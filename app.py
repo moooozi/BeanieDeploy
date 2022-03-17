@@ -119,7 +119,7 @@ class PageCheck(tk.Frame):
         label3 = ttk.Label(middle_frame, text="Compatibility Check Passed!", font=MEDIUMFONT)
         label4 = ttk.Label(middle_frame, text="Compatibility Check Failed!", font=MEDIUMFONT)
 
-        pb_hD = ttk.Progressbar(middle_frame, orient='horizontal',length = 500, mode='indeterminate')
+        pb_hD = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='indeterminate')
 
         label2.pack(pady=40, anchor="w")
         pb_hD.pack(expand=True)
@@ -135,7 +135,8 @@ class PageCheck(tk.Frame):
                              command=lambda: app.destroy())
 
         print(compatibility_results)
-        if compatibility_results['result_uefi_check'] == 1 and compatibility_results['result_totalram_check'] == 1 and compatibility_results['result_space_check'] == (1 | 2):
+        if compatibility_results['result_uefi_check'] == 1 and compatibility_results['result_totalram_check'] == 1 and \
+                compatibility_results['result_space_check'] in (1, 2):
             label2.pack_forget()
             pb_hD.pack_forget()
             label3.pack(pady=40, anchor="nw")
@@ -168,9 +169,6 @@ class PageCheck(tk.Frame):
             label5.pack(padx=10, anchor="w")
             button2.pack(anchor="se", side="right", ipadx=15, padx=10)
 
-
-
-
     def compatibility_test(self):
 
         print('hey')
@@ -194,7 +192,7 @@ class PageCheck(tk.Frame):
 
         def check_resizable():
             return subprocess.run([r'powershell.exe',
-                                   r'(Get-PartitionSupportedSize -DriveLetter $env:SystemDrive.Substring(0, 1)).SizeMax'],
+                                   r'((Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).Size - (Get-PartitionSupportedSize -DriveLetter $env:SystemDrive.Substring(0, 1)).SizeMin)'],
                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
         totalram = int(check_totalram().stdout)
@@ -224,14 +222,15 @@ class PageCheck(tk.Frame):
         else:
             result_space_check = 0
 
-        if result_space_check == (1 | 2):
+        if result_space_check in (1, 2):
             if check_resizable().returncode != 0:
                 result_resizable_check = 9
             elif int(str(check_resizable().stdout)[2:-5]) > required_space_min:
                 result_resizable_check = 1
             else:
                 result_resizable_check = 0
-
+        else:
+            result_resizable_check = 8
         check_results = {'result_uefi_check': result_uefi_check,
                          'result_totalram_check': result_totalram_check,
                          'result_space_check': result_space_check,
