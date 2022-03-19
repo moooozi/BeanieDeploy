@@ -1,7 +1,9 @@
-from APP_INFO import *
+# from APP_INFO import *
 import tkinter as tk
 from tkinter import ttk
 from multiprocessing import Process
+
+import APP_INFO
 from lang_en import *
 from functions import *
 
@@ -12,7 +14,7 @@ app.geometry("800x500")
 # app.iconbitmap("yourimage.ico")
 app.resizable(False, False)
 app.tk.call('tk', 'scaling', 1.5)
-win_width, win_height = 550, 400
+win_width, win_height = 100, 100
 
 LARGEFONT = ("Ariel", 20)
 MEDIUMFONT = ("Ariel", 16)
@@ -37,23 +39,18 @@ def clear_frame():
         widgets.destroy()
 
 
-selections = {}
-
-
 # page_check
 def main():
     def page_check():
         page_name = "page_check"
 
-        label2 = ttk.Label(middle_frame, text="Checking System requirements. please wait...", font=MEDIUMFONT)
-        label3 = ttk.Label(middle_frame, text="Compatibility Check Passed!", font=MEDIUMFONT)
-
-        proggresbar_check = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='indeterminate')
+        label2 = ttk.Label(middle_frame, text=lang_check_running, font=MEDIUMFONT)
+        progressbar_check = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='indeterminate')
 
         label2.pack(pady=40, anchor="w")
-        proggresbar_check.pack(expand=True)
+        progressbar_check.pack(expand=True)
 
-        proggresbar_check.start(10)
+        progressbar_check.start(10)
         queue1 = Queue()
 
         p1 = Process(target=compatibility_test, args=(queue1,))
@@ -61,20 +58,18 @@ def main():
         while queue1.empty():
             app.update()
         compatibility_results = queue1.get()
-        button1 = ttk.Button(middle_frame, text="Next",
-                             command=lambda: page_1())
 
-        button2 = ttk.Button(middle_frame, text="Quit",
+        button2 = ttk.Button(middle_frame, text=lang_btn_quit,
                              command=lambda: app.destroy())
 
         print(compatibility_results)
         if compatibility_results['result_uefi_check'] == 1 and compatibility_results['result_totalram_check'] == 1 and \
                 compatibility_results['result_space_check'] in (1, 2):
-            page_1()
+            page_1(compatibility_results['result_space_check'])
         else:
 
             label2.pack_forget()
-            proggresbar_check.pack_forget()
+            progressbar_check.pack_forget()
             label4 = ttk.Label(middle_frame, text=lang_error_title, font=MEDIUMFONT)
             errors = []
             if compatibility_results['result_uefi_check'] == 0:
@@ -101,62 +96,110 @@ def main():
             button2.pack(anchor="se", side="right", ipadx=15, padx=10)
 
     # page_1
-    def page_1():
+    def page_1(space_check_results):
         page_name = "page_1"
         clear_frame()
 
         label2 = ttk.Label(middle_frame, text=lang_install_question, font=MEDIUMFONT)
         label2.pack(pady=40, anchor="w")
-        button1 = ttk.Button(middle_frame, text="Next",
-                             command=lambda: page_2())
+        button1 = ttk.Button(middle_frame, text=lang_btn_next,
+                             command=lambda: page_2(space_check_results, var1))
         # putting the button in its place by
         # using grid
         var1 = tk.IntVar(app, 1)
-        # Dictionary to create multiple buttons
-        values = {lang_install_option1: 1,
-                  lang_install_option2: 2,
-                  lang_install_option3: 3}
-
-        # Loop is used to create multiple Radiobuttons
-        # rather than creating each button separately
         var1.set(1)
-        for (text, value) in values.items():
-            ttk.Radiobutton(middle_frame, text=text, variable=var1,
-                            value=value).pack(anchor="w", ipady=5)
+
+        r1_install = ttk.Radiobutton(middle_frame, text=lang_install_options[1], variable=var1, value=1)
+        r1_install.pack(anchor="w", ipady=5)
+        r2_install = ttk.Radiobutton(middle_frame, text=lang_install_options[2], variable=var1, value=2)
+        r2_install.pack(anchor="w", ipady=5)
+        r3_install = ttk.Radiobutton(middle_frame, text=lang_install_options[3], variable=var1, value=3)
+        r3_install.pack(anchor="w", ipady=5)
 
         button1.pack(anchor="se", side="right", ipadx=15, padx=10)
 
     # page_2
-    def page_2():
+    def page_2(space_check_results, selection1):
         page_name = "page_2"
         clear_frame()
         label2 = ttk.Label(middle_frame, text=lang_windows_question, font=MEDIUMFONT)
         label2.pack(pady=40, anchor="w")
 
-        button1 = ttk.Button(middle_frame, text="Next",
-                             command=lambda: page_1())
+        button1 = ttk.Button(middle_frame, text=lang_btn_next,
+                             command=lambda: page_1(space_check_results))
 
         button2 = ttk.Button(middle_frame, text="Back",
-                             command=lambda: page_1())
+                             command=lambda: page_verify(space_check_results, selection1, var2))
 
         var2 = tk.IntVar(app, 1)
+        if space_check_results == 2:
+            r1_windows = ttk.Radiobutton(middle_frame, text=lang_windows_options[1], variable=var2, value=1)
+        else:
+            r1_windows = ttk.Radiobutton(middle_frame, text=lang_windows_option1_disabled, state='disabled')
+        r2_windows = ttk.Radiobutton(middle_frame, text=lang_windows_options[2], variable=var2, value=2)
+        r3_windows = ttk.Radiobutton(middle_frame, text=lang_windows_options[3], variable=var2, value=3)
+        r4_windows = ttk.Radiobutton(middle_frame, text=lang_windows_options[4], variable=var2, value=3)
 
-        # Dictionary to create multiple buttons
-
-        values = {lang_windows_option1: 1,
-                  lang_windows_option2: 2,
-                  lang_windows_option3: 3}
-
-        # Loop is used to create multiple Radiobuttons
-        # rather than creating each button separately
-        for (text, value) in values.items():
-            ttk.Radiobutton(middle_frame, text=text, variable=var2,
-                            value=value).pack(anchor="w", ipady=5)
+        r1_windows.pack(anchor="w", ipady=5)
+        r2_windows.pack(anchor="w", ipady=5)
+        r3_windows.pack(anchor="w", ipady=5)
+        r4_windows.pack(anchor="w", ipady=5)
 
         button1.pack(anchor="se", side="right", ipadx=15, padx=10)
         button2.pack(anchor="se", side="right", padx=5)
 
-    page_check()
+    def page_verify(space_check_results, selection1, selection2):
+        page_name = "page_2"
+        clear_frame()
+        label2 = ttk.Label(middle_frame, text=lang_verify_question, font=MEDIUMFONT)
+        label2.pack(pady=40, anchor="w")
+
+        button1 = ttk.Button(middle_frame, text=lang_btn_start,
+                             command=lambda: page_installing(selection1, selection2))
+
+        button2 = ttk.Button(middle_frame, text="Back",
+                             command=lambda: page_1(space_check_results))
+
+        review_text1 = 'x  ' + lang_install_options[selection1] + '\n' + 'x  ' + lang_windows_options[selection2]
+        review_text = ttk.Label(middle_frame, text=review_text1)
+
+        review_text.pack(anchor='w', padx=5)
+
+        button1.pack(anchor="se", side="right", ipadx=15, padx=10)
+        button2.pack(anchor="se", side="right", padx=5)
+
+    def page_installing(selection1, selection2):
+        page_name = "page_installing"
+        clear_frame()
+
+        queue2 = Queue()
+
+        label2 = ttk.Label(middle_frame, text=lang_install_running, font=MEDIUMFONT)
+        progressbar_install = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='determinate')
+
+        label2.pack(pady=40, anchor="w")
+        progressbar_install.pack(expand=True)
+
+        install_dir = get_user_home() + '\win2linux_tmpdir'
+
+        p2 = Process(target=download_file, args=(APP_INFO.iso_url, install_dir))
+        p2.start()
+        while queue2.qsize() == 0:
+            app.update_idletasks()
+        job_id = queue2.get()
+        download_size = get_download_size(job_id)
+
+        def retrack(jobid, totalsize):
+            downloaded = track(jobid)
+            progressbar_install['value'] = (downloaded * 100)/totalsize
+            app.update()
+            if downloaded < totalsize:
+                app.after(1000, retrack(jobid, totalsize))
+
+        retrack(job_id, download_size)
+        #join_downloaded_file(job_id)
+
+    page_verify(1, 1, 1)
     app.mainloop()
 
 
