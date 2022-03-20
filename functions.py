@@ -2,10 +2,6 @@ import time
 import APP_INFO
 import webbrowser
 import subprocess
-from multiprocessing import Queue
-
-import app
-
 
 def open_url(url):
     webbrowser.open_new_tab(url)
@@ -168,6 +164,12 @@ def finish_downloaded(job_id):
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5])
 
 
+def unzip_files(unzip_app_path, zip_file, unzip_location):
+    return int(str(subprocess.run(
+        [r'' + unzip_app_path, r'x ' + zip_file + ' -o' + unzip_location + ''],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5])
+
+
 def add_boot_entry(boot_efi_file_path, boot_drive_letter):
     bootguid = str(subprocess.run(
         [r'powershell.exe', r'(bcdedit /copy {bootmgr} /d "TmpInstallMedia")'],
@@ -182,8 +184,3 @@ def add_boot_entry(boot_efi_file_path, boot_drive_letter):
     subprocess.run([r'powershell.exe', r'bcdedit /set {fwbootmgr} displayorder ' + bootguid + ' /addfirst'],
                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
-
-def unzip_files(unzip_app_path, zip_file, unzip_location):
-    return int(str(subprocess.run(
-        [r'' + unzip_app_path, r'x ' + zip_file + ' -o' + unzip_location + ''],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5])

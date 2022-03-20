@@ -1,7 +1,7 @@
 # from APP_INFO import *
 import tkinter as tk
 from tkinter import ttk
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 
 import APP_INFO
 from lang_en import *
@@ -11,9 +11,14 @@ from functions import *
 app = tk.Tk()
 app.title(SW_NAME)
 app.geometry("800x500")
+# Style
+style = ttk.Style(app)
+app.tk.call('source', 'C:/Users/trapp/PycharmProjects/Lnixify/azure dark/azure dark.tcl')
+style.theme_use('azure')
+style.configure("Accentbutton", foreground='white')
+style.configure("Togglebutton", foreground='white')
 # app.iconbitmap("yourimage.ico")
 app.resizable(False, False)
-app.tk.call('tk', 'scaling', 1.5)
 win_width, win_height = 100, 100
 
 LARGEFONT = ("Ariel", 20)
@@ -25,7 +30,7 @@ container = tk.Frame(app)
 container.pack(side="top", fill="both", expand=True)
 container.grid_rowconfigure(0, weight=1)
 container.grid_columnconfigure(0, weight=1)
-
+# Frames
 top_frame = tk.Frame(container, height=100, bg='yellow')
 top_frame.pack(fill="x", ipadx=10, ipady=10)
 left_frame = tk.Frame(container, width=200, bg='blue')
@@ -102,7 +107,7 @@ def main():
 
         label2 = ttk.Label(middle_frame, text=lang_install_question, font=MEDIUMFONT)
         label2.pack(pady=40, anchor="w")
-        button1 = ttk.Button(middle_frame, text=lang_btn_next,
+        button1 = ttk.Button(middle_frame, text=lang_btn_next, style="Accentbutton",
                              command=lambda: page_2(space_check_results, var1))
         # putting the button in its place by
         # using grid
@@ -125,7 +130,7 @@ def main():
         label2 = ttk.Label(middle_frame, text=lang_windows_question, font=MEDIUMFONT)
         label2.pack(pady=40, anchor="w")
 
-        button1 = ttk.Button(middle_frame, text=lang_btn_next,
+        button1 = ttk.Button(middle_frame, text=lang_btn_next, style="Accentbutton",
                              command=lambda: page_1(space_check_results))
 
         button2 = ttk.Button(middle_frame, text="Back",
@@ -154,7 +159,7 @@ def main():
         label2 = ttk.Label(middle_frame, text=lang_verify_question, font=MEDIUMFONT)
         label2.pack(pady=40, anchor="w")
 
-        button1 = ttk.Button(middle_frame, text=lang_btn_start,
+        button1 = ttk.Button(middle_frame, text=lang_btn_start, style="Accentbutton",
                              command=lambda: page_installing(selection1, selection2))
 
         button2 = ttk.Button(middle_frame, text="Back",
@@ -203,7 +208,7 @@ def main():
         retrack(job_id, download_size)
         finish_downloaded(job_id)
 
-    page_verify(1, 1, 1)
+    page_check()
     app.mainloop()
 
 
