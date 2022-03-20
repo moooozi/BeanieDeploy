@@ -135,7 +135,7 @@ def create_temp_boot_partition():
     format_volume(tmp_part_letter, 'FAT32')
 
 
-def get_user_home():
+def get_user_home_dir():
     return str(subprocess.run(
         [r'powershell.exe', r'$home'],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
@@ -144,7 +144,7 @@ def get_user_home():
 def download_file(url, destination, queue2):
     job_id = str(subprocess.run(
         [r'powershell.exe',
-         r'(Start-BitsTransfer -Source ' + url + ' -Destination ' + destination + ' -Priority normal -Asynchronous).JobId'],
+         r'(Start-BitsTransfer -Source ' + url + ' -Destination ' + destination + ' -Priority normal -Asynchronous -RetryInterval 60 -RetryTimeout 210000).JobId'],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
     queue2.put(job_id)
@@ -162,8 +162,28 @@ def track(job_id):
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5])
 
 
-def join_downloaded_file(job_id):
+def finish_downloaded(job_id):
     return int(str(subprocess.run(
-        [r'powershell.exe', r'(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }).bytestransferred'],
+        [r'powershell.exe', r'(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }) | Complete-BitsTransfer'],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5])
 
+
+def add_boot_entry(boot_efi_file_path, boot_drive_letter):
+    bootguid = str(subprocess.run(
+        [r'powershell.exe', r'(bcdedit /copy {bootmgr} /d "TmpInstallMedia")'],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+    bootguid = str(subprocess.run(
+        [r'powershell.exe', r"""'{' + (""" + bootguid + """-split '[{}]')[1] + '}'"""],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+    subprocess.run([r'powershell.exe', r'bcdedit /set ' + bootguid + ' path ' + boot_efi_file_path + ''],
+                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    subprocess.run([r'powershell.exe', r'bcdedit /set ' + bootguid + ' device partition=' + boot_drive_letter + ':'],
+                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    subprocess.run([r'powershell.exe', r'bcdedit /set {fwbootmgr} displayorder ' + bootguid + ' /addfirst'],
+                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+
+def unzip_files(unzip_app_path, zip_file, unzip_location):
+    return int(str(subprocess.run(
+        [r'' + unzip_app_path, r'x ' + zip_file + ' -o' + unzip_location + ''],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5])

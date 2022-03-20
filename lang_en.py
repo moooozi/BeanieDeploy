@@ -33,3 +33,6 @@ lang_windows_options = [0, "Install " + distro_name + " alongside Windows",
 lang_windows_option1_disabled = lang_windows_options[1] + ' (not enough space)'
 
 lang_verify_question = "This is what is going to be done. Click " + lang_btn_start + " once ready"
+
+
+lang_job_downloading_install_media = "Downloading install media"

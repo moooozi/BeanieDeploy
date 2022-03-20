@@ -171,33 +171,37 @@ def main():
     def page_installing(selection1, selection2):
         page_name = "page_installing"
         clear_frame()
-
         queue2 = Queue()
-
         label2 = ttk.Label(middle_frame, text=lang_install_running, font=MEDIUMFONT)
         progressbar_install = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='determinate')
+        current_job_title = "Starting download"
+        current_job = ttk.Label(middle_frame, text=current_job_title, font=MEDIUMFONT)
 
         label2.pack(pady=40, anchor="w")
         progressbar_install.pack(expand=True)
+        current_job.pack(pady=40, anchor="w")
 
-        install_dir = get_user_home() + '\win2linux_tmpdir'
-
-        p2 = Process(target=download_file, args=(APP_INFO.iso_url, install_dir))
+        download_path = get_user_home_dir() + '\win2linux_tmpdir'
+        install_media_path = download_path + "\install_media.iso"
+        p2 = Process(target=download_file, args=(APP_INFO.iso_url, install_media_path))
         p2.start()
         while queue2.qsize() == 0:
             app.update_idletasks()
+        # Wait 2 sec
+        app.after(2000, app.update_idletasks())
         job_id = queue2.get()
         download_size = get_download_size(job_id)
 
         def retrack(jobid, totalsize):
             downloaded = track(jobid)
-            progressbar_install['value'] = (downloaded * 100)/totalsize
+            percent = (downloaded * 100)/totalsize
+            progressbar_install['value'] = percent*0.85
             app.update()
             if downloaded < totalsize:
                 app.after(1000, retrack(jobid, totalsize))
 
         retrack(job_id, download_size)
-        #join_downloaded_file(job_id)
+        finish_downloaded(job_id)
 
     page_verify(1, 1, 1)
     app.mainloop()
