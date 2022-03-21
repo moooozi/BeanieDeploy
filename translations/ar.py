@@ -24,13 +24,13 @@ ln_install_options = [0, "KDE تثبيت سريع مع سطح مكتب",
                       "GNOME التثبيت السريع مع سطح مكتب",
                       "متقدم: دعني أقوم بتهيئة تطبيقاتي لاحقًا"]
 
-ln_windows_question = "بياناتك؟ Windows حسنًا , ماذا عن "
+ln_windows_question = "وبياناتك؟ Windows حسنًا , ماذا عن "
 
 ln_windows_options = [0, "Windows بجانب %s تثبيت" % APP_INFO.distro_name,
                       " %s وترحيل مكتبتي (الموسيقى والصور ومقاطع الفيديو) إلى  Windows إزالة" % APP_INFO.distro_name,
                       " %s وجميع البيانات وابدأ من جديد باستخدام Windows إزالة" % APP_INFO.distro_name,
-                      "خيارات متقدمة: لا تفعل شيئًا ودعني أقسم لاحقًا"]
-ln_windows_option1_disabled = "% s (مساحة غير كافية)" % ln_windows_options[1]
+                      "متقدم: لا تفعل شيئًا ودعني أقسم لاحقًا"]
+ln_windows_option1_disabled = "(مساحة غير كافية) %s" % ln_windows_options[1]
 
 ln_verify_question = "هذا ما سيتم القيام به. انقر فوق% s مرة واحدة جاهزًا" % ln_btn_start
 
