@@ -32,6 +32,6 @@ ln_windows_options = [0, "Windows بجانب %s تثبيت" % APP_INFO.distro_na
                       "متقدم: لا تفعل شيئًا ودعني أقسم لاحقًا"]
 ln_windows_option1_disabled = "(مساحة غير كافية) %s" % ln_windows_options[1]
 
-ln_verify_question = "هذا ما سيتم القيام به. انقر فوق% s مرة واحدة جاهزًا" % ln_btn_start
+ln_verify_question = "هذا ما سيتم القيام به. انقر فوق % s عندما تجهز" % ln_btn_start
 
 ln_job_downloading_install_media = "تنزيل وسائط التثبيت"

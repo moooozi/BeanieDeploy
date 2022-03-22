@@ -64,29 +64,31 @@ top_frame = tk.Frame(container, height=100)
 left_frame = tk.Frame(container, width=200)
 left_frame_img = tk.PhotoImage(file='resources/leftframe.png')
 left_frame_label = tk.Label(left_frame, image=left_frame_img)
-top_frame_img = tk.PhotoImage(file='resources/topframe.png')
-top_frame_label = tk.Label(top_frame, image=top_frame_img)
+middle_frame = tk.Frame(container, height=800)
+
+lang_available = ["English", "Deutsch", "العربية"]
+lang_var = tk.StringVar()
+lang_list = ttk.Combobox(top_frame, name="language", textvariable=lang_var)
+lang_list['values'] = lang_available
+lang_list['state'] = 'readonly'
+lang_list.set('English')
 
 
 def rebuild_container():
-    top_frame.pack(fill="x")
+    top_frame.pack(fill="x",expand=1)
     left_frame.pack(fill="y", side=left_var)
     left_frame_label.pack()
-    top_frame_label.pack()
+    middle_frame.pack(fill="both", expand=1, padx=20, pady=20)
+    lang_list.pack( anchor=nw_var, padx=10, pady=10)
+
 
 
 rebuild_container()
-
-middle_frame = tk.Frame(container, height=800)
-middle_frame.pack(fill="both", expand=1, padx=20, pady=20)
 
 
 def clear_frame():
     for widgets in middle_frame.winfo_children():
         widgets.destroy()
-
-
-lang_available = ["English", "Deutsch", "Arabic"]
 
 
 def change_lang(new_lang_code, pagename):
@@ -97,7 +99,7 @@ def change_lang(new_lang_code, pagename):
     if new_lang_code == 'Deutsch':
         import translations.de as lang
         right_to_left_lang(0)
-    if new_lang_code == 'Arabic':
+    if new_lang_code == 'العربية':
         import translations.ar as lang
         right_to_left_lang(1)
 
@@ -166,20 +168,13 @@ def main():
 
         clear_frame()
 
+        def change_callback(*args): change_lang(lang_var.get(), page_name)
+        lang_list.bind('<<ComboboxSelected>>', change_callback)
+
         label2 = ttk.Label(middle_frame, text=lang.ln_install_question, font=MEDIUMFONT)
         label2.pack(pady=40, anchor=w_var)
         button1 = ttk.Button(middle_frame, text=lang.ln_btn_next, style="Accentbutton",
                              command=lambda: page_2(space_check_results, var1))
-        lang_var = tk.StringVar()
-        lang_list = ttk.Combobox(middle_frame, textvariable=lang_var)
-        lang_list['values'] = lang_available
-        lang_list['state'] = 'readonly'
-        lang_list.pack()
-
-        def change_callback(*args):
-            change_lang(lang_var.get(), page_name)
-
-        lang_list.bind('<<ComboboxSelected>>', change_callback)
 
         # putting the button in its place by
         # using grid
@@ -198,8 +193,12 @@ def main():
 
     # page_2
     def page_2(space_check_results, selection1):
-        page_name = "page_2"
+        def page_name(): page_2(space_check_results, selection1)
         clear_frame()
+
+        def change_callback(*args): change_lang(lang_var.get(), page_name)
+        lang_list.bind('<<ComboboxSelected>>', change_callback)
+
         label2 = ttk.Label(middle_frame, text=lang.ln_windows_question, font=MEDIUMFONT)
         label2.pack(pady=40, anchor=w_var)
 
@@ -227,8 +226,12 @@ def main():
         button2.pack(anchor=se_var, side=right_var, padx=5)
 
     def page_verify(space_check_results, selection1, selection2):
-        page_name = "page_2"
+        def page_name(): page_verify(space_check_results, selection1, selection2)
         clear_frame()
+
+        def change_callback(*args): change_lang(lang_var.get(), page_name)
+        lang_list.bind('<<ComboboxSelected>>', change_callback)
+
         label2 = ttk.Label(middle_frame, text=lang.ln_verify_question, font=MEDIUMFONT)
         label2.pack(pady=40, anchor=w_var)
 
