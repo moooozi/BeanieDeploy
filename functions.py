@@ -3,6 +3,7 @@ import APP_INFO
 import webbrowser
 import subprocess
 
+
 def open_url(url):
     webbrowser.open_new_tab(url)
 
@@ -184,3 +185,28 @@ def add_boot_entry(boot_efi_file_path, boot_drive_letter):
     subprocess.run([r'powershell.exe', r'bcdedit /set {fwbootmgr} displayorder ' + bootguid + ' /addfirst'],
                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
+
+def get_wifi_profiles():
+    out = str(subprocess.run(
+        [r'powershell.exe',
+         r'(netsh wlan show profiles) | Select-String “\:(.+)$” | %{$name=$_.Matches.Groups[1].Value.Trim(); $_} | %{(netsh wlan show profile name=”$name” key=clear)} | Select-String “Key Content\W+\:(.+)$” | %{$pass=$_.Matches.Groups[1].Value.Trim(); $_} | %{[PSCustomObject]@{ PROFILE_NAME=$name;PASSWORD=$pass }} | Format-Table -AutoSize'],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[56:-13]
+    out = out.split("\\r\\n")
+    newout = []
+    for i in out:
+        i = i.split()
+        newout.append(i)
+    return newout
+
+
+def build_autoinstall_ks_file(keymap, xlayouts, syslang, timezone, de_option, usrfullname, username, password):
+    if de_option == 1:
+        packages = "@^workstation-product-environment"
+    textpart1 = "graphical\nkeyboard --vckeymap='" + keymap + "' --xlayouts='%s'\n" % xlayouts
+    textpart2 = "lang " + syslang + ".UTF-8\n%packages\n" + packages + "\n%end\nfirstboot --enable\n"
+    textpart3 = "autopart\nclearpart --none --initlabel\ntimezone %s --utc\nrootpw --lock\n" % timezone
+    textpart4 = "user --groups=wheel --name='" + usrfullname + "' --password='" + password + "' --gecos='%s'" % username
+    text = textpart1 + textpart2 + textpart3 + textpart4
+    ks_file = open('anaconda-ks.cfg', 'w')
+    ks_file.write(text)
+    print(text)

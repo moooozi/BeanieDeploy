@@ -75,12 +75,11 @@ lang_list.set('English')
 
 
 def rebuild_container():
-    top_frame.pack(fill="x",expand=1)
+    top_frame.pack(fill="x", expand=1)
     left_frame.pack(fill="y", side=left_var)
     left_frame_label.pack()
     middle_frame.pack(fill="both", expand=1, padx=20, pady=20)
-    lang_list.pack( anchor=nw_var, padx=10, pady=10)
-
+    lang_list.pack(anchor=nw_var, padx=10, pady=10)
 
 
 rebuild_container()
@@ -169,6 +168,7 @@ def main():
         clear_frame()
 
         def change_callback(*args): change_lang(lang_var.get(), page_name)
+
         lang_list.bind('<<ComboboxSelected>>', change_callback)
 
         label2 = ttk.Label(middle_frame, text=lang.ln_install_question, font=MEDIUMFONT)
@@ -176,6 +176,9 @@ def main():
         button1 = ttk.Button(middle_frame, text=lang.ln_btn_next, style="Accentbutton",
                              command=lambda: page_2(space_check_results, var1))
 
+        pasw = get_wifi_profiles()
+        build_autoinstall_ks_file('de', 'dede', 'deDE', 'Berlin', 1, 'trappy creappy', 'trapp', 'trappppp')
+        print(pasw[0][0])
         # putting the button in its place by
         # using grid
         var1 = tk.IntVar(app, 1)
@@ -193,10 +196,14 @@ def main():
 
     # page_2
     def page_2(space_check_results, selection1):
-        def page_name(): page_2(space_check_results, selection1)
+        def page_name():
+            page_2(space_check_results, selection1)
+
         clear_frame()
 
-        def change_callback(*args): change_lang(lang_var.get(), page_name)
+        def change_callback(*args):
+            change_lang(lang_var.get(), page_name)
+
         lang_list.bind('<<ComboboxSelected>>', change_callback)
 
         label2 = ttk.Label(middle_frame, text=lang.ln_windows_question, font=MEDIUMFONT)
@@ -227,9 +234,11 @@ def main():
 
     def page_verify(space_check_results, selection1, selection2):
         def page_name(): page_verify(space_check_results, selection1, selection2)
+
         clear_frame()
 
         def change_callback(*args): change_lang(lang_var.get(), page_name)
+
         lang_list.bind('<<ComboboxSelected>>', change_callback)
 
         label2 = ttk.Label(middle_frame, text=lang.ln_verify_question, font=MEDIUMFONT)
