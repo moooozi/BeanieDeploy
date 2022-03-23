@@ -25,13 +25,13 @@ ln_install_question = "Wie möchten Sie %s installieren?" % APP_INFO.distro_name
 
 ln_install_options = [0, "Schnellinstallation mit KDE-Desktop",
                       "Schnellinstallation mit GNOME Desktop",
-                      "Erweitert: Lassen Sie mich meine Applets später konfigurieren"]
+                      "Erweitert: Lassen Sie mich meine Apps später konfigurieren"]
 
 ln_windows_question = "Verstanden, was ist mit Windows und Ihren Daten?"
 
 ln_windows_options = [0, "%s neben Windows installieren" % APP_INFO.distro_name,
                       "Windows entfernen und meine Bibliothek (Musik, Fotos, Videos) nach %s migrieren" % APP_INFO.distro_name,
-                      "Nuke Windows und alle Daten und starte neu mit %s" % APP_INFO.distro_name,
+                      "Lösche Windows und alle Daten und starte neu mit %s" % APP_INFO.distro_name,
                       "Erweitert: Nichts tun und mich später partitionieren lassen"]
 ln_windows_option1_disabled = "%s (nicht genug Platz)" % ln_windows_options[1]
 

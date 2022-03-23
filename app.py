@@ -16,6 +16,8 @@ app.geometry("800x500")
 # Style
 style = ttk.Style(app)
 app.tk.call('source', str(pathlib.Path(__file__).parent) + '/azure dark/azure dark.tcl')
+#app.tk.call('source', 'azure dark/azure dark.tcl')
+
 style.theme_use('azure')
 style.configure("Accentbutton", foreground='white')
 style.configure("Togglebutton", foreground='white')
@@ -116,17 +118,15 @@ def main():
     def page_check():
         page_name = "page_check"
 
-        def page_name():
-            page_check()
+        def page_name(): page_check()
 
-        def change_callback(*args):
-            change_lang(lang_var.get(), page_name)
+        def change_callback(*args): change_lang(lang_var.get(), page_name)
 
         lang_list.bind('<<ComboboxSelected>>', change_callback)
 
         clear_frame()
 
-        label2 = ttk.Label(middle_frame, text=lang.ln_check_running, font=MEDIUMFONT)
+        label2 = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=lang.ln_check_running, font=MEDIUMFONT)
         progressbar_check = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='indeterminate')
 
         label2.pack(pady=40, anchor=w_var)
@@ -138,6 +138,7 @@ def main():
             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
             quit()
         global compatibility_results
+        # compatibility_results = {'result_uefi_check': 0,'result_totalram_check': 0,'result_space_check': 0,'result_resizable_check': 0,'result_bitlocker_check': 0}
         if not compatibility_results:
             if not process_compatibility_check.is_alive():
                 process_compatibility_check.start()
@@ -158,7 +159,7 @@ def main():
 
             label2.pack_forget()
             progressbar_check.pack_forget()
-            label4 = ttk.Label(middle_frame, text=lang.ln_error_title, font=MEDIUMFONT)
+            label4 = ttk.Label(middle_frame, wraplength=540,  justify=left_var,  text=lang.ln_error_title, font=MEDIUMFONT)
             errors = []
             if compatibility_results['result_uefi_check'] == 0:
                 errors.append(lang.ln_error_uefi_0)
@@ -181,7 +182,7 @@ def main():
             if compatibility_results['result_bitlocker_check'] == 0:
                 errors.append(lang.ln_error_bitlocker_9)
 
-            label5 = ttk.Label(middle_frame, text=lang.ln_error_list + "\n\n  X  " + ("\n  X  ".join(errors)),
+            label5 = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=lang.ln_error_list + "\n\n- " + ("\n- ".join(errors)),
                                font=SMALLFONT)
 
             label4.pack(pady=40, anchor=nw_var)
@@ -198,7 +199,7 @@ def main():
 
         lang_list.bind('<<ComboboxSelected>>', change_callback)
 
-        label2 = ttk.Label(middle_frame, text=lang.ln_install_question, font=MEDIUMFONT)
+        label2 = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=lang.ln_install_question, font=MEDIUMFONT)
         label2.pack(pady=40, anchor=w_var)
         button1 = ttk.Button(middle_frame, text=lang.ln_btn_next, style="Accentbutton",
                              command=lambda: page_2(space_check_results, var1))
@@ -230,7 +231,7 @@ def main():
 
         lang_list.bind('<<ComboboxSelected>>', change_callback)
 
-        label2 = ttk.Label(middle_frame, text=lang.ln_windows_question, font=MEDIUMFONT)
+        label2 = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=lang.ln_windows_question, font=MEDIUMFONT)
         label2.pack(pady=40, anchor=w_var)
 
         button1 = ttk.Button(middle_frame, text=lang.ln_btn_next, style="Accentbutton",
@@ -265,7 +266,7 @@ def main():
 
         lang_list.bind('<<ComboboxSelected>>', change_callback)
 
-        label2 = ttk.Label(middle_frame, text=lang.ln_verify_question, font=MEDIUMFONT)
+        label2 = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=lang.ln_verify_question, font=MEDIUMFONT)
         label2.pack(pady=40, anchor=w_var)
 
         button1 = ttk.Button(middle_frame, text=lang.ln_btn_start, style="Accentbutton",
@@ -276,7 +277,7 @@ def main():
 
         review_text1 = 'x  ' + lang.ln_install_options[selection1] + '\n' + 'x  ' + lang.ln_windows_options[
             selection2]
-        review_text = ttk.Label(middle_frame, text=review_text1)
+        review_text = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=review_text1)
 
         review_text.pack(anchor='w', padx=5)
 
@@ -287,10 +288,10 @@ def main():
         page_name = "page_installing"
         clear_frame()
         queue2 = Queue()
-        label2 = ttk.Label(middle_frame, text=lang.ln_install_running, font=MEDIUMFONT)
+        label2 = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=lang.ln_install_running, font=MEDIUMFONT)
         progressbar_install = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='determinate')
         current_job_title = "Starting download"
-        current_job = ttk.Label(middle_frame, text=current_job_title, font=MEDIUMFONT)
+        current_job = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=current_job_title, font=MEDIUMFONT)
 
         label2.pack(pady=40, anchor=w_var)
         progressbar_install.pack(expand=True)
@@ -318,7 +319,8 @@ def main():
         retrack(job_id, download_size)
         finish_downloaded(job_id)
 
-    page_check()
+    print(lang.ln_install_text)
+    #page_check()
     app.mainloop()
 
 
