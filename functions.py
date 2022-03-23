@@ -33,6 +33,12 @@ def compatibility_test(queue):
     #                           r'((Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).Size - (Get-PartitionSupportedSize -DriveLetter $env:SystemDrive.Substring(0, 1)).SizeMin)'],
     #                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
+    def check_bitlocker_status():
+        return subprocess.run(
+            [r'powershell.exe', r'(Get-BitLockerVolume -MountPoint $env:SystemDrive).EncryptionPercentage'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, shell=True)
+
     totalram = int(check_totalram().stdout)
     result_resizable_check = 0
     if check_totalram().returncode != 0:
@@ -71,10 +77,18 @@ def compatibility_test(queue):
     # else:
     #    result_resizable_check = 8
     result_resizable_check = 8
+
+    if check_bitlocker_status().returncode != 0:
+        result_bitlocker_check = 9
+    elif str(check_bitlocker_status().stdout)[2:-5] == '0':
+        result_bitlocker_check = 1
+    else:
+        result_bitlocker_check = 0
     check_results = {'result_uefi_check': result_uefi_check,
                      'result_totalram_check': result_totalram_check,
                      'result_space_check': result_space_check,
-                     'result_resizable_check': result_resizable_check}
+                     'result_resizable_check': result_resizable_check,
+                     'result_bitlocker_check': result_bitlocker_check}
     queue.put(check_results)
 
     # return check_results
@@ -205,8 +219,7 @@ def build_autoinstall_ks_file(keymap, xlayouts, syslang, timezone, de_option, us
     textpart1 = "graphical\nkeyboard --vckeymap='" + keymap + "' --xlayouts='%s'\n" % xlayouts
     textpart2 = "lang " + syslang + ".UTF-8\n%packages\n" + packages + "\n%end\nfirstboot --enable\n"
     textpart3 = "autopart\nclearpart --none --initlabel\ntimezone %s --utc\nrootpw --lock\n" % timezone
-    textpart4 = "user --groups=wheel --name='" + usrfullname + "' --password='" + password + "' --gecos='%s'" % username
-    text = textpart1 + textpart2 + textpart3 + textpart4
+    text = textpart1 + textpart2 + textpart3
     ks_file = open('anaconda-ks.cfg', 'w')
     ks_file.write(text)
     print(text)

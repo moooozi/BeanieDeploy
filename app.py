@@ -1,5 +1,7 @@
 # from APP_INFO import *
+import ctypes
 import pathlib
+import sys
 import tkinter as tk
 from tkinter import ttk
 from multiprocessing import Process, Queue
@@ -117,6 +119,11 @@ def main():
         progressbar_check.pack(expand=True)
 
         progressbar_check.start(10)
+        app.update()
+        if not ctypes.windll.shell32.IsUserAnAdmin():
+            app.after(1000, app.update())
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+            quit()
         queue1 = Queue()
 
         p1 = Process(target=compatibility_test, args=(queue1,))
@@ -130,7 +137,8 @@ def main():
 
         print(compatibility_results)
         if compatibility_results['result_uefi_check'] == 1 and compatibility_results['result_totalram_check'] == 1 and \
-                compatibility_results['result_space_check'] in (1, 2):
+                compatibility_results['result_space_check'] in (1, 2) and compatibility_results[
+            'result_bitlocker_check'] == 1:
             page_1(compatibility_results['result_space_check'])
         else:
 
@@ -153,6 +161,10 @@ def main():
             if compatibility_results['result_resizable_check'] == 9:
                 errors.append(lang.ln_error_resizable_0)
             if compatibility_results['result_resizable_check'] == 0:
+                errors.append(lang.ln_error_resizable_9)
+            if compatibility_results['result_bitlocker_check'] == 9:
+                errors.append(lang.ln_error_resizable_0)
+            if compatibility_results['result_bitlocker_check'] == 0:
                 errors.append(lang.ln_error_resizable_9)
 
             label5 = ttk.Label(middle_frame, text=("\n".join(errors)), font=SMALLFONT)
@@ -294,7 +306,7 @@ def main():
         retrack(job_id, download_size)
         finish_downloaded(job_id)
 
-    page_1(1)
+    page_check()
     app.mainloop()
 
 

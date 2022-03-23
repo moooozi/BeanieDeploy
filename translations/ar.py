@@ -9,8 +9,8 @@ ln_check_running = "جاري التحقق من متطلبات النظام. ال
 ln_install_running = "جارٍ التثبيت ..."
 
 ln_error_title = "لا يمكن تشغيل% s على نظامك" % APP_INFO.SW_NAME
-ln_error_uefi_0 = "نظامك لا يدعم (أو لا يستخدم) تمهيد UEFI."
-ln_error_uefi_9 = "تعذر التحقق من دعم تمهيد UEFI."
+ln_error_uefi_0 = "نظامك لا يدعم (أو لا يستخدم)  UEFI Boot."
+ln_error_uefi_9 = "تعذر التحقق من دعم UEFI Boot."
 ln_error_totalram_0 = "لا يحتوي نظامك على سعة ذاكرة RAM كافية."
 ln_error_totalram_9 = "فشل التحقق من سعة ذاكرة الوصول العشوائي المتاحة."
 ln_error_space_0 = "لا توجد مساحة كافية على محرك أقراص النظام. حرر بعض المساحة وحاول مرة أخرى لاحقًا"
