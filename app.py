@@ -133,9 +133,8 @@ def main():
         progressbar_check.pack(expand=True)
 
         progressbar_check.start(10)
-        app.update()
         if not ctypes.windll.shell32.IsUserAnAdmin():
-            app.after(100, app.update())
+            app.update()
             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
             quit()
         global compatibility_results
