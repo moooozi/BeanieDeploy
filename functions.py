@@ -140,8 +140,8 @@ def create_temp_boot_partition():
     sys_drive_new_size = str(get_drive_size_after_resize(sys_drive_letter).stdout)[2:-5]
     resize_partition(sys_drive_letter, sys_drive_new_size)
 
-    tmp_part_size = APP_INFO.required_shrink_space - 1000000
-    tmp_part_letter = 'T'
+    tmp_part_size = APP_INFO.required_shrink_space - 1100000
+    tmp_part_letter = get_free_drive_letter()
     new_partition(sys_disk_number, tmp_part_size, tmp_part_letter)
     format_volume(tmp_part_letter, 'FAT32')
 
@@ -223,3 +223,15 @@ def build_autoinstall_ks_file(keymap, xlayouts, syslang, timezone, de_option, us
     ks_file = open('anaconda-ks.cfg', 'w')
     ks_file.write(text)
     print(text)
+
+
+def get_free_drive_letter():
+    drive_letter = [
+        'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+
+    def test(letter):
+        return str(subprocess.run([r'powershell.exe', r'Get-Volume | Where-Object DriveLetter -eq ' + letter],
+                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+    for letter in drive_letter:
+        if not test(letter):
+            return letter
