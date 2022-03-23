@@ -59,6 +59,7 @@ def right_to_left_lang(var):
 
 
 queue1 = Queue()
+compatibility_results = {}
 process_compatibility_check = Process(target=compatibility_test, args=(queue1,))
 
 # creating a container
@@ -114,8 +115,13 @@ def change_lang(new_lang_code, pagename):
 def main():
     def page_check():
         page_name = "page_check"
-        def page_name(): page_check()
-        def change_callback(*args): change_lang(lang_var.get(), page_name)
+
+        def page_name():
+            page_check()
+
+        def change_callback(*args):
+            change_lang(lang_var.get(), page_name)
+
         lang_list.bind('<<ComboboxSelected>>', change_callback)
 
         clear_frame()
@@ -129,20 +135,20 @@ def main():
         progressbar_check.start(10)
         app.update()
         if not ctypes.windll.shell32.IsUserAnAdmin():
-            app.after(1000, app.update())
+            app.after(100, app.update())
             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
             quit()
-
-        if not process_compatibility_check.is_alive():
-            process_compatibility_check.start()
-        while queue1.empty():
-            app.update()
-        compatibility_results = queue1.get()
+        global compatibility_results
+        if not compatibility_results:
+            if not process_compatibility_check.is_alive():
+                process_compatibility_check.start()
+            while queue1.empty():
+                app.update()
+            compatibility_results = queue1.get()
 
         button2 = ttk.Button(middle_frame, text=lang.ln_btn_quit,
                              command=lambda: app.destroy())
 
-        print(compatibility_results)
         if compatibility_results['result_uefi_check'] == 1 and compatibility_results[
             'result_totalram_check'] == 1 and compatibility_results[
             'result_space_check'] in (1, 2) and compatibility_results[
@@ -176,7 +182,8 @@ def main():
             if compatibility_results['result_bitlocker_check'] == 0:
                 errors.append(lang.ln_error_bitlocker_9)
 
-            label5 = ttk.Label(middle_frame, text=("\n".join(errors)), font=SMALLFONT)
+            label5 = ttk.Label(middle_frame, text=lang.ln_error_list + "\n\n  X  " + ("\n  X  ".join(errors)),
+                               font=SMALLFONT)
 
             label4.pack(pady=40, anchor=nw_var)
             label5.pack(padx=10, anchor=w_var)
@@ -197,9 +204,6 @@ def main():
         button1 = ttk.Button(middle_frame, text=lang.ln_btn_next, style="Accentbutton",
                              command=lambda: page_2(space_check_results, var1))
 
-        pasw = get_wifi_profiles()
-        build_autoinstall_ks_file('de', 'dede', 'deDE', 'Berlin', 1, 'trappy creappy', 'trapp', 'trappppp')
-        print(pasw[0][0])
         # putting the button in its place by
         # using grid
         var1 = tk.IntVar(app, 1)

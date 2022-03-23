@@ -10,6 +10,7 @@ ln_check_running = "Checking System compatibility. please wait..."
 ln_install_running = "Installing..."
 
 ln_error_title = "%s can't run on your system" % APP_INFO.SW_NAME
+ln_error_list = "Following requirements were missing:"
 ln_error_uefi_0 = "Your system does not support (or is not using) UEFI boot."
 ln_error_uefi_9 = "UEFI boot support could not be verified."
 ln_error_totalram_0 = "Your system does not have sufficient RAM capacity."

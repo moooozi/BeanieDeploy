@@ -9,6 +9,7 @@ ln_check_running = "Systemkompatibilität wird überprüft. Bitte warten..."
 ln_install_running = "Installieren..."
 
 ln_error_title = "%s kann auf Ihrem System nicht ausgeführt werden" % APP_INFO.SW_NAME
+ln_error_list = "Folgende Voraussetzungen fehlen:"
 ln_error_uefi_0 = "Ihr System unterstützt (oder verwendet) UEFI-Boot nicht."
 ln_error_uefi_9 = "UEFI-Boot-Unterstützung konnte nicht verifiziert werden."
 ln_error_totalram_0 = "Ihr System hat nicht genügend RAM-Kapazität."

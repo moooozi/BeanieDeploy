@@ -84,6 +84,13 @@ def compatibility_test(queue):
         result_bitlocker_check = 1
     else:
         result_bitlocker_check = 0
+
+    #result_bitlocker_check = 0
+    #result_resizable_check = 0
+    #result_uefi_check = 0
+    #result_space_check = 0
+    #result_totalram_check = 0
+
     check_results = {'result_uefi_check': result_uefi_check,
                      'result_totalram_check': result_totalram_check,
                      'result_space_check': result_space_check,
