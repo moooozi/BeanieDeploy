@@ -6,7 +6,7 @@ ln_btn_back = "Back"
 ln_btn_quit = "Quit"
 ln_btn_start = "Start"
 
-ln_check_running = "Checking System requirements. please wait..."
+ln_check_running = "Checking System compatibility. please wait..."
 ln_install_running = "Installing..."
 
 ln_error_title = "%s can't run on your system" % APP_INFO.SW_NAME
@@ -14,10 +14,12 @@ ln_error_uefi_0 = "Your system does not support (or is not using) UEFI boot."
 ln_error_uefi_9 = "UEFI boot support could not be verified."
 ln_error_totalram_0 = "Your system does not have sufficient RAM capacity."
 ln_error_totalram_9 = "Failed to check available RAM capacity."
-ln_error_space_0 = "Not enough space on your system drive. Free up some space and try again later"
+ln_error_space_0 = "Not enough space on your system drive. Free up some space and try again"
 ln_error_space_9 = "Failed to check available disk space on your system drive."
 ln_error_resizable_0 = "Failed to check system drive resizability."
 ln_error_resizable_9 = "Not enough shrink room on system drive."
+ln_error_bitlocker_0 = "Failed to check whether system drive has bitlocker enabled."
+ln_error_bitlocker_9 = "System drive has bitlocker enabled. Compatibility cannot be ensured"
 
 ln_install_question = "How do you want to install %s?" % APP_INFO.distro_name
 

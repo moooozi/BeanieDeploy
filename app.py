@@ -27,36 +27,39 @@ LARGEFONT = ("Ariel", 20)
 MEDIUMFONT = ("Ariel", 16)
 SMALLFONT = ("Ariel", 12)
 
-w_var = 'w'
-ne_var = 'ne'
-se_var = 'se'
-nw_var = 'nw'
-left_var = 'left'
-right_var = 'right'
+w_var = "w"
+ne_var = "ne"
+se_var = "se"
+nw_var = "nw"
+left_var = "left"
+right_var = "right"
 
 
 def right_to_left_lang(var):
     global w_var, nw_var, ne_var, right_var, left_var, right_var, se_var
     if var:
-        if ne_var == 'ne':
-            w_var = 'e'
-            ne_var = 'nw'
-            se_var = 'sw'
-            nw_var = 'ne'
-            left_var = 'right'
-            right_var = 'left'
+        if ne_var == "ne":
+            w_var = "e"
+            ne_var = "nw"
+            se_var = "sw"
+            nw_var = "ne"
+            left_var = "right"
+            right_var = "left"
             rebuild_container()
 
     else:
-        if ne_var == 'nw':
-            w_var = 'w'
-            ne_var = 'ne'
-            se_var = 'se'
-            nw_var = 'nw'
-            left_var = 'left'
-            right_var = 'right'
+        if ne_var == "nw":
+            w_var = "w"
+            ne_var = "ne"
+            se_var = "se"
+            nw_var = "nw"
+            left_var = "left"
+            right_var = "right"
             rebuild_container()
 
+
+queue1 = Queue()
+process_compatibility_check = Process(target=compatibility_test, args=(queue1,))
 
 # creating a container
 container = tk.Frame(app)
@@ -111,6 +114,11 @@ def change_lang(new_lang_code, pagename):
 def main():
     def page_check():
         page_name = "page_check"
+        def page_name(): page_check()
+        def change_callback(*args): change_lang(lang_var.get(), page_name)
+        lang_list.bind('<<ComboboxSelected>>', change_callback)
+
+        clear_frame()
 
         label2 = ttk.Label(middle_frame, text=lang.ln_check_running, font=MEDIUMFONT)
         progressbar_check = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='indeterminate')
@@ -124,10 +132,9 @@ def main():
             app.after(1000, app.update())
             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
             quit()
-        queue1 = Queue()
 
-        p1 = Process(target=compatibility_test, args=(queue1,))
-        p1.start()
+        if not process_compatibility_check.is_alive():
+            process_compatibility_check.start()
         while queue1.empty():
             app.update()
         compatibility_results = queue1.get()
@@ -136,8 +143,10 @@ def main():
                              command=lambda: app.destroy())
 
         print(compatibility_results)
-        if compatibility_results['result_uefi_check'] == 1 and compatibility_results['result_totalram_check'] == 1 and \
-                compatibility_results['result_space_check'] in (1, 2) and compatibility_results[
+        if compatibility_results['result_uefi_check'] == 1 and compatibility_results[
+            'result_totalram_check'] == 1 and compatibility_results[
+            'result_space_check'] in (1, 2) and compatibility_results[
+            'result_resizable_check'] == 1 and compatibility_results[
             'result_bitlocker_check'] == 1:
             page_1(compatibility_results['result_space_check'])
         else:
@@ -163,9 +172,9 @@ def main():
             if compatibility_results['result_resizable_check'] == 0:
                 errors.append(lang.ln_error_resizable_9)
             if compatibility_results['result_bitlocker_check'] == 9:
-                errors.append(lang.ln_error_resizable_0)
+                errors.append(lang.ln_error_bitlocker_0)
             if compatibility_results['result_bitlocker_check'] == 0:
-                errors.append(lang.ln_error_resizable_9)
+                errors.append(lang.ln_error_bitlocker_9)
 
             label5 = ttk.Label(middle_frame, text=("\n".join(errors)), font=SMALLFONT)
 
@@ -291,12 +300,12 @@ def main():
         while queue2.qsize() == 0:
             app.update_idletasks()
         # Wait 2 sec
-        app.after(2000, app.update_idletasks())
+        app.after(2000, app.update())
         job_id = queue2.get()
         download_size = get_download_size(job_id)
 
         def retrack(jobid, totalsize):
-            downloaded = track(jobid)
+            downloaded = get_total_download_size(jobid)
             percent = (downloaded * 100) / totalsize
             progressbar_install['value'] = percent * 0.85
             app.update()

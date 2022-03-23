@@ -28,10 +28,10 @@ def compatibility_test(queue):
                                r'(Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).SizeRemaining'],
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
-    # def check_resizable():
-    #    return subprocess.run([r'powershell.exe',
-    #                           r'((Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).Size - (Get-PartitionSupportedSize -DriveLetter $env:SystemDrive.Substring(0, 1)).SizeMin)'],
-    #                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    def check_resizable():
+        return subprocess.run([r'powershell.exe',
+                               r'((Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).Size - (Get-PartitionSupportedSize -DriveLetter $env:SystemDrive.Substring(0, 1)).SizeMin)'],
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
     def check_bitlocker_status():
         return subprocess.run(
@@ -39,7 +39,8 @@ def compatibility_test(queue):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT, shell=True)
 
-    totalram = int(check_totalram().stdout)
+    totalram = int(str(check_totalram().stdout)[2:-5])
+    print(totalram)
     result_resizable_check = 0
     if check_totalram().returncode != 0:
         result_totalram_check = 9
@@ -66,17 +67,16 @@ def compatibility_test(queue):
     else:
         result_space_check = 0
 
-    # if result_space_check in (1, 2):
-    #    print(check_resizable())
-    #    if check_resizable().returncode != 0:
-    #        result_resizable_check = 9
-    #    elif int(str(check_resizable().stdout)[2:-5]) > required_space_min:
-    #        result_resizable_check = 1
-    #    else:
-    #        result_resizable_check = 0
-    # else:
-    #    result_resizable_check = 8
-    result_resizable_check = 8
+    if result_space_check in (1, 2):
+        print(check_resizable())
+        if check_resizable().returncode != 0:
+            result_resizable_check = 9
+        elif int(str(check_resizable().stdout)[2:-5]) > required_space_min:
+            result_resizable_check = 1
+        else:
+            result_resizable_check = 0
+    else:
+        result_resizable_check = 8
 
     if check_bitlocker_status().returncode != 0:
         result_bitlocker_check = 9
@@ -167,7 +167,7 @@ def get_download_size(job_id):
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5])
 
 
-def track(job_id):
+def get_total_download_size(job_id):
     return int(str(subprocess.run(
         [r'powershell.exe', r'(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }).bytestransferred'],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5])
