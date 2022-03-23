@@ -2,9 +2,6 @@ import time
 import APP_INFO
 import webbrowser
 import subprocess
-from multiprocessing import Queue
-
-import app
 
 
 def open_url(url):
@@ -35,6 +32,12 @@ def compatibility_test(queue):
     #    return subprocess.run([r'powershell.exe',
     #                           r'((Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).Size - (Get-PartitionSupportedSize -DriveLetter $env:SystemDrive.Substring(0, 1)).SizeMin)'],
     #                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+    def check_bitlocker_status():
+        return subprocess.run(
+            [r'powershell.exe', r'(Get-BitLockerVolume -MountPoint $env:SystemDrive).EncryptionPercentage'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, shell=True)
 
     totalram = int(check_totalram().stdout)
     result_resizable_check = 0
@@ -74,10 +77,18 @@ def compatibility_test(queue):
     # else:
     #    result_resizable_check = 8
     result_resizable_check = 8
+
+    if check_bitlocker_status().returncode != 0:
+        result_bitlocker_check = 9
+    elif str(check_bitlocker_status().stdout)[2:-5] == '0':
+        result_bitlocker_check = 1
+    else:
+        result_bitlocker_check = 0
     check_results = {'result_uefi_check': result_uefi_check,
                      'result_totalram_check': result_totalram_check,
                      'result_space_check': result_space_check,
-                     'result_resizable_check': result_resizable_check}
+                     'result_resizable_check': result_resizable_check,
+                     'result_bitlocker_check': result_bitlocker_check}
     queue.put(check_results)
 
     # return check_results
@@ -135,7 +146,7 @@ def create_temp_boot_partition():
     format_volume(tmp_part_letter, 'FAT32')
 
 
-def get_user_home():
+def get_user_home_dir():
     return str(subprocess.run(
         [r'powershell.exe', r'$home'],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
@@ -144,7 +155,7 @@ def get_user_home():
 def download_file(url, destination, queue2):
     job_id = str(subprocess.run(
         [r'powershell.exe',
-         r'(Start-BitsTransfer -Source ' + url + ' -Destination ' + destination + ' -Priority normal -Asynchronous).JobId'],
+         r'(Start-BitsTransfer -Source ' + url + ' -Destination ' + destination + ' -Priority normal -Asynchronous -RetryInterval 60 -RetryTimeout 210000).JobId'],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
     queue2.put(job_id)
@@ -162,8 +173,53 @@ def track(job_id):
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5])
 
 
-def join_downloaded_file(job_id):
+def finish_downloaded(job_id):
     return int(str(subprocess.run(
-        [r'powershell.exe', r'(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }).bytestransferred'],
+        [r'powershell.exe', r'(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }) | Complete-BitsTransfer'],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5])
 
+
+def unzip_files(unzip_app_path, zip_file, unzip_location):
+    return int(str(subprocess.run(
+        [r'' + unzip_app_path, r'x ' + zip_file + ' -o' + unzip_location + ''],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5])
+
+
+def add_boot_entry(boot_efi_file_path, boot_drive_letter):
+    bootguid = str(subprocess.run(
+        [r'powershell.exe', r'(bcdedit /copy {bootmgr} /d "TmpInstallMedia")'],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+    bootguid = str(subprocess.run(
+        [r'powershell.exe', r"""'{' + (""" + bootguid + """-split '[{}]')[1] + '}'"""],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+    subprocess.run([r'powershell.exe', r'bcdedit /set ' + bootguid + ' path ' + boot_efi_file_path + ''],
+                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    subprocess.run([r'powershell.exe', r'bcdedit /set ' + bootguid + ' device partition=' + boot_drive_letter + ':'],
+                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    subprocess.run([r'powershell.exe', r'bcdedit /set {fwbootmgr} displayorder ' + bootguid + ' /addfirst'],
+                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+
+def get_wifi_profiles():
+    out = str(subprocess.run(
+        [r'powershell.exe',
+         r'(netsh wlan show profiles) | Select-String “\:(.+)$” | %{$name=$_.Matches.Groups[1].Value.Trim(); $_} | %{(netsh wlan show profile name=”$name” key=clear)} | Select-String “Key Content\W+\:(.+)$” | %{$pass=$_.Matches.Groups[1].Value.Trim(); $_} | %{[PSCustomObject]@{ PROFILE_NAME=$name;PASSWORD=$pass }} | Format-Table -AutoSize'],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[56:-13]
+    out = out.split("\\r\\n")
+    newout = []
+    for i in out:
+        i = i.split()
+        newout.append(i)
+    return newout
+
+
+def build_autoinstall_ks_file(keymap, xlayouts, syslang, timezone, de_option, usrfullname, username, password):
+    if de_option == 1:
+        packages = "@^workstation-product-environment"
+    textpart1 = "graphical\nkeyboard --vckeymap='" + keymap + "' --xlayouts='%s'\n" % xlayouts
+    textpart2 = "lang " + syslang + ".UTF-8\n%packages\n" + packages + "\n%end\nfirstboot --enable\n"
+    textpart3 = "autopart\nclearpart --none --initlabel\ntimezone %s --utc\nrootpw --lock\n" % timezone
+    text = textpart1 + textpart2 + textpart3
+    ks_file = open('anaconda-ks.cfg', 'w')
+    ks_file.write(text)
+    print(text)
