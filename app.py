@@ -16,7 +16,7 @@ app.geometry("800x500")
 # Style
 style = ttk.Style(app)
 app.tk.call('source', str(pathlib.Path(__file__).parent) + '/azure dark/azure dark.tcl')
-#app.tk.call('source', 'azure dark/azure dark.tcl')
+# app.tk.call('source', 'azure dark/azure dark.tcl')
 
 style.theme_use('azure')
 style.configure("Accentbutton", foreground='white')
@@ -60,9 +60,18 @@ def right_to_left_lang(var):
             rebuild_container()
 
 
+download_path = get_user_home_dir() + '\win2linux_tmpdir'
+install_media_path = download_path + "\install_media.iso"
+unzip_app_path = 0
+
 queue1 = Queue()
 compatibility_results = {}
 process_compatibility_check = Process(target=compatibility_test, args=(queue1,))
+installer_status = [False, False, False, False, False]
+
+
+process_dl_install_media = Process(target=initiate_download, args=(APP_INFO.iso_url, install_media_path, queue1,))
+process_create_tmp_partition = Process(target=create_temp_boot_partition, args=(APP_INFO.required_shrink_space,queue1,))
 
 # creating a container
 container = tk.Frame(app)
@@ -116,17 +125,16 @@ def change_lang(new_lang_code, pagename):
 # page_check
 def main():
     def page_check():
-        page_name = "page_check"
+        def page_name():
+            page_check()
 
-        def page_name(): page_check()
-
-        def change_callback(*args): change_lang(lang_var.get(), page_name)
+        def change_callback(*args):
+            change_lang(lang_var.get(), page_name)
 
         lang_list.bind('<<ComboboxSelected>>', change_callback)
-
         clear_frame()
 
-        label2 = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=lang.ln_check_running, font=MEDIUMFONT)
+        label2 = ttk.Label(middle_frame, wraplength=540, justify=left_var, text=lang.ln_check_running, font=MEDIUMFONT)
         progressbar_check = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='indeterminate')
 
         label2.pack(pady=40, anchor=w_var)
@@ -138,7 +146,8 @@ def main():
             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
             quit()
         global compatibility_results
-        # compatibility_results = {'result_uefi_check': 0,'result_totalram_check': 0,'result_space_check': 0,'result_resizable_check': 0,'result_bitlocker_check': 0}
+        compatibility_results = {'result_uefi_check': 0, 'result_totalram_check': 0, 'result_space_check': 0,
+                                 'result_resizable_check': 0, 'result_bitlocker_check': 0}
         if not compatibility_results:
             if not process_compatibility_check.is_alive():
                 process_compatibility_check.start()
@@ -159,7 +168,8 @@ def main():
 
             label2.pack_forget()
             progressbar_check.pack_forget()
-            label4 = ttk.Label(middle_frame, wraplength=540,  justify=left_var,  text=lang.ln_error_title, font=MEDIUMFONT)
+            label4 = ttk.Label(middle_frame, wraplength=540, justify=left_var, text=lang.ln_error_title,
+                               font=MEDIUMFONT)
             errors = []
             if compatibility_results['result_uefi_check'] == 0:
                 errors.append(lang.ln_error_uefi_0)
@@ -182,7 +192,8 @@ def main():
             if compatibility_results['result_bitlocker_check'] == 0:
                 errors.append(lang.ln_error_bitlocker_9)
 
-            label5 = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=lang.ln_error_list + "\n\n- " + ("\n- ".join(errors)),
+            label5 = ttk.Label(middle_frame, wraplength=540, justify=left_var,
+                               text=lang.ln_error_list + "\n\n- " + ("\n- ".join(errors)),
                                font=SMALLFONT)
 
             label4.pack(pady=40, anchor=nw_var)
@@ -193,13 +204,13 @@ def main():
     def page_1(space_check_results):
         def page_name(): page_1(space_check_results)
 
-        clear_frame()
-
         def change_callback(*args): change_lang(lang_var.get(), page_name)
 
         lang_list.bind('<<ComboboxSelected>>', change_callback)
+        clear_frame()
 
-        label2 = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=lang.ln_install_question, font=MEDIUMFONT)
+        label2 = ttk.Label(middle_frame, wraplength=540, justify=left_var, text=lang.ln_install_question,
+                           font=MEDIUMFONT)
         label2.pack(pady=40, anchor=w_var)
         button1 = ttk.Button(middle_frame, text=lang.ln_btn_next, style="Accentbutton",
                              command=lambda: page_2(space_check_results, var1))
@@ -224,14 +235,14 @@ def main():
         def page_name():
             page_2(space_check_results, selection1)
 
-        clear_frame()
-
         def change_callback(*args):
             change_lang(lang_var.get(), page_name)
 
         lang_list.bind('<<ComboboxSelected>>', change_callback)
+        clear_frame()
 
-        label2 = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=lang.ln_windows_question, font=MEDIUMFONT)
+        label2 = ttk.Label(middle_frame, wraplength=540, justify=left_var, text=lang.ln_windows_question,
+                           font=MEDIUMFONT)
         label2.pack(pady=40, anchor=w_var)
 
         button1 = ttk.Button(middle_frame, text=lang.ln_btn_next, style="Accentbutton",
@@ -260,13 +271,13 @@ def main():
     def page_verify(space_check_results, selection1, selection2):
         def page_name(): page_verify(space_check_results, selection1, selection2)
 
-        clear_frame()
-
         def change_callback(*args): change_lang(lang_var.get(), page_name)
 
         lang_list.bind('<<ComboboxSelected>>', change_callback)
+        clear_frame()
 
-        label2 = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=lang.ln_verify_question, font=MEDIUMFONT)
+        label2 = ttk.Label(middle_frame, wraplength=540, justify=left_var, text=lang.ln_verify_question,
+                           font=MEDIUMFONT)
         label2.pack(pady=40, anchor=w_var)
 
         button1 = ttk.Button(middle_frame, text=lang.ln_btn_start, style="Accentbutton",
@@ -277,7 +288,7 @@ def main():
 
         review_text1 = 'x  ' + lang.ln_install_options[selection1] + '\n' + 'x  ' + lang.ln_windows_options[
             selection2]
-        review_text = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=review_text1)
+        review_text = ttk.Label(middle_frame, wraplength=540, justify=left_var, text=review_text1)
 
         review_text.pack(anchor='w', padx=5)
 
@@ -285,42 +296,61 @@ def main():
         button2.pack(anchor=se_var, side=right_var, padx=5)
 
     def page_installing(selection1, selection2):
-        page_name = "page_installing"
+        def page_name(): page_installing(selection1, selection2)
+
+        def change_callback(*args): change_lang(lang_var.get(), page_name)
+
+        lang_list.bind('<<ComboboxSelected>>', change_callback)
+
         clear_frame()
-        queue2 = Queue()
-        label2 = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=lang.ln_install_running, font=MEDIUMFONT)
+
+        label2 = ttk.Label(middle_frame, wraplength=540, justify=left_var, text=lang.ln_install_running,
+                           font=MEDIUMFONT)
         progressbar_install = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='determinate')
-        current_job_title = "Starting download"
-        current_job = ttk.Label(middle_frame, wraplength=540,  justify=left_var, text=current_job_title, font=MEDIUMFONT)
+        current_job_title = lang.ln_job_starting_download
+        current_job = ttk.Label(middle_frame, wraplength=540, justify=left_var, text=current_job_title, font=MEDIUMFONT)
+
+        global installer_status
+        if not installer_status[0]:
+            if not process_dl_install_media.is_alive():
+                queue1.get()  # to empty the queue
+                process_dl_install_media.start()
+                installer_status[0] = True
+        while process_dl_install_media.is_alive():
+            if not queue1.empty():
+                dl_status = queue1.get()
+            # do more stuff here
+            # percent = (downloaded * 100) / totalsize
+            # progressbar_install['value'] = percent * 0.85
+            app.after(1000, app.update())
+
+        if not installer_status[1]:
+            if not process_create_tmp_partition.is_alive():
+                queue1.get()  # to empty the queue
+                process_create_tmp_partition.start()
+                installer_status[1] = True
+        while process_create_tmp_partition.is_alive():
+            app.after(1000, app.update())
+        tmp_part_result = queue1.get()
+        if tmp_part_result[0] == 1:
+            installer_status[2] = True
+        if installer_status[2] and not installer_status[3]:
+            process_unzip_to_tmp_part = Process(target=unzip_files, args=(unzip_app_path,install_media_path, tmp_part_result[1]))
+            process_unzip_to_tmp_part.start()
+            installer_status[3] = True
+        if installer_status[2] and installer_status[3]: pass
+
+
+
+
 
         label2.pack(pady=40, anchor=w_var)
         progressbar_install.pack(expand=True)
         current_job.pack(pady=40, anchor=w_var)
 
-        download_path = get_user_home_dir() + '\win2linux_tmpdir'
-        install_media_path = download_path + "\install_media.iso"
-        p2 = Process(target=download_file, args=(APP_INFO.iso_url, install_media_path))
-        p2.start()
-        while queue2.qsize() == 0:
-            app.update_idletasks()
-        # Wait 2 sec
-        app.after(2000, app.update())
-        job_id = queue2.get()
-        download_size = get_download_size(job_id)
-
-        def retrack(jobid, totalsize):
-            downloaded = get_total_download_size(jobid)
-            percent = (downloaded * 100) / totalsize
-            progressbar_install['value'] = percent * 0.85
-            app.update()
-            if downloaded < totalsize:
-                app.after(1000, retrack(jobid, totalsize))
-
-        retrack(job_id, download_size)
-        finish_downloaded(job_id)
-
     print(lang.ln_install_text)
-    #page_check()
+    page_check()
+
     app.mainloop()
 
 
