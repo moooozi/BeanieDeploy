@@ -40,7 +40,6 @@ def compatibility_test(queue):
             stderr=subprocess.STDOUT, shell=True)
 
     totalram = int(str(check_totalram().stdout)[2:-5])
-    print(totalram)
     result_resizable_check = 0
     if check_totalram().returncode != 0:
         result_totalram_check = 9
@@ -101,49 +100,38 @@ def get_sys_drive_letter():
 
 
 def get_disk_number(drive_letter):
-    return subprocess.run(
-        [r'powershell.exe', r'(Get-Partition | Where DriveLetter -eq ' + drive_letter + ' | Get-Disk).Number'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT, shell=True)
+    arg = r'(Get-Partition | Where DriveLetter -eq ' + drive_letter + r' | Get-Disk).Number'
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def get_drive_size_after_resize(drive_letter):
-    return subprocess.run(
-        [r'powershell.exe',
-         r'(Get-Volume | Where DriveLetter -eq ' + drive_letter + ').Size -' + APP_INFO.required_shrink_space],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT, shell=True)
+def get_drive_size_after_resize(drive_letter, required_space):
+    arg = r'(Get-Volume | Where DriveLetter -eq ' + drive_letter + ').Size -' + str(required_space)
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
 def resize_partition(drive_letter, new_size):
+    arg = r'Resize-Partition -DriveLetter ' + drive_letter + r' -Size ' + new_size
     return subprocess.run(
-        [r'powershell.exe',
-         r'Resize-Partition -DriveLetter ' + drive_letter + ' -Size ' + new_size],
+        [r'powershell.exe', arg],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT, shell=True)
 
 
 def new_partition(disk_number, size, drive_letter):
-    return subprocess.run(
-        [r'powershell.exe',
-         r'New-Partition -DiskNumber ' + disk_number + ' -Size ' + size + ' -DriveLetter ' + drive_letter],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT, shell=True)
+    arg = r'New-Partition -DiskNumber ' + str(disk_number) + r' -Size ' + str(size) + r' -DriveLetter ' + drive_letter
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
 def format_volume(drive_letter, filesystem):
-    return subprocess.run(
-        [r'powershell.exe',
-         r'Format-Volume -DriveLetter ' + drive_letter + ' -FileSystem ' + filesystem],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT, shell=True)
+    arg = r'Format-Volume -DriveLetter ' + drive_letter + ' -FileSystem ' + filesystem
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def create_temp_boot_partition(tmp_part_size,queue):
+def create_temp_boot_partition(tmp_part_size, queue):
     print('create_temp_boot_partition')
     sys_drive_letter = str(get_sys_drive_letter().stdout)[2:-5]
     sys_disk_number = str(get_disk_number(sys_drive_letter).stdout)[2:-5]
-    sys_drive_new_size = str(get_drive_size_after_resize(sys_drive_letter).stdout)[2:-5]
+    sys_drive_new_size = str(get_drive_size_after_resize(sys_drive_letter, tmp_part_size).stdout)[2:-5]
     resize_partition(sys_drive_letter, sys_drive_new_size)
 
     tmp_part_size = tmp_part_size - 1100000
@@ -156,77 +144,90 @@ def create_temp_boot_partition(tmp_part_size,queue):
 def get_user_home_dir():
     return str(subprocess.run(
         [r'powershell.exe', r'$home'],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5].replace(r'\\', '\\')
 
 
-def download_file(url, destination):
-    return str(subprocess.run(
-        [r'powershell.exe',
-         r'(Start-BitsTransfer -Source ' + url + ' -Destination ' + destination + ' -Priority normal -Asynchronous -RetryInterval 60 -RetryTimeout 210000).JobId'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+def create_dir(path):
+    arg = "New-Item -Path '" + path + "' -ItemType Directory"
+    str(subprocess.run(
+        [r'powershell.exe', arg],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5].replace(r'\\', '\\')
+
+
+def download_file(url, destination,queue):
+    arg = '(Start-BitsTransfer -Source "' + url + '" -Destination "' + destination + '" -Priority normal -Asynchronous).JobId'
+    job_id = str(subprocess.run(
+        [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[86:122]
+    queue.put(job_id)
 
 
 def get_download_size(job_id):
-    return int(str(subprocess.run(
-        [r'powershell.exe', r'(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }).bytestotal'],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5])
+    arg = '(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }).bytestotal'
+    return str(subprocess.run(
+        [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
 def get_downloaded_size(job_id):
-    return int(str(subprocess.run(
-        [r'powershell.exe', r'(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }).bytestransferred'],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5])
+    arg = '(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }).bytestransferred'
+    return str(subprocess.run(
+        [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
 def finish_download(job_id):
-    return subprocess.run(
-        [r'powershell.exe', r'(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }) | Complete-BitsTransfer'],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    arg = '(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }) | Complete-BitsTransfer'
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def initiate_download(url, destination, queue):
-    job_id = download_file(url, destination)
+def track_download(job_id):
     dl_size = get_download_size(job_id)
     already_downloaded = get_downloaded_size(job_id)
-    while already_downloaded < dl_size:
-        time.sleep(1)
-        already_downloaded = get_downloaded_size(job_id)
-        queue.put([dl_size, already_downloaded])
-    finish_download(job_id)
+    return [dl_size, already_downloaded]
 
 
-def mount_iso(unzip_app_path, zip_file, unzip_location):
-    subprocess.run(
-        [r'' + unzip_app_path, r'x ' + zip_file + ' -o' + unzip_location + ''],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+def mount_iso(iso_path):
+    arg = r'(Mount−DiskImage −ImagePath "' + iso_path + '" | Get-Volume).DriveLetter'
+    return str(subprocess.run(
+        [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
-def unzip_files(unzip_app_path, zip_file, unzip_location):
-    subprocess.run(
-        [r'' + unzip_app_path, r'x ' + zip_file + ' -o' + unzip_location + ''],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+def copy_files(source, destination):
+    arg = r'robocopy "' + source + '" "' + destination + '" /e /mt'
+    return str(subprocess.run([r'powershell.exe', arg],
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+
+
+def cleanup_after_install(location):
+    arg = r'Remove-Item ' + location + ' -Recurse'
+    subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+
+def restart_windows():
+    #subprocess.run([r'powershell.exe', r'Restart-Computer'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    print('restarting')
 
 
 def add_boot_entry(boot_efi_file_path, boot_drive_letter):
-    bootguid = str(subprocess.run(
-        [r'powershell.exe', r'(bcdedit /copy {bootmgr} /d "TmpInstallMedia")'],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
-    bootguid = str(subprocess.run(
-        [r'powershell.exe', r"""'{' + (""" + bootguid + """-split '[{}]')[1] + '}'"""],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
-    subprocess.run([r'powershell.exe', r'bcdedit /set ' + bootguid + ' path ' + boot_efi_file_path + ''],
-                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    subprocess.run([r'powershell.exe', r'bcdedit /set ' + bootguid + ' device partition=' + boot_drive_letter + ':'],
-                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    subprocess.run([r'powershell.exe', r'bcdedit /set {fwbootmgr} displayorder ' + bootguid + ' /addfirst'],
-                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    arg1 = r'(bcdedit /copy {bootmgr} /d "TmpInstallMedia")'
+    bootguid = str(subprocess.run([r'powershell.exe', arg1], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+
+    arg2 = """'{' + (""" + bootguid + """-split '[{}]')[1] + '}'"""
+    bootguid = str(subprocess.run([r'powershell.exe', arg2], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+
+    arg3 = r'bcdedit /set ' + bootguid + ' path ' + boot_efi_file_path + ''
+    subprocess.run([r'powershell.exe', arg3], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    arg4 = r'bcdedit /set ' + bootguid + ' device partition=' + boot_drive_letter + ':'
+    subprocess.run([r'powershell.exe', arg4], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    arg5 = r'bcdedit /set {fwbootmgr} displayorder ' + bootguid + ' /addfirst'
+    subprocess.run([r'powershell.exe', arg5], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
 def get_wifi_profiles():
     out = str(subprocess.run(
         [r'powershell.exe',
-         r'(netsh wlan show profiles) | Select-String “\:(.+)$” | %{$name=$_.Matches.Groups[1].Value.Trim(); $_} | %{(netsh wlan show profile name=”$name” key=clear)} | Select-String “Key Content\W+\:(.+)$” | %{$pass=$_.Matches.Groups[1].Value.Trim(); $_} | %{[PSCustomObject]@{ PROFILE_NAME=$name;PASSWORD=$pass }} | Format-Table -AutoSize'],
+         r'(netsh wlan show profiles) | Select-String “\:(.+)$” | %{$name=$_.Matches.Groups[1].Value.Trim(); $_} | %{'
+         r'(netsh wlan show profile name=”$name” key=clear)} | Select-String “Key Content\W+\:(.+)$” | %{'
+         r'$pass=$_.Matches.Groups[1].Value.Trim(); $_} | %{[PSCustomObject]@{ PROFILE_NAME=$name;PASSWORD=$pass }} | '
+         r'Format-Table -AutoSize'],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[56:-13]
     out = out.split("\\r\\n")
     newout = []
@@ -249,13 +250,13 @@ def build_autoinstall_ks_file(keymap, xlayouts, syslang, timezone, de_option, us
 
 
 def get_unused_drive_letter():
-    drive_letter = [
+    drive_letters = [
         'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
-    def test(letter):
-        return str(subprocess.run([r'powershell.exe', r'Get-Volume | Where-Object DriveLetter -eq ' + letter],
+    def test(test_letter):
+        return str(subprocess.run([r'powershell.exe', r'Get-Volume | Where-Object DriveLetter -eq ' + test_letter],
                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
-    for letter in drive_letter:
+    for letter in drive_letters:
         if not test(letter):
             return letter
