@@ -31,7 +31,7 @@ SMALLFONT = ("Ariel", 12)
 
 
 # Global Variables
-sel_vars = [tk.IntVar(app, 1), tk.IntVar(app, 1), tk.IntVar(app, 1), tk.IntVar(app, 1)]
+sel_vars = [tk.IntVar(app, 0), tk.IntVar(app, 0), tk.IntVar(app, 1), tk.IntVar(app, 0)]
 queue1 = Queue()
 queue2 = Queue()
 queue3 = Queue()
@@ -216,9 +216,9 @@ def main():
         button1 = ttk.Button(middle_frame, text=lang.ln_btn_next, style="Accentbutton",
                              command=lambda: page_2(space_check_results))
 
-        r1_install = ttk.Radiobutton(middle_frame, text=lang.ln_install_options[1], variable=sel_vars[0], value=1)
-        r2_install = ttk.Radiobutton(middle_frame, text=lang.ln_install_options[2], variable=sel_vars[0], value=2)
-        r3_install = ttk.Radiobutton(middle_frame, text=lang.ln_install_options[3], variable=sel_vars[0], value=3)
+        r1_install = ttk.Radiobutton(middle_frame, text=lang.ln_install_options[0], variable=sel_vars[0], value=0)
+        r2_install = ttk.Radiobutton(middle_frame, text=lang.ln_install_options[1], variable=sel_vars[0], value=1)
+        r3_install = ttk.Radiobutton(middle_frame, text=lang.ln_install_options[2], variable=sel_vars[0], value=2)
 
         title.pack(pady=40, anchor=w_var)
         r1_install.pack(anchor=w_var, ipady=5)
@@ -243,12 +243,12 @@ def main():
                              command=lambda: page_1(space_check_results))
         global sel_vars
         if space_check_results == 2:
-            r1_windows = ttk.Radiobutton(middle_frame, text=lang.ln_windows_options[1], variable=sel_vars[1], value=1)
+            r1_windows = ttk.Radiobutton(middle_frame, text=lang.ln_windows_options[0], variable=sel_vars[1], value=0)
         else:
             r1_windows = ttk.Radiobutton(middle_frame, text=lang.ln_windows_option1_disabled, state='disabled')
-        r2_windows = ttk.Radiobutton(middle_frame, text=lang.ln_windows_options[2], variable=sel_vars[1], value=2)
-        r3_windows = ttk.Radiobutton(middle_frame, text=lang.ln_windows_options[3], variable=sel_vars[1], value=3)
-        r4_windows = ttk.Radiobutton(middle_frame, text=lang.ln_windows_options[4], variable=sel_vars[1], value=4)
+        r2_windows = ttk.Radiobutton(middle_frame, text=lang.ln_windows_options[1], variable=sel_vars[1], value=1)
+        r3_windows = ttk.Radiobutton(middle_frame, text=lang.ln_windows_options[2], variable=sel_vars[1], value=2)
+        r4_windows = ttk.Radiobutton(middle_frame, text=lang.ln_windows_options[3], variable=sel_vars[1], value=3)
 
         title.pack(pady=40, anchor=w_var)
         r1_windows.pack(anchor=w_var, ipady=5)
@@ -307,16 +307,17 @@ def main():
         global installer_status, process_dl_install_media, process_create_tmp_partition, mount_iso_letter, \
                process_copy_to_part, tmp_part_letter, process_make_boot, job_id
         if not installer_status:
-            if queue2.qsize(): queue2.get()  # to empty the queue
+            while queue2.qsize(): queue2.get()  # to empty the queue
             progressbar_install['value'] = 0
             job_var.set(lang.ln_job_starting_download)
             app.update()
             create_dir(download_path)
             process_dl_install_media = Process(target=download_file, args=(APP_INFO.iso_url, install_media_path, queue2,))
             process_dl_install_media.start()
-            while not queue2.qsize():
+            while queue2.qsize() == 0:
                 app.after(100, app.update())
             job_id = queue2.get()
+            print(job_id)
             installer_status = 1
 
         if installer_status == 1:
@@ -346,7 +347,7 @@ def main():
                 tmp_part_letter = tmp_part_result[1]
                 installer_status = 4
         if installer_status == 4:
-            mount_iso_letter = mount_iso(download_path)
+            mount_iso_letter = mount_iso(install_media_path)
             source_files = mount_iso_letter + ':\\'
             destination_files = tmp_part_letter + ':\\'
             process_copy_to_part = Process(target=copy_files, args=(source_files, destination_files,))
@@ -396,11 +397,11 @@ def main():
         button2.pack(anchor=se_var, side=right_var, padx=5)
 
         if sel_vars[3].get():
-            time_left = 1000
+            time_left = 10
             while True:
                 if time_left:
-                    text_var.set(lang.ln_finished_text_restarting_now % (int(time_left/100)))
-                    time_left = time_left - 1
+                    text_var.set(lang.ln_finished_text_restarting_now % (int(time_left)))
+                    time_left = time_left - 0.01
                     app.after(10, app.update())
                 else:
                     restart_windows()
@@ -409,8 +410,7 @@ def main():
             if done:
                 app.destroy()
 
-    print(get_user_home_dir())
-    print(install_media_path)
+
     page_check()
     app.mainloop()
 

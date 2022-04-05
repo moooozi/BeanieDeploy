@@ -185,7 +185,7 @@ def track_download(job_id):
 
 
 def mount_iso(iso_path):
-    arg = r'(Mount−DiskImage −ImagePath "' + iso_path + '" | Get-Volume).DriveLetter'
+    arg = '(Mount-DiskImage -ImagePath "' + iso_path + '" | Get-Volume).DriveLetter'
     return str(subprocess.run(
         [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
@@ -197,7 +197,7 @@ def copy_files(source, destination):
 
 
 def cleanup_after_install(location):
-    arg = r'Remove-Item ' + location + ' -Recurse'
+    arg = r'Remove-Item "' + location + '" -Recurse'
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
