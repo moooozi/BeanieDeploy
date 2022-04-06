@@ -124,7 +124,7 @@ def main():
             'space'] in (1, 2) and compatibility_results['resizable'] == 1 and compatibility_results['bitlocker'] == 1:
             page_1(compatibility_results['space'])
         else:
-            label2.pack_forget()
+            title.pack_forget()
             progressbar_check.pack_forget()
             title = ttk.Label(middle_frame, wraplength=540, justify=directions_var['l'], text=ln.ln_error_title,
                               font=MEDIUMFONT)
@@ -150,11 +150,17 @@ def main():
             if compatibility_results['bitlocker'] == 9:
                 errors.append(ln.ln_error_bitlocker_9)
 
-            errors_text = ttk.Label(middle_frame, wraplength=540, justify=directions_var['l'],
-                               text=ln.ln_error_list + "\n\n- " + ("\n- ".join(errors)),
-                               font=SMALLFONT)
+            errors_text_label = ttk.Label(middle_frame, wraplength=540, justify=directions_var['l'],
+                                          text=ln.ln_error_list + '\n',
+                                          font=SMALLFONT)
+            errors_listed = 'x  ' + ("\nx  ".join(errors))
+            errors_text = tk.Text(middle_frame, spacing1=6, height=6)
+            errors_text.insert(1.0, errors_listed)
+            errors_text.configure(state='disabled')
+
             title.pack(pady=40, anchor=directions_var['nw'])
-            errors_text.pack(padx=10, anchor=directions_var['w'])
+            errors_text_label.pack(padx=10, anchor=directions_var['w'])
+            errors_text.pack(padx=10, pady=5, anchor=directions_var['w'])
             btn_quit.pack(anchor=directions_var['se'], side=directions_var['r'], ipadx=15, padx=10)
 
     # page_1
