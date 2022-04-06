@@ -1,6 +1,6 @@
 SW_NAME = "Lnixify"
 distro_name = "Fedora Linux"
-required_shrink_space = 900 * 1024 * 1024
-iso_url = "http://archive.ubuntu.com/ubuntu/dists/bionic-updates/main/installer-amd64/current/images/netboot/mini.iso"
-#iso_url = "https://download.fedoraproject.org/pub/fedora/linux/releases/35/Everything/x86_64/iso/Fedora-Everything-netinst-x86_64-35-1.2.iso"
+required_installer_space = 900 * 1024 * 1024
+url_direct_dl = "https://download.fedoraproject.org/pub/fedora/linux/releases/test/36_Beta/Workstation/x86_64/iso/Fedora-Workstation-Live-x86_64-36_Beta-1.4.iso"
+url_torrent = "https://torrent.fedoraproject.org/torrents/Fedora-Workstation-Live-x86_64-36_Beta.torrent"
 efi_file_path = "\EFI\BOOT\grubx64.efi"

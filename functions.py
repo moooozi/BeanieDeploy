@@ -1,7 +1,5 @@
-import time
-import APP_INFO
-import webbrowser
 import subprocess
+import webbrowser
 
 
 def open_url(url):
@@ -40,7 +38,6 @@ def compatibility_test(queue):
             stderr=subprocess.STDOUT, shell=True)
 
     totalram = int(str(check_totalram().stdout)[2:-5])
-    result_resizable_check = 0
     if check_totalram().returncode != 0:
         result_totalram_check = 9
     elif totalram >= required_ram:
@@ -84,11 +81,11 @@ def compatibility_test(queue):
     else:
         result_bitlocker_check = 0
 
-    check_results = {'result_uefi_check': result_uefi_check,
-                     'result_totalram_check': result_totalram_check,
-                     'result_space_check': result_space_check,
-                     'result_resizable_check': result_resizable_check,
-                     'result_bitlocker_check': result_bitlocker_check}
+    check_results = {'uefi': result_uefi_check,
+                     'totalram': result_totalram_check,
+                     'space': result_space_check,
+                     'resizable': result_resizable_check,
+                     'bitlocker': result_bitlocker_check}
     queue.put(check_results)
 
     # return check_results
@@ -154,12 +151,18 @@ def create_dir(path):
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5].replace(r'\\', '\\')
 
 
-def download_file(url, destination,queue):
+def download_file(url, destination, queue):
     arg = '(Start-BitsTransfer -Source "' + url + '" -Destination "' + destination + '" -Priority normal -Asynchronous).JobId'
     job_id = str(subprocess.run(
         [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[86:122]
     queue.put(job_id)
 
+
+def download_file2(app_path, url, destination, queue):
+    arg = '(-d "' + destination + '" -Destination "' + destination + '" -Priority normal -Asynchronous).JobId'
+    job_id = str(subprocess.Popen(
+        [app_path, arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[86:122]
+    queue.put(job_id)
 
 def get_download_size(job_id):
     arg = '(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }).bytestotal'
@@ -260,3 +263,4 @@ def get_unused_drive_letter():
     for letter in drive_letters:
         if not test(letter):
             return letter
+
