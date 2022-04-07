@@ -97,7 +97,7 @@ def main():
         title = ttk.Label(middle_frame, wraplength=540, justify=directions_var['l'], text=ln.ln_check_running, font=MEDIUMFONT)
         progressbar_check = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='indeterminate')
 
-        title.pack(pady=40, anchor=directions_var['w'])
+        title.pack(pady=35, anchor=directions_var['w'])
         progressbar_check.pack(expand=True)
         progressbar_check.start(10)
         # Request admin if not available
@@ -110,7 +110,8 @@ def main():
         compatibility_results = {'uefi': 1, 'ram': 1, 'space': 2, 'resizable': 1, 'bitlocker': 1}
         if not compatibility_results:
             if not compatibility_check_status:
-                Process(target=compatibility_test, args=(queue1,)).start()
+                Process(target=compatibility_test,
+                        args=(APP_INFO.required_installer_space, APP_INFO.required_ram, queue1,)).start()
                 compatibility_check_status = 1
             if compatibility_check_status == 1:
                 while not queue1.qsize():
@@ -158,7 +159,7 @@ def main():
             errors_text.insert(1.0, errors_listed)
             errors_text.configure(state='disabled')
 
-            title.pack(pady=40, anchor=directions_var['nw'])
+            title.pack(pady=35, anchor=directions_var['nw'])
             errors_text_label.pack(padx=10, anchor=directions_var['w'])
             errors_text.pack(padx=10, pady=5, anchor=directions_var['w'])
             btn_quit.pack(anchor=directions_var['se'], side=directions_var['r'], ipadx=15, padx=10)
@@ -182,7 +183,7 @@ def main():
         r2_install = ttk.Radiobutton(middle_frame, text=ln.ln_install_options[1], variable=sel_vars[0], value=1)
         r3_install = ttk.Radiobutton(middle_frame, text=ln.ln_install_options[2], variable=sel_vars[0], value=2)
 
-        title.pack(pady=40, anchor=directions_var['w'])
+        title.pack(pady=35, anchor=directions_var['w'])
         r1_install.pack(anchor=directions_var['w'], ipady=5)
         r2_install.pack(anchor=directions_var['w'], ipady=5)
         r3_install.pack(anchor=directions_var['w'], ipady=5)
@@ -213,7 +214,7 @@ def main():
         r3_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[2], variable=sel_vars[1], value=2)
         r4_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[3], variable=sel_vars[1], value=3)
 
-        title.pack(pady=40, anchor=directions_var['w'])
+        title.pack(pady=35, anchor=directions_var['w'])
         r1_windows.pack(anchor=directions_var['w'], ipady=5)
         r2_windows.pack(anchor=directions_var['w'], ipady=5)
         r3_windows.pack(anchor=directions_var['w'], ipady=5)
@@ -246,7 +247,7 @@ def main():
         c2_auto_restart = ttk.Checkbutton(middle_frame, text=ln.ln_addition_auto_restart, variable=sel_vars[3],
                                           onvalue=1, offvalue=0)
 
-        title.pack(pady=40, anchor=directions_var['w'])
+        title.pack(pady=35, anchor=directions_var['w'])
         review_text.pack(anchor=directions_var['w'], pady=5)
         c1_import_wifi.pack(anchor=directions_var['w'])
         c2_auto_restart.pack(anchor=directions_var['w'])
@@ -267,12 +268,11 @@ def main():
         job_var = tk.StringVar()
         current_job = ttk.Label(middle_frame, wraplength=540, justify=directions_var['l'], textvariable=job_var, font=SMALLFONT)
 
-        title.pack(pady=40, anchor=directions_var['w'])
+        title.pack(pady=35, anchor=directions_var['w'])
         progressbar_install.pack(expand=True)
         current_job.pack(pady=5, anchor=directions_var['w'])
 
-        global installer_status, process_dl_install_media, process_create_tmp_partition, mount_iso_letter, \
-               process_copy_to_part, tmp_part_letter, process_make_boot, job_id
+        global installer_status, mount_iso_letter, tmp_part_letter, job_id
         if not installer_status:
             while queue1.qsize(): queue1.get()  # to empty the queue
             progressbar_install['value'] = 0
@@ -280,7 +280,7 @@ def main():
             app.update()
             create_dir(download_path)
             Process(target=download_file, args=(APP_INFO.url_direct_dl, install_media_path, queue1,)).start()
-            while queue1.qsize() == 0:
+            while not queue1.qsize():
                 app.after(100, app.update())
             job_id = queue1.get()
             print(job_id)
@@ -305,36 +305,37 @@ def main():
             installer_status = 3
 
         if installer_status == 3:
-            while queue1.qsize() == 0:
-                app.after(1000, app.update())
+            while not queue1.qsize():
+                app.after(200, app.update())
             tmp_part_result = queue1.get()
             if tmp_part_result[0] == 1:
                 tmp_part_letter = tmp_part_result[1]
                 installer_status = 4
         if installer_status == 4:
+            while queue1.qsize(): queue1.get()  # to empty the queue
             mount_iso_letter = mount_iso(install_media_path)
             source_files = mount_iso_letter + ':\\'
             destination_files = tmp_part_letter + ':\\'
-            process_copy_to_part = Process(target=copy_files, args=(source_files, destination_files,))
-            process_copy_to_part.start()
+            Process(target=copy_files, args=(source_files, destination_files, queue1,)).start()
             job_var.set(ln.ln_job_copying_to_tmp_part)
             progressbar_install['value'] = 94
             installer_status = 5
-
         if installer_status == 5:
-            while process_copy_to_part.is_alive():
-                app.after(1000, app.update())
-            installer_status = 6
+            while not queue1.qsize():
+                app.after(200, app.update())
+            if queue1.get() == 1:
+                installer_status = 6
         if installer_status == 6:
+            while queue1.qsize(): queue1.get()  # to empty the queue
             job_var.set(ln.ln_job_adding_tmp_boot_entry)
             progressbar_install['value'] = 99
-            process_make_boot = Process(target=add_boot_entry, args=(APP_INFO.efi_file_path, tmp_part_letter,))
-            process_make_boot.start()
+            Process(target=add_boot_entry, args=(APP_INFO.efi_file_path, tmp_part_letter, queue1,)).start()
             installer_status = 7
         if installer_status == 7:
-            while process_make_boot.is_alive():
-                app.after(1000, app.update())
-            installer_status = 8
+            while not queue1.qsize():
+                app.after(200, app.update())
+            if queue1.get() == 1:
+                installer_status = 8
         if installer_status == 8:
             cleanup_after_install(download_path)
             installer_status = 9
@@ -358,9 +359,9 @@ def main():
         text1 = ttk.Label(middle_frame, wraplength=540, justify=directions_var['l'], text=ln.ln_finished_text, font=SMALLFONT)
         text2 = ttk.Label(middle_frame, wraplength=540, justify="center", textvariable=text_var, font=SMALLFONT)
 
-        title.pack(pady=40, anchor=directions_var['w'])
-        text1.pack(pady=40, anchor=directions_var['w'])
-        text2.pack(pady=40, anchor=directions_var['w'])
+        title.pack(pady=35, anchor=directions_var['w'])
+        text1.pack(pady=10, anchor=directions_var['w'])
+        text2.pack(pady=10, anchor=directions_var['w'])
         button1.pack(anchor=directions_var['se'], side=directions_var['r'], ipadx=15, padx=10)
         button2.pack(anchor=directions_var['se'], side=directions_var['r'], padx=5)
 

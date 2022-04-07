@@ -6,11 +6,9 @@ def open_url(url):
     webbrowser.open_new_tab(url)
 
 
-def compatibility_test(queue):
-    print('hey')
-    required_space_min = 900 * 1024 * 1024
-    required_space_dualboot = required_space_min + 70 * 1024 * 1024 * 1024
-    required_ram = 4
+def compatibility_test(required_space_min, required_ram, queue):
+
+    required_space_dualboot = required_space_min + 20 * 1024 * 1024 * 1024
 
     def check_uefi():
         return subprocess.run([r'powershell.exe', r'$env:firmware_type'], stdout=subprocess.PIPE,
@@ -88,55 +86,6 @@ def compatibility_test(queue):
                      'bitlocker': result_bitlocker_check}
     queue.put(check_results)
 
-    # return check_results
-
-
-def get_sys_drive_letter():
-    return subprocess.run([r'powershell.exe', r'$env:SystemDrive.Substring(0, 1)'], stdout=subprocess.PIPE,
-                          stderr=subprocess.STDOUT, shell=True)
-
-
-def get_disk_number(drive_letter):
-    arg = r'(Get-Partition | Where DriveLetter -eq ' + drive_letter + r' | Get-Disk).Number'
-    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-
-
-def get_drive_size_after_resize(drive_letter, required_space):
-    arg = r'(Get-Volume | Where DriveLetter -eq ' + drive_letter + ').Size -' + str(required_space)
-    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-
-
-def resize_partition(drive_letter, new_size):
-    arg = r'Resize-Partition -DriveLetter ' + drive_letter + r' -Size ' + new_size
-    return subprocess.run(
-        [r'powershell.exe', arg],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT, shell=True)
-
-
-def new_partition(disk_number, size, drive_letter):
-    arg = r'New-Partition -DiskNumber ' + str(disk_number) + r' -Size ' + str(size) + r' -DriveLetter ' + drive_letter
-    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-
-
-def format_volume(drive_letter, filesystem):
-    arg = r'Format-Volume -DriveLetter ' + drive_letter + ' -FileSystem ' + filesystem
-    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-
-
-def create_temp_boot_partition(tmp_part_size, queue):
-    print('create_temp_boot_partition')
-    sys_drive_letter = str(get_sys_drive_letter().stdout)[2:-5]
-    sys_disk_number = str(get_disk_number(sys_drive_letter).stdout)[2:-5]
-    sys_drive_new_size = str(get_drive_size_after_resize(sys_drive_letter, tmp_part_size).stdout)[2:-5]
-    resize_partition(sys_drive_letter, sys_drive_new_size)
-
-    tmp_part_size = tmp_part_size - 1100000
-    tmp_part_letter = get_unused_drive_letter()
-    new_partition(sys_disk_number, tmp_part_size, tmp_part_letter)
-    format_volume(tmp_part_letter, 'FAT32')
-    queue.put([1, tmp_part_letter])
-
 
 def get_user_home_dir():
     return str(subprocess.run(
@@ -187,16 +136,77 @@ def track_download(job_id):
     return [dl_size, already_downloaded]
 
 
+def get_sys_drive_letter():
+    return subprocess.run([r'powershell.exe', r'$env:SystemDrive.Substring(0, 1)'], stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT, shell=True)
+
+
+def get_disk_number(drive_letter):
+    arg = r'(Get-Partition | Where DriveLetter -eq ' + drive_letter + r' | Get-Disk).Number'
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+
+def get_drive_size_after_resize(drive_letter, required_space):
+    arg = r'(Get-Volume | Where DriveLetter -eq ' + drive_letter + ').Size -' + str(required_space)
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+
+def resize_partition(drive_letter, new_size):
+    arg = r'Resize-Partition -DriveLetter ' + drive_letter + r' -Size ' + new_size
+    return subprocess.run(
+        [r'powershell.exe', arg],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT, shell=True)
+
+
+def get_unused_drive_letter():
+    drive_letters = [
+        'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+
+    def test(test_letter):
+        return str(subprocess.run([r'powershell.exe', r'Get-Volume | Where-Object DriveLetter -eq ' + test_letter],
+                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+
+    for letter in drive_letters:
+        if not test(letter):
+            return letter
+
+
+def new_partition(disk_number, size, drive_letter):
+    arg = r'New-Partition -DiskNumber ' + str(disk_number) + r' -Size ' + str(size) + r' -DriveLetter ' + drive_letter
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+
+def format_volume(drive_letter, filesystem):
+    arg = r'Format-Volume -DriveLetter ' + drive_letter + ' -FileSystem ' + filesystem
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+
+def create_temp_boot_partition(tmp_part_size, queue):
+    print('create_temp_boot_partition')
+    sys_drive_letter = str(get_sys_drive_letter().stdout)[2:-5]
+    sys_disk_number = str(get_disk_number(sys_drive_letter).stdout)[2:-5]
+    sys_drive_new_size = str(get_drive_size_after_resize(sys_drive_letter, tmp_part_size).stdout)[2:-5]
+    resize_partition(sys_drive_letter, sys_drive_new_size)
+
+    tmp_part_size = tmp_part_size - 1100000
+    tmp_part_letter = get_unused_drive_letter()
+    new_partition(sys_disk_number, tmp_part_size, tmp_part_letter)
+    format_volume(tmp_part_letter, 'FAT32')
+    queue.put([1, tmp_part_letter])
+
+
 def mount_iso(iso_path):
     arg = '(Mount-DiskImage -ImagePath "' + iso_path + '" | Get-Volume).DriveLetter'
     return str(subprocess.run(
         [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
-def copy_files(source, destination):
+def copy_files(source, destination, queue):
     arg = r'robocopy "' + source + '" "' + destination + '" /e /mt'
-    return str(subprocess.run([r'powershell.exe', arg],
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+    subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    if True:
+        queue.put(1)
 
 
 def cleanup_after_install(location):
@@ -205,11 +215,11 @@ def cleanup_after_install(location):
 
 
 def restart_windows():
-    #subprocess.run([r'powershell.exe', r'Restart-Computer'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    subprocess.run([r'powershell.exe', r'Restart-Computer'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     print('restarting')
 
 
-def add_boot_entry(boot_efi_file_path, boot_drive_letter):
+def add_boot_entry(boot_efi_file_path, boot_drive_letter, queue):
     arg1 = r'(bcdedit /copy {bootmgr} /d "TmpInstallMedia")'
     bootguid = str(subprocess.run([r'powershell.exe', arg1], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
@@ -222,6 +232,8 @@ def add_boot_entry(boot_efi_file_path, boot_drive_letter):
     subprocess.run([r'powershell.exe', arg4], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     arg5 = r'bcdedit /set {fwbootmgr} displayorder ' + bootguid + ' /addfirst'
     subprocess.run([r'powershell.exe', arg5], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    if True:
+        queue.put(1)
 
 
 def get_wifi_profiles():
@@ -251,16 +263,4 @@ def build_autoinstall_ks_file(keymap, xlayouts, syslang, timezone, de_option, us
     ks_file.write(text)
     print(text)
 
-
-def get_unused_drive_letter():
-    drive_letters = [
-        'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
-
-    def test(test_letter):
-        return str(subprocess.run([r'powershell.exe', r'Get-Volume | Where-Object DriveLetter -eq ' + test_letter],
-                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
-
-    for letter in drive_letters:
-        if not test(letter):
-            return letter
 

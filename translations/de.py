@@ -4,6 +4,8 @@ ln_btn_next = "Weiter"
 ln_btn_back = "Zurück"
 ln_btn_quit = "Beenden"
 ln_btn_start = "Starten"
+ln_btn_restart_now = "Jetzt neustarten"
+ln_btn_restart_later = "Später neustarten"
 
 ln_check_running = "Systemkompatibilität wird überprüft. Bitte warten..."
 ln_install_running = "Installieren..."
@@ -23,18 +25,30 @@ ln_error_bitlocker_9 = "Auf dem Systemlaufwerk ist Bitlocker aktiviert. Kompatib
 
 ln_install_question = "Wie möchten Sie %s installieren?" % APP_INFO.distro_name
 
-ln_install_options = [0, "Schnellinstallation mit KDE-Desktop",
+ln_install_options = ["Schnellinstallation mit KDE-Desktop",
                       "Schnellinstallation mit GNOME Desktop",
                       "Erweitert: Lassen Sie mich meine Apps später konfigurieren"]
+ln_install_help = "Hilfe mir zu entscheiden"
 
-ln_windows_question = "Verstanden, was ist mit Windows und Ihren Daten?"
-
-ln_windows_options = [0, "%s neben Windows installieren" % APP_INFO.distro_name,
+ln_windows_question = "Okay! Was soll ich mit Windows und Ihren Datein tun?"
+ln_windows_options = ["%s neben Windows installieren" % APP_INFO.distro_name,
                       "Windows entfernen und meine Bibliothek (Musik, Fotos, Videos) nach %s migrieren" % APP_INFO.distro_name,
-                      "Lösche Windows und alle Daten und starte neu mit %s" % APP_INFO.distro_name,
+                      "Lösche Windows und alle meine Daten und starte neu mit %s" % APP_INFO.distro_name,
                       "Erweitert: Nichts tun und mich später partitionieren lassen"]
-ln_windows_option1_disabled = "%s (nicht genug Platz)" % ln_windows_options[1]
+ln_windows_option1_disabled = "%s (nicht genug Speicherplatz)" % ln_windows_options[1]
 
-ln_verify_question = "Das wird getan. Klicken Sie auf %s, sobald Sie fertig sind." % ln_btn_start
+ln_verify_question = "Das wird getan. Klicken Sie auf %s, sobald Sie bereit sind." % ln_btn_start
+ln_addition_import_wifi = "Meine WLAN-Netzwerke nach %s exportieren" % APP_INFO.distro_name
+ln_addition_auto_restart = "Automatisch neustarten"
 
-ln_job_downloading_install_media = "Installationsmedien werden heruntergeladen"
+ln_job_starting_download = "Download wird gestartet"
+ln_job_downloading_install_media = "Installationsmedium werden heruntergeladen"
+ln_job_creating_tmp_part = "Temporäre Boot-Partition für Installationsmedium wird erstellt..."
+ln_job_copying_to_tmp_part = "Installationsmediumdateien werden auf temporäre Boot-Partition kopiert..."
+ln_job_adding_tmp_boot_entry = "Boot-Eintrag wird hinzugefügt..."
+
+ln_finished_title = "Neustart erforderlich"
+ln_finished_text = "Ein Neustart ist erforderlich, um die Installation fortzusetzen, Klicken Sie auf " \
+                   "'%s', um jetzt neu zu starten oder '%s' " \
+                   "um später manuell neuzustarten" % (ln_btn_restart_now, ln_btn_restart_later)
+ln_finished_text_restarting_now = "Automatischer Neustart in %s Sekunden"
