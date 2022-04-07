@@ -41,7 +41,8 @@ compatibility_results = {}
 compatibility_check_status = 0
 installer_status = 0
 download_path = get_user_home_dir() + "\\win2linux_tmpdir"
-install_media_path = download_path + "\\install_media.iso"
+downloaded_iso_name = "install_media.iso"
+install_media_path = download_path + "\\" + downloaded_iso_name
 mount_iso_letter = ''
 #   MULTI-LINGUAL /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 lang_var = tk.StringVar()
@@ -295,6 +296,7 @@ def main():
                 job_var.set(ln.ln_job_downloading_install_media + r'(%' + str(round(percent, 1)) + ')')
                 app.after(500, app.update())
             finish_download(job_id)
+            rename_file(download_path, '*.iso', downloaded_iso_name)
             installer_status = 2
 
         if installer_status == 2:

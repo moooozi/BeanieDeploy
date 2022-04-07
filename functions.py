@@ -1,4 +1,5 @@
 import subprocess
+import time
 import webbrowser
 
 
@@ -107,11 +108,30 @@ def download_file(url, destination, queue):
     queue.put(job_id)
 
 
-def download_file2(app_path, url, destination, queue):
-    arg = '(-d "' + destination + '" -Destination "' + destination + '" -Priority normal -Asynchronous).JobId'
-    job_id = str(subprocess.Popen(
-        [app_path, arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[86:122]
-    queue.put(job_id)
+def download_with_aria2(app_path, url, destination, queue):
+    arg = r' --dir="' + destination + '" ' + url
+    p = subprocess.Popen(app_path + arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                         universal_newlines=True)
+    tracker = {}
+    while True:
+        output = p.stdout.readline()
+        if output == '' and p.poll() is not None:
+            return 0
+        if output:
+            if '(OK):download completed' in output:
+                print('done')
+                return 1
+            else:
+                st = output.strip()
+                try:
+                    tracker['%'] = st[:st.index('%) CN:')][st.index('(')+1:]
+                    tracker['size'] = st[:st.index('%) CN:')][st.index('MiB/') + 4:-5]
+                    tracker['downloaded'] = st[:st.index('%) CN:')][st.index(' ') + 1:st.index('MiB/') + 1]
+                    tracker['speed'] = st[st.index(' DL:'):][4:st.index('iB') - 5]
+                    queue.put(tracker)
+                    time.sleep(0.3)
+                except ValueError: pass
+
 
 def get_download_size(job_id):
     arg = '(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }).bytestotal'
@@ -125,15 +145,20 @@ def get_downloaded_size(job_id):
         [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
+def track_download(job_id):
+    dl_size = get_download_size(job_id)
+    already_downloaded = get_downloaded_size(job_id)
+    return [dl_size, already_downloaded]
+
+
 def finish_download(job_id):
     arg = '(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }) | Complete-BitsTransfer'
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def track_download(job_id):
-    dl_size = get_download_size(job_id)
-    already_downloaded = get_downloaded_size(job_id)
-    return [dl_size, already_downloaded]
+def rename_file(dir_path, file_name, new_name):
+    arg = 'Get-ChildItem -Path "' + dir_path + '" -Name -include "' + file_name + '" | Rename-item -Newname "' + new_name + '"'
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
 def get_sys_drive_letter():
