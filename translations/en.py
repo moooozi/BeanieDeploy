@@ -42,7 +42,11 @@ ln_addition_import_wifi = "Export my Wi-Fi networks to %s" % APP_INFO.distro_nam
 ln_addition_auto_restart = "Restart automatically"
 
 ln_job_starting_download = "Starting download..."
-ln_job_downloading_install_media = "Downloading install media..."
+
+ln_job_dl_install_media = "Downloading install media..."
+ln_dl_timeleft = "Time left: "
+ln_dl_speed = "Speed: "
+
 ln_job_creating_tmp_part = "Creating temporary boot partition for installer media..."
 ln_job_copying_to_tmp_part = "Copying required installer media files to temporary boot partition..."
 ln_job_adding_tmp_boot_entry = "Adding boot entry..."

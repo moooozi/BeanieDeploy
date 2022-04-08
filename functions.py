@@ -108,8 +108,10 @@ def download_file(url, destination, queue):
     queue.put(job_id)
 
 
-def download_with_aria2(app_path, url, destination, queue):
+def download_with_aria2(app_path, url, destination, istorrent, queue):
     arg = r' --dir="' + destination + '" ' + url
+    if istorrent:
+        arg = arg + '--seed-time=0'
     p = subprocess.Popen(app_path + arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                          universal_newlines=True)
     tracker = {}
@@ -119,18 +121,24 @@ def download_with_aria2(app_path, url, destination, queue):
             return 0
         if output:
             if '(OK):download completed' in output:
-                print('done')
-                return 1
+                queue.put('OK')
             else:
-                st = output.strip()
-                try:
-                    tracker['%'] = st[:st.index('%) CN:')][st.index('(')+1:]
-                    tracker['size'] = st[:st.index('%) CN:')][st.index('MiB/') + 4:-5]
-                    tracker['downloaded'] = st[:st.index('%) CN:')][st.index(' ') + 1:st.index('MiB/') + 1]
-                    tracker['speed'] = st[st.index(' DL:'):][4:st.index('iB') - 5]
-                    queue.put(tracker)
-                    time.sleep(0.3)
-                except ValueError: pass
+                if (txt := output.strip())[0:2] == '[#':
+                    txt = txt[1:-1]
+                    try:
+                        if (eta_key := 'ETA:') in txt:
+                            index = txt.index(eta_key)
+                            tracker['eta'] = txt[index + len(eta_key):].split(' ', 1)[0]
+                        if (speed_key := 'DL:') in txt:
+                            index = txt.index(speed_key)
+                            tracker['speed'] = txt[index + len(speed_key):].split(' ', 1)[0]
+                        if '%)' and 'B/' in txt:
+                            index1 = txt.index('%)')
+                            index2 = txt.index('(')
+                            tracker['size'] = txt.split()[1]
+                            tracker['%'] = txt[index2 + 1:index1]
+                        queue.put(tracker)
+                    except (ValueError, IndexError): pass
 
 
 def get_download_size(job_id):
@@ -211,10 +219,9 @@ def create_temp_boot_partition(tmp_part_size, queue):
     print('create_temp_boot_partition')
     sys_drive_letter = str(get_sys_drive_letter().stdout)[2:-5]
     sys_disk_number = str(get_disk_number(sys_drive_letter).stdout)[2:-5]
-    sys_drive_new_size = str(get_drive_size_after_resize(sys_drive_letter, tmp_part_size).stdout)[2:-5]
+    sys_drive_new_size = str(get_drive_size_after_resize(sys_drive_letter, tmp_part_size + 1100000).stdout)[2:-5]
     resize_partition(sys_drive_letter, sys_drive_new_size)
 
-    tmp_part_size = tmp_part_size - 1100000
     tmp_part_letter = get_unused_drive_letter()
     new_partition(sys_disk_number, tmp_part_size, tmp_part_letter)
     format_volume(tmp_part_letter, 'FAT32')

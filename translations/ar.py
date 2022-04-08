@@ -42,7 +42,10 @@ ln_addition_import_wifi = " %s تصدير شبكات واي فاي الخاصة 
 ln_addition_auto_restart = "إعادة التشغيل تلقائيًا"
 
 ln_job_starting_download = "جار بدء التنزيل"
-ln_job_downloading_install_media = "جارٍ تنزيل وسائط التثبيت"
+ln_job_dl_install_media = "جارٍ تنزيل وسائط التثبيت"
+ln_dl_timeleft = " الوقت المتبقي "
+ln_dl_speed = " السرعة "
+
 ln_job_creating_tmp_part = "إنشاء قرص إقلاع مؤقت لوسائط التثبيت"
 ln_job_copying_to_tmp_part = "نسخ ملفات وسائط المثبّت المطلوبة إلى قسم التمهيد المؤقت"
 ln_job_adding_tmp_boot_entry = "إضافة إدخالات الإقلاع"

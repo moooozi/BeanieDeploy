@@ -84,7 +84,7 @@ def change_lang(lang):
 def reload_page(lang, current_page):
     change_lang(lang)
     current_page()
-    
+
 
 def main():
     def page_check():
@@ -280,22 +280,23 @@ def main():
             job_var.set(ln.ln_job_starting_download)
             app.update()
             create_dir(download_path)
-            Process(target=download_file, args=(APP_INFO.url_direct_dl, install_media_path, queue1,)).start()
-            while not queue1.qsize():
-                app.after(100, app.update())
-            job_id = queue1.get()
-            print(job_id)
+            Process(target=download_with_aria2, args=(APP_INFO.url_direct_dl, install_media_path, queue1,)).start()
             installer_status = 1
 
         if installer_status == 1:
-            dl_status = track_download(job_id)
-            while dl_status[0] != dl_status[1]:
-                dl_status = track_download(job_id)
-                percent = (int(dl_status[1]) * 100) / int(dl_status[0])
-                progressbar_install['value'] = percent * 0.92
-                job_var.set(ln.ln_job_downloading_install_media + r'(%' + str(round(percent, 1)) + ')')
-                app.after(500, app.update())
-            finish_download(job_id)
+            while True:
+                while not queue1.qsize(): app.after(100, app.update())
+                while queue1.qsize() != 1: queue1.get()
+                dl_status = queue1.get()
+                if dl_status == 'OK':
+                    installer_status = 3
+                    break
+                progressbar_install['value'] = dl_status['%'] * 0.92
+                txt = ln.ln_job_dl_install_media + '%s, %s%s/s, %s%s' % (dl_status['size'], ln.ln_dl_speed,
+                                                                       dl_status['speed'], ln.ln_dl_timeleft,
+                                                                       dl_status['eta'])
+                job_var.set(txt)
+                app.after(100, app.update())
             rename_file(download_path, '*.iso', downloaded_iso_name)
             installer_status = 2
 
@@ -304,7 +305,6 @@ def main():
             Process(target=create_temp_boot_partition, args=(APP_INFO.required_installer_space, queue1,)).start()
             job_var.set(ln.ln_job_creating_tmp_part)
             progressbar_install['value'] = 92
-            installer_status = 3
 
         if installer_status == 3:
             while not queue1.qsize():

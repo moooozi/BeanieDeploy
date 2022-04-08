@@ -42,7 +42,10 @@ ln_addition_import_wifi = "Meine WLAN-Netzwerke nach %s exportieren" % APP_INFO.
 ln_addition_auto_restart = "Automatisch neustarten"
 
 ln_job_starting_download = "Download wird gestartet"
-ln_job_downloading_install_media = "Installationsmedium werden heruntergeladen"
+ln_dl_timeleft = "Verbleibende Zeit: "
+ln_dl_speed = "Geschwindigkeit: "
+
+ln_job_dl_install_media = "Installationsmedium werden heruntergeladen"
 ln_job_creating_tmp_part = "Temporäre Boot-Partition für Installationsmedium wird erstellt..."
 ln_job_copying_to_tmp_part = "Installationsmediumdateien werden auf temporäre Boot-Partition kopiert..."
 ln_job_adding_tmp_boot_entry = "Boot-Eintrag wird hinzugefügt..."
