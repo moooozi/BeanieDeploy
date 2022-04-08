@@ -35,7 +35,7 @@ left_frame_img = tk.PhotoImage(file='resources/leftframe.png')
 left_frame_label = tk.Label(left_frame, image=left_frame_img)
 middle_frame = tk.Frame(container, height=800)
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
-sel_vars = (tk.IntVar(app, 0), tk.IntVar(app, 0), tk.IntVar(app, 1), tk.IntVar(app, 0))
+sel_vars = (tk.IntVar(app, 0), tk.IntVar(app, 0), tk.IntVar(app, 1), tk.IntVar(app, 0), tk.IntVar(app, 0))
 queue1 = Queue()
 compatibility_results = {}
 compatibility_check_status = 0
@@ -273,14 +273,21 @@ def main():
         progressbar_install.pack(expand=True)
         current_job.pack(pady=5, anchor=directions_var['w'])
 
-        global installer_status, mount_iso_letter, tmp_part_letter, job_id
+        global installer_status, mount_iso_letter, tmp_part_letter
         if not installer_status:
             while queue1.qsize(): queue1.get()  # to empty the queue
             progressbar_install['value'] = 0
             job_var.set(ln.ln_job_starting_download)
             app.update()
             create_dir(download_path)
-            Process(target=download_with_aria2, args=(APP_INFO.url_direct_dl, install_media_path, queue1,)).start()
+            aria2_location = current_dir + '\\resources\\aria2c.exe'
+            if sel_vars[4].get():
+                args = (aria2_location, APP_INFO.url_torrent, download_path, 1, queue1,)
+                # if torrent is selected
+            else:
+                args = (aria2_location, APP_INFO.url_direct_dl, download_path, 0, queue1,)
+                # if torrent is not selected (direct download)
+            Process(target=download_with_aria2, args=args).start()
             installer_status = 1
 
         if installer_status == 1:
@@ -292,11 +299,12 @@ def main():
                     installer_status = 3
                     break
                 progressbar_install['value'] = dl_status['%'] * 0.92
-                txt = ln.ln_job_dl_install_media + '%s, %s%s/s, %s%s' % (dl_status['size'], ln.ln_dl_speed,
-                                                                       dl_status['speed'], ln.ln_dl_timeleft,
-                                                                       dl_status['eta'])
+                txt = ln.ln_job_dl_install_media + '\n%s\n%s%s/s, %s%s' % (dl_status['size'], ln.ln_dl_speed,
+                                                                           dl_status['speed'], ln.ln_dl_timeleft,
+                                                                           dl_status['eta'])
                 job_var.set(txt)
                 app.after(100, app.update())
+            move_files_to_dir(download_path, download_path)
             rename_file(download_path, '*.iso', downloaded_iso_name)
             installer_status = 2
 

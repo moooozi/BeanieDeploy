@@ -169,6 +169,13 @@ def rename_file(dir_path, file_name, new_name):
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
+def move_files_to_dir(source, destination):
+    arg = 'Get-ChildItem -Path ' + source + ' -Recurse -File | Move-Item -Destination ' + destination
+    subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    arg = 'Get-ChildItem -Path ' + source + ' -Recurse -Directory | Remove-Item'
+    subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+
 def get_sys_drive_letter():
     return subprocess.run([r'powershell.exe', r'$env:SystemDrive.Substring(0, 1)'], stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT, shell=True)
