@@ -339,6 +339,7 @@ def main():
             Process(target=create_temp_boot_partition, args=(APP_INFO.required_installer_space, queue1,)).start()
             job_var.set(ln.ln_job_creating_tmp_part)
             progressbar_install['value'] = 90
+            installer_status = 3
 
         if installer_status == 3:
             while not queue1.qsize():
