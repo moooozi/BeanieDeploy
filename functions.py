@@ -88,6 +88,40 @@ def compatibility_test(required_space_min, required_ram, queue):
     queue.put(check_results)
 
 
+"""
+def download_file_legacy():  # DEPRECATE METHOD, REPLACED WITH aria2 ***********************************************
+
+    def download_file(url, destination, queue):
+        arg = '(Start-BitsTransfer -Source "' + url + '" -Destination "' + destination + '" -Priority normal -Asynchronous).JobId'
+        job_id = str(subprocess.run(
+            [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[86:122]
+        queue.put(job_id)
+    
+    
+    def get_download_size(job_id):
+        arg = '(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }).bytestotal'
+        return str(subprocess.run(
+            [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+    
+    
+    def get_downloaded_size(job_id):
+        arg = '(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }).bytestransferred'
+        return str(subprocess.run(
+            [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+    
+    
+    def track_download(job_id):
+        dl_size = get_download_size(job_id)
+        already_downloaded = get_downloaded_size(job_id)
+        return [dl_size, already_downloaded]
+    
+    
+    def finish_download(job_id):
+        arg = '(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }) | Complete-BitsTransfer'
+        return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+"""
+
+
 def get_user_home_dir():
     return str(subprocess.run(
         [r'powershell.exe', r'$home'],
@@ -99,13 +133,6 @@ def create_dir(path):
     str(subprocess.run(
         [r'powershell.exe', arg],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5].replace(r'\\', '\\')
-
-
-def download_file(url, destination, queue):
-    arg = '(Start-BitsTransfer -Source "' + url + '" -Destination "' + destination + '" -Priority normal -Asynchronous).JobId'
-    job_id = str(subprocess.run(
-        [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[86:122]
-    queue.put(job_id)
 
 
 def download_with_aria2(app_path, url, destination, istorrent, queue):
@@ -139,29 +166,6 @@ def download_with_aria2(app_path, url, destination, istorrent, queue):
                             tracker['%'] = txt[index2 + 1:index1]
                         queue.put(tracker)
                     except (ValueError, IndexError): pass
-
-
-def get_download_size(job_id):
-    arg = '(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }).bytestotal'
-    return str(subprocess.run(
-        [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
-
-
-def get_downloaded_size(job_id):
-    arg = '(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }).bytestransferred'
-    return str(subprocess.run(
-        [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
-
-
-def track_download(job_id):
-    dl_size = get_download_size(job_id)
-    already_downloaded = get_downloaded_size(job_id)
-    return [dl_size, already_downloaded]
-
-
-def finish_download(job_id):
-    arg = '(Get-BitsTransfer | ? { $_.JobId -eq "' + job_id + '" }) | Complete-BitsTransfer'
-    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
 def rename_file(dir_path, file_name, new_name):

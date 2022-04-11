@@ -40,6 +40,8 @@ ln_windows_option1_disabled = "(مساحة غير كافية) %s" % ln_windows_o
 ln_verify_question = "هذا ما سيتم القيام به. انقر فوق % s عندما تجهز" % ln_btn_start
 ln_addition_import_wifi = " %s تصدير شبكات واي فاي الخاصة بي إلى" % APP_INFO.distro_name
 ln_addition_auto_restart = "إعادة التشغيل تلقائيًا"
+ln_show_advanced = "إظهار الإعدادات المتقدمة"
+ln_advanced_torrent = "استخدم تورينت للتنزيل"
 
 ln_job_starting_download = "جار بدء التنزيل"
 ln_job_dl_install_media = "جارٍ تنزيل وسائط التثبيت"

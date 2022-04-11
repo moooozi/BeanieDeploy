@@ -13,7 +13,9 @@ from functions import *
 #   DRIVER CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 app = tk.Tk()
 app.title(APP_INFO.SW_NAME)
-app.geometry("800x500")
+MAXWIDTH = 800
+MAXHEIGHT = 500
+app.geometry(str("%sx%s" % (MAXWIDTH, MAXHEIGHT)))
 current_dir = str(Path(__file__).parent)
 # app.iconbitmap("yourimage.ico")
 app.resizable(False, False)
@@ -27,15 +29,18 @@ style.configure("Togglebutton", foreground='white')
 LARGEFONT = ("Ariel", 20)
 MEDIUMFONT = ("Ariel", 16)
 SMALLFONT = ("Ariel", 12)
+VERYSMALLFONT = ("Ariel", 10)
+
 #   MAIN CONTAINER & FRAMES   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 container = tk.Frame(app)
-top_frame = tk.Frame(container, height=100)
-left_frame = tk.Frame(container, width=200)
+top_frame = tk.Frame(container, height=90, width=MAXWIDTH)
+left_frame = tk.Frame(container, width=200, height=MAXHEIGHT)
 left_frame_img = tk.PhotoImage(file='resources/leftframe.png')
 left_frame_label = tk.Label(left_frame, image=left_frame_img)
-middle_frame = tk.Frame(container, height=800)
+middle_frame = tk.Frame(container, height=700)
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 sel_vars = (tk.IntVar(app, 0), tk.IntVar(app, 0), tk.IntVar(app, 1), tk.IntVar(app, 0), tk.IntVar(app, 0))
+#          ( Install options , Windows Options  , import Wifi?     , auto restart?    , use torrent?
 queue1 = Queue()
 compatibility_results = {}
 compatibility_check_status = 0
@@ -58,10 +63,14 @@ def rebuild_container():
 (see function right_to_left_lang)"""
     container.pack(side="top", fill="both", expand=True)
     top_frame.pack(fill="x", expand=1)
+    top_frame.pack_propagate(False)
     left_frame.pack(fill="y", side=directions_var['l'])
-    left_frame_label.pack()
+    left_frame.pack_propagate(False)
+    left_frame_label.pack(side='bottom')
     middle_frame.pack(fill="both", expand=1, padx=20, pady=20)
-    lang_list.pack(anchor=directions_var['nw'], padx=10, pady=10)
+    middle_frame.pack_propagate(False)
+
+    lang_list.pack(anchor=directions_var['nw'], padx=20, pady=20)
 
 
 def clear_frame():
@@ -247,11 +256,20 @@ def main():
                                          onvalue=1, offvalue=0)
         c2_auto_restart = ttk.Checkbutton(middle_frame, text=ln.ln_addition_auto_restart, variable=sel_vars[3],
                                           onvalue=1, offvalue=0)
+        c3_torrent = ttk.Checkbutton(middle_frame, text=ln.ln_advanced_torrent, variable=sel_vars[4],
+                                          onvalue=1, offvalue=0)
+        advanced_btn = ttk.Label(middle_frame, wraplength=540, justify="center",
+                                 text=ln.ln_show_advanced, font=VERYSMALLFONT,foreground='#3aa9ff')
 
+        def show_advanced(event):
+            advanced_btn.pack_forget()
+            c3_torrent.pack(anchor=directions_var['w'])
+        advanced_btn.bind("<Button-1>", show_advanced)
         title.pack(pady=35, anchor=directions_var['w'])
         review_text.pack(anchor=directions_var['w'], pady=5)
         c1_import_wifi.pack(anchor=directions_var['w'])
         c2_auto_restart.pack(anchor=directions_var['w'])
+        advanced_btn.pack(pady=10, padx=10, anchor=directions_var['w'])
         btn_next.pack(anchor=directions_var['se'], side=directions_var['r'], ipadx=15, padx=10)
         btn_back.pack(anchor=directions_var['se'], side=directions_var['r'], padx=5)
 

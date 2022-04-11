@@ -27,7 +27,7 @@ ln_install_question = "How do you want to install %s?" % APP_INFO.distro_name
 
 ln_install_options = ("Quick Install with KDE Desktop",
                       "Quick Install with GNOME Desktop",
-                      "Advanced: Let me configure my applets later")
+                      "Advanced: Let me select my packages later")
 ln_install_help = "Help me decide"
 
 ln_windows_question = "Okay! what about Windows and your files?"
@@ -40,6 +40,8 @@ ln_windows_option1_disabled = "%s (not enough space)" % ln_windows_options[0]
 ln_verify_question = "This is what is going to be done. Click %s once ready" % ln_btn_start
 ln_addition_import_wifi = "Export my Wi-Fi networks to %s" % APP_INFO.distro_name
 ln_addition_auto_restart = "Restart automatically"
+ln_show_advanced = "Show advanced settings"
+ln_advanced_torrent = "Download using torrent"
 
 ln_job_starting_download = "Starting download..."
 
