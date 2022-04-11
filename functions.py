@@ -81,7 +81,7 @@ def compatibility_test(required_space_min, required_ram, queue):
         result_bitlocker_check = 0
 
     check_results = {'uefi': result_uefi_check,
-                     'totalram': result_totalram_check,
+                     'ram': result_totalram_check,
                      'space': result_space_check,
                      'resizable': result_resizable_check,
                      'bitlocker': result_bitlocker_check}
@@ -135,13 +135,18 @@ def create_dir(path):
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5].replace(r'\\', '\\')
 
 
-def download_with_aria2(app_path, url, destination, istorrent, queue):
+def download_with_aria2(app_path, url, destination, is_torrent, queue):
     arg = r' --dir="' + destination + '" ' + url
-    if istorrent:
-        arg = arg + '--seed-time=0'
+    if is_torrent:
+        arg = arg + ' --seed-time=0'
     p = subprocess.Popen(app_path + arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                          universal_newlines=True)
-    tracker = {}
+    tracker = {
+        'speed': '0',
+        'eta': 'N/A',
+        'size': '',
+        '%': '0'
+    }
     while True:
         output = p.stdout.readline()
         if output == '' and p.poll() is not None:
@@ -163,15 +168,19 @@ def download_with_aria2(app_path, url, destination, istorrent, queue):
                             index1 = txt.index('%)')
                             index2 = txt.index('(')
                             tracker['size'] = txt.split()[1]
-                            tracker['%'] = txt[index2 + 1:index1]
+                            tracker['%'] = int(txt[index2 + 1:index1])
+
                         queue.put(tracker)
                     except (ValueError, IndexError): pass
 
 
 def rename_file(dir_path, file_name, new_name):
-    arg = 'Get-ChildItem -Path "' + dir_path + '" -Name -include "' + file_name + '" | Rename-item -Newname "' + new_name + '"'
+    arg = 'Get-ChildItem -Path "' + dir_path + '" -Name -include "' + file_name + '"'
+    out = str(subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                             shell=True).stdout)[2:-5]
+    out = out.split('\\r\\n')[0]
+    arg = 'Rename-item -Path "' + dir_path + '\\' + out + '" -Newname "' + new_name + '"'
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-
 
 def move_files_to_dir(source, destination):
     arg = 'Get-ChildItem -Path ' + source + ' -Recurse -File | Move-Item -Destination ' + destination
@@ -236,7 +245,7 @@ def create_temp_boot_partition(tmp_part_size, queue):
     tmp_part_letter = get_unused_drive_letter()
     new_partition(sys_disk_number, tmp_part_size, tmp_part_letter)
     format_volume(tmp_part_letter, 'FAT32')
-    queue.put([1, tmp_part_letter])
+    queue.put((1, tmp_part_letter))
 
 
 def mount_iso(iso_path):
@@ -252,7 +261,7 @@ def copy_files(source, destination, queue):
         queue.put(1)
 
 
-def cleanup_after_install(location):
+def cleanup_remove_folder(location):
     arg = r'Remove-Item "' + location + '" -Recurse'
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
@@ -293,6 +302,12 @@ def get_wifi_profiles():
         i = i.split()
         newout.append(i)
     return newout
+
+
+def check_file_if_exists(path):
+    arg = 'Test-Path -Path "' + path + '" -PathType Leaf'
+    return str(subprocess.run(
+        [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
 def build_autoinstall_ks_file(keymap, xlayouts, syslang, timezone, de_option, usrfullname, username, password):

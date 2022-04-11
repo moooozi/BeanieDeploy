@@ -43,6 +43,11 @@ ln_addition_auto_restart = "Restart automatically"
 ln_show_advanced = "Show advanced settings"
 ln_advanced_torrent = "Download using torrent"
 
+ln_old_download_detected = "Unfinished installation detected"
+ln_old_download_detected_text = "An unfinished installation detected, use previously downloaded files? " \
+                        "(choose 'No' to clean up and start new download)"
+
+
 ln_job_starting_download = "Starting download..."
 
 ln_job_dl_install_media = "Downloading install media..."

@@ -43,6 +43,10 @@ ln_addition_auto_restart = "إعادة التشغيل تلقائيًا"
 ln_show_advanced = "إظهار الإعدادات المتقدمة"
 ln_advanced_torrent = "استخدم تورينت للتنزيل"
 
+ln_old_download_detected = "تم اكتشاف تثبيت غير مكتمل"
+ln_old_download_detected_text = "تم اكتشاف تثبيت غير مكتمل ، هل تريد استخدام الملفات التي تم تنزيلها مسبقًا؟" \
+                         "(اختر 'لا' للتنظيف وبدء تنزيل جديد)"
+
 ln_job_starting_download = "جار بدء التنزيل"
 ln_job_dl_install_media = "جارٍ تنزيل وسائط التثبيت"
 ln_dl_timeleft = " الوقت المتبقي "

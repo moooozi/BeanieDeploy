@@ -4,7 +4,7 @@ import importlib
 from pathlib import Path
 import sys
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from multiprocessing import Process, Queue
 import APP_INFO
 from multilingual import language_list, right_to_left_lang
@@ -287,11 +287,17 @@ def main():
         job_var = tk.StringVar()
         current_job = ttk.Label(middle_frame, wraplength=540, justify=directions_var['l'], textvariable=job_var, font=SMALLFONT)
 
-        title.pack(pady=35, anchor=directions_var['w'])
+        title.pack(pady=25, anchor=directions_var['w'])
         progressbar_install.pack(expand=True)
         current_job.pack(pady=5, anchor=directions_var['w'])
 
         global installer_status, mount_iso_letter, tmp_part_letter
+        if check_file_if_exists(install_media_path) == 'True':
+            question = messagebox.askyesno(ln.ln_old_download_detected, ln.ln_old_download_detected_text)
+            if question:
+                installer_status = 2
+            else:
+                cleanup_remove_folder(download_path)
         if not installer_status:
             while queue1.qsize(): queue1.get()  # to empty the queue
             progressbar_install['value'] = 0
@@ -308,6 +314,8 @@ def main():
             Process(target=download_with_aria2, args=args).start()
             installer_status = 1
 
+
+
         if installer_status == 1:
             while True:
                 while not queue1.qsize(): app.after(100, app.update())
@@ -316,7 +324,7 @@ def main():
                 if dl_status == 'OK':
                     installer_status = 3
                     break
-                progressbar_install['value'] = dl_status['%'] * 0.92
+                progressbar_install['value'] = dl_status['%'] * 0.90
                 txt = ln.ln_job_dl_install_media + '\n%s\n%s%s/s, %s%s' % (dl_status['size'], ln.ln_dl_speed,
                                                                            dl_status['speed'], ln.ln_dl_timeleft,
                                                                            dl_status['eta'])
@@ -330,7 +338,7 @@ def main():
             while queue1.qsize(): queue1.get()  # to empty the queue
             Process(target=create_temp_boot_partition, args=(APP_INFO.required_installer_space, queue1,)).start()
             job_var.set(ln.ln_job_creating_tmp_part)
-            progressbar_install['value'] = 92
+            progressbar_install['value'] = 90
 
         if installer_status == 3:
             while not queue1.qsize():
@@ -365,7 +373,7 @@ def main():
             if queue1.get() == 1:
                 installer_status = 8
         if installer_status == 8:
-            cleanup_after_install(download_path)
+            cleanup_remove_folder(download_path)
             installer_status = 9
         if installer_status == 9:
             page_installer_installed()
@@ -405,6 +413,7 @@ def main():
     change_lang('English')
     rebuild_container()
     page_check()
+    #print(rename_file(download_path, '*.iso', downloaded_iso_name))
     app.mainloop()
 
 

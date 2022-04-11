@@ -43,6 +43,10 @@ ln_addition_auto_restart = "Automatisch neustarten"
 ln_show_advanced = "Erweiterte Einstellungen anzeigen"
 ln_advanced_torrent = "Torrent zum Download verwenden"
 
+ln_old_download_detected = "Nicht abgeschlossene Installation erkannt"
+ln_old_download_detected_text = "Eine nicht abgeschlossene Installation erkannt, zuvor heruntergeladene Dateien verwenden? " \
+                                "(wählen Sie 'Nein', um zu bereinigen und einen neuen Download zu starten)"
+
 ln_job_starting_download = "Download wird gestartet"
 ln_dl_timeleft = "Verbleibende Zeit: "
 ln_dl_speed = "Geschwindigkeit: "
