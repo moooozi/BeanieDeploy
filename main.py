@@ -116,7 +116,7 @@ def main():
             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
             quit()
         global compatibility_results, compatibility_check_status
-        #compatibility_results = {'uefi': 0, 'ram': 0, 'space': 0, 'resizable': 0, 'bitlocker': 0}
+        # compatibility_results = {'uefi': 0, 'ram': 0, 'space': 0, 'resizable': 0, 'bitlocker': 0}
         compatibility_results = {'uefi': 1, 'ram': 1, 'space': 2, 'resizable': 1, 'bitlocker': 1}
         if not compatibility_results:
             if not compatibility_check_status:
@@ -407,16 +407,16 @@ def main():
             restart_windows()
             app.destroy()
 
-    if not ctypes.windll.shell32.IsUserAnAdmin():
-        app.update()
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
-        quit()
+    # if not ctypes.windll.shell32.IsUserAnAdmin():
+    #     app.update()
+    #     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+    #     quit()
     #add_boot_entry(APP_INFO.efi_file_path, 'G', queue1)
     #relabel_volume('C', 'Windows OS')
+    #print(get_wifi_profiles())
     change_lang('English')
     build_container()
     page_check()
-
     app.mainloop()
 
 

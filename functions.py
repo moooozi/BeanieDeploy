@@ -130,9 +130,9 @@ def get_user_home_dir():
 
 def create_dir(path):
     arg = "New-Item -Path '" + path + "' -ItemType Directory"
-    str(subprocess.run(
+    subprocess.run(
         [r'powershell.exe', arg],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5].replace(r'\\', '\\')
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
 def download_with_aria2(app_path, url, destination, is_torrent, queue):
@@ -213,8 +213,7 @@ def resize_partition(drive_letter, new_size):
 
 
 def get_unused_drive_letter():
-    drive_letters = [
-        'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+    drive_letters = ['G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
     def test(test_letter):
         return str(subprocess.run([r'powershell.exe', r'Get-Volume | Where-Object DriveLetter -eq ' + test_letter],
@@ -275,7 +274,6 @@ def cleanup_remove_folder(location):
 
 def restart_windows():
     subprocess.run([r'powershell.exe', r'Restart-Computer'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    print('restarting')
 
 
 def add_boot_entry(boot_efi_file_path, boot_drive_letter, queue):
@@ -301,14 +299,17 @@ def get_wifi_profiles():
         [r'powershell.exe',
          r'(netsh wlan show profiles) | Select-String “\:(.+)$” | %{$name=$_.Matches.Groups[1].Value.Trim(); $_} | %{'
          r'(netsh wlan show profile name=”$name” key=clear)} | Select-String “Key Content\W+\:(.+)$” | %{'
-         r'$pass=$_.Matches.Groups[1].Value.Trim(); $_} | %{[PSCustomObject]@{ PROFILE_NAME=$name;PASSWORD=$pass }} | '
-         r'Format-Table -AutoSize'],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[56:-13]
-    out = out.split("\\r\\n")
+         r'$pass=$_.Matches.Groups[1].Value.Trim(); $_} | %{[PSCustomObject]@{ PROFILE_NAME="$name)name";'
+         r'PASSWORD="passwd($pass" }} | Format-Table -AutoSize'],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout)
+    print(out)
+    out = out.split("\n")
     newout = []
     for i in out:
-        i = i.split()
-        newout.append(i)
+        i = ' '.join(i.split())
+        if ')name passwd(' in i:
+            i = i.split(')name passwd(')
+            newout.append(i)
     return newout
 
 
@@ -318,7 +319,7 @@ def check_file_if_exists(path):
         [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
-def build_autoinstall_ks_file(keymap, xlayouts, syslang, timezone, de_option, usrfullname, username, password):
+def build_autoinstall_ks_file(keymap, xlayouts, syslang, timezone, de_option):
     if de_option == 1:
         packages = "@^workstation-product-environment"
     textpart1 = "graphical\nkeyboard --vckeymap='" + keymap + "' --xlayouts='%s'\n" % xlayouts
