@@ -225,26 +225,33 @@ def get_unused_drive_letter():
             return letter
 
 
+def relabel_volume(drive_letter, new_label):
+    arg = r'Set-Volume -DriveLetter "' + drive_letter + '" -NewFileSystemLabel "' + new_label + '"'
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+
 def new_partition(disk_number, size, drive_letter):
     arg = r'New-Partition -DiskNumber ' + str(disk_number) + r' -Size ' + str(size) + r' -DriveLetter ' + drive_letter
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def format_volume(drive_letter, filesystem):
-    arg = r'Format-Volume -DriveLetter ' + drive_letter + ' -FileSystem ' + filesystem
+def format_volume(drive_letter, filesystem, label):
+    arg = r'Format-Volume -DriveLetter ' + drive_letter + ' -FileSystem ' + filesystem \
+          + ' -NewFileSystemLabel "' + label
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
 def create_temp_boot_partition(tmp_part_size, queue):
     print('create_temp_boot_partition')
     sys_drive_letter = str(get_sys_drive_letter().stdout)[2:-5]
+    relabel_volume(sys_drive_letter, 'Windows OS')
     sys_disk_number = str(get_disk_number(sys_drive_letter).stdout)[2:-5]
     sys_drive_new_size = str(get_drive_size_after_resize(sys_drive_letter, tmp_part_size + 1100000).stdout)[2:-5]
     resize_partition(sys_drive_letter, sys_drive_new_size)
 
     tmp_part_letter = get_unused_drive_letter()
     new_partition(sys_disk_number, tmp_part_size, tmp_part_letter)
-    format_volume(tmp_part_letter, 'FAT32')
+    format_volume(tmp_part_letter, 'FAT32', 'install_med')
     queue.put((1, tmp_part_letter))
 
 
@@ -282,7 +289,7 @@ def add_boot_entry(boot_efi_file_path, boot_drive_letter, queue):
     arg = r'bcdedit /set "' + bootguid + '" device partition=' + boot_drive_letter + ':'
     out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     print(out)
-    arg = r'bcdedit /set "{fwbootmgr}" displayorder "' + bootguid + '" /addfirst'
+    arg = r'bcdedit /set "{fwbootmgr}" bootsequence "' + bootguid + '" /addfirst'
     out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     print(out)
     if True:

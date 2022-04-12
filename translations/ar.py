@@ -38,10 +38,10 @@ ln_windows_options = ["Windows بجانب %s تثبيت" % APP_INFO.distro_name,
 ln_windows_option1_disabled = "(مساحة غير كافية) %s" % ln_windows_options[1]
 
 ln_verify_question = "هذا ما سيتم القيام به. انقر فوق % s عندما تجهز" % ln_btn_start
-ln_addition_import_wifi = " %s تصدير شبكات واي فاي الخاصة بي إلى" % APP_INFO.distro_name
-ln_addition_auto_restart = "إعادة التشغيل تلقائيًا"
+ln_add_import_wifi = " %s تصدير شبكات واي فاي الخاصة بي إلى" % APP_INFO.distro_name
+ln_add_auto_restart = "إعادة التشغيل تلقائيًا"
 ln_show_advanced = "إظهار الإعدادات المتقدمة"
-ln_advanced_torrent = "استخدم تورينت للتنزيل"
+ln_adv_torrent = "استخدم تورينت للتنزيل"
 
 ln_old_download_detected = "تم اكتشاف تثبيت غير مكتمل"
 ln_old_download_detected_text = "تم اكتشاف تثبيت غير مكتمل ، هل تريد استخدام الملفات التي تم تنزيلها مسبقًا؟" \

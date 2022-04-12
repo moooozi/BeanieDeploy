@@ -38,10 +38,10 @@ ln_windows_options = ["%s neben Windows installieren" % APP_INFO.distro_name,
 ln_windows_option1_disabled = "%s (nicht genug Speicherplatz)" % ln_windows_options[1]
 
 ln_verify_question = "Das wird getan. Klicken Sie auf %s, sobald Sie bereit sind." % ln_btn_start
-ln_addition_import_wifi = "Meine WLAN-Netzwerke nach %s exportieren" % APP_INFO.distro_name
-ln_addition_auto_restart = "Automatisch neustarten"
+ln_add_import_wifi = "Meine WLAN-Netzwerke nach %s exportieren" % APP_INFO.distro_name
+ln_add_auto_restart = "Automatisch neustarten"
 ln_show_advanced = "Erweiterte Einstellungen anzeigen"
-ln_advanced_torrent = "Torrent zum Download verwenden"
+ln_adv_torrent = "Torrent zum Download verwenden"
 
 ln_old_download_detected = "Nicht abgeschlossene Installation erkannt"
 ln_old_download_detected_text = "Eine nicht abgeschlossene Installation erkannt, zuvor heruntergeladene Dateien verwenden? " \

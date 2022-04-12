@@ -38,10 +38,10 @@ ln_windows_options = ("Install %s alongside Windows" % APP_INFO.distro_name,
 ln_windows_option1_disabled = "%s (not enough space)" % ln_windows_options[0]
 
 ln_verify_question = "This is what is going to be done. Click %s once ready" % ln_btn_start
-ln_addition_import_wifi = "Export my Wi-Fi networks to %s" % APP_INFO.distro_name
-ln_addition_auto_restart = "Restart automatically"
+ln_add_import_wifi = "Export my Wi-Fi networks to %s" % APP_INFO.distro_name
+ln_add_auto_restart = "Restart automatically"
 ln_show_advanced = "Show advanced settings"
-ln_advanced_torrent = "Download using torrent"
+ln_adv_torrent = "Download using torrent"
 
 ln_old_download_detected = "Unfinished installation detected"
 ln_old_download_detected_text = "An unfinished installation detected, use previously downloaded files? " \
