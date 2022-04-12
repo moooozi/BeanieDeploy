@@ -22,7 +22,7 @@ app.resizable(False, False)
 app.option_add('*Font', 'Ariel 11')
 #   STYLE     /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 style = ttk.Style(app)
-app.tk.call('source', current_dir + '/azure dark/azure dark.tcl')
+app.tk.call('source', current_dir + '/theme/azure-dark.tcl')
 style.theme_use('azure')
 style.configure("Accentbutton", foreground='white')
 style.configure("Togglebutton", foreground='white')
@@ -58,7 +58,7 @@ lang_list.set('English')
 lang_current = (None, None)
 
 
-def rebuild_container():
+def build_container():
     """Used to build or rebuild the main frames after language change to a language with different direction
 (see function right_to_left_lang)"""
     container.pack(side="top", fill="both", expand=True)
@@ -86,7 +86,7 @@ def change_lang(lang):
     ln = importlib.import_module('.' + lang_new[0], 'translations')
     if lang_current[1] != lang_new[1]:
         directions_var = right_to_left_lang(lang_new[1])
-        rebuild_container()
+        build_container()
     lang_current = lang_new
 
 
@@ -306,15 +306,13 @@ def main():
             create_dir(download_path)
             aria2_location = current_dir + '\\resources\\aria2c.exe'
             if sel_vars[4].get():
-                args = (aria2_location, APP_INFO.url_torrent, download_path, 1, queue1,)
                 # if torrent is selected
+                args = (aria2_location, APP_INFO.url_torrent, download_path, 1, queue1,)
             else:
-                args = (aria2_location, APP_INFO.url_direct_dl, download_path, 0, queue1,)
                 # if torrent is not selected (direct download)
+                args = (aria2_location, APP_INFO.url_direct_dl, download_path, 0, queue1,)
             Process(target=download_with_aria2, args=args).start()
             installer_status = 1
-
-
 
         if installer_status == 1:
             while True:
@@ -412,9 +410,8 @@ def main():
             app.destroy()
 
     change_lang('English')
-    rebuild_container()
+    build_container()
     page_check()
-    #print(rename_file(download_path, '*.iso', downloaded_iso_name))
     app.mainloop()
 
 

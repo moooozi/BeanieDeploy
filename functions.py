@@ -272,18 +272,19 @@ def restart_windows():
 
 
 def add_boot_entry(boot_efi_file_path, boot_drive_letter, queue):
-    arg1 = r'(bcdedit /copy {bootmgr} /d "TmpInstallMedia")'
-    bootguid = str(subprocess.run([r'powershell.exe', arg1], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
-
-    arg2 = """'{' + (""" + bootguid + """-split '[{}]')[1] + '}'"""
-    bootguid = str(subprocess.run([r'powershell.exe', arg2], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
-
-    arg3 = r'bcdedit /set ' + bootguid + ' path ' + boot_efi_file_path + ''
-    subprocess.run([r'powershell.exe', arg3], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    arg4 = r'bcdedit /set ' + bootguid + ' device partition=' + boot_drive_letter + ':'
-    subprocess.run([r'powershell.exe', arg4], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    arg5 = r'bcdedit /set {fwbootmgr} displayorder ' + bootguid + ' /addfirst'
-    subprocess.run([r'powershell.exe', arg5], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    arg = r'bcdedit /copy "{bootmgr}" /d "LinuxInstallMedia"'
+    bootguid = str(subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+    bootguid = bootguid[bootguid.index('{'):bootguid.index('}') + 1]
+    arg = r'bcdedit /set  "' + bootguid + '" path ' + boot_efi_file_path + ''
+    out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    print(out)
+    arg = r'bcdedit /set "' + bootguid + '" device partition=' + boot_drive_letter + ':'
+    out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    print(out)
+    arg = r'bcdedit /set "{fwbootmgr}" displayorder "' + bootguid + '" /addfirst'
+    out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    print(out)
     if True:
         queue.put(1)
 
