@@ -24,13 +24,13 @@ ln_error_bitlocker_0 = "لمحرك أقراص النظام. لا يمكن ضما
 ln_error_bitlocker_9 = ".Bitlockerفشل التحقق مما إذا كان محرك أقراص النظام ممكّنًا لـ"
 
 ln_install_question = "؟%s كيف تريد تثبيت" % APP_INFO.distro_name
-
-ln_install_options = ["KDE تثبيت سريع مع سطح مكتب",
-                      "GNOME التثبيت السريع مع سطح مكتب",
-                      "متقدم: دعني أقوم بإختيار تطبيقاتي لاحقًا"]
+ln_install_options = ("(موصى به)(%s سطح المكتب) %sتثبيت التلقائي ل" % (APP_INFO.distro_flavors_de[0], APP_INFO.distro_flavors_names[0]),
+                       "(%s سطح المكتب) %sتثبيت التلقائي ل" % (APP_INFO.distro_flavors_de[1], APP_INFO.distro_flavors_names[1]),
+                       "واختر الحزم لاحقًا net-install متقدم: استخدم ")
 ln_install_help = "ساعدني في اتخاذ القرار"
 
 ln_windows_question = "وبياناتك؟ Windows حسنًا , ماذا عن "
+
 ln_windows_options = ["Windows بجانب %s تثبيت" % APP_INFO.distro_name,
                       " %s وترحيل مكتبتي (الموسيقى والصور ومقاطع الفيديو) إلى  Windows إزالة" % APP_INFO.distro_name,
                       " %s وجميع البيانات وابدأ من جديد باستخدام Windows إزالة" % APP_INFO.distro_name,

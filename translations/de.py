@@ -16,8 +16,8 @@ ln_error_uefi_0 = "Ihr System unterstützt (oder verwendet) UEFI-Boot nicht."
 ln_error_uefi_9 = "UEFI-Boot-Unterstützung konnte nicht verifiziert werden."
 ln_error_totalram_0 = "Ihr System hat nicht genügend RAM-Kapazität."
 ln_error_totalram_9 = "Verfügbare RAM-Kapazität konnte nicht geprüft werden."
-ln_error_space_0 = "Nicht genügend Speicherplatz auf Ihrem Systemlaufwerk. Geben Sie Speicherplatz frei und versuchen Sie es erneut."
-ln_error_space_9 = "Der verfügbare Speicherplatz auf Ihrem Systemlaufwerk konnte nicht überprüft werden."
+ln_error_space_0 = "Nicht genügend Speicherplatz auf dem Systemlaufwerk."
+ln_error_space_9 = "Der verfügbare Speicherplatz auf dem Systemlaufwerk konnte nicht überprüft werden."
 ln_error_resizable_0 = "Die Größenänderung des Systemlaufwerks konnte nicht überprüft werden."
 ln_error_resizable_9 = "Nicht genug Platz zum Verkleinern auf dem Systemlaufwerk."
 ln_error_bitlocker_0 = "Fehler beim Prüfen, ob auf dem Systemlaufwerk Bitlocker aktiviert ist."
@@ -25,16 +25,18 @@ ln_error_bitlocker_9 = "Auf dem Systemlaufwerk ist Bitlocker aktiviert. Kompatib
 
 ln_install_question = "Wie möchten Sie %s installieren?" % APP_INFO.distro_name
 
-ln_install_options = ["Schnellinstallation mit KDE-Desktop",
-                      "Schnellinstallation mit GNOME Desktop",
-                      "Erweitert: Lassen Sie mich meine Apps später auswählen"]
+ln_install_options = ("%s automatisch installieren (%s Desktop)"
+                      % (APP_INFO.distro_flavors_names[0], APP_INFO.distro_flavors_de[0]),
+                      "%s automatisch installieren (%s Desktop)"
+                      % (APP_INFO.distro_flavors_names[1], APP_INFO.distro_flavors_de[1]),
+                      "Erweitert: Net-install verwenden & Pakete später auswählen")
 ln_install_help = "Hilfe mir zu entscheiden"
 
 ln_windows_question = "Okay! Was soll ich mit Windows und Ihren Datein tun?"
-ln_windows_options = ["%s neben Windows installieren" % APP_INFO.distro_name,
+ln_windows_options = ("%s neben Windows installieren" % APP_INFO.distro_name,
                       "Windows entfernen und meine Bibliothek (Musik, Fotos, Videos) nach %s migrieren" % APP_INFO.distro_name,
                       "Lösche Windows und alle meine Daten und starte neu mit %s" % APP_INFO.distro_name,
-                      "Erweitert: Nichts tun und mich später partitionieren lassen"]
+                      "Erweitert: Nichts tun und mich später partitionieren lassen")
 ln_windows_option1_disabled = "%s (nicht genug Speicherplatz)" % ln_windows_options[1]
 
 ln_verify_question = "Das wird getan. Klicken Sie auf %s, sobald Sie bereit sind." % ln_btn_start

@@ -25,9 +25,9 @@ ln_error_bitlocker_9 = "Failed to verify system drive bitlocker status."
 
 ln_install_question = "How do you want to install %s?" % APP_INFO.distro_name
 
-ln_install_options = ("Quick Install with KDE Desktop",
-                      "Quick Install with GNOME Desktop",
-                      "Advanced: Let me select my packages later")
+ln_install_options = ("Auto Install %s (%s Desktop) (recommended)" % (APP_INFO.distro_flavors_names[0],APP_INFO.distro_flavors_de[0]),
+                      "Auto Install %s (%s Desktop)" % (APP_INFO.distro_flavors_names[1],APP_INFO.distro_flavors_de[1]),
+                      "Advanced: Use net-install & choose packages later")
 ln_install_help = "Help me decide"
 
 ln_windows_question = "Okay! what about Windows and your files?"
