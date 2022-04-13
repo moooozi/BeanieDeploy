@@ -8,6 +8,12 @@ ln_btn_restart_now = "Jetzt neustarten"
 ln_btn_restart_later = "Später neustarten"
 
 ln_check_running = "Systemkompatibilität wird überprüft. Bitte warten..."
+ln_check_ram = "Wird überprüft: Verfügbare RAM-Kapazität"
+ln_check_uefi = "Wird überprüft: UEFI-Konformität"
+ln_check_space = "Wird überprüft: Verfügbaren Speicherplatz"
+ln_check_resizable = "Wird überprüft: Veränderbarkeit des Systemlaufwerks"
+ln_check_bitlocker = "Wird überprüft: den Bitlocker-Status des Systemlaufwerks"
+
 ln_install_running = "Installieren..."
 
 ln_error_title = "%s kann auf Ihrem System nicht ausgeführt werden" % APP_INFO.SW_NAME
@@ -31,6 +37,9 @@ ln_install_options = ("%s automatisch installieren (%s Desktop)"
                       % (APP_INFO.distro_flavors_names[1], APP_INFO.distro_flavors_de[1]),
                       "Erweitert: Net-install verwenden & Pakete später auswählen")
 ln_install_help = "Hilfe mir zu entscheiden"
+
+ln_adv_confirm = "Erweiterte Option ausgewählt..."
+ln_adv_confirm_text = "Ich habe eine erweiterte Option ausgewählt und weiß, was ich tue"
 
 ln_windows_question = "Okay! Was soll ich mit Windows und Ihren Datein tun?"
 ln_windows_options = ("%s neben Windows installieren" % APP_INFO.distro_name,

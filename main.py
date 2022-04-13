@@ -45,9 +45,9 @@ queue1 = Queue()
 compatibility_results = {}
 compatibility_check_status = 0
 installer_status = 0
-download_path = get_user_home_dir() + "\\win2linux_tmpdir"
-install_iso_name = "install_media.iso"
-install_iso_path = download_path + "\\" + install_iso_name
+download_path = ''
+install_iso_name = ''
+install_iso_path = ''
 mount_iso_letter = ''
 #   MULTI-LINGUAL /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 lang_var = tk.StringVar()
@@ -106,10 +106,13 @@ def main():
         # *************************************************************************************************************
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_check_running, font=MEDIUMFONT)
         progressbar_check = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='indeterminate')
+        job_var = tk.StringVar()
+        current_job = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], textvariable=job_var, font=SMALLFONT)
 
         title.pack(pady=35, anchor=di_var['w'])
         progressbar_check.pack(expand=True)
         progressbar_check.start(10)
+        current_job.pack(pady=5, anchor=di_var['w'])
         # Request elevation (admin) if not running as admin
         if not ctypes.windll.shell32.IsUserAnAdmin():
             app.update()
@@ -117,22 +120,38 @@ def main():
             quit()
         global compatibility_results, compatibility_check_status
         # compatibility_results = {'uefi': 0, 'ram': 0, 'space': 0, 'resizable': 0, 'bitlocker': 0}
-        compatibility_results = {'uefi': 1, 'ram': 1, 'space': 2, 'resizable': 1, 'bitlocker': 1}
+        # compatibility_results = {'uefi': 1, 'ram': 1, 'space': 2, 'resizable': 1, 'bitlocker': 1}
         if not compatibility_results:
             if not compatibility_check_status:
                 Process(target=compatibility_test,
                         args=(APP_INFO.required_installer_space, APP_INFO.required_ram, queue1,)).start()
                 compatibility_check_status = 1
             if compatibility_check_status == 1:
-                while not queue1.qsize():
-                    app.after(10, app.update())
-                compatibility_results = queue1.get()
-                compatibility_check_status = 2
+                while True:
+                    while not queue1.qsize(): app.after(10, app.update())
+                    queue_out = queue1.get()
+                    if queue_out == 'ram': job_var.set(ln.ln_check_ram)
+                    elif queue_out == 'uefi': job_var.set(ln.ln_check_uefi)
+                    elif queue_out == 'space': job_var.set(ln.ln_check_space)
+                    elif queue_out == 'resizable': job_var.set(ln.ln_check_resizable)
+                    elif queue_out == 'bitlocker': job_var.set(ln.ln_check_bitlocker)
+                    else:
+                        compatibility_results = queue_out
+                        compatibility_check_status = 2
+                        break
 
         btn_quit = ttk.Button(middle_frame, text=ln.ln_btn_quit, command=lambda: app.destroy())
 
-        if compatibility_results['uefi'] == 1 and compatibility_results['ram'] == 1 and compatibility_results[
-            'space'] in (1, 2) and compatibility_results['resizable'] == 1 and compatibility_results['bitlocker'] == 1:
+        if compatibility_results['uefi'] == 1 \
+                and compatibility_results['ram'] == 1 \
+                and compatibility_results['space'] in (1, 2) \
+                and compatibility_results['resizable'] == 1 \
+                and compatibility_results['bitlocker'] == 1:
+
+            global download_path, install_iso_name, install_iso_path
+            download_path = get_user_home_dir() + "\\win2linux_tmpdir"
+            install_iso_name = 'install_media.iso'
+            install_iso_path = download_path + "\\" + install_iso_name
             page_1(compatibility_results['space'])
         else:
             title.pack_forget()
@@ -187,7 +206,7 @@ def main():
 
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_install_question, font=MEDIUMFONT)
         btn_next = ttk.Button(middle_frame, text=ln.ln_btn_next, style="Accentbutton",
-                              command=lambda: page_2(space_check_results))
+                              command=lambda: validate_input())
 
         r1_install = ttk.Radiobutton(middle_frame, text=ln.ln_install_options[0], variable=sel_vars[0], value=0)
         r2_install = ttk.Radiobutton(middle_frame, text=ln.ln_install_options[1], variable=sel_vars[0], value=1)
@@ -198,6 +217,16 @@ def main():
         r2_install.pack(anchor=di_var['w'], ipady=5)
         r3_install.pack(anchor=di_var['w'], ipady=5)
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
+
+        def validate_input():
+            if sel_vars[0].get() == 2:
+                question = messagebox.askyesno(ln.ln_adv_confirm, ln.ln_adv_confirm_text)
+                if question:
+                    page_2(space_check_results)
+                else:
+                    sel_vars[0].set(0)
+                    return
+            page_2(space_check_results)
 
     # page_2
     def page_2(space_check_results):
@@ -222,6 +251,12 @@ def main():
         r2_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[1], variable=sel_vars[1], value=1)
         r3_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[2], variable=sel_vars[1], value=2)
         r4_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[3], variable=sel_vars[1], value=3)
+
+        if sel_vars[0].get() == 2:
+            r1_windows['state'] = 'disabled'
+            r2_windows['state'] = 'disabled'
+            r3_windows['state'] = 'disabled'
+            sel_vars[1].set(3)
 
         title.pack(pady=35, anchor=di_var['w'])
         r1_windows.pack(anchor=di_var['w'], ipady=5)
@@ -361,7 +396,7 @@ def main():
         if installer_status == 6:  # step 4: adding boot entry
             while queue1.qsize(): queue1.get()  # to empty the queue
             job_var.set(ln.ln_job_adding_tmp_boot_entry)
-            progressbar_install['value'] = 99
+            progressbar_install['value'] = 98
             Process(target=add_boot_entry, args=(APP_INFO.efi_file_path, tmp_part_letter, queue1,)).start()
             installer_status = 7
         if installer_status == 7:  # while adding boot entry is ongoing...
@@ -370,6 +405,7 @@ def main():
             if queue1.get() == 1:
                 installer_status = 8
         if installer_status == 8:  # step 5: clean up iso and other downloaded files since install is complete
+            unmount_iso(install_iso_path)
             cleanup_remove_folder(download_path)
             installer_status = 9
         if installer_status == 9:  # step 6: redirect to next page
@@ -407,10 +443,10 @@ def main():
             restart_windows()
             app.destroy()
 
-    # if not ctypes.windll.shell32.IsUserAnAdmin():
-    #     app.update()
-    #     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
-    #     quit()
+    #if not ctypes.windll.shell32.IsUserAnAdmin():
+    #    app.update()
+    #    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+    #    quit()
     #add_boot_entry(APP_INFO.efi_file_path, 'G', queue1)
     #relabel_volume('C', 'Windows OS')
     #print(get_wifi_profiles())

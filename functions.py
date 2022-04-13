@@ -9,34 +9,36 @@ def open_url(url):
 
 def compatibility_test(required_space_min, required_ram, queue):
 
-    required_space_dualboot = required_space_min + 20 * 1024 * 1024 * 1024
+    required_space_dualboot = required_space_min + gigabyte(40)
 
     def check_uefi():
         return subprocess.run([r'powershell.exe', r'$env:firmware_type'], stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT, shell=True)
+                              stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
 
     def check_totalram():
         return subprocess.run([r'powershell.exe',
                                r'(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property capacity -Sum).sum /1gb'],
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
 
     def check_space():
         return subprocess.run([r'powershell.exe',
                                r'(Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).SizeRemaining'],
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
 
     def check_resizable():
         return subprocess.run([r'powershell.exe',
                                r'((Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).Size - (Get-PartitionSupportedSize -DriveLetter $env:SystemDrive.Substring(0, 1)).SizeMin)'],
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
 
     def check_bitlocker_status():
         return subprocess.run(
             [r'powershell.exe', r'(Get-BitLockerVolume -MountPoint $env:SystemDrive).EncryptionPercentage'],
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT, shell=True)
+            stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
 
-    totalram = int(str(check_totalram().stdout)[2:-5])
+    # check starting...
+    queue.put('ram')
+    totalram = int(check_totalram().stdout)
     if check_totalram().returncode != 0:
         result_totalram_check = 9
     elif totalram >= required_ram:
@@ -45,7 +47,7 @@ def compatibility_test(required_space_min, required_ram, queue):
         result_totalram_check = 0
     if check_uefi().returncode != 0:
         result_uefi_check = 9
-    elif b'uefi' in check_uefi().stdout.lower():
+    elif 'uefi' in check_uefi().stdout.lower():
         result_uefi_check = 1
     else:
         result_uefi_check = 0
@@ -53,29 +55,31 @@ def compatibility_test(required_space_min, required_ram, queue):
     if check_space().returncode != 0:
         result_space_check = 9
 
-    space_available = int(str(check_space().stdout)[2:-5])
+    queue.put('space')
+    space_available = int(check_space().stdout)
 
     if space_available > required_space_dualboot:
         result_space_check = 2
-    elif space_available > required_space_min:
+    elif space_available > required_space_min + gigabyte(3):
         result_space_check = 1
     else:
         result_space_check = 0
 
     if result_space_check in (1, 2):
-        print(check_resizable())
+        queue.put('resizable')
         if check_resizable().returncode != 0:
             result_resizable_check = 9
-        elif int(str(check_resizable().stdout)[2:-5]) > required_space_min:
+        elif int(check_resizable().stdout) > required_space_min + gigabyte(1):
             result_resizable_check = 1
         else:
             result_resizable_check = 0
     else:
         result_resizable_check = 8
 
+    queue.put('bitlocker')
     if check_bitlocker_status().returncode != 0:
         result_bitlocker_check = 9
-    elif str(check_bitlocker_status().stdout)[2:-5] == '0':
+    elif check_bitlocker_status().stdout[:1] == '0':
         result_bitlocker_check = 1
     else:
         result_bitlocker_check = 0
@@ -260,6 +264,12 @@ def mount_iso(iso_path):
         [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
+def unmount_iso(iso_path):
+    arg = '(Dismount-DiskImage -ImagePath "' + iso_path + '"'
+    return str(subprocess.run(
+        [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+
+
 def copy_files(source, destination, queue):
     arg = r'robocopy "' + source + '" "' + destination + '" /e /mt'
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
@@ -330,4 +340,6 @@ def build_autoinstall_ks_file(keymap, xlayouts, syslang, timezone, de_option):
     ks_file.write(text)
     print(text)
 
+
+def gigabyte(gb): return gb * 1073741824
 

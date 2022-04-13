@@ -8,6 +8,12 @@ ln_btn_restart_now = "Restart now"
 ln_btn_restart_later = "Restart later"
 
 ln_check_running = "Checking System compatibility. please wait..."
+ln_check_ram = "Checking available RAM capacity"
+ln_check_uefi = "Checking UEFI compliance"
+ln_check_space = "Checking available space"
+ln_check_resizable = "Checking system drive resizability"
+ln_check_bitlocker = "Checking system drive bitlocker status"
+
 ln_install_running = "Installing..."
 
 ln_error_title = "%s can't run on your system" % APP_INFO.SW_NAME
@@ -29,6 +35,9 @@ ln_install_options = ("Auto Install %s (%s Desktop) (recommended)" % (APP_INFO.d
                       "Auto Install %s (%s Desktop)" % (APP_INFO.distro_flavors_names[1],APP_INFO.distro_flavors_de[1]),
                       "Advanced: Use net-install & choose packages later")
 ln_install_help = "Help me decide"
+
+ln_adv_confirm = "Advanced option selected..."
+ln_adv_confirm_text = "I selected an advanced option and I know what I'm doing"
 
 ln_windows_question = "Okay! what about Windows and your files?"
 ln_windows_options = ("Install %s alongside Windows" % APP_INFO.distro_name,

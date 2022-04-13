@@ -8,6 +8,12 @@ ln_btn_restart_now = "إعادة التشغيل الآن"
 ln_btn_restart_later = "إعادة التشغيل لاحقًا"
 
 ln_check_running = "...جاري التحقق من توافق النظام. الرجاء الانتظار"
+ln_check_ram = "التحقق من سعة ذاكرة الوصول العشوائي المتاحة"
+ln_check_uefi = "UEFI التحقق من توافق"
+ln_check_space = "التحقق من المساحة المتوفرة"
+ln_check_resizable = "التحقق من تغيير حجم محرك أقراص النظام"
+ln_check_bitlocker = "التحقق من حالة قفل محرك أقراص النظام"
+
 ln_install_running = "...جارٍ التثبيت"
 
 ln_error_title = "على نظامك %s لا يمكن تشغيل" % APP_INFO.SW_NAME
@@ -29,6 +35,8 @@ ln_install_options = ("(موصى به)(%s سطح المكتب) %sتثبيت ال
                        "واختر الحزم لاحقًا net-install متقدم: استخدم ")
 ln_install_help = "ساعدني في اتخاذ القرار"
 
+ln_adv_confirm = "تم تحديد الخيار المتقدم ..."
+ln_adv_confirm_text = "لقد اخترت خياراً متقدماً وأعرف بالضبط ما أفعله"
 ln_windows_question = "وبياناتك؟ Windows حسنًا , ماذا عن "
 
 ln_windows_options = ["Windows بجانب %s تثبيت" % APP_INFO.distro_name,
