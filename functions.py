@@ -186,6 +186,7 @@ def rename_file(dir_path, file_name, new_name):
     arg = 'Rename-item -Path "' + dir_path + '\\' + out + '" -Newname "' + new_name + '"'
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
+
 def move_files_to_dir(source, destination):
     arg = 'Get-ChildItem -Path ' + source + ' -Recurse -File | Move-Item -Destination ' + destination
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
@@ -240,7 +241,7 @@ def new_partition(disk_number, size, drive_letter):
 
 def format_volume(drive_letter, filesystem, label):
     arg = r'Format-Volume -DriveLetter ' + drive_letter + ' -FileSystem ' + filesystem \
-          + ' -NewFileSystemLabel "' + label
+          + ' -NewFileSystemLabel "' + label + '"'
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
@@ -254,7 +255,7 @@ def create_temp_boot_partition(tmp_part_size, queue):
 
     tmp_part_letter = get_unused_drive_letter()
     new_partition(sys_disk_number, tmp_part_size, tmp_part_letter)
-    format_volume(tmp_part_letter, 'FAT32', 'install_med')
+    format_volume(tmp_part_letter, 'FAT32', 'INSTALL-MED')
     queue.put((1, tmp_part_letter))
 
 
@@ -265,7 +266,7 @@ def mount_iso(iso_path):
 
 
 def unmount_iso(iso_path):
-    arg = '(Dismount-DiskImage -ImagePath "' + iso_path + '"'
+    arg = 'Dismount-DiskImage -ImagePath "' + iso_path + '"'
     return str(subprocess.run(
         [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 

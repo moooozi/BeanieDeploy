@@ -36,7 +36,7 @@ ln_install_options = ("(موصى به)(%s سطح المكتب) %sتثبيت ال
 ln_install_help = "ساعدني في اتخاذ القرار"
 
 ln_adv_confirm = "تم تحديد الخيار المتقدم ..."
-ln_adv_confirm_text = "لقد اخترت خياراً متقدماً وأعرف بالضبط ما أفعله"
+ln_adv_confirm_text = "لقد اخترت خياراً متقدماً وأعرف تماما ما أفعله"
 ln_windows_question = "وبياناتك؟ Windows حسنًا , ماذا عن "
 
 ln_windows_options = ["Windows بجانب %s تثبيت" % APP_INFO.distro_name,
