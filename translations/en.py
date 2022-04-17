@@ -16,7 +16,7 @@ ln_check_bitlocker = "Checking system drive bitlocker status"
 
 ln_install_running = "Installing..."
 
-ln_error_title = "%s can't run on your system" % APP_INFO.SW_NAME
+ln_error_title = "%s can't run on your system"
 ln_error_list = "Following issues detected:"
 ln_error_arch_0 = "This device's CPU architecture is incompatible."
 ln_error_arch_9 = "CPU architecture could not be verified."
@@ -31,11 +31,12 @@ ln_error_resizable_9 = "Failed to check system drive resizability."
 ln_error_bitlocker_0 = "System drive has Bitlocker enabled. Compatibility cannot be ensured"
 ln_error_bitlocker_9 = "Failed to verify system drive bitlocker status."
 
-ln_install_question = "How do you want to install Linux?"
 ln_recommended = "Recommended"
 ln_adv = "Advanced"
-ln_install_auto = "Automatic and guided install"
+ln_warn_space = "Not enough space"
 
+ln_install_question = "How do you want to install Linux?"
+ln_install_auto = "Automatic and guided install"
 ln_install_help = "Help me decide"
 
 ln_adv_confirm = "Advanced option selected..."
@@ -45,13 +46,12 @@ ln_windows_question = "Okay! what about Windows and your files?"
 ln_windows_options = ('Install "%s" alongside Windows',
                       'Remove Windows & migrate my Library (Music, Photos, Videos) to "%s"',
                       'Nuke Windows and all data and start fresh with "%s"')
-ln_windows_option1_disabled = "%s (not enough space)" % ln_windows_options[0]
 
 ln_verify_question = "This is what is going to be done. Click %s once ready" % ln_btn_start
 ln_add_import_wifi = "Export my Wi-Fi networks to the new OS"
 ln_add_auto_restart = "Restart automatically"
-ln_show_advanced = "Show advanced settings"
-ln_adv_torrent = "Download using torrent"
+ln_add_torrent = "Download using torrent"
+ln_more_settings = "More settings"
 
 ln_old_download_detected = "Unfinished installation detected"
 ln_old_download_detected_text = "An unfinished installation detected, use previously downloaded files? " \
