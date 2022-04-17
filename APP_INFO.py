@@ -1,8 +1,8 @@
 SW_NAME = "Lnixify"
 
 minimal_required_space = 0.8
+dualboot_required_space = 40
 minimal_equired_ram = 4
-
 default_efi_file_path = "\EFI\BOOT\BOOTX64.EFI"
 distros = [
  # (name, version, DE, iso size, is auto-installable?, is recommended?, is advanced? , '', direct-dl-link, torrent-file-link )

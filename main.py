@@ -1,7 +1,6 @@
 # from APP_INFO import *
 import ctypes
 import importlib
-import time
 from pathlib import Path
 import sys
 import tkinter as tk
@@ -27,14 +26,17 @@ app.tk.call('source', current_dir + '/theme/azure-dark.tcl')
 style.theme_use('azure')
 style.configure("Accentbutton", foreground='white')
 style.configure("Togglebutton", foreground='white')
-LARGEFONT = ("Ariel", 20)
-MEDIUMFONT = ("Ariel", 16)
+LARGEFONT = ("Ariel", 24)
+MEDIUMFONT = ("Ariel", 15)
 SMALLFONT = ("Ariel", 12)
 VERYSMALLFONT = ("Ariel", 10)
 
 #   MAIN CONTAINER & FRAMES   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 container = tk.Frame(app)
-top_frame = tk.Frame(container, height=90, width=MAXWIDTH)
+top_bg = '#474747'
+top_frame = tk.Frame(container, height=100, width=MAXWIDTH, background=top_bg)
+main_title_text = tk.StringVar()
+top_main_title = ttk.Label(top_frame, justify='center', textvariable=main_title_text, font=LARGEFONT, background=top_bg)
 left_frame = tk.Frame(container, width=200, height=MAXHEIGHT)
 left_frame_img = tk.PhotoImage(file='resources/leftframe.png')
 left_frame_label = tk.Label(left_frame, image=left_frame_img)
@@ -52,7 +54,7 @@ install_iso_path = ''
 mount_iso_letter = ''
 #   MULTI-LINGUAL /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 lang_var = tk.StringVar()
-lang_list = ttk.Combobox(top_frame, name="language", textvariable=lang_var)
+lang_list = ttk.Combobox(top_frame, name="language", textvariable=lang_var, background=top_bg)
 lang_list['values'] = tuple(language_list.keys())
 lang_list['state'] = 'readonly'
 lang_list.set('English')
@@ -65,13 +67,14 @@ def build_container():
     container.pack(side="top", fill="both", expand=True)
     top_frame.pack(fill="x", expand=1)
     top_frame.pack_propagate(False)
+    lang_list.pack(anchor=di_var['w'], side='left', padx=30)
+    top_main_title.pack(anchor='center',side='left', padx=15)
     left_frame.pack(fill="y", side=di_var['l'])
     left_frame.pack_propagate(False)
     left_frame_label.pack(side='bottom')
     middle_frame.pack(fill="both", expand=1, padx=20, pady=20)
     middle_frame.pack_propagate(False)
 
-    lang_list.pack(anchor=di_var['nw'], padx=20, pady=20)
 
 
 def clear_frame():
@@ -107,14 +110,14 @@ def main():
         clear_frame()
         # *************************************************************************************************************
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_check_running, font=MEDIUMFONT)
-        progressbar_check = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='indeterminate')
+        progressbar_check = ttk.Progressbar(middle_frame, orient='horizontal', length=540, mode='indeterminate')
         job_var = tk.StringVar()
         current_job = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], textvariable=job_var, font=SMALLFONT)
 
         title.pack(pady=35, anchor=di_var['w'])
-        progressbar_check.pack(expand=True)
+        progressbar_check.pack(pady=25)
         progressbar_check.start(10)
-        current_job.pack(pady=5, anchor=di_var['w'])
+        current_job.pack(padx=10, anchor=di_var['w'])
         # Request elevation (admin) if not running as admin
         if not ctypes.windll.shell32.IsUserAnAdmin():
             app.update()
@@ -211,6 +214,7 @@ def main():
 
         global tk_vars
 
+        main_title_text.set('Welcome to Lnixify')
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_install_question, font=MEDIUMFONT)
         btn_next = ttk.Button(middle_frame, text=ln.ln_btn_next, style="Accentbutton",
                               command=lambda: validate_next_page())
@@ -265,25 +269,46 @@ def main():
         lang_list.bind('<<ComboboxSelected>>', change_callback)
         clear_frame()
         # *************************************************************************************************************
+        global tk_vars
 
-        title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_windows_question, font=MEDIUMFONT)
+        selected_distro = tk_vars[0].get()
+        main_title_text.set(ln.ln_install_auto)
+        title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'],
+                          text=ln.ln_windows_question % distros[selected_distro][0], font=MEDIUMFONT)
 
         btn_next = ttk.Button(middle_frame, text=ln.ln_btn_next, style="Accentbutton",
-                              command=lambda: page_verify())
+                              command=lambda: validate_next_page())
         btn_back = ttk.Button(middle_frame, text=ln.ln_btn_back,
                               command=lambda: page_1())
-        global tk_vars
-        selected = tk_vars[0].get()
-        r1_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[0] % distros[selected][0], variable=tk_vars[1], value=0)
-        r2_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[1] % distros[selected][0], variable=tk_vars[1], value=1)
-        r3_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[2] % distros[selected][0], variable=tk_vars[1], value=2)
+
+        r2_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[1] % distros[selected_distro][0], variable=tk_vars[1], value=1)
+        r3_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[2] % distros[selected_distro][0], variable=tk_vars[1], value=2)
+
 
         title.pack(pady=35, anchor=di_var['w'])
-        r1_windows.pack(anchor=di_var['w'], ipady=5)
+        if compatibility_results['space'] < gigabyte(distros[selected_distro][3] + gigabyte(dualboot_required_space)):
+            temp_frame = ttk.Frame(middle_frame)
+            temp_frame.pack(fill="x")
+            ttk.Radiobutton(temp_frame, text=ln.ln_windows_options[0] % distros[selected_distro][0],
+                            state='disabled').pack(anchor=di_var['w'], side=di_var['l'], ipady=5)
+            ttk.Label(temp_frame, wraplength=540, justify="center", text=ln.ln_warn_space,
+                      font=VERYSMALLFONT, foreground='#ff4a4a').pack(padx=20, anchor=di_var['e'], side=di_var['l'])
+            tk_vars[1].set(-1)
+
+        else:
+            ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[0] % distros[selected_distro][0],
+                            variable=tk_vars[1], value=0).pack(anchor=di_var['w'], ipady=5)
         r2_windows.pack(anchor=di_var['w'], ipady=5)
         r3_windows.pack(anchor=di_var['w'], ipady=5)
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
         btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
+
+
+
+        def validate_next_page(*args):
+            if tk_vars[1].get() == -1: return
+            return page_verify()
+
 
     def page_verify():
         # ************** Multilingual support *************************************************************************
@@ -292,8 +317,9 @@ def main():
         lang_list.bind('<<ComboboxSelected>>', change_callback)
         clear_frame()
         # *************************************************************************************************************
-
         global tk_vars
+
+        main_title_text.set('')
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_verify_question, font=MEDIUMFONT)
         btn_next = ttk.Button(middle_frame, text=ln.ln_btn_start, style="Accentbutton",
                               command=lambda: page_installing())
@@ -332,13 +358,13 @@ def main():
 
         lang_list.pack_forget()
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_install_running, font=MEDIUMFONT)
-        progressbar_install = ttk.Progressbar(middle_frame, orient='horizontal', length=500, mode='determinate')
+        progressbar_install = ttk.Progressbar(middle_frame, orient='horizontal', length=540, mode='determinate')
         job_var = tk.StringVar()
         current_job = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], textvariable=job_var, font=SMALLFONT)
 
-        title.pack(pady=25, anchor=di_var['w'])
-        progressbar_install.pack(expand=True)
-        current_job.pack(pady=5, anchor=di_var['w'])
+        title.pack(pady=35, anchor=di_var['w'])
+        progressbar_install.pack(pady=25)
+        current_job.pack(padx=10, anchor=di_var['w'])
 
         global installer_status, mount_iso_letter, tmp_part_letter
         if check_file_if_exists(install_iso_path) == 'True':

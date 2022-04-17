@@ -14,8 +14,6 @@ ln_check_space = "Checking available space"
 ln_check_resizable = "Checking system drive resizability"
 ln_check_bitlocker = "Checking system drive bitlocker status"
 
-ln_install_running = "Installing..."
-
 ln_error_title = "%s can't run on your system"
 ln_error_list = "Following issues detected:"
 ln_error_arch_0 = "This device's CPU architecture is incompatible."
@@ -35,6 +33,7 @@ ln_recommended = "Recommended"
 ln_adv = "Advanced"
 ln_warn_space = "Not enough space"
 
+ln_install_running = "Installing..."
 ln_install_question = "How do you want to install Linux?"
 ln_install_auto = "Automatic and guided install"
 ln_install_help = "Help me decide"
@@ -42,7 +41,7 @@ ln_install_help = "Help me decide"
 ln_adv_confirm = "Advanced option selected..."
 ln_adv_confirm_text = "I selected an advanced option and I know what I'm doing"
 
-ln_windows_question = "Okay! what about Windows and your files?"
+ln_windows_question = "Okay! How should %s be installed?"
 ln_windows_options = ('Install "%s" alongside Windows',
                       'Remove Windows & migrate my Library (Music, Photos, Videos) to "%s"',
                       'Nuke Windows and all data and start fresh with "%s"')
@@ -55,7 +54,7 @@ ln_more_settings = "More settings"
 
 ln_old_download_detected = "Unfinished installation detected"
 ln_old_download_detected_text = "An unfinished installation detected, use previously downloaded files? " \
-                        "(choose 'No' to clean up and start new download)"
+                                "(choose 'No' to clean up and start new download)"
 
 
 ln_job_starting_download = "Starting download..."
