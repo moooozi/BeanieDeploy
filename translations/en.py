@@ -17,7 +17,9 @@ ln_check_bitlocker = "Checking system drive bitlocker status"
 ln_install_running = "Installing..."
 
 ln_error_title = "%s can't run on your system" % APP_INFO.SW_NAME
-ln_error_list = "Following requirements are missing:"
+ln_error_list = "Following issues detected:"
+ln_error_arch_0 = "This device's CPU architecture is incompatible."
+ln_error_arch_9 = "CPU architecture could not be verified."
 ln_error_uefi_0 = "Your system does not support (or is not using) UEFI boot."
 ln_error_uefi_9 = "UEFI boot support could not be verified."
 ln_error_totalram_0 = "Your system does not have sufficient RAM capacity."
@@ -29,25 +31,24 @@ ln_error_resizable_9 = "Failed to check system drive resizability."
 ln_error_bitlocker_0 = "System drive has Bitlocker enabled. Compatibility cannot be ensured"
 ln_error_bitlocker_9 = "Failed to verify system drive bitlocker status."
 
-ln_install_question = "How do you want to install %s?" % APP_INFO.distro_name
+ln_install_question = "How do you want to install Linux?"
+ln_recommended = "Recommended"
+ln_adv = "Advanced"
+ln_install_auto = "Automatic and guided install"
 
-ln_install_options = ("Auto Install %s (%s Desktop) (recommended)" % (APP_INFO.distro_flavors_names[0],APP_INFO.distro_flavors_de[0]),
-                      "Auto Install %s (%s Desktop)" % (APP_INFO.distro_flavors_names[1],APP_INFO.distro_flavors_de[1]),
-                      "Advanced: Use net-install & choose packages later")
 ln_install_help = "Help me decide"
 
 ln_adv_confirm = "Advanced option selected..."
 ln_adv_confirm_text = "I selected an advanced option and I know what I'm doing"
 
 ln_windows_question = "Okay! what about Windows and your files?"
-ln_windows_options = ("Install %s alongside Windows" % APP_INFO.distro_name,
-                      "Remove Windows & migrate my Library (Music, Photos, Videos) to %s" % APP_INFO.distro_name,
-                      "Nuke Windows and all data and start fresh with %s" % APP_INFO.distro_name,
-                      "Advanced: Do nothing and let me partition later")
+ln_windows_options = ('Install "%s" alongside Windows',
+                      'Remove Windows & migrate my Library (Music, Photos, Videos) to "%s"',
+                      'Nuke Windows and all data and start fresh with "%s"')
 ln_windows_option1_disabled = "%s (not enough space)" % ln_windows_options[0]
 
 ln_verify_question = "This is what is going to be done. Click %s once ready" % ln_btn_start
-ln_add_import_wifi = "Export my Wi-Fi networks to %s" % APP_INFO.distro_name
+ln_add_import_wifi = "Export my Wi-Fi networks to the new OS"
 ln_add_auto_restart = "Restart automatically"
 ln_show_advanced = "Show advanced settings"
 ln_adv_torrent = "Download using torrent"

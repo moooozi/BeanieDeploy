@@ -1,18 +1,19 @@
 # from APP_INFO import *
 import ctypes
 import importlib
+import time
 from pathlib import Path
 import sys
 import tkinter as tk
 from tkinter import ttk, messagebox
 from multiprocessing import Process, Queue
-import APP_INFO
+from APP_INFO import *
 from multilingual import language_list, right_to_left_lang
 from functions import *
 
 #   DRIVER CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 app = tk.Tk()
-app.title(APP_INFO.SW_NAME)
+app.title(SW_NAME)
 MAXWIDTH = 800
 MAXHEIGHT = 500
 app.geometry(str("%sx%s" % (MAXWIDTH, MAXHEIGHT)))
@@ -39,8 +40,8 @@ left_frame_img = tk.PhotoImage(file='resources/leftframe.png')
 left_frame_label = tk.Label(left_frame, image=left_frame_img)
 middle_frame = tk.Frame(container, height=700)
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
-sel_vars = (tk.IntVar(app, 0), tk.IntVar(app, 0), tk.IntVar(app, 1), tk.IntVar(app, 0), tk.IntVar(app, 0))
-#          ( Install options , Windows Options  , import Wifi?     , auto restart?    , use torrent?    )
+vars = (tk.IntVar(app, 0), tk.IntVar(app, 0), tk.IntVar(app, 1), tk.IntVar(app, 0), tk.IntVar(app, 0), tk.IntVar(app, 1))
+#          ( Install options , Windows Options  , import Wifi?     , auto restart?    , use torrent?, auto install    )
 queue1 = Queue()
 compatibility_results = {}
 compatibility_check_status = 0
@@ -124,14 +125,15 @@ def main():
         if not compatibility_results:
             if not compatibility_check_status:
                 Process(target=compatibility_test,
-                        args=(APP_INFO.required_installer_space, APP_INFO.required_ram, queue1,)).start()
+                        args=(minimal_required_space, queue1,)).start()
                 compatibility_check_status = 1
             if compatibility_check_status == 1:
                 while True:
                     while not queue1.qsize(): app.after(10, app.update())
                     queue_out = queue1.get()
-                    if queue_out == 'ram': job_var.set(ln.ln_check_ram)
+                    if queue_out == 'arch': pass
                     elif queue_out == 'uefi': job_var.set(ln.ln_check_uefi)
+                    elif queue_out == 'ram': job_var.set(ln.ln_check_ram)
                     elif queue_out == 'space': job_var.set(ln.ln_check_space)
                     elif queue_out == 'resizable': job_var.set(ln.ln_check_resizable)
                     elif queue_out == 'bitlocker': job_var.set(ln.ln_check_bitlocker)
@@ -141,43 +143,47 @@ def main():
                         break
 
         btn_quit = ttk.Button(middle_frame, text=ln.ln_btn_quit, command=lambda: app.destroy())
-
         if compatibility_results['uefi'] == 1 \
-                and compatibility_results['ram'] == 1 \
-                and compatibility_results['space'] in (1, 2) \
-                and compatibility_results['resizable'] == 1 \
+                and compatibility_results['arch'] == 1 \
+                and compatibility_results['ram'] >= required_ram \
+                and compatibility_results['space'] >= gigabyte(minimal_required_space) \
+                and compatibility_results['resizable'] >= gigabyte(minimal_required_space) \
                 and compatibility_results['bitlocker'] == 1:
 
             global download_path, install_iso_name, install_iso_path
             download_path = get_user_home_dir() + "\\win2linux_tmpdir"
             install_iso_name = 'install_media.iso'
             install_iso_path = download_path + "\\" + install_iso_name
-            page_1(compatibility_results['space'])
+            page_1()
         else:
             title.pack_forget()
             progressbar_check.pack_forget()
             title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_error_title,
                               font=MEDIUMFONT)
             errors = []
+            if compatibility_results['arch'] == 0:
+                errors.append(ln.ln_error_arch_0)
+            if compatibility_results['arch'] == -1:
+                errors.append(ln.ln_error_arch_9)
             if compatibility_results['uefi'] == 0:
                 errors.append(ln.ln_error_uefi_0)
-            if compatibility_results['uefi'] == 9:
+            if compatibility_results['uefi'] == -1:
                 errors.append(ln.ln_error_uefi_9)
-            if compatibility_results['ram'] == 0:
+            if compatibility_results['ram'] <= required_ram:
                 errors.append(ln.ln_error_totalram_0)
-            if compatibility_results['ram'] == 9:
+            if compatibility_results['ram'] == -1:
                 errors.append(ln.ln_error_totalram_9)
-            if compatibility_results['space'] == 0:
+            if compatibility_results['space'] <= gigabyte(minimal_required_space):
                 errors.append(ln.ln_error_space_0)
-            if compatibility_results['space'] == 9:
+            if compatibility_results['space'] == -1:
                 errors.append(ln.ln_error_space_9)
-            if compatibility_results['resizable'] == 0:
+            if compatibility_results['resizable'] <= gigabyte(minimal_required_space):
                 errors.append(ln.ln_error_resizable_0)
-            if compatibility_results['resizable'] == 9:
+            if compatibility_results['resizable'] == -1:
                 errors.append(ln.ln_error_resizable_9)
             if compatibility_results['bitlocker'] == 0:
                 errors.append(ln.ln_error_bitlocker_0)
-            if compatibility_results['bitlocker'] == 9:
+            if compatibility_results['bitlocker'] == -1:
                 errors.append(ln.ln_error_bitlocker_9)
 
             errors_text_label = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'],
@@ -194,44 +200,55 @@ def main():
             btn_quit.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
 
     # page_1
-    def page_1(space_check_results):
+    def page_1():
         # ************** Multilingual support *************************************************************************
-        def page_name(): page_1(space_check_results)
+        def page_name(): page_1()
         def change_callback(*args): reload_page(lang_var.get(), page_name)
         lang_list.bind('<<ComboboxSelected>>', change_callback)
         clear_frame()
         # *************************************************************************************************************
 
-        global sel_vars
+        global vars
 
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_install_question, font=MEDIUMFONT)
         btn_next = ttk.Button(middle_frame, text=ln.ln_btn_next, style="Accentbutton",
-                              command=lambda: validate_input())
-
-        r1_install = ttk.Radiobutton(middle_frame, text=ln.ln_install_options[0], variable=sel_vars[0], value=0)
-        r2_install = ttk.Radiobutton(middle_frame, text=ln.ln_install_options[1], variable=sel_vars[0], value=1)
-        r3_install = ttk.Radiobutton(middle_frame, text=ln.ln_install_options[2], variable=sel_vars[0], value=2)
+                              command=lambda: validate_next_page())
+        c1_autoinst = ttk.Checkbutton(middle_frame, text=ln.ln_install_auto, variable=vars[5], onvalue=1, offvalue=0)
 
         title.pack(pady=35, anchor=di_var['w'])
-        r1_install.pack(anchor=di_var['w'], ipady=5)
-        r2_install.pack(anchor=di_var['w'], ipady=5)
-        r3_install.pack(anchor=di_var['w'], ipady=5)
+        for index, distro in enumerate(distros):
+            txt = ''
+            if distro[5]: txt += ln.ln_adv + ': '
+            txt += distro[0] + ' ' + distro[1]
+            if distro[4]: txt += ' (%s)' % ln.ln_recommended
+            ttk.Radiobutton(middle_frame, text=txt, variable=vars[0], value=index,
+                            command=lambda: validate_input()).pack(anchor=di_var['w'], ipady=5)
+
+        c1_autoinst.pack(anchor=di_var['w'], pady=40)
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
 
-        def validate_input():
-            if sel_vars[0].get() == 2:
+        def validate_input(*args):
+            selected = vars[0].get()
+            if distros[selected][4]:
+                c1_autoinst['state'] = 'enabled'
+            else:
+                c1_autoinst['state'] = 'disabled'
+                vars[5].set(0)
+            if distros[selected][6]:
                 question = messagebox.askyesno(ln.ln_adv_confirm, ln.ln_adv_confirm_text)
-                if question:
-                    page_2(space_check_results)
-                else:
-                    sel_vars[0].set(0)
-                    return
-            page_2(space_check_results)
+                if not question:
+                    vars[0].set(0)
+                    c1_autoinst['state'] = 'enabled'
+                    vars[5].set(1)
+
+        def validate_next_page(*args):
+            if vars[5].get(): return page_2()
+            return page_verify()
 
     # page_2
-    def page_2(space_check_results):
+    def page_2():
         # ************** Multilingual support *************************************************************************
-        def page_name(): page_2(space_check_results)
+        def page_name(): page_2()
         def change_callback(*args): reload_page(lang_var.get(), page_name)
         lang_list.bind('<<ComboboxSelected>>', change_callback)
         clear_frame()
@@ -240,56 +257,46 @@ def main():
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_windows_question, font=MEDIUMFONT)
 
         btn_next = ttk.Button(middle_frame, text=ln.ln_btn_next, style="Accentbutton",
-                              command=lambda: page_verify(space_check_results))
+                              command=lambda: page_verify())
         btn_back = ttk.Button(middle_frame, text=ln.ln_btn_back,
-                              command=lambda: page_1(space_check_results))
-        global sel_vars
-        if space_check_results == 2:
-            r1_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[0], variable=sel_vars[1], value=0)
-        else:
-            r1_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_option1_disabled, state='disabled')
-        r2_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[1], variable=sel_vars[1], value=1)
-        r3_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[2], variable=sel_vars[1], value=2)
-        r4_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[3], variable=sel_vars[1], value=3)
-
-        if sel_vars[0].get() == 2:
-            r1_windows['state'] = 'disabled'
-            r2_windows['state'] = 'disabled'
-            r3_windows['state'] = 'disabled'
-            sel_vars[1].set(3)
+                              command=lambda: page_1())
+        global vars
+        selected = vars[0].get()
+        r1_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[0] % distros[selected][0], variable=vars[1], value=0)
+        r2_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[1] % distros[selected][0], variable=vars[1], value=1)
+        r3_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[2] % distros[selected][0], variable=vars[1], value=2)
 
         title.pack(pady=35, anchor=di_var['w'])
         r1_windows.pack(anchor=di_var['w'], ipady=5)
         r2_windows.pack(anchor=di_var['w'], ipady=5)
         r3_windows.pack(anchor=di_var['w'], ipady=5)
-        r4_windows.pack(anchor=di_var['w'], ipady=5)
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
         btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
-    def page_verify(space_check_results):
+    def page_verify():
         # ************** Multilingual support *************************************************************************
-        def page_name(): page_verify(space_check_results)
+        def page_name(): page_verify()
         def change_callback(*args): reload_page(lang_var.get(), page_name)
         lang_list.bind('<<ComboboxSelected>>', change_callback)
         clear_frame()
         # *************************************************************************************************************
 
-        global sel_vars
+        global vars
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_verify_question, font=MEDIUMFONT)
         btn_next = ttk.Button(middle_frame, text=ln.ln_btn_start, style="Accentbutton",
                               command=lambda: page_installing())
         btn_back = ttk.Button(middle_frame, text=ln.ln_btn_back,
-                              command=lambda: page_2(space_check_results))
+                              command=lambda: page_2())
 
-        review_sel = 'x  ' + ln.ln_install_options[sel_vars[0].get()] + '\nx  ' + ln.ln_windows_options[sel_vars[1].get()]
+        review_sel = 'x  ' + ln.ln_install_options[vars[0].get()] + '\nx  ' + ln.ln_windows_options[vars[1].get()]
         review_text = tk.Text(middle_frame, spacing1=1,height=6)
         review_text.insert(1.0, review_sel)
         review_text.configure(state='disabled')
 
         # additions and advanced options (checkboxes)
-        c1_add = ttk.Checkbutton(middle_frame, text=ln.ln_add_import_wifi, variable=sel_vars[2], onvalue=1, offvalue=0)
-        c2_add = ttk.Checkbutton(middle_frame, text=ln.ln_add_auto_restart, variable=sel_vars[3], onvalue=1, offvalue=0)
-        c3_adv = ttk.Checkbutton(middle_frame, text=ln.ln_adv_torrent, variable=sel_vars[4], onvalue=1, offvalue=0)
+        c1_add = ttk.Checkbutton(middle_frame, text=ln.ln_add_import_wifi, variable=vars[2], onvalue=1, offvalue=0)
+        c2_add = ttk.Checkbutton(middle_frame, text=ln.ln_add_auto_restart, variable=vars[3], onvalue=1, offvalue=0)
+        c3_adv = ttk.Checkbutton(middle_frame, text=ln.ln_adv_torrent, variable=vars[4], onvalue=1, offvalue=0)
         advanced_btn = ttk.Label(middle_frame, wraplength=540, justify="center",
                                  text=ln.ln_show_advanced, font=VERYSMALLFONT,foreground='#3aa9ff')
 
@@ -338,12 +345,12 @@ def main():
             app.update()
             create_dir(download_path)
             aria2_location = current_dir + '\\resources\\aria2c.exe'
-            if sel_vars[4].get():
+            if vars[4].get():
                 # if torrent is selected
-                args = (aria2_location, APP_INFO.url_torrent, download_path, 1, queue1,)
+                args = (aria2_location, distros[vars[0].get()][9], download_path, 1, queue1,)
             else:
                 # if torrent is not selected (direct download)
-                args = (aria2_location, APP_INFO.url_direct_dl, download_path, 0, queue1,)
+                args = (aria2_location, distros[vars[0].get()][8], download_path, 0, queue1,)
             Process(target=download_with_aria2, args=args).start()
             installer_status = 1
 
@@ -367,7 +374,7 @@ def main():
 
         if installer_status == 2:  # step 2: create temporary boot partition
             while queue1.qsize(): queue1.get()  # to empty the queue
-            Process(target=create_temp_boot_partition, args=(APP_INFO.required_installer_space, queue1,)).start()
+            Process(target=create_temp_boot_partition, args=(distros[distros[vars[0].get()][3]], queue1,)).start()
             job_var.set(ln.ln_job_creating_tmp_part)
             progressbar_install['value'] = 90
             installer_status = 3
@@ -397,7 +404,7 @@ def main():
             while queue1.qsize(): queue1.get()  # to empty the queue
             job_var.set(ln.ln_job_adding_tmp_boot_entry)
             progressbar_install['value'] = 98
-            Process(target=add_boot_entry, args=(APP_INFO.efi_file_path, tmp_part_letter, queue1,)).start()
+            Process(target=add_boot_entry, args=(default_efi_file_path, tmp_part_letter, queue1,)).start()
             installer_status = 7
         if installer_status == 7:  # while adding boot entry is ongoing...
             while not queue1.qsize():
@@ -434,7 +441,7 @@ def main():
         button1.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
         button2.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
-        if sel_vars[3].get():
+        if vars[3].get():
             time_left = 10
             while time_left:
                 text_var.set(ln.ln_finished_text_restarting_now % (int(time_left)))

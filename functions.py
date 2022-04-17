@@ -7,9 +7,11 @@ def open_url(url):
     webbrowser.open_new_tab(url)
 
 
-def compatibility_test(required_space_min, required_ram, queue):
+def compatibility_test(required_space_min, queue):
 
-    required_space_dualboot = required_space_min + gigabyte(40)
+    def check_arch():
+        return subprocess.run([r'powershell.exe', r'$env:PROCESSOR_ARCHITECTURE'], stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
 
     def check_uefi():
         return subprocess.run([r'powershell.exe', r'$env:firmware_type'], stdout=subprocess.PIPE,
@@ -37,44 +39,44 @@ def compatibility_test(required_space_min, required_ram, queue):
             stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
 
     # check starting...
-    queue.put('ram')
-    totalram = int(check_totalram().stdout)
-    if check_totalram().returncode != 0:
-        result_totalram_check = 9
-    elif totalram >= required_ram:
-        result_totalram_check = 1
+    queue.put('arch')
+    check = check_arch()
+    if check.returncode != 0:
+        result_arch_check = -1
+    elif 'amd64' in check.stdout.lower():
+        result_arch_check = 1
     else:
-        result_totalram_check = 0
-    if check_uefi().returncode != 0:
-        result_uefi_check = 9
-    elif 'uefi' in check_uefi().stdout.lower():
+        result_arch_check = 0
+    queue.put('uefi')
+    check = check_uefi()
+    if check.returncode != 0:
+        result_uefi_check = -1
+    elif 'uefi' in check.stdout.lower():
         result_uefi_check = 1
     else:
         result_uefi_check = 0
-
-    if check_space().returncode != 0:
-        result_space_check = 9
-
+    queue.put('ram')
+    check = check_totalram()
+    if check.returncode != 0:
+        result_totalram_check = -1
+    else:
+        result_totalram_check = int(check.stdout.strip())
     queue.put('space')
-    space_available = int(check_space().stdout)
-
-    if space_available > required_space_dualboot:
-        result_space_check = 2
-    elif space_available > required_space_min + gigabyte(3):
-        result_space_check = 1
+    check = check_space()
+    if check.returncode != 0:
+        result_space_check = -1
     else:
-        result_space_check = 0
+        result_space_check = int(check.stdout.strip())
 
-    if result_space_check in (1, 2):
+    if result_space_check > required_space_min:
         queue.put('resizable')
-        if check_resizable().returncode != 0:
-            result_resizable_check = 9
-        elif int(check_resizable().stdout) > required_space_min + gigabyte(1):
-            result_resizable_check = 1
+        check = check_resizable()
+        if check.returncode != 0:
+            result_resizable_check = -1
         else:
-            result_resizable_check = 0
+            result_resizable_check = int(check.stdout.strip())
     else:
-        result_resizable_check = 8
+        result_resizable_check = -2
 
     queue.put('bitlocker')
     if check_bitlocker_status().returncode != 0:
@@ -88,7 +90,8 @@ def compatibility_test(required_space_min, required_ram, queue):
                      'ram': result_totalram_check,
                      'space': result_space_check,
                      'resizable': result_resizable_check,
-                     'bitlocker': result_bitlocker_check}
+                     'bitlocker': result_bitlocker_check,
+                     'arch': result_arch_check}
     queue.put(check_results)
 
 
@@ -250,7 +253,7 @@ def create_temp_boot_partition(tmp_part_size, queue):
     sys_drive_letter = str(get_sys_drive_letter().stdout)[2:-5]
     relabel_volume(sys_drive_letter, 'Windows OS')
     sys_disk_number = str(get_disk_number(sys_drive_letter).stdout)[2:-5]
-    sys_drive_new_size = str(get_drive_size_after_resize(sys_drive_letter, tmp_part_size + 1100000).stdout)[2:-5]
+    sys_drive_new_size = str(get_drive_size_after_resize(sys_drive_letter, gigabyte(tmp_part_size) + 1100000).stdout)[2:-5]
     resize_partition(sys_drive_letter, sys_drive_new_size)
 
     tmp_part_letter = get_unused_drive_letter()
