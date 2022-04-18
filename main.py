@@ -284,9 +284,8 @@ def main():
         r2_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[1] % distros[selected_distro][0], variable=tk_vars[1], value=1)
         r3_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[2] % distros[selected_distro][0], variable=tk_vars[1], value=2)
 
-
         title.pack(pady=35, anchor=di_var['w'])
-        if compatibility_results['space'] < gigabyte(distros[selected_distro][3] + gigabyte(dualboot_required_space)):
+        if compatibility_results['space'] < gigabyte(distros[selected_distro][3] + dualboot_required_space):
             temp_frame = ttk.Frame(middle_frame)
             temp_frame.pack(fill="x")
             ttk.Radiobutton(temp_frame, text=ln.ln_windows_options[0] % distros[selected_distro][0],
@@ -302,8 +301,6 @@ def main():
         r3_windows.pack(anchor=di_var['w'], ipady=5)
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
         btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
-
-
 
         def validate_next_page(*args):
             if tk_vars[1].get() == -1: return
