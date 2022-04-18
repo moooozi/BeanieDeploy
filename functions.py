@@ -199,7 +199,7 @@ def move_files_to_dir(source, destination):
 
 def get_sys_drive_letter():
     return subprocess.run([r'powershell.exe', r'$env:SystemDrive.Substring(0, 1)'], stdout=subprocess.PIPE,
-                          stderr=subprocess.STDOUT, shell=True)
+                          stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout.strip()
 
 
 def get_disk_number(drive_letter):
@@ -250,7 +250,7 @@ def format_volume(drive_letter, filesystem, label):
 
 def create_temp_boot_partition(tmp_part_size, queue):
     print('create_temp_boot_partition')
-    sys_drive_letter = str(get_sys_drive_letter().stdout)[2:-5]
+    sys_drive_letter = get_sys_drive_letter()
     relabel_volume(sys_drive_letter, 'Windows OS')
     sys_disk_number = str(get_disk_number(sys_drive_letter).stdout)[2:-5]
     sys_drive_new_size = str(get_drive_size_after_resize(sys_drive_letter, gigabyte(tmp_part_size) + 1100000).stdout)[2:-5]
@@ -279,6 +279,11 @@ def copy_files(source, destination, queue):
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     if True:
         queue.put(1)
+
+
+def copy_one_file(source, destination):
+    arg = r'Copy-Item "' + source + '" -Destination "' + destination + '"'
+    subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
 def cleanup_remove_folder(location):

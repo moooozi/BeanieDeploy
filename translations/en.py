@@ -3,7 +3,7 @@ import APP_INFO
 ln_btn_next = "Next"
 ln_btn_back = "Back"
 ln_btn_quit = "Quit"
-ln_btn_start = "Start"
+ln_btn_install = "Install now"
 ln_btn_restart_now = "Restart now"
 ln_btn_restart_later = "Restart later"
 
@@ -37,7 +37,7 @@ ln_init_download = "Initial download: %sGB"
 
 ln_install_running = "Installing..."
 ln_install_question = "How do you want to install Linux?"
-ln_install_auto = "Automatic and guided install"
+ln_install_auto = "Quick & guided install"
 ln_install_help = "Help me decide"
 
 ln_adv_confirm = "Advanced option selected..."
@@ -48,7 +48,17 @@ ln_windows_options = ('Install "%s" alongside Windows',
                       'Remove Windows & migrate my Library (Music, Photos, Videos) to "%s"',
                       'Nuke Windows and all data and start fresh with "%s"')
 
-ln_verify_question = "This is what is going to be done. Click %s once ready" % ln_btn_start
+ln_verify_question = "This is what is going to happen. Click %s once ready" % ln_btn_install
+ln_verify_text = \
+    (
+     "%s will be downloaded",
+     (" and booted after restart to begin installation", " and installed"),
+     (" alongside Windows", " replacing Windows", ", and will remove everything, including Windows"),
+     ("None of your files will be deleted or changed in any way",
+      "Everything on system drive (%s:\\) will be removed, this usually includes your Library folders (Downloads, Videos, Music, Pictures, etc)",
+      "Everything on this device will be removed ")
+    )
+
 ln_add_import_wifi = "Export my Wi-Fi networks to the new OS"
 ln_add_auto_restart = "Restart automatically"
 ln_add_torrent = "Download using torrent"
