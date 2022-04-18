@@ -378,11 +378,11 @@ def main():
             app.update()
             create_dir(download_path)
             aria2_location = current_dir + '\\resources\\aria2c.exe'
-            if tk_vars[4].get():
-                # if torrent is selected
+            if tk_vars[4].get() and distros[tk_vars[0].get()][9]:
+                # if torrent is selected and a torrent link is available
                 args = (aria2_location, distros[tk_vars[0].get()][9], download_path, 1, queue1,)
             else:
-                # if torrent is not selected (direct download)
+                # if torrent is not selected or not available (direct download)
                 args = (aria2_location, distros[tk_vars[0].get()][8], download_path, 0, queue1,)
             Process(target=download_with_aria2, args=args).start()
             installer_status = 1
