@@ -32,6 +32,8 @@ ln_error_bitlocker_9 = "Failed to verify system drive bitlocker status."
 ln_recommended = "Recommended"
 ln_adv = "Advanced"
 ln_warn_space = "Not enough space"
+ln_total_download = "Total download: %sGB"
+ln_init_download = "Initial download: %sGB"
 
 ln_install_running = "Installing..."
 ln_install_question = "How do you want to install Linux?"

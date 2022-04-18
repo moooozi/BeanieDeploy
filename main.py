@@ -72,7 +72,7 @@ def build_container():
     left_frame.pack(fill="y", side=di_var['l'])
     left_frame.pack_propagate(False)
     left_frame_label.pack(side='bottom')
-    middle_frame.pack(fill="both", expand=1, padx=20, pady=20)
+    middle_frame.pack(fill="both", expand=1, padx=15, pady=20)
     middle_frame.pack_propagate(False)
 
 
@@ -110,7 +110,7 @@ def main():
         clear_frame()
         # *************************************************************************************************************
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_check_running, font=MEDIUMFONT)
-        progressbar_check = ttk.Progressbar(middle_frame, orient='horizontal', length=540, mode='indeterminate')
+        progressbar_check = ttk.Progressbar(middle_frame, orient='horizontal', length=550, mode='indeterminate')
         job_var = tk.StringVar()
         current_job = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], textvariable=job_var, font=SMALLFONT)
 
@@ -228,16 +228,20 @@ def main():
             if distro[5]:
                 txt += ' (%s)' % ln.ln_recommended
                 tk_vars[0].set(index)
+
+            temp_frame = ttk.Frame(middle_frame)
+            temp_frame.pack(fill="x", pady=5)
+            radio = ttk.Radiobutton(temp_frame, text=txt, variable=tk_vars[0], value=index, command=lambda: validate_input())
+            radio.pack(anchor=di_var['w'], side=di_var['l'])
+            if distro[7]: dl_size_txt = ln.ln_init_download % distro[3]
+            else: dl_size_txt = ln.ln_total_download % distro[3]
+            ttk.Label(temp_frame, wraplength=540, justify="center", text=dl_size_txt,
+                      font=VERYSMALLFONT, foreground='#3aa9ff').pack(padx=5, anchor=di_var['e'], side=di_var['r'])
             if compatibility_results['resizable'] < gigabyte(distro[3]):
-                temp_frame = ttk.Frame(middle_frame)
-                temp_frame.pack(fill="x")
-                ttk.Radiobutton(temp_frame, text=txt, state='disabled').pack(anchor=di_var['w'], side=di_var['l'])
+                radio.configure(state='disabled')
                 ttk.Label(temp_frame, wraplength=540, justify="center", text=ln.ln_warn_space,
-                          font=VERYSMALLFONT, foreground='#ff4a4a').pack(padx=50, anchor=di_var['e'], side=di_var['r'])
+                          font=VERYSMALLFONT, foreground='#ff4a4a').pack(padx=5, anchor=di_var['e'], side=di_var['r'])
                 if distro[5]: tk_vars[0].set(-1)
-            else:
-                ttk.Radiobutton(middle_frame, text=txt, variable=tk_vars[0], value=index,
-                                command=lambda: validate_input()).pack(anchor=di_var['w'], ipady=2)
 
         c1_autoinst.pack(anchor=di_var['w'], pady=40)
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
@@ -252,7 +256,7 @@ def main():
             if distros[selected][6]:
                 question = messagebox.askyesno(ln.ln_adv_confirm, ln.ln_adv_confirm_text)
                 if not question:
-                    tk_vars[0].set(0)
+                    tk_vars[0].set(-1)
                     c1_autoinst['state'] = 'enabled'
                     tk_vars[5].set(1)
 
@@ -355,7 +359,7 @@ def main():
 
         lang_list.pack_forget()
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_install_running, font=MEDIUMFONT)
-        progressbar_install = ttk.Progressbar(middle_frame, orient='horizontal', length=540, mode='determinate')
+        progressbar_install = ttk.Progressbar(middle_frame, orient='horizontal', length=550, mode='determinate')
         job_var = tk.StringVar()
         current_job = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], textvariable=job_var, font=SMALLFONT)
 
