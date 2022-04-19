@@ -19,7 +19,7 @@ def compatibility_test(required_space_min, queue):
 
     def check_totalram():
         return subprocess.run([r'powershell.exe',
-                               r'(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property capacity -Sum).sum /1gb'],
+                               r'(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property capacity -Sum).sum'],
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
 
     def check_space():
@@ -197,6 +197,15 @@ def move_files_to_dir(source, destination):
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
+def check_hash(file_path, sha256_hash):
+    arg = r'(Get-FileHash "' + file_path + '" -Algorithm SHA256).Hash'
+    out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                         shell=True, universal_newlines=True)
+    if out.returncode != 0: return -1
+    if out.stdout.strip().upper() == sha256_hash.upper(): return 1
+    else: return 0
+
+
 def get_sys_drive_letter():
     return subprocess.run([r'powershell.exe', r'$env:SystemDrive.Substring(0, 1)'], stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout.strip()
@@ -209,7 +218,8 @@ def get_disk_number(drive_letter):
 
 def get_drive_size_after_resize(drive_letter, required_space):
     arg = r'(Get-Volume | Where DriveLetter -eq ' + drive_letter + ').Size -' + str(required_space)
-    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                          shell=True, universal_newlines=True).stdout.strip()
 
 
 def resize_partition(drive_letter, new_size):
@@ -251,9 +261,9 @@ def format_volume(drive_letter, filesystem, label):
 def create_temp_boot_partition(tmp_part_size, queue):
     print('create_temp_boot_partition')
     sys_drive_letter = get_sys_drive_letter()
-    relabel_volume(sys_drive_letter, 'Windows OS')
+    relabel_volume(sys_drive_letter, 'WindowsOS')
     sys_disk_number = str(get_disk_number(sys_drive_letter).stdout)[2:-5]
-    sys_drive_new_size = str(get_drive_size_after_resize(sys_drive_letter, gigabyte(tmp_part_size) + 1100000).stdout)[2:-5]
+    sys_drive_new_size = get_drive_size_after_resize(sys_drive_letter, tmp_part_size + 1100000)
     resize_partition(sys_drive_letter, sys_drive_new_size)
 
     tmp_part_letter = get_unused_drive_letter()
@@ -296,10 +306,12 @@ def restart_windows():
 
 
 def add_boot_entry(boot_efi_file_path, boot_drive_letter, queue):
-    arg = r'bcdedit /copy "{bootmgr}" /d "LinuxInstallMedia"'
-    bootguid = str(subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE,
-                                        stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+    arg = r'bcdedit /copy "{bootmgr}" /d "Linux Install Media"'
+    bootguid = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout.strip()
+    print(bootguid)
     bootguid = bootguid[bootguid.index('{'):bootguid.index('}') + 1]
+    print(bootguid)
     arg = r'bcdedit /set  "' + bootguid + '" path ' + boot_efi_file_path + ''
     out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     print(out)

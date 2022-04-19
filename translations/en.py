@@ -31,6 +31,7 @@ ln_error_bitlocker_9 = "Failed to verify system drive bitlocker status."
 
 ln_recommended = "Recommended"
 ln_adv = "Advanced"
+ln_net_install = "Network Install"
 ln_warn_space = "Not enough space"
 ln_total_download = "Total download: %sGB"
 ln_init_download = "Initial download: %sGB"
@@ -44,9 +45,9 @@ ln_adv_confirm = "Advanced option selected..."
 ln_adv_confirm_text = "I selected an advanced option and I know what I'm doing"
 
 ln_windows_question = "Okay! How should %s be installed?"
-ln_windows_options = ('Install "%s" alongside Windows',
-                      'Remove Windows & migrate my Library (Music, Photos, Videos) to "%s"',
-                      'Nuke Windows and all data and start fresh with "%s"')
+ln_windows_options = ('Install alongside Windows',
+                      'Remove Windows & migrate my Library (Music, Photos, Videos)',
+                      'Nuke Windows and all data and start fresh')
 
 ln_verify_question = "This is what is going to happen. Click %s once ready" % ln_btn_install
 ln_verify_text = \

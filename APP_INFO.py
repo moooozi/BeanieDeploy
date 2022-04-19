@@ -1,24 +1,33 @@
+import urllib.request
+
 SW_NAME = "Lnixify"
 
-minimal_required_space = 0.8
-dualboot_required_space = 40
-minimal_equired_ram = 4
+minimal_required_space = 0.8  # Gigabyte
+dualboot_required_space = 6450  # Gigabyte
+minimal_required_ram = 5.5  # Gigabyte
 default_efi_file_path = "\EFI\BOOT\BOOTX64.EFI"
-distros = [
- # (name, version, DE, iso size, is auto-installable?, is recommended?, is advanced? , net-install, direct-dl-link, torrent-file-link )
- # ( 0  ,    1   , 2 ,    3    ,           4         ,       5        ,        6     ,     7      ,     8         ,         9         )
- ('Fedora Silverblue', '36', 'GNOME', 2.7, True, True, False, False,
-  'https://dl.fedoraproject.org/pub/fedora/linux/development/36/Silverblue/x86_64/iso/Fedora-Silverblue-ostree-x86_64-36-20220416.n.0.iso',
-  'https://torrent.fedoraproject.org/torrents/Fedora-Silverblue-ostree-x86_64-36_Beta.torrent'),
+url = "https://speed.hetzner.de/100MB.bin"
 
- ('Fedora Kinoite', '36', 'KDE', 2.9, True, False, False, False,
-  'https://dl.fedoraproject.org/pub/fedora/linux/development/36/Kinoite/x86_64/iso/Fedora-Kinoite-ostree-x86_64-36-20220416.n.0.iso',
-  'https://torrent.fedoraproject.org/torrents/Fedora-Kinoite-ostree-x86_64-36_Beta.torrent'),
+distros = {
+    'name': ('Fedora Silverblue', 'Fedora Kinoite', 'Fedora Everything'),
+    'version': ('36', '36', '36'),
+    'de': ('GNOME', 'KDE', ''),
+    'size': [0, 0, 0],
+    'auto-installable': (True, True, False),
+    'recommended': (True, False, False),
+    'advanced': (False, False, True),
+    'netinstall': (False, False, True),
+    'dl_link':
+        (
+        'https://download.fedoraproject.org/pub/fedora/linux/releases/35/Silverblue/x86_64/iso/Fedora-Silverblue-ostree-x86_64-35-1.2.iso',
+        'https://download.fedoraproject.org/pub/fedora/linux/releases/35/Kinoite/x86_64/iso/Fedora-Kinoite-ostree-x86_64-35-1.2.iso',
+        'https://download.fedoraproject.org/pub/fedora/linux/releases/35/Everything/x86_64/iso/Fedora-Everything-netinst-x86_64-35-1.2.iso'),
+    'hash256': (),
+    'torrent': ('', '', '')
+}
 
- ('Fedora Everything', '36', 'Net-install', 0.75, False, False, True, True,
-  'https://dl.fedoraproject.org/pub/fedora/linux/development/36/Kinoite/x86_64/iso/Fedora-Kinoite-ostree-x86_64-36-20220416.n.0.iso',
-  ''),
-
-]
-required_ram = 4
-efi_file_path = "\EFI\BOOT\BOOTX64.EFI"
+# Update sizes
+def update_sizes(dists):
+    for i, distro in enumerate(dists):
+        dists[i][3] = urllib.request.urlopen(distro[8]).length
+        return dists

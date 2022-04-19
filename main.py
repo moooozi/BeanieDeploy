@@ -42,8 +42,15 @@ left_frame_img = tk.PhotoImage(file='resources/leftframe.png')
 left_frame_label = tk.Label(left_frame, image=left_frame_img)
 middle_frame = tk.Frame(container, height=700)
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
-tk_vars = (tk.IntVar(app, 0), tk.IntVar(app, -1), tk.IntVar(app, 1), tk.IntVar(app, 0), tk.IntVar(app, 0), tk.IntVar(app, 1))
-#          ( 0Install options , 1Windows Options  , 2import Wifi? , 3auto restart?   ,  4use torrent?   , 5auto install    )
+
+# Tkinter variables, the '_t' suffix means Toggle
+vDist = tk.IntVar(app, 0)
+vAutoinst_t = tk.IntVar(app, 1)
+vAutoinst_option = tk.IntVar(app, -1)
+vWifi_t = tk.IntVar(app, 1)
+vAutorestart_t = tk.IntVar(app, 0)
+vTorrent_t = tk.IntVar(app, 0)
+
 queue1 = Queue()
 compatibility_results = {}
 compatibility_check_status = 0
@@ -126,7 +133,7 @@ def main():
             quit()
         global compatibility_results, compatibility_check_status
         # compatibility_results = {'uefi': 0, 'ram': 0, 'space': 0, 'resizable': 0, 'bitlocker': 0}
-        compatibility_results = {'uefi': 1, 'ram': 32, 'space': 134064279552, 'resizable': 5853276160, 'bitlocker': 1, 'arch': 1}
+        compatibility_results = {'uefi': 1, 'ram': 34359738368, 'space': 134064279552, 'resizable': 5853276160, 'bitlocker': 1, 'arch': 1}
         if not compatibility_results:
             if not compatibility_check_status:
                 Process(target=compatibility_test,
@@ -149,7 +156,7 @@ def main():
         btn_quit = ttk.Button(middle_frame, text=ln.ln_btn_quit, command=lambda: app.destroy())
         if compatibility_results['uefi'] == 1 \
                 and compatibility_results['arch'] == 1 \
-                and compatibility_results['ram'] >= required_ram \
+                and compatibility_results['ram'] >= gigabyte(minimal_required_ram) \
                 and compatibility_results['space'] >= gigabyte(minimal_required_space) \
                 and compatibility_results['resizable'] >= gigabyte(minimal_required_space) \
                 and compatibility_results['bitlocker'] == 1:
@@ -173,15 +180,15 @@ def main():
                 errors.append(ln.ln_error_uefi_0)
             if compatibility_results['uefi'] == -1:
                 errors.append(ln.ln_error_uefi_9)
-            if compatibility_results['ram'] <= required_ram:
+            if compatibility_results['ram'] < gigabyte(minimal_required_ram):
                 errors.append(ln.ln_error_totalram_0)
             if compatibility_results['ram'] == -1:
                 errors.append(ln.ln_error_totalram_9)
-            if compatibility_results['space'] <= gigabyte(minimal_required_space):
+            if compatibility_results['space'] < gigabyte(minimal_required_space):
                 errors.append(ln.ln_error_space_0)
             if compatibility_results['space'] == -1:
                 errors.append(ln.ln_error_space_9)
-            if compatibility_results['resizable'] <= gigabyte(minimal_required_space):
+            if compatibility_results['resizable'] < gigabyte(minimal_required_space):
                 errors.append(ln.ln_error_resizable_0)
             if compatibility_results['resizable'] == -1:
                 errors.append(ln.ln_error_resizable_9)
@@ -218,51 +225,56 @@ def main():
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_install_question, font=MEDIUMFONT)
         btn_next = ttk.Button(middle_frame, text=ln.ln_btn_next, style="Accentbutton",
                               command=lambda: validate_next_page())
-        c1_autoinst = ttk.Checkbutton(middle_frame, text=ln.ln_install_auto, variable=tk_vars[5], onvalue=1, offvalue=0)
+        c1_autoinst = ttk.Checkbutton(middle_frame, text=ln.ln_install_auto, variable=vAutoinst_t, onvalue=1, offvalue=0)
 
         title.pack(pady=35, anchor=di_var['w'])
-        for index, distro in enumerate(distros):
-            txt = ''
-            if distro[6]: txt += ln.ln_adv + ': '
-            txt += distro[0] + ' %s (%s)' % (distro[1], distro[2])
-            if distro[5]:
+
+        for index, distro in enumerate(distros['name']):
+            txt = ''  # Generating Text for each list member of installable flavors/distros
+            if distros['advanced'][index]: txt += ln.ln_adv + ': '
+            txt += distro + ' %s' % distros['version'][index]
+            if distros['de'][index]: txt += ' (%s)' % distros['de'][index]
+            if distros['netinstall'][index]: txt += ' (%s)' % ln.ln_net_install
+            if distros['recommended'][index]:
+                vDist.set(index)
+                if distros['auto-installable'][index]: vAutoinst_t.set(1)
                 txt += ' (%s)' % ln.ln_recommended
-                tk_vars[0].set(index)
 
             temp_frame = ttk.Frame(middle_frame)
             temp_frame.pack(fill="x", pady=5)
-            radio = ttk.Radiobutton(temp_frame, text=txt, variable=tk_vars[0], value=index, command=lambda: validate_input())
+            radio = ttk.Radiobutton(temp_frame, text=txt, variable=vDist, value=index, command=lambda: validate_input())
             radio.pack(anchor=di_var['w'], side=di_var['l'])
-            if distro[7]: dl_size_txt = ln.ln_init_download % distro[3]
-            else: dl_size_txt = ln.ln_total_download % distro[3]
+            if distros['netinstall'][index]: dl_size_txt = ln.ln_init_download % distros['size'][index]
+            else: dl_size_txt = ln.ln_total_download % distros['size'][index]
             ttk.Label(temp_frame, wraplength=540, justify="center", text=dl_size_txt,
                       font=VERYSMALLFONT, foreground='#3aa9ff').pack(padx=5, anchor=di_var['e'], side=di_var['r'])
-            if compatibility_results['resizable'] < gigabyte(distro[3]):
+            if compatibility_results['resizable'] < gigabyte(distros['size'][index]):
                 radio.configure(state='disabled')
                 ttk.Label(temp_frame, wraplength=540, justify="center", text=ln.ln_warn_space,
                           font=VERYSMALLFONT, foreground='#ff4a4a').pack(padx=5, anchor=di_var['e'], side=di_var['r'])
-                if distro[5]: tk_vars[0].set(-1)
+                if distros['recommended'][index]:
+                    vDist.set(-1)
+                    vAutoinst_t.set(0)
 
         c1_autoinst.pack(anchor=di_var['w'], pady=40)
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
 
         def validate_input(*args):
 
-            if distros[tk_vars[0].get()][4]:
+            if distros['advanced'][vDist.get()]:
+                question = messagebox.askyesno(ln.ln_adv_confirm, ln.ln_adv_confirm_text)
+                if not question: vDist.set(-1)
+                else: pass
+            if distros['auto-installable'][vDist.get()]:
                 c1_autoinst['state'] = 'enabled'
+                vAutoinst_t.set(1)
             else:
                 c1_autoinst['state'] = 'disabled'
-                tk_vars[5].set(0)
-            if distros[tk_vars[0].get()][6]:
-                question = messagebox.askyesno(ln.ln_adv_confirm, ln.ln_adv_confirm_text)
-                if not question:
-                    tk_vars[0].set(-1)
-                    c1_autoinst['state'] = 'enabled'
-                    tk_vars[5].set(1)
+                vAutoinst_t.set(0)
 
         def validate_next_page(*args):
-            if tk_vars[0].get() == -1: return
-            if tk_vars[5].get(): return page_2()
+            if vDist.get() == -1: return
+            if vAutoinst_t.get(): return page_2()
             return page_verify()
 
     # page_2
@@ -277,36 +289,32 @@ def main():
 
         main_title_text.set(ln.ln_install_auto)
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'],
-                          text=ln.ln_windows_question % distros[tk_vars[0].get()][0], font=MEDIUMFONT)
-
-        btn_next = ttk.Button(middle_frame, text=ln.ln_btn_next, style="Accentbutton",
-                              command=lambda: validate_next_page())
-        btn_back = ttk.Button(middle_frame, text=ln.ln_btn_back,
-                              command=lambda: page_1())
-
-        r2_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[1] % distros[tk_vars[0].get()][0], variable=tk_vars[1], value=1)
-        r3_windows = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[2] % distros[tk_vars[0].get()][0], variable=tk_vars[1], value=2)
-
+                          text=ln.ln_windows_question % distros['name'][vDist.get()], font=MEDIUMFONT)
         title.pack(pady=35, anchor=di_var['w'])
-        if compatibility_results['space'] < gigabyte(distros[tk_vars[0].get()][3] + dualboot_required_space):
-            temp_frame = ttk.Frame(middle_frame)
-            temp_frame.pack(fill="x")
-            ttk.Radiobutton(temp_frame, text=ln.ln_windows_options[0] % distros[tk_vars[0].get()][0],
-                            state='disabled').pack(anchor=di_var['w'], side=di_var['l'], ipady=5)
-            ttk.Label(temp_frame, wraplength=540, justify="center", text=ln.ln_warn_space,
-                      font=VERYSMALLFONT, foreground='#ff4a4a').pack(padx=20, anchor=di_var['e'], side=di_var['l'])
-            tk_vars[1].set(-1)
 
-        else:
-            ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[0] % distros[tk_vars[0].get()][0],
-                            variable=tk_vars[1], value=0).pack(anchor=di_var['w'], ipady=5)
-        r2_windows.pack(anchor=di_var['w'], ipady=5)
-        r3_windows.pack(anchor=di_var['w'], ipady=5)
+        r1_frame = ttk.Frame(middle_frame)
+        r1_frame.pack(fill="x")
+        r1_autoinst = ttk.Radiobutton(r1_frame, text=ln.ln_windows_options[0], variable=vAutoinst_option, value=0)
+        r1_autoinst.pack(anchor=di_var['w'], side=di_var['l'], ipady=5)
+        r1_space = ttk.Label(r1_frame, wraplength=540, justify="center", text=ln.ln_warn_space, font=VERYSMALLFONT,
+                             foreground='#ff4a4a')
+        r2_autoinst = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[1], variable=vAutoinst_option, value=1)
+        r2_autoinst.pack(anchor=di_var['w'], ipady=5)
+        r3_autoinst = ttk.Radiobutton(middle_frame, text=ln.ln_windows_options[2], variable=vAutoinst_option, value=2)
+        r3_autoinst.pack(anchor=di_var['w'], ipady=5)
+
+        btn_next = ttk.Button(middle_frame, text=ln.ln_btn_next, style="Accentbutton", command=lambda: validate_next_page())
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
+        btn_back = ttk.Button(middle_frame, text=ln.ln_btn_back, command=lambda: page_1())
         btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
+        if compatibility_results['space'] < gigabyte(distros['size'][vDist.get()] + dualboot_required_space):
+            vAutoinst_option.set(-1)
+            r1_space.pack(padx=20, anchor=di_var['e'], side=di_var['l'])
+            r1_autoinst.configure(state='disabled')
+
         def validate_next_page(*args):
-            if tk_vars[1].get() == -1: return
+            if vAutoinst_option.get() == -1: return
             page_verify()
 
     def page_verify():
@@ -326,19 +334,19 @@ def main():
                               command=lambda: validate_back_page())
 
         # Construction user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
-        review_sel = 'x  ' + ln.ln_verify_text[0] % distros[tk_vars[0].get()][0] + ln.ln_verify_text[1][tk_vars[5].get()]
-        if tk_vars[5].get():
-            review_sel += ln.ln_verify_text[2][tk_vars[1].get()]
-            review_sel += '\nx  ' + ln.ln_verify_text[3][tk_vars[1].get()]
-            if tk_vars[1].get() == 1: review_sel = review_sel % get_sys_drive_letter()
+        review_sel = 'x  ' + ln.ln_verify_text[0] % distros['name'][vDist.get()] + ln.ln_verify_text[1][vAutoinst_t.get()]
+        if vAutoinst_t.get():
+            review_sel += ln.ln_verify_text[2][vAutoinst_option.get()]
+            review_sel += '\nx  ' + ln.ln_verify_text[3][vAutoinst_option.get()]
+            if vAutoinst_option.get() == 1: review_sel = review_sel % get_sys_drive_letter()
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         review_text = tk.Text(middle_frame, spacing1=1, height=5, width=100, wrap='word')
         review_text.insert(1.0, review_sel)
         review_text.configure(state='disabled')
         # additions options (checkboxes)
-        c1_add = ttk.Checkbutton(middle_frame, text=ln.ln_add_import_wifi, variable=tk_vars[2], onvalue=1, offvalue=0)
-        c2_add = ttk.Checkbutton(middle_frame, text=ln.ln_add_auto_restart, variable=tk_vars[3], onvalue=1, offvalue=0)
-        c3_add = ttk.Checkbutton(middle_frame, text=ln.ln_add_torrent, variable=tk_vars[4], onvalue=1, offvalue=0)
+        c1_add = ttk.Checkbutton(middle_frame, text=ln.ln_add_import_wifi, variable=vWifi_t, onvalue=1, offvalue=0)
+        c2_add = ttk.Checkbutton(middle_frame, text=ln.ln_add_auto_restart, variable=vAutorestart_t, onvalue=1, offvalue=0)
+        c3_add = ttk.Checkbutton(middle_frame, text=ln.ln_add_torrent, variable=vTorrent_t, onvalue=1, offvalue=0)
         more_settings_btn = ttk.Label(middle_frame, wraplength=540, justify="center", text=ln.ln_more_settings,
                                       font=VERYSMALLFONT, foreground='#3aa9ff')
 
@@ -347,7 +355,7 @@ def main():
             c3_add.pack(anchor=di_var['w'])
 
         def validate_back_page(*args):
-            if tk_vars[5].get(): page_2()
+            if vAutoinst_t.get(): page_2()
             else: page_1()
         more_settings_btn.bind("<Button-1>", show_more_settings)
         title.pack(pady=35, anchor=di_var['w'])
@@ -391,12 +399,12 @@ def main():
             app.update()
             create_dir(download_path)
             aria2_location = current_dir + '\\resources\\aria2c.exe'
-            if tk_vars[4].get() and distros[tk_vars[0].get()][9]:
+            if vTorrent_t.get() and distros['torrent'][vDist.get()]:
                 # if torrent is selected and a torrent link is available
-                args = (aria2_location, distros[tk_vars[0].get()][9], download_path, 1, queue1,)
+                args = (aria2_location, distros['torrent'][vDist.get()], download_path, 1, queue1,)
             else:
                 # if torrent is not selected or not available (direct download)
-                args = (aria2_location, distros[tk_vars[0].get()][8], download_path, 0, queue1,)
+                args = (aria2_location, distros['dl_link'][vDist.get()], download_path, 0, queue1,)
             Process(target=download_with_aria2, args=args).start()
             installer_status = 1
 
@@ -420,7 +428,8 @@ def main():
 
         if installer_status == 2:  # step 2: create temporary boot partition
             while queue1.qsize(): queue1.get()  # to empty the queue
-            Process(target=create_temp_boot_partition, args=(distros[distros[tk_vars[0].get()][3]], queue1,)).start()
+            tmp_part_size = gigabyte(distros['size'][vDist.get()])
+            Process(target=create_temp_boot_partition, args=(tmp_part_size, queue1,)).start()
             job_var.set(ln.ln_job_creating_tmp_part)
             progressbar_install['value'] = 90
             installer_status = 3
@@ -450,9 +459,9 @@ def main():
             while queue1.qsize(): queue1.get()  # to empty the queue
             job_var.set(ln.ln_job_adding_tmp_boot_entry)
             progressbar_install['value'] = 98
-            if tk_vars[5]: grub_cfg_file = grub_config_dir + 'grub_autoinst.cfg'
+            if vAutoinst_t.get(): grub_cfg_file = grub_config_dir + 'grub_autoinst.cfg'
             else: grub_cfg_file = grub_config_dir + 'grub_default.cfg'
-            copy_one_file(grub_cfg_file, tmp_part_letter + ':\\EFI\\BOOT\\grub.cfg' )
+            copy_one_file(grub_cfg_file, tmp_part_letter + ':\\EFI\\BOOT\\grub.cfg')
             Process(target=add_boot_entry, args=(default_efi_file_path, tmp_part_letter, queue1,)).start()
             installer_status = 7
         if installer_status == 7:  # while adding boot entry is ongoing...
@@ -490,9 +499,9 @@ def main():
         button1.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
         button2.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
-        if tk_vars[3].get():
+        if vAutorestart_t.get():
             time_left = 10
-            while time_left:
+            while time_left > 0:
                 text_var.set(ln.ln_finished_text_restarting_now % (int(time_left)))
                 time_left = time_left - 0.01
                 app.after(10, app.update())
