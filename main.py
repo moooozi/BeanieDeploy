@@ -44,7 +44,7 @@ middle_frame = tk.Frame(container, height=700)
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 
 # Tkinter variables, the '_t' suffix means Toggle
-vDist = tk.IntVar(app, 0)
+vDist = tk.IntVar(app, -2)
 vAutoinst_t = tk.IntVar(app, 1)
 vAutoinst_option = tk.IntVar(app, -1)
 vWifi_t = tk.IntVar(app, 1)
@@ -84,7 +84,6 @@ def build_container():
     middle_frame.pack_propagate(False)
 
 
-
 def clear_frame():
     """removes all elements inside the middle frame, which contains all page-specific content"""
     for widgets in middle_frame.winfo_children():
@@ -118,13 +117,12 @@ def main():
         clear_frame()
         # *************************************************************************************************************
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_check_running, font=MEDIUMFONT)
-        progressbar_check = ttk.Progressbar(middle_frame, orient='horizontal', length=550, mode='indeterminate')
-        job_var = tk.StringVar()
-        current_job = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], textvariable=job_var, font=SMALLFONT)
-
         title.pack(pady=35, anchor=di_var['w'])
+        progressbar_check = ttk.Progressbar(middle_frame, orient='horizontal', length=550, mode='indeterminate')
         progressbar_check.pack(pady=25)
         progressbar_check.start(10)
+        job_var = tk.StringVar()
+        current_job = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], textvariable=job_var, font=SMALLFONT)
         current_job.pack(padx=10, anchor=di_var['w'])
         # Request elevation (admin) if not running as admin
         if not ctypes.windll.shell32.IsUserAnAdmin():
@@ -132,7 +130,6 @@ def main():
             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
             quit()
         global compatibility_results, compatibility_check_status
-        # compatibility_results = {'uefi': 0, 'ram': 0, 'space': 0, 'resizable': 0, 'bitlocker': 0}
         compatibility_results = {'uefi': 1, 'ram': 34359738368, 'space': 134064279552, 'resizable': 5853276160, 'bitlocker': 1, 'arch': 1}
         if not compatibility_results:
             if not compatibility_check_status:
@@ -218,15 +215,8 @@ def main():
         lang_list.bind('<<ComboboxSelected>>', change_callback)
         clear_frame()
         # *************************************************************************************************************
-
-        global tk_vars
-
         main_title_text.set('Welcome to Lnixify')
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_install_question, font=MEDIUMFONT)
-        btn_next = ttk.Button(middle_frame, text=ln.ln_btn_next, style="Accentbutton",
-                              command=lambda: validate_next_page())
-        c1_autoinst = ttk.Checkbutton(middle_frame, text=ln.ln_install_auto, variable=vAutoinst_t, onvalue=1, offvalue=0)
-
         title.pack(pady=35, anchor=di_var['w'])
 
         for index, distro in enumerate(distros['name']):
@@ -236,7 +226,7 @@ def main():
             if distros['de'][index]: txt += ' (%s)' % distros['de'][index]
             if distros['netinstall'][index]: txt += ' (%s)' % ln.ln_net_install
             if distros['recommended'][index]:
-                vDist.set(index)
+                if vDist.get() == -2: vDist.set(index)  # If unset, set it to the default value
                 if distros['auto-installable'][index]: vAutoinst_t.set(1)
                 txt += ' (%s)' % ln.ln_recommended
 
@@ -254,13 +244,13 @@ def main():
                           font=VERYSMALLFONT, foreground='#ff4a4a').pack(padx=5, anchor=di_var['e'], side=di_var['r'])
                 if distros['recommended'][index]:
                     vDist.set(-1)
-                    vAutoinst_t.set(0)
 
+        c1_autoinst = ttk.Checkbutton(middle_frame, text=ln.ln_install_auto, variable=vAutoinst_t, onvalue=1, offvalue=0)
         c1_autoinst.pack(anchor=di_var['w'], pady=40)
+        btn_next = ttk.Button(middle_frame, text=ln.ln_btn_next, style="Accentbutton", command=lambda: validate_next_page())
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
 
         def validate_input(*args):
-
             if distros['advanced'][vDist.get()]:
                 question = messagebox.askyesno(ln.ln_adv_confirm, ln.ln_adv_confirm_text)
                 if not question: vDist.set(-1)
@@ -285,8 +275,6 @@ def main():
         lang_list.bind('<<ComboboxSelected>>', change_callback)
         clear_frame()
         # *************************************************************************************************************
-        global tk_vars
-
         main_title_text.set(ln.ln_install_auto)
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'],
                           text=ln.ln_windows_question % distros['name'][vDist.get()], font=MEDIUMFONT)
@@ -324,15 +312,9 @@ def main():
         lang_list.bind('<<ComboboxSelected>>', change_callback)
         clear_frame()
         # *************************************************************************************************************
-        global tk_vars
-
         main_title_text.set('')
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_verify_question, font=MEDIUMFONT)
-        btn_next = ttk.Button(middle_frame, text=ln.ln_btn_install, style="Accentbutton",
-                              command=lambda: page_installing())
-        btn_back = ttk.Button(middle_frame, text=ln.ln_btn_back,
-                              command=lambda: validate_back_page())
-
+        title.pack(pady=35, anchor=di_var['w'])
         # Construction user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = 'x  ' + ln.ln_verify_text[0] % distros['name'][vDist.get()] + ln.ln_verify_text[1][vAutoinst_t.get()]
         if vAutoinst_t.get():
@@ -343,28 +325,25 @@ def main():
         review_text = tk.Text(middle_frame, spacing1=1, height=5, width=100, wrap='word')
         review_text.insert(1.0, review_sel)
         review_text.configure(state='disabled')
+        review_text.pack(anchor=di_var['w'], pady=5)
         # additions options (checkboxes)
         c1_add = ttk.Checkbutton(middle_frame, text=ln.ln_add_import_wifi, variable=vWifi_t, onvalue=1, offvalue=0)
+        c1_add.pack(anchor=di_var['w'])
         c2_add = ttk.Checkbutton(middle_frame, text=ln.ln_add_auto_restart, variable=vAutorestart_t, onvalue=1, offvalue=0)
+        c2_add.pack(anchor=di_var['w'])
         c3_add = ttk.Checkbutton(middle_frame, text=ln.ln_add_torrent, variable=vTorrent_t, onvalue=1, offvalue=0)
-        more_settings_btn = ttk.Label(middle_frame, wraplength=540, justify="center", text=ln.ln_more_settings,
-                                      font=VERYSMALLFONT, foreground='#3aa9ff')
-
-        def show_more_settings(*args):
-            more_settings_btn.pack_forget()
-            c3_add.pack(anchor=di_var['w'])
+        more_settings_btn = ttk.Label(middle_frame, justify="center", text=ln.ln_more_settings, font=VERYSMALLFONT, foreground='#3aa9ff')
+        more_settings_btn.pack(pady=10, padx=10, anchor=di_var['w'])
+        more_settings_btn.bind("<Button-1>",
+                               lambda x: (more_settings_btn.pack_forget(), c3_add.pack(anchor=di_var['w'])))
+        btn_next = ttk.Button(middle_frame, text=ln.ln_btn_install, style="Accentbutton", command=lambda: page_installing())
+        btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
+        btn_back = ttk.Button(middle_frame, text=ln.ln_btn_back, command=lambda: validate_back_page())
+        btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
         def validate_back_page(*args):
             if vAutoinst_t.get(): page_2()
             else: page_1()
-        more_settings_btn.bind("<Button-1>", show_more_settings)
-        title.pack(pady=35, anchor=di_var['w'])
-        review_text.pack(anchor=di_var['w'], pady=5)
-        c1_add.pack(anchor=di_var['w'])
-        c2_add.pack(anchor=di_var['w'])
-        more_settings_btn.pack(pady=10, padx=10, anchor=di_var['w'])
-        btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
-        btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
     def page_installing():
         # ************** Multilingual support *************************************************************************
@@ -373,15 +352,14 @@ def main():
         lang_list.bind('<<ComboboxSelected>>', change_callback)
         clear_frame()
         # *************************************************************************************************************
-
+        main_title_text.set('ln.ln_install_running')
         lang_list.pack_forget()
-        title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_install_running, font=MEDIUMFONT)
+        # title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_install_running, font=MEDIUMFONT)
+        # title.pack(pady=35, anchor=di_var['w'])
         progressbar_install = ttk.Progressbar(middle_frame, orient='horizontal', length=550, mode='determinate')
+        progressbar_install.pack(pady=25)
         job_var = tk.StringVar()
         current_job = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], textvariable=job_var, font=SMALLFONT)
-
-        title.pack(pady=35, anchor=di_var['w'])
-        progressbar_install.pack(pady=25)
         current_job.pack(padx=10, anchor=di_var['w'])
 
         global installer_status, mount_iso_letter, tmp_part_letter
@@ -483,20 +461,20 @@ def main():
         lang_list.bind('<<ComboboxSelected>>', change_callback)
         clear_frame()
         # *************************************************************************************************************
-
         lang_list.pack(anchor=di_var['nw'], padx=10, pady=10)
+
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_finished_title, font=MEDIUMFONT)
-        button1 = ttk.Button(middle_frame, text=ln.ln_btn_restart_now, style="Accentbutton",
-                             command= lambda: [restart_windows(), app.destroy()])
-        button2 = ttk.Button(middle_frame, text=ln.ln_btn_restart_later, command=lambda: app.destroy())
+        title.pack(pady=35, anchor=di_var['w'])
+
         text_var = tk.StringVar()
         text1 = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln.ln_finished_text, font=SMALLFONT)
-        text2 = ttk.Label(middle_frame, wraplength=540, justify="center", textvariable=text_var, font=SMALLFONT)
-
-        title.pack(pady=35, anchor=di_var['w'])
         text1.pack(pady=10, anchor=di_var['w'])
+        text2 = ttk.Label(middle_frame, wraplength=540, justify="center", textvariable=text_var, font=SMALLFONT)
         text2.pack(pady=10, anchor=di_var['w'])
+
+        button1 = ttk.Button(middle_frame, text=ln.ln_btn_restart_now, style="Accentbutton", command=lambda: (restart_windows(), app.destroy()))
         button1.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
+        button2 = ttk.Button(middle_frame, text=ln.ln_btn_restart_later, command=lambda: app.destroy())
         button2.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
         if vAutorestart_t.get():
