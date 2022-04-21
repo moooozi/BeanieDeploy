@@ -154,8 +154,8 @@ Pops up window to get input from user and freezes the main GUI while waiting for
         btn_true_txt = ln_btn_confirm
         btn_false_txt = ln_btn_cancel
         entry_var = tk.StringVar()
-        entry = ttk.Entry(pop_frame, width=8, textvariable=entry_var)
-        entry.pack(pady=10, anchor=di_var['w'])
+        entry = ttk.Entry(pop_frame, width=20, textvariable=entry_var)
+        entry.pack(pady=20, padx=20, anchor=di_var['w'])
 
     btn_true = ttk.Button(pop_frame, text=btn_true_txt, style="Accentbutton", command=lambda: validate_pop_input(1))
     btn_true.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
