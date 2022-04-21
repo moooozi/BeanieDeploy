@@ -109,6 +109,13 @@ def reload_page(lang, current_page):
 
 
 def open_popup(question_type, title_txt, msg_txt):
+    """
+Pops up window to get input from user and freezes the main GUI while waiting for response
+    :param question_type: can be a 'yes-no','cancel-confirm', 'abort-retry-continue', and 'entry' for text input
+    :param title_txt: the title for the popup in big font
+    :param msg_txt: the smaller text beneath the title
+    :return:
+    """
     pop = tk.Toplevel(app)
     pop_var = tk.IntVar()
     x = app.winfo_x()
