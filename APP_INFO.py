@@ -3,7 +3,7 @@ import urllib.request
 SW_NAME = "Lnixify"
 
 minimal_required_space = 0.8  # Gigabyte
-dualboot_required_space = 6450  # Gigabyte
+dualboot_required_space = 2 # Gigabyte
 minimal_required_ram = 5.5  # Gigabyte
 default_efi_file_path = "\EFI\BOOT\BOOTX64.EFI"
 url = "https://speed.hetzner.de/100MB.bin"

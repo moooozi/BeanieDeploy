@@ -4,7 +4,7 @@ import importlib
 from pathlib import Path
 import sys
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from multiprocessing import Process, Queue
 from APP_INFO import *
 from multilingual import language_list, right_to_left_lang
@@ -143,6 +143,12 @@ def open_popup(question_type, title_txt, msg_txt):
     elif question_type == 'yes-no':
         btn_true_txt = ln_btn_yes
         btn_false_txt = ln_btn_no
+    elif question_type == 'entry':
+        btn_true_txt = ln_btn_confirm
+        btn_false_txt = ln_btn_cancel
+        entry_var = tk.StringVar()
+        entry = ttk.Entry(pop_frame, width=8, textvariable=entry_var)
+        entry.pack(pady=10, anchor=di_var['w'])
 
     btn_true = ttk.Button(pop_frame, text=btn_true_txt, style="Accentbutton", command=lambda: validate_pop_input(1))
     btn_true.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
@@ -158,6 +164,7 @@ def open_popup(question_type, title_txt, msg_txt):
         pop_var.set(inputted)
         pop.destroy()
     pop.wait_window()
+    if question_type == 'entry' and pop_var.get() == 1: return entry_var.get()
     return pop_var.get()
 
 
@@ -337,7 +344,8 @@ def main():
 
         r1_frame = ttk.Frame(middle_frame)
         r1_frame.pack(fill="x")
-        r1_autoinst = ttk.Radiobutton(r1_frame, text=ln_windows_options[0], variable=vAutoinst_option, value=0)
+        r1_autoinst = ttk.Radiobutton(r1_frame, text=ln_windows_options[0], variable=vAutoinst_option, value=0,
+                                      command=lambda:ask_dualboot_size())
         r1_autoinst.pack(anchor=di_var['w'], side=di_var['l'], ipady=5)
         r1_space = ttk.Label(r1_frame, wraplength=540, justify="center", text=ln_warn_space, font=VERYSMALLFONT,
                              foreground='#ff4a4a')
@@ -355,6 +363,20 @@ def main():
             vAutoinst_option.set(-1)
             r1_space.pack(padx=20, anchor=di_var['e'], side=di_var['l'])
             r1_autoinst.configure(state='disabled')
+
+        def ask_dualboot_size():
+            min_size = dualboot_required_space
+            max_size = byte_to_gb(compatibility_results['resizable']) - distros['size'][vDist.get()] - 0.5
+            while True:
+                result = open_popup('entry', ln_dualboot_size_question % distros['name'][vDist.get()],
+                                    ln_dualboot_size_txt % (min_size, max_size))
+                if result == 0:
+                    vAutoinst_option.set(-1)
+                    break
+                try:
+                    result = float(result)
+                    if min_size <= result <= max_size: return result
+                except ValueError: pass
 
         def validate_next_page(*args):
             if vAutoinst_option.get() == -1: return

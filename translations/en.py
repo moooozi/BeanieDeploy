@@ -57,6 +57,8 @@ ln_windows_question = "Okay! How should %s be installed?"
 ln_windows_options = ('Install alongside Windows',
                       'Remove Windows & migrate my Library (Music, Photos, Videos)',
                       'Nuke Windows and all data and start fresh')
+ln_dualboot_size_question = "How much storage for %s?"
+ln_dualboot_size_txt = "Please enter a number between %sGB and %sGB"
 
 ln_verify_question = "This is what is going to happen. Click %s once ready" % ln_btn_install
 ln_verify_text = \

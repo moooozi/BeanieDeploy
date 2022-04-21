@@ -364,4 +364,5 @@ def build_autoinstall_ks_file(keymap, xlayouts, syslang, timezone, de_option):
 
 
 def gigabyte(gb): return gb * 1073741824
+def byte_to_gb(byte): return round(byte / 1073741824, 2)
 
