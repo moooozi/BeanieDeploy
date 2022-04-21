@@ -132,7 +132,6 @@ Pops up window to get input from user and freezes the main GUI while waiting for
     btn_danger_txt = None
     btn_true_txt = None
     btn_false_txt = None
-    #ttk.Label(pop_frame, text="Hello World!", font=('Mistral 18 bold')).pack()
     title = ttk.Label(pop_frame, wraplength=600, font=('Mistral 18 bold'), justify=di_var['l'], text=title_txt)
     title.pack(pady=20, anchor=di_var['w'])
     if len(msg_txt) > 120: msg_font = VERYSMALLFONT
@@ -198,7 +197,7 @@ def main():
             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
             quit()
         global compatibility_results, compatibility_check_status
-        compatibility_results = {'uefi': 1, 'ram': 34359738368, 'space': 134064279552, 'resizable': 5853276160, 'bitlocker': 1, 'arch': 1}
+        compatibility_results = {'uefi': 1, 'ram': 34359738368, 'space': 134064279552, 'resizable': gigabyte(37), 'bitlocker': 1, 'arch': 1}
         if not compatibility_results:
             if not compatibility_check_status:
                 Process(target=compatibility_test,
@@ -219,8 +218,8 @@ def main():
                         compatibility_check_status = 2
                         break
         btn_quit = ttk.Button(middle_frame, text=ln_btn_quit, command=lambda: app.destroy())
-        if compatibility_results['uefi'] == 1 \
-                and compatibility_results['arch'] == 1 \
+        if compatibility_results['arch'] == 1 \
+                and compatibility_results['uefi'] == 1 \
                 and compatibility_results['ram'] >= gigabyte(minimal_required_ram) \
                 and compatibility_results['space'] >= gigabyte(minimal_required_space) \
                 and compatibility_results['resizable'] >= gigabyte(minimal_required_space) \
@@ -234,7 +233,7 @@ def main():
         else:
             title.pack_forget()
             progressbar_check.pack_forget()
-            title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln_error_title,
+            title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln_error_title % SW_NAME,
                               font=MEDIUMFONT)
             errors = []
             if compatibility_results['arch'] == 0:
@@ -352,7 +351,7 @@ def main():
         r1_frame = ttk.Frame(middle_frame)
         r1_frame.pack(fill="x")
         r1_autoinst = ttk.Radiobutton(r1_frame, text=ln_windows_options[0], variable=vAutoinst_option, value=0,
-                                      command=lambda:ask_dualboot_size())
+                                      command=lambda: ask_dualboot_size())
         r1_autoinst.pack(anchor=di_var['w'], side=di_var['l'], ipady=5)
         r1_space = ttk.Label(r1_frame, wraplength=540, justify="center", text=ln_warn_space, font=VERYSMALLFONT,
                              foreground='#ff4a4a')
@@ -366,14 +365,16 @@ def main():
         btn_back = ttk.Button(middle_frame, text=ln_btn_back, command=lambda: page_1())
         btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
-        if compatibility_results['space'] < gigabyte(distros['size'][vDist.get()] + dualboot_required_space):
+        # LOGIC
+        space_dualboot = gigabyte(distros['size'][vDist.get()] + dualboot_required_space + additional_failsafe_space)
+        if compatibility_results['resizable'] < space_dualboot:
             vAutoinst_option.set(-1)
             r1_space.pack(padx=20, anchor=di_var['e'], side=di_var['l'])
             r1_autoinst.configure(state='disabled')
 
         def ask_dualboot_size():
             min_size = dualboot_required_space
-            max_size = byte_to_gb(compatibility_results['resizable']) - distros['size'][vDist.get()] - 0.5
+            max_size = byte_to_gb(compatibility_results['resizable']) - distros['size'][vDist.get()] - additional_failsafe_space
             while True:
                 result = open_popup('entry', ln_dualboot_size_question % distros['name'][vDist.get()],
                                     ln_dualboot_size_txt % (min_size, max_size))
@@ -606,7 +607,6 @@ def main():
     #print(get_wifi_profiles())
 
     change_lang('English')
-    #open_popup('2','2','1')
     page_check()
 
     app.mainloop()

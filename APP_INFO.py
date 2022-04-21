@@ -2,17 +2,17 @@ import urllib.request
 
 SW_NAME = "Lnixify"
 
-minimal_required_space = 0.8  # Gigabyte
-dualboot_required_space = 2 # Gigabyte
+minimal_required_space = 4  # Gigabyte
+dualboot_required_space = 35  # Gigabyte
+additional_failsafe_space = 2  # Gigabyte
 minimal_required_ram = 5.5  # Gigabyte
 default_efi_file_path = "\EFI\BOOT\BOOTX64.EFI"
-url = "https://speed.hetzner.de/100MB.bin"
 
 distros = {
     'name': ('Fedora Silverblue', 'Fedora Kinoite', 'Fedora Everything'),
     'version': ('36', '36', '36'),
     'de': ('GNOME', 'KDE', ''),
-    'size': [0, 0, 0],
+    'size': [2.7, 0, 0],
     'auto-installable': (True, True, False),
     'recommended': (True, False, False),
     'advanced': (False, False, True),
