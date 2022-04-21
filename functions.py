@@ -197,13 +197,14 @@ def move_files_to_dir(source, destination):
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def check_hash(file_path, sha256_hash):
+def check_hash(file_path, sha256_hash, queue):
     arg = r'(Get-FileHash "' + file_path + '" -Algorithm SHA256).Hash'
     out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                          shell=True, universal_newlines=True)
-    if out.returncode != 0: return -1
-    if out.stdout.strip().upper() == sha256_hash.upper(): return 1
-    else: return 0
+    if out.returncode != 0: queue.put(-1)
+    print('filehash: %s ' % out.stdout.strip().upper(), 'expected: %s' % sha256_hash.upper())
+    if out.stdout.strip().upper() == sha256_hash.upper(): queue.put(1)
+    else: queue.put((out.stdout.strip().upper(), sha256_hash.upper()))
 
 
 def get_sys_drive_letter():

@@ -22,8 +22,12 @@ distros = {
         'https://download.fedoraproject.org/pub/fedora/linux/releases/35/Silverblue/x86_64/iso/Fedora-Silverblue-ostree-x86_64-35-1.2.iso',
         'https://download.fedoraproject.org/pub/fedora/linux/releases/35/Kinoite/x86_64/iso/Fedora-Kinoite-ostree-x86_64-35-1.2.iso',
         'https://download.fedoraproject.org/pub/fedora/linux/releases/35/Everything/x86_64/iso/Fedora-Everything-netinst-x86_64-35-1.2.iso'),
-    'hash256': (),
-    'torrent': ('', '', '')
+    'hash256': ('76a2b19ae9b49a6647c8b7cda37f6002c109d89771c3b673498d19974c0626a0',
+                '',
+                ''),
+    'torrent': ('',
+                '',
+                '')
 }
 
 # Update sizes

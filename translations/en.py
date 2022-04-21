@@ -1,11 +1,20 @@
 import APP_INFO
 
+
 ln_btn_next = "Next"
+ln_btn_yes = "Yes"
+ln_btn_no = "No"
 ln_btn_back = "Back"
 ln_btn_quit = "Quit"
+ln_btn_cancel = "Cancel"
+ln_btn_abort = "Abort"
+ln_btn_confirm = "Confirm"
 ln_btn_install = "Install now"
 ln_btn_restart_now = "Restart now"
 ln_btn_restart_later = "Restart later"
+ln_btn_dl_again = "Download Again"
+ln_btn_continue_anyways = "Continue anyways"
+
 
 ln_check_running = "Checking System compatibility. please wait..."
 ln_check_ram = "Checking available RAM capacity"
@@ -63,12 +72,11 @@ ln_verify_text = \
 ln_add_import_wifi = "Export my Wi-Fi networks to the new OS"
 ln_add_auto_restart = "Restart automatically"
 ln_add_torrent = "Download using torrent"
-ln_more_settings = "More settings"
+ln_more_options = "More options"
 
-ln_old_download_detected = "Unfinished installation detected"
-ln_old_download_detected_text = "An unfinished installation detected, use previously downloaded files? " \
-                                "(choose 'No' to clean up and start new download)"
-
+ln_old_download_detected = "Previously downloaded files found"
+ln_old_download_detected_text = "Do you wish to use these previously downloaded files? " \
+                                "(if not, these files will be deleted and a new download will start)"
 
 ln_job_starting_download = "Starting download..."
 
@@ -76,10 +84,20 @@ ln_job_dl_install_media = "Downloading install media..."
 ln_dl_timeleft = "Time left: "
 ln_dl_speed = "Speed: "
 
+ln_job_checksum = "Checking downloaded file's integrity"
+ln_job_checksum_failed = "Integrity check failed"
+ln_job_checksum_failed_txt = "Failed to check downloaded file integrity, continue anyways?"
+ln_job_checksum_mismatch = "Checksum Mismatch"
+ln_job_checksum_mismatch_txt = "The downloaded file has bad fingerprint (Hash) and cannot be trusted.\n\nFile Hash:\n%s\n" \
+                               "Expected Hash:\n%s\n\n" \
+                               "This could also mean the downloaded file is corrupted"
+
 ln_job_creating_tmp_part = "Creating temporary boot partition for installer media..."
 ln_job_copying_to_tmp_part = "Copying required installer media files to temporary boot partition..."
 ln_job_adding_tmp_boot_entry = "Adding boot entry..."
 
+ln_cleanup_question = "Clean up downloaded files?"
+ln_cleanup_question_txt = "These files are not useful anymore unless you plan to reuse the app later.\n\nDelete them?"
 ln_finished_title = "Restart required"
 ln_finished_text = "A restart is required to continue installation, " \
                    "click '%s' to restart now or '%s' to manually restart later" % (ln_btn_restart_now, ln_btn_restart_later)
