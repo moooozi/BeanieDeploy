@@ -17,7 +17,7 @@ app.title(SW_NAME)
 MAXWIDTH = 800
 MAXHEIGHT = 500
 app.geometry(str("%sx%s" % (MAXWIDTH, MAXHEIGHT)))
-current_dir = str(Path(__file__).parent)
+current_dir = str(Path(__file__).parent.absolute())
 # app.iconbitmap("yourimage.ico")
 app.resizable(False, False)
 app.option_add('*Font', 'Ariel 11')
@@ -43,15 +43,6 @@ left_frame_img = tk.PhotoImage(file='resources/leftframe.png')
 left_frame_label = tk.Label(left_frame, image=left_frame_img)
 middle_frame = tk.Frame(container, height=700)
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
-
-# Tkinter variables, the '_t' suffix means Toggle
-vDist = tk.IntVar(app, -2)
-vAutoinst_t = tk.IntVar(app, 1)
-vAutoinst_option = tk.IntVar(app, -1)
-vWifi_t = tk.IntVar(app, 1)
-vAutorestart_t = tk.IntVar(app, 0)
-vTorrent_t = tk.IntVar(app, 0)
-
 queue1 = Queue()
 compatibility_results = {}
 compatibility_check_status = 0
@@ -61,6 +52,13 @@ install_iso_name = ''
 install_iso_path = ''
 mount_iso_letter = ''
 grub_config_dir = current_dir + '\\resources\\grub_conf\\'
+# Tkinter variables, the '_t' suffix means Toggle
+vDist = tk.IntVar(app, -2)
+vAutoinst_t = tk.IntVar(app, 1)
+vAutoinst_option = tk.IntVar(app, -1)
+vWifi_t = tk.IntVar(app, 1)
+vAutorestart_t = tk.IntVar(app, 0)
+vTorrent_t = tk.IntVar(app, 0)
 #   MULTI-LINGUAL /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 lang_var = tk.StringVar()
 lang_list = ttk.Combobox(top_frame, name="language", textvariable=lang_var, background=top_bg)
@@ -120,8 +118,13 @@ Pops up window to get input from user and freezes the main GUI while waiting for
     pop_var = tk.IntVar()
     x = app.winfo_x()
     y = app.winfo_y()
-    pop.geometry("600x300")
-    pop.geometry("+%d+%d" % (x+125, y+125))
+    if len(msg_txt) > 120:
+        geometry = "600x300+%d+%d" % (x+125, y+125)
+        msg_font = VERYSMALLFONT
+    else:
+        geometry = "600x200+%d+%d" % (x+125, y+200)
+        msg_font = SMALLFONT
+    pop.geometry(geometry)
     pop.overrideredirect(True)
     pop.focus_set()
     pop.grab_set()
@@ -134,22 +137,23 @@ Pops up window to get input from user and freezes the main GUI while waiting for
     btn_false_txt = None
     title = ttk.Label(pop_frame, wraplength=600, font=('Mistral 18 bold'), justify=di_var['l'], text=title_txt)
     title.pack(pady=20, anchor=di_var['w'])
-    if len(msg_txt) > 120: msg_font = VERYSMALLFONT
-    else: msg_font = SMALLFONT
     msg = ttk.Label(pop_frame, wraplength=600, justify=di_var['l'], text=msg_txt, font=msg_font)
     msg.pack(pady=10, anchor=di_var['w'])
 
     if question_type == 'cancel-confirm':
         btn_true_txt = ln_btn_confirm
         btn_false_txt = ln_btn_cancel
-    elif question_type == 'abort-retry-continue':
+    elif question_type == 'cancel-continue':
+        btn_true_txt = ln_btn_continue
+        btn_false_txt = ln_btn_cancel
+    elif question_type in ('abort-retry-continue', 'arc'):
         btn_true_txt = ln_btn_dl_again
         btn_false_txt = ln_btn_abort
-        btn_danger_txt = ln_btn_continue_anyways
-    elif question_type == 'yes-no':
+        btn_danger_txt = ln_btn_continue
+    elif question_type in ('yes-no', 'yn'):
         btn_true_txt = ln_btn_yes
         btn_false_txt = ln_btn_no
-    elif question_type == 'entry':
+    elif question_type in ('entry', 'e'):
         btn_true_txt = ln_btn_confirm
         btn_false_txt = ln_btn_cancel
         entry_var = tk.StringVar()
@@ -197,7 +201,7 @@ def main():
             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
             quit()
         global compatibility_results, compatibility_check_status
-        compatibility_results = {'uefi': 1, 'ram': 34359738368, 'space': 134064279552, 'resizable': gigabyte(37), 'bitlocker': 1, 'arch': 1}
+        compatibility_results = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 32008358400, 'bitlocker': 1, 'arch': 'amd64'}
         if not compatibility_results:
             if not compatibility_check_status:
                 Process(target=compatibility_test,
@@ -215,16 +219,25 @@ def main():
                     elif queue_out == 'bitlocker': job_var.set(ln_check_bitlocker)
                     else:
                         compatibility_results = queue_out
+                        print(compatibility_results)
                         compatibility_check_status = 2
                         break
-        btn_quit = ttk.Button(middle_frame, text=ln_btn_quit, command=lambda: app.destroy())
-        if compatibility_results['arch'] == 1 \
-                and compatibility_results['uefi'] == 1 \
-                and compatibility_results['ram'] >= gigabyte(minimal_required_ram) \
-                and compatibility_results['space'] >= gigabyte(minimal_required_space) \
-                and compatibility_results['resizable'] >= gigabyte(minimal_required_space) \
-                and compatibility_results['bitlocker'] == 1:
+        errors = []
+        print(compatibility_results['arch'])
+        if compatibility_results['arch'] == -1: errors.append(ln_error_arch_9)
+        elif compatibility_results['arch'] != 'amd64': errors.append(ln_error_arch_0)
+        if compatibility_results['uefi'] == -1: errors.append(ln_error_uefi_9)
+        elif compatibility_results['uefi'] != 1: errors.append(ln_error_uefi_0)
+        if compatibility_results['ram'] == -1: errors.append(ln_error_totalram_9)
+        elif compatibility_results['ram'] < gigabyte(minimal_required_ram): errors.append(ln_error_totalram_0)
+        if compatibility_results['space'] == -1: errors.append(ln_error_space_9)
+        elif compatibility_results['space'] < gigabyte(minimal_required_space): errors.append(ln_error_space_0)
+        if compatibility_results['resizable'] == -1: errors.append(ln_error_resizable_9)
+        elif compatibility_results['resizable'] < gigabyte(minimal_required_space): errors.append(ln_error_resizable_0)
+        if compatibility_results['bitlocker'] == -1: errors.append(ln_error_bitlocker_9)
+        elif compatibility_results['bitlocker'] == 0: errors.append(ln_error_bitlocker_0)
 
+        if not errors:
             global download_path, install_iso_name, install_iso_path
             download_path = get_user_home_dir() + "\\win2linux_tmpdir"
             install_iso_name = 'install_media.iso'
@@ -235,43 +248,19 @@ def main():
             progressbar_check.pack_forget()
             title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln_error_title % SW_NAME,
                               font=MEDIUMFONT)
-            errors = []
-            if compatibility_results['arch'] == 0:
-                errors.append(ln_error_arch_0)
-            if compatibility_results['arch'] == -1:
-                errors.append(ln_error_arch_9)
-            if compatibility_results['uefi'] == 0:
-                errors.append(ln_error_uefi_0)
-            if compatibility_results['uefi'] == -1:
-                errors.append(ln_error_uefi_9)
-            if compatibility_results['ram'] < gigabyte(minimal_required_ram):
-                errors.append(ln_error_totalram_0)
-            if compatibility_results['ram'] == -1:
-                errors.append(ln_error_totalram_9)
-            if compatibility_results['space'] < gigabyte(minimal_required_space):
-                errors.append(ln_error_space_0)
-            if compatibility_results['space'] == -1:
-                errors.append(ln_error_space_9)
-            if compatibility_results['resizable'] < gigabyte(minimal_required_space):
-                errors.append(ln_error_resizable_0)
-            if compatibility_results['resizable'] == -1:
-                errors.append(ln_error_resizable_9)
-            if compatibility_results['bitlocker'] == 0:
-                errors.append(ln_error_bitlocker_0)
-            if compatibility_results['bitlocker'] == -1:
-                errors.append(ln_error_bitlocker_9)
+            title.pack(pady=35, anchor=di_var['nw'])
 
-            errors_text_label = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'],
-                                          text=ln_error_list + '\n',
+            errors_text_label = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln_error_list + '\n',
                                           font=SMALLFONT)
+            errors_text_label.pack(padx=10, anchor=di_var['w'])
+
             errors_listed = 'x  ' + ("\nx  ".join(errors))
             errors_text = tk.Text(middle_frame, spacing1=6, height=6)
             errors_text.insert(1.0, errors_listed)
             errors_text.configure(state='disabled')
-
-            title.pack(pady=35, anchor=di_var['nw'])
-            errors_text_label.pack(padx=10, anchor=di_var['w'])
             errors_text.pack(padx=10, pady=5, anchor=di_var['w'])
+
+            btn_quit = ttk.Button(middle_frame, text=ln_btn_quit, command=lambda: app.destroy())
             btn_quit.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
 
     # page_1
@@ -293,10 +282,9 @@ def main():
             if distros['de'][index]: txt += ' (%s)' % distros['de'][index]
             if distros['netinstall'][index]: txt += ' (%s)' % ln_net_install
             if distros['recommended'][index]:
-                if vDist.get() == -2: vDist.set(index)  # If unset, set it to the default value
-                if distros['auto-installable'][index]: vAutoinst_t.set(1)
+                if vDist.get() == -2: vDist.set(index)  # If unset, set it to the default recommended entry
+                if distros['auto-installable'][index]: vAutoinst_t.set(1)  # by default turn on autoinstall if supported
                 txt += ' (%s)' % ln_recommended
-
             temp_frame = ttk.Frame(middle_frame)
             temp_frame.pack(fill="x", pady=5)
             radio = ttk.Radiobutton(temp_frame, text=txt, variable=vDist, value=index, command=lambda: validate_input())
@@ -319,7 +307,7 @@ def main():
 
         def validate_input(*args):
             if distros['advanced'][vDist.get()]:
-                question = open_popup('cancel-confirm', ln_adv_confirm, ln_adv_confirm_text)
+                question = open_popup('cancel-continue', ln_adv_confirm, ln_adv_confirm_text)
                 print('hi')
                 if not question: vDist.set(-1)
                 else: pass

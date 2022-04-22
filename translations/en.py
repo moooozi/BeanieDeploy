@@ -7,13 +7,13 @@ ln_btn_no = "No"
 ln_btn_back = "Back"
 ln_btn_quit = "Quit"
 ln_btn_cancel = "Cancel"
+ln_btn_continue = "Continue"
 ln_btn_abort = "Abort"
 ln_btn_confirm = "Confirm"
 ln_btn_install = "Install now"
 ln_btn_restart_now = "Restart now"
 ln_btn_restart_later = "Restart later"
 ln_btn_dl_again = "Download Again"
-ln_btn_continue_anyways = "Continue anyways"
 
 
 ln_check_running = "Checking System compatibility. please wait..."
@@ -51,7 +51,7 @@ ln_install_auto = "Quick & guided install"
 ln_install_help = "Help me decide"
 
 ln_adv_confirm = "Advanced option selected..."
-ln_adv_confirm_text = "I selected an advanced option and I know what I'm doing"
+ln_adv_confirm_text = "This option isn't recommended for new users."
 
 ln_windows_question = "Okay! How should %s be installed?"
 ln_windows_options = ('Install alongside Windows',

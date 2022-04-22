@@ -43,10 +43,8 @@ def compatibility_test(required_space_min, queue):
     check = check_arch()
     if check.returncode != 0:
         result_arch_check = -1
-    elif 'amd64' in check.stdout.lower():
-        result_arch_check = 1
     else:
-        result_arch_check = 0
+        result_arch_check = check.stdout.strip().lower()
     queue.put('uefi')
     check = check_uefi()
     if check.returncode != 0:
