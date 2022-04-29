@@ -103,7 +103,7 @@ def get_xlated_timezone(tz_spec_part):
     return xlated
 
 
-def detect_locale():
+def detect_locale(queue=None):
     url = requests.get(FEDORA_DETECT_LOCALE_API).text
     data = json.loads(url)
     timezone = data['time_zone']
@@ -111,7 +111,11 @@ def detect_locale():
     if not is_valid_timezone(timezone):
         # try to get a timezone from the territory code
         timezone = langtable.list_timezones(territoryId=country_code)[0]
-    return country_code, timezone
+    stout = ('detect_locale', country_code, timezone)
+    if queue:
+        queue.put(stout)
+    else:
+        return stout
 
 
 def func1(territory):
@@ -126,12 +130,14 @@ def func3(lang):
     return langtable.list_locales(languageId=lang)
 
 
-def func4(territory, other_langs=None):
-    locales_in_territory = func1(territory)
+def func4(territory=None, other_langs=None):
     langs_id = []
-    for locale in locales_in_territory:
-        lang_in_locale = func2(locale)
-        langs_id.append(lang_in_locale)
+
+    if territory:
+        locales_in_territory = func1(territory)
+        for locale in locales_in_territory:
+            lang_in_locale = func2(locale)
+            langs_id.append(lang_in_locale)
     if other_langs:
         for lang_id in other_langs:
             if lang_id in langs_id: continue
@@ -140,7 +146,6 @@ def func4(territory, other_langs=None):
     for lang_id in langs_id:
         lang_locales = func3(lang_id)
         langs_locales_sorted.append([lang_id, lang_locales])
-
     for i in range(len(langs_locales_sorted)):
         lang_native_name = langtable.language_name(languageId=langs_locales_sorted[i][0])
         lang_english_name = langtable.language_name(languageId=langs_locales_sorted[i][0], languageIdQuery='en')
@@ -150,6 +155,4 @@ def func4(territory, other_langs=None):
             locale_name_english = langtable.language_name(languageId=langs_locales_sorted[i][1][j], languageIdQuery='en')
             locale_data = (locale_name_native, locale_name_english, langs_locales_sorted[i][1][j])
             langs_locales_sorted[i][1][j] = locale_data
-
-    print(langs_locales_sorted)
     return langs_locales_sorted

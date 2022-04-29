@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import ttk
 from multiprocessing import Process, Queue
 
-import autoinst
+from autoinst import get_avaliable_translations, get_xlated_timezone, langtable, func4, all_timezones, detect_locale
 from APP_INFO import *
 from multilingual import language_list, right_to_left_lang
 from functions import *
@@ -48,6 +48,8 @@ middle_frame = tk.Frame(container, height=700)
 queue1 = Queue()
 compatibility_results = {}
 compatibility_check_status = 0
+IP_LOCALE = []
+AUTOINST = {}
 installer_status = 0
 download_path = ''
 install_iso_name = ''
@@ -203,12 +205,12 @@ def main():
             app.update()
             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
             quit()
-        global compatibility_results, compatibility_check_status
-        compatibility_results = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 32008358400, 'bitlocker': 1, 'arch': 'amd64'}
+        global compatibility_results, compatibility_check_status, IP_LOCALE
+        #compatibility_results = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 32008358400, 'bitlocker': 1, 'arch': 'amd64'}
         if not compatibility_results:
             if not compatibility_check_status:
-                Process(target=compatibility_test,
-                        args=(minimal_required_space, queue1,)).start()
+                Process(target=compatibility_test, args=(minimal_required_space, queue1,)).start()
+                Process(target=detect_locale, args=(queue1,)).start()
                 compatibility_check_status = 1
             if compatibility_check_status == 1:
                 while True:
@@ -220,11 +222,15 @@ def main():
                     elif queue_out == 'space': job_var.set(ln_check_space)
                     elif queue_out == 'resizable': job_var.set(ln_check_resizable)
                     elif queue_out == 'bitlocker': job_var.set(ln_check_bitlocker)
+                    elif isinstance(queue_out, tuple) and queue_out[0] == 'detect_locale':
+                        IP_LOCALE = queue_out[1:]
+                        print(IP_LOCALE)
                     else:
                         compatibility_results = queue_out
                         print(compatibility_results)
                         compatibility_check_status = 2
                         break
+        # if not LOCALE_IP: LOCALE_IP = ('US', 'America/New_York')
         errors = []
         print(compatibility_results['arch'])
         if compatibility_results['arch'] == -1: errors.append(ln_error_arch_9)
@@ -379,7 +385,7 @@ def main():
 
         def validate_next_page(*args):
             if vAutoinst_option.get() == -1: return
-            page_verify()
+            page_autoinst2()
 
     # page_autoinst2
     def page_autoinst2():
@@ -389,15 +395,15 @@ def main():
         lang_list.bind('<<ComboboxSelected>>', change_callback)
         clear_frame()
         # *************************************************************************************************************
-        global locale_info
-
-        title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'],
-                          text=ln_title_autoinst2, font=MEDIUMFONT)
+        title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln_title_autoinst2, font=MEDIUMFONT)
         title.pack(pady=35, anchor=di_var['w'])
 
-        locale_info = ['DE', 'Europe/Berlin']  #  autoinst.detect_locale()
-        all_languages = autoinst.get_avaliable_translations()
-        langs_and_locales = autoinst.func4(locale_info[0], other_langs=all_languages)
+        all_languages = get_avaliable_translations()
+        if IP_LOCALE:
+            langs_and_locales = func4(territory=IP_LOCALE[0], other_langs=all_languages)
+        else:
+            langs_and_locales = func4(other_langs=all_languages)
+
         temp_frame = ttk.Frame(middle_frame)
         temp_frame.pack()
         lang_list_fedora = ttk.Treeview(temp_frame, columns='lang', show='headings', height=8)
@@ -423,9 +429,9 @@ def main():
         lang_list_fedora.bind('<<TreeviewSelect>>', on_lang_click)
 
         def validate_next_page(*args):
-            global autoinst_locale
-            autoinst_locale = locale_list_fedora.focus()
-            if autoinst.langtable.parse_locale(autoinst_locale).language:
+            global SELECTED_LOCALE
+            SELECTED_LOCALE = locale_list_fedora.focus()
+            if langtable.parse_locale(SELECTED_LOCALE).language:
                 page_autoinst3()
 
     def page_autoinst3():
@@ -436,42 +442,44 @@ def main():
         clear_frame()
         # *************************************************************************************************************
 
-        title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'],
-                          text=ln_title_autoinst3, font=MEDIUMFONT)
+        title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln_title_autoinst3, font=MEDIUMFONT)
         title.pack(pady=35, anchor=di_var['w'])
-        var_keymaps_tz = tk.IntVar()
-        locale_from_ip = autoinst.langtable.list_locales(territoryId=locale_info[0])[0]
-        locale_from_ip_name = autoinst.langtable.language_name(languageId=locale_from_ip)
-        chosen_locale_name = autoinst.langtable.language_name(languageId=autoinst_locale)
-        r1_keymaps_tz = ttk.Radiobutton(middle_frame, text=ln_keymap_tz_option % chosen_locale_name,
-                                        variable=var_keymaps_tz, value=0, command=lambda: validate_input())
-        r1_keymaps_tz.pack(anchor=di_var['w'], ipady=5)
-        if locale_from_ip != autoinst_locale:
-            r2_keymaps_tz = ttk.Radiobutton(middle_frame, text=ln_keymap_tz_option % locale_from_ip_name,
-                                            variable=var_keymaps_tz, value=1, command=lambda: validate_input())
-            r2_keymaps_tz.pack(anchor=di_var['w'], ipady=5)
+        
+        var_keymaps_tz = tk.IntVar(value=1)
+        chosen_locale_name = langtable.language_name(languageId=SELECTED_LOCALE)
+        if IP_LOCALE:
+            locale_from_ip = langtable.list_locales(territoryId=IP_LOCALE[0])[0]
+            locale_from_ip_name = langtable.language_name(languageId=locale_from_ip)
+            if locale_from_ip != SELECTED_LOCALE:
+                r1_keymaps_tz = ttk.Radiobutton(middle_frame, text=ln_keymap_tz_option % locale_from_ip_name,
+                                                variable=var_keymaps_tz, value=0, command=lambda: validate_input())
+                r1_keymaps_tz.pack(anchor=di_var['w'], ipady=5)
+
+        r2_keymaps_tz = ttk.Radiobutton(middle_frame, text=ln_keymap_tz_option % chosen_locale_name,
+                                        variable=var_keymaps_tz, value=1, command=lambda: validate_input())
         r3_keymaps_tz = ttk.Radiobutton(middle_frame, text=ln_keymap_tz_custom, variable=var_keymaps_tz,
                                         value=2, command=lambda: validate_input())
+        r2_keymaps_tz.pack(anchor=di_var['w'], ipady=5)
         r3_keymaps_tz.pack(anchor=di_var['w'], ipady=5)
-        timezone_all = sorted(autoinst.all_timezones())
 
-        global timezone_var, keyboard_var
-
+        timezone_all = sorted(all_timezones())
         lists_frame = ttk.Frame(middle_frame)
         timezone_var = tk.StringVar()
-        timezone_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'],
-                                 text=ln_list_timezones, font=VERYSMALLFONT)
+        timezone_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'], text=ln_list_timezones, font=VERYSMALLFONT)
         timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=timezone_var)
         timezone_list['values'] = tuple(timezone_all)
         timezone_list['state'] = 'readonly'
-        timezone_list.set(locale_info[1])
 
         keyboards_all = []
-        local_keyboards = autoinst.langtable.list_keyboards(territoryId=locale_info[0])
-        for keyboard in local_keyboards:
-            if keyboard not in keyboards_all:
-                keyboards_all.append(keyboard)
-        common_keyboards = autoinst.langtable.list_common_keyboards()
+
+        if IP_LOCALE:
+            timezone_list.set(IP_LOCALE[1])
+            local_keyboards = langtable.list_keyboards(territoryId=IP_LOCALE[0])
+            for keyboard in local_keyboards:
+                if keyboard not in keyboards_all:
+                    keyboards_all.append(keyboard)
+
+        common_keyboards = langtable.list_common_keyboards()
         for keyboard in common_keyboards:
             if keyboard not in keyboards_all:
                 keyboards_all.append(keyboard)
@@ -480,18 +488,18 @@ def main():
         keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=keyboard_var)
         keyboard_list['values'] = tuple(keyboards_all)
         keyboard_list['state'] = 'readonly'
-        keyboard_list.set(keyboards_all[0])
-        print(autoinst.langtable.timezone_name(timezoneId=timezone_var.get(), languageIdQuery='de'))
+        
+        if IP_LOCALE:
+            keyboard_list.set(keyboards_all[0])
 
-        btn_next = ttk.Button(middle_frame, text=ln_btn_next, style="Accentbutton", command=lambda: page_autoinst2())
+        btn_next = ttk.Button(middle_frame, text=ln_btn_next, style="Accentbutton", command=lambda: validate_next_page())
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
         btn_back = ttk.Button(middle_frame, text=ln_btn_back, command=lambda: page_autoinst2())
         btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
-
         def validate_input(*args):
             if var_keymaps_tz.get() == 2:
-                lists_frame.pack(fill='x',padx=20)
+                lists_frame.pack(fill='x', padx=20)
                 keyboards_txt.grid(pady=5, padx=5, column=0, row=1, sticky=di_var['w'])
                 keyboard_list.grid(pady=5, padx=5, column=1, row=1)
                 timezone_txt.grid(pady=5, padx=5, column=0, row=0, sticky=di_var['w'])
@@ -499,9 +507,19 @@ def main():
             else:
                 lists_frame.pack_forget()
 
-
         def validate_next_page(*args):
-            page_verify()
+            if var_keymaps_tz.get() == 0:
+                AUTOINST['keymap'] = langtable.list_keyboards(territoryId=IP_LOCALE[0])[0]
+                AUTOINST['timezone'] = langtable.list_timezones(territoryId=IP_LOCALE[0])[0]
+            elif var_keymaps_tz.get() == 1:
+                AUTOINST['keymap'] = langtable.list_keyboards(languageId=SELECTED_LOCALE)[0]
+                AUTOINST['timezone'] = langtable.list_timezones(languageId=SELECTED_LOCALE)[0]
+            elif var_keymaps_tz.get() == 2:
+                AUTOINST['keymap'] = keyboard_var.get()
+                AUTOINST['timezone'] = timezone_var.get()
+
+            if AUTOINST['keymap'] and AUTOINST['timezone']:
+                page_verify()
 
     def page_verify():
         # ************** Multilingual support *************************************************************************
