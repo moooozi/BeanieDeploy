@@ -6,6 +6,8 @@ import sys
 import tkinter as tk
 from tkinter import ttk
 from multiprocessing import Process, Queue
+
+import autoinst
 from APP_INFO import *
 from multilingual import language_list, right_to_left_lang
 from functions import *
@@ -51,6 +53,7 @@ download_path = ''
 install_iso_name = ''
 install_iso_path = ''
 mount_iso_letter = ''
+tmp_part_letter = ''
 grub_config_dir = current_dir + '\\resources\\grub_conf\\'
 # Tkinter variables, the '_t' suffix means Toggle
 vDist = tk.IntVar(app, -2)
@@ -320,13 +323,13 @@ def main():
 
         def validate_next_page(*args):
             if vDist.get() == -1: return
-            if vAutoinst_t.get(): return page_2()
+            if vAutoinst_t.get(): return page_autoinst1()
             return page_verify()
 
-    # page_2
-    def page_2():
+    # page_autoinst1
+    def page_autoinst1():
         # ************** Multilingual support *************************************************************************
-        def page_name(): page_2()
+        def page_name(): page_autoinst1()
         def change_callback(*args): reload_page(lang_var.get(), page_name)
         lang_list.bind('<<ComboboxSelected>>', change_callback)
         clear_frame()
@@ -378,6 +381,128 @@ def main():
             if vAutoinst_option.get() == -1: return
             page_verify()
 
+    # page_autoinst2
+    def page_autoinst2():
+        # ************** Multilingual support *************************************************************************
+        def page_name(): page_autoinst2()
+        def change_callback(*args): reload_page(lang_var.get(), page_name)
+        lang_list.bind('<<ComboboxSelected>>', change_callback)
+        clear_frame()
+        # *************************************************************************************************************
+        global locale_info
+
+        title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'],
+                          text=ln_title_autoinst2, font=MEDIUMFONT)
+        title.pack(pady=35, anchor=di_var['w'])
+
+        locale_info = ['DE', 'Europe/Berlin']  #  autoinst.detect_locale()
+        all_languages = autoinst.get_avaliable_translations()
+        langs_and_locales = autoinst.func4(locale_info[0], other_langs=all_languages)
+        temp_frame = ttk.Frame(middle_frame)
+        temp_frame.pack()
+        lang_list_fedora = ttk.Treeview(temp_frame, columns='lang', show='headings', height=8)
+        lang_list_fedora.heading('lang', text=ln_lang)
+        lang_list_fedora.pack(anchor=di_var['w'], side=di_var['l'], ipady=5)
+        locale_list_fedora = ttk.Treeview(temp_frame, columns='locale', show='headings', height=8)
+        locale_list_fedora.heading('locale', text=ln_locale)
+        locale_list_fedora.pack(anchor=di_var['w'], side=di_var['l'], ipady=5)
+
+        for i in range(len(langs_and_locales)):
+            lang_list_fedora.insert(parent='', index='end', iid=str(i), values=('%s (%s)' % langs_and_locales[i][0][:2],))
+
+        btn_next = ttk.Button(middle_frame, text=ln_btn_next, style="Accentbutton", command=lambda: validate_next_page())
+        btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
+        btn_back = ttk.Button(middle_frame, text=ln_btn_back, command=lambda: page_autoinst1())
+        btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
+
+        def on_lang_click(*args):
+            for item in locale_list_fedora.get_children():
+                locale_list_fedora.delete(item)
+            for locale in langs_and_locales[int(lang_list_fedora.focus())][1]:
+                locale_list_fedora.insert(parent='', index='end', iid=locale[2], values=locale[0:1])
+        lang_list_fedora.bind('<<TreeviewSelect>>', on_lang_click)
+
+        def validate_next_page(*args):
+            global autoinst_locale
+            autoinst_locale = locale_list_fedora.focus()
+            if autoinst.langtable.parse_locale(autoinst_locale).language:
+                page_autoinst3()
+
+    def page_autoinst3():
+        # ************** Multilingual support *************************************************************************
+        def page_name(): page_autoinst3()
+        def change_callback(*args): reload_page(lang_var.get(), page_name)
+        lang_list.bind('<<ComboboxSelected>>', change_callback)
+        clear_frame()
+        # *************************************************************************************************************
+
+        title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'],
+                          text=ln_title_autoinst3, font=MEDIUMFONT)
+        title.pack(pady=35, anchor=di_var['w'])
+        var_keymaps_tz = tk.IntVar()
+        locale_from_ip = autoinst.langtable.list_locales(territoryId=locale_info[0])[0]
+        locale_from_ip_name = autoinst.langtable.language_name(languageId=locale_from_ip)
+        chosen_locale_name = autoinst.langtable.language_name(languageId=autoinst_locale)
+        r1_keymaps_tz = ttk.Radiobutton(middle_frame, text=ln_keymap_tz_option % chosen_locale_name,
+                                        variable=var_keymaps_tz, value=0, command=lambda: validate_input())
+        r1_keymaps_tz.pack(anchor=di_var['w'], ipady=5)
+        if locale_from_ip != autoinst_locale:
+            r2_keymaps_tz = ttk.Radiobutton(middle_frame, text=ln_keymap_tz_option % locale_from_ip_name,
+                                            variable=var_keymaps_tz, value=1, command=lambda: validate_input())
+            r2_keymaps_tz.pack(anchor=di_var['w'], ipady=5)
+        r3_keymaps_tz = ttk.Radiobutton(middle_frame, text=ln_keymap_tz_custom, variable=var_keymaps_tz,
+                                        value=2, command=lambda: validate_input())
+        r3_keymaps_tz.pack(anchor=di_var['w'], ipady=5)
+        timezone_all = sorted(autoinst.all_timezones())
+
+        global timezone_var, keyboard_var
+
+        lists_frame = ttk.Frame(middle_frame)
+        timezone_var = tk.StringVar()
+        timezone_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'],
+                                 text=ln_list_timezones, font=VERYSMALLFONT)
+        timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=timezone_var)
+        timezone_list['values'] = tuple(timezone_all)
+        timezone_list['state'] = 'readonly'
+        timezone_list.set(locale_info[1])
+
+        keyboards_all = []
+        local_keyboards = autoinst.langtable.list_keyboards(territoryId=locale_info[0])
+        for keyboard in local_keyboards:
+            if keyboard not in keyboards_all:
+                keyboards_all.append(keyboard)
+        common_keyboards = autoinst.langtable.list_common_keyboards()
+        for keyboard in common_keyboards:
+            if keyboard not in keyboards_all:
+                keyboards_all.append(keyboard)
+        keyboard_var = tk.StringVar()
+        keyboards_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'], text=ln_list_keymaps, font=VERYSMALLFONT)
+        keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=keyboard_var)
+        keyboard_list['values'] = tuple(keyboards_all)
+        keyboard_list['state'] = 'readonly'
+        keyboard_list.set(keyboards_all[0])
+        print(autoinst.langtable.timezone_name(timezoneId=timezone_var.get(), languageIdQuery='de'))
+
+        btn_next = ttk.Button(middle_frame, text=ln_btn_next, style="Accentbutton", command=lambda: page_autoinst2())
+        btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
+        btn_back = ttk.Button(middle_frame, text=ln_btn_back, command=lambda: page_autoinst2())
+        btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
+
+
+        def validate_input(*args):
+            if var_keymaps_tz.get() == 2:
+                lists_frame.pack(fill='x',padx=20)
+                keyboards_txt.grid(pady=5, padx=5, column=0, row=1, sticky=di_var['w'])
+                keyboard_list.grid(pady=5, padx=5, column=1, row=1)
+                timezone_txt.grid(pady=5, padx=5, column=0, row=0, sticky=di_var['w'])
+                timezone_list.grid(pady=5, padx=5, column=1, row=0)
+            else:
+                lists_frame.pack_forget()
+
+
+        def validate_next_page(*args):
+            page_verify()
+
     def page_verify():
         # ************** Multilingual support *************************************************************************
         def page_name(): page_verify()
@@ -415,7 +540,7 @@ def main():
         btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
         def validate_back_page(*args):
-            if vAutoinst_t.get(): page_2()
+            if vAutoinst_t.get(): page_autoinst1()
             else: page_1()
 
     def page_installing():
@@ -451,6 +576,7 @@ def main():
                 job_var.set(ln_job_starting_download)
                 app.update()
                 create_dir(download_path)
+
                 aria2_location = current_dir + '\\resources\\aria2c.exe'
                 if vTorrent_t.get() and distros['torrent'][vDist.get()]:
                     # if torrent is selected and a torrent link is available
@@ -595,7 +721,7 @@ def main():
     #print(get_wifi_profiles())
 
     change_lang('English')
-    page_check()
+    page_autoinst2()
 
     app.mainloop()
 

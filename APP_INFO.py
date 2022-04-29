@@ -27,7 +27,10 @@ distros = {
                 ''),
     'torrent': ('',
                 '',
-                '')
+                ''),
+    'ostree': ('--osname="fedora" --remote="fedora" --url="file:///ostree/repo" --ref="fedora/36/x86_64/silverblue" --nogpg',
+               '--osname="fedora" --remote="fedora" --url="file:///ostree/repo" --ref="fedora/36/x86_64/kinoite" --nogpg',
+               '')
 }
 
 # Update sizes

@@ -38,6 +38,8 @@ ln_error_resizable_9 = "Failed to check system drive resizability."
 ln_error_bitlocker_0 = "System drive has Bitlocker enabled. Compatibility cannot be ensured"
 ln_error_bitlocker_9 = "Failed to verify system drive bitlocker status."
 
+ln_lang = "Language"
+ln_locale = "Locale"
 ln_recommended = "Recommended"
 ln_adv = "Advanced"
 ln_net_install = "Network Install"
@@ -49,6 +51,10 @@ ln_install_running = "Installing..."
 ln_install_question = "How do you want to install Linux?"
 ln_install_auto = "Quick & guided install"
 ln_install_help = "Help me decide"
+ln_title_autoinst2 = "Choose your language and locale"
+ln_title_autoinst3 = "Choose your timezone and keyboard layout"
+ln_list_keymaps = "Keyboard Layout"
+ln_list_timezones = "Timezone"
 
 ln_adv_confirm = "Advanced option selected..."
 ln_adv_confirm_text = "This option isn't recommended for new users."
@@ -65,7 +71,7 @@ ln_verify_text = \
     (
      "%s will be downloaded",
      (" and booted after restart to begin installation", " and installed"),
-     (" alongside Windows", " replacing Windows", ", and will remove everything, including Windows"),
+     (" alongside Windows", " replacing Windows", ", Windows and all existing files will be removed"),
      ("None of your files will be deleted or changed in any way",
       "Everything on system drive (%s:\\) will be removed, this usually includes your Library folders (Downloads, Videos, Music, Pictures, etc)",
       "Everything on this device will be removed ")
@@ -85,6 +91,9 @@ ln_job_starting_download = "Starting download..."
 ln_job_dl_install_media = "Downloading install media..."
 ln_dl_timeleft = "Time left: "
 ln_dl_speed = "Speed: "
+
+ln_keymap_tz_option = "Use timezone and keyboard layout for %s"
+ln_keymap_tz_custom = "Custom timezone and keyboard layout"
 
 ln_job_checksum = "Checking downloaded file's integrity"
 ln_job_checksum_failed = "Integrity check failed"

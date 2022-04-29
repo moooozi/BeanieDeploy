@@ -349,16 +349,24 @@ def check_file_if_exists(path):
         [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
-def build_autoinstall_ks_file(keymap, xlayouts, syslang, timezone, de_option):
-    if de_option == 1:
-        packages = "@^workstation-product-environment"
-    textpart1 = "graphical\nkeyboard --vckeymap='" + keymap + "' --xlayouts='%s'\n" % xlayouts
-    textpart2 = "lang " + syslang + ".UTF-8\n%packages\n" + packages + "\n%end\nfirstboot --enable\n"
-    textpart3 = "autopart\nclearpart --none --initlabel\ntimezone %s --utc\nrootpw --lock\n" % timezone
-    text = textpart1 + textpart2 + textpart3
+def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None):
+    part_const1 = "graphical"
+    part_pre = "\n"
+    part_post = "\n"
+    part_keymap = "\nkeyboard --vckeymap=" + keymap
+    part_lang = "\nlang " + lang
+    part_const2 = "\nfirewall --use-system-defaults"
+    if ostree_args: part_ostree = "\nostreesetup " + ostree_args
+    else: part_ostree = ""
+    part_const3 = "\nfirstboot --enable"
+    part_timezone = "\ntimezone " + timezone + " --utc"
+    part_partition = "\n"
+    part_const4 = "\nrootpw --lock"
+    ks_file_text = part_const1 + part_pre + part_post + part_keymap + part_lang + part_const2 + part_ostree + \
+                   part_const3 + part_timezone + part_partition + part_const4
     ks_file = open('anaconda-ks.cfg', 'w')
-    ks_file.write(text)
-    print(text)
+    ks_file.write(ks_file_text)
+    print(ks_file_text)
 
 
 def gigabyte(gb): return gb * 1073741824
