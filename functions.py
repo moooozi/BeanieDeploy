@@ -349,7 +349,7 @@ def check_file_if_exists(path):
         [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
-def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None):
+def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None, username=None, fullname=""):
     part_const1 = "graphical"
     part_pre = "\n"
     part_post = "\n"
@@ -361,9 +361,10 @@ def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None):
     part_const3 = "\nfirstboot --enable"
     part_timezone = "\ntimezone " + timezone + " --utc"
     part_partition = "\n"
+    part_user = "\nuser --name=" + username + " --gecos='" + fullname + "' --groups=wheel"
     part_const4 = "\nrootpw --lock"
     ks_file_text = part_const1 + part_pre + part_post + part_keymap + part_lang + part_const2 + part_ostree + \
-                   part_const3 + part_timezone + part_partition + part_const4
+                   part_const3 + part_timezone + part_partition + part_user + part_const4
     ks_file = open('anaconda-ks.cfg', 'w')
     ks_file.write(ks_file_text)
     print(ks_file_text)

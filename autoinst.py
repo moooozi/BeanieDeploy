@@ -26,6 +26,10 @@ ALL_LANGUAGES = ['ar', 'en', 'fr', 'de', 'ja', 'zh', 'ru', 'es', 'aa', 'af', 'ag
              'te', 'tg', 'th', 'the', 'ti', 'tig', 'tk', 'tl', 'tn', 'to', 'tpi', 'tr', 'ts', 'tt', 'ug', 'uk', 'unm',
              'ur', 'uz', 've', 'vi', 'wa', 'wae', 'wal', 'wo', 'xh', 'yi', 'yo', 'yue', 'yuw', 'zu']
 
+ALL_KEYMAPS = ['al', 'al-plisi', 'at', 'at-mac', 'at-nodeadkeys', 'az', 'ba', 'ba-alternatequotes', 'ba-unicode', 'ba-unicodeus', 'ba-us', 'be', 'be-iso-alternate', 'be-nodeadkeys', 'be-oss', 'be-oss_latin9', 'be-wang', 'br', 'br-dvorak', 'br-nativo', 'br-nativo-epo', 'br-nativo-us', 'br-nodeadkeys', 'br-thinkpad', 'by-latin', 'ca', 'ca-eng', 'ca-fr-dvorak', 'ca-fr-legacy', 'ca-multi', 'ca-multix', 'ch', 'ch-de_mac', 'ch-de_nodeadkeys', 'ch-fr', 'ch-fr_mac', 'ch-fr_nodeadkeys', 'ch-legacy', 'cm', 'cm-azerty', 'cm-dvorak', 'cm-french', 'cm-mmuock', 'cm-qwerty', 'cn', 'cn-altgr-pinyin', 'cz', 'cz-bksl', 'cz-dvorak-ucw', 'cz-qwerty', 'cz-qwerty-mac', 'cz-qwerty_bksl', 'cz-rus', 'de', 'de-T3', 'de-deadacute', 'de-deadgraveacute', 'de-deadtilde', 'de-dsb', 'de-dsb_qwertz', 'de-dvorak', 'de-e1', 'de-e2', 'de-mac', 'de-mac_nodeadkeys', 'de-neo', 'de-nodeadkeys', 'de-qwerty', 'de-ro', 'de-ro_nodeadkeys', 'de-tr', 'de-us', 'dk', 'dk-dvorak', 'dk-mac', 'dk-mac_nodeadkeys', 'dk-nodeadkeys', 'dk-winkeys', 'dz', 'dz-azerty-deadkeys', 'dz-qwerty-gb-deadkeys', 'dz-qwerty-us-deadkeys', 'ee', 'ee-dvorak', 'ee-nodeadkeys', 'ee-us', 'epo', 'epo-legacy', 'es', 'es-ast', 'es-cat', 'es-deadtilde', 'es-dvorak', 'es-mac', 'es-nodeadkeys', 'es-winkeys', 'fi', 'fi-classic', 'fi-mac', 'fi-nodeadkeys', 'fi-smi', 'fi-winkeys', 'fo', 'fo-nodeadkeys', 'fr', 'fr-afnor', 'fr-azerty', 'fr-bepo', 'fr-bepo_afnor', 'fr-bepo_latin9', 'fr-bre', 'fr-dvorak', 'fr-latin9', 'fr-latin9_nodeadkeys', 'fr-mac', 'fr-nodeadkeys', 'fr-oci', 'fr-oss', 'fr-oss_latin9', 'fr-oss_nodeadkeys', 'fr-us', 'gb', 'gb-colemak', 'gb-colemak_dh', 'gb-dvorak', 'gb-dvorakukp', 'gb-extd', 'gb-intl', 'gb-mac', 'gb-mac_intl', 'gb-pl', 'ge', 'ge-ergonomic', 'ge-mess', 'ge-ru', 'gh', 'gh-akan', 'gh-avn', 'gh-ewe', 'gh-fula', 'gh-ga', 'gh-generic', 'gh-gillbt', 'gh-hausa', 'hr', 'hr-alternatequotes', 'hr-unicode', 'hr-unicodeus', 'hr-us', 'hu', 'hu-101_qwerty_comma_dead', 'hu-101_qwerty_comma_nodead', 'hu-101_qwerty_dot_dead', 'hu-101_qwerty_dot_nodead', 'hu-101_qwertz_comma_dead', 'hu-101_qwertz_comma_nodead', 'hu-101_qwertz_dot_dead', 'hu-101_qwertz_dot_nodead', 'hu-102_qwerty_comma_dead', 'hu-102_qwerty_comma_nodead', 'hu-102_qwerty_dot_dead', 'hu-102_qwerty_dot_nodead', 'hu-102_qwertz_comma_dead', 'hu-102_qwertz_comma_nodead', 'hu-102_qwertz_dot_dead', 'hu-102_qwertz_dot_nodead', 'hu-nodeadkeys', 'hu-qwerty', 'hu-standard', 'id', 'ie', 'ie-CloGaelach', 'ie-UnicodeExpert', 'ie-ogam_is434', 'il', 'in-eng', 'in-iipa', 'iq-ku', 'iq-ku_alt', 'iq-ku_ara', 'iq-ku_f', 'ir-ku', 'ir-ku_alt', 'ir-ku_ara', 'ir-ku_f', 'is', 'is-dvorak', 'is-mac', 'is-mac_legacy', 'it', 'it-fur', 'it-geo', 'it-ibm', 'it-intl', 'it-mac', 'it-nodeadkeys', 'it-scn', 'it-us', 'it-winkeys', 'jp', 'jp-OADG109A', 'jp-dvorak', 'jp-kana86', 'ke', 'ke-kik', 'kr', 'kr-kr104', 'kz-latin', 'latam', 'latam-colemak', 'latam-colemak-gaming', 'latam-deadtilde', 'latam-dvorak', 'latam-nodeadkeys', 'lk-us', 'lt', 'lt-ibm', 'lt-lekp', 'lt-lekpa', 'lt-ratise', 'lt-sgs', 'lt-std', 'lt-us', 'lv', 'lv-adapted', 'lv-apostrophe', 'lv-ergonomic', 'lv-fkey', 'lv-modern', 'lv-tilde', 'ma-french', 'md', 'md-gag', 'me', 'me-latinalternatequotes', 'me-latinunicode', 'me-latinunicodeyz', 'me-latinyz', 'ml', 'ml-fr-oss', 'ml-us-intl', 'ml-us-mac', 'mm', 'mt', 'mt-alt-gb', 'mt-alt-us', 'mt-us', 'ng', 'ng-hausa', 'ng-igbo', 'ng-yoruba', 'nl', 'nl-mac', 'nl-std', 'nl-us', 'no', 'no-colemak', 'no-dvorak', 'no-mac', 'no-mac_nodeadkeys', 'no-nodeadkeys', 'no-smi', 'no-smi_nodeadkeys', 'no-winkeys', 'ph', 'ph-capewell-dvorak', 'ph-capewell-qwerf2k6', 'ph-colemak', 'ph-dvorak', 'pl', 'pl-csb', 'pl-dvorak', 'pl-dvorak_altquotes', 'pl-dvorak_quotes', 'pl-dvp', 'pl-legacy', 'pl-qwertz', 'pl-szl', 'pt', 'pt-mac', 'pt-mac_nodeadkeys', 'pt-nativo', 'pt-nativo-epo', 'pt-nativo-us', 'pt-nodeadkeys', 'ro', 'ro-std', 'ro-winkeys', 'rs-latin', 'rs-latinalternatequotes', 'rs-latinunicode', 'rs-latinunicodeyz', 'rs-latinyz', 'ru-cv_latin', 'se', 'se-dvorak', 'se-mac', 'se-nodeadkeys', 'se-smi', 'se-svdvorak', 'se-us', 'se-us_dvorak', 'si', 'si-alternatequotes', 'si-us', 'sk', 'sk-bksl', 'sk-qwerty', 'sk-qwerty_bksl', 'sy-ku', 'sy-ku_alt', 'sy-ku_f', 'tm', 'tm-alt', 'tr', 'tr-alt', 'tr-crh', 'tr-crh_alt', 'tr-crh_f', 'tr-f', 'tr-intl', 'tr-ku', 'tr-ku_alt', 'tr-ku_f', 'tw', 'tw-indigenous', 'tw-saisiyat', 'us', 'us-alt-intl', 'us-altgr-intl', 'us-colemak', 'us-colemak_dh', 'us-colemak_dh_iso', 'us-dvorak', 'us-dvorak-alt-intl', 'us-dvorak-classic', 'us-dvorak-intl', 'us-dvorak-l', 'us-dvorak-mac', 'us-dvorak-r', 'us-dvp', 'us-euro', 'us-haw', 'us-hbs', 'us-intl', 'us-mac', 'us-norman', 'us-olpc2', 'us-symbolic', 'us-workman', 'us-workman-intl', 'uz-latin', 'vn', 'vn-fr', 'vn-us']
+
+
+
 LAYOUT_VARIANT_RE = re.compile(r'^\s*([/\w]+)\s*'  # layout plus
                                r'(?:(?:\(\s*([-\w]+)\s*\))'  # variant in parentheses
                                r'|(?:$))\s*')  # or nothing
@@ -62,11 +66,16 @@ def get_all_regions_and_timezones():
 
     return result
 
-def get_avaliable_translations():
+
+def get_available_translations():
     """
 
     """
     return ALL_LANGUAGES
+
+
+def get_available_keymaps():
+    return ALL_KEYMAPS
 
 
 def is_valid_timezone(timezone):

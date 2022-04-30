@@ -53,6 +53,12 @@ ln_install_auto = "Quick & guided install"
 ln_install_help = "Help me decide"
 ln_title_autoinst2 = "Choose your language and locale"
 ln_title_autoinst3 = "Choose your timezone and keyboard layout"
+ln_title_autoinst4 = "Create your local user account"
+
+ln_entry_username = "Username"
+ln_entry_fullname = "Full name (optional)"
+ln_password_reminder_txt = "You can (and should) create password for your user account after the installation"
+
 ln_list_keymaps = "Keyboard Layout"
 ln_list_timezones = "Timezone"
 

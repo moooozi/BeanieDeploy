@@ -7,7 +7,8 @@ import tkinter as tk
 from tkinter import ttk
 from multiprocessing import Process, Queue
 
-from autoinst import get_avaliable_translations, get_xlated_timezone, langtable, func4, all_timezones, detect_locale
+from autoinst import get_available_translations, get_xlated_timezone, langtable, func4, all_timezones, detect_locale, \
+    get_available_keymaps
 from APP_INFO import *
 from multilingual import language_list, right_to_left_lang
 from functions import *
@@ -398,7 +399,7 @@ def main():
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln_title_autoinst2, font=MEDIUMFONT)
         title.pack(pady=35, anchor=di_var['w'])
 
-        all_languages = get_avaliable_translations()
+        all_languages = get_available_translations()
         if IP_LOCALE:
             langs_and_locales = func4(territory=IP_LOCALE[0], other_langs=all_languages)
         else:
@@ -479,8 +480,8 @@ def main():
                 if keyboard not in keyboards_all:
                     keyboards_all.append(keyboard)
 
-        common_keyboards = langtable.list_common_keyboards()
-        for keyboard in common_keyboards:
+        all_keymaps = get_available_keymaps()
+        for keyboard in all_keymaps:
             if keyboard not in keyboards_all:
                 keyboards_all.append(keyboard)
         keyboard_var = tk.StringVar()
@@ -519,7 +520,44 @@ def main():
                 AUTOINST['timezone'] = timezone_var.get()
 
             if AUTOINST['keymap'] and AUTOINST['timezone']:
-                page_verify()
+                page_autoinst4()
+
+    def page_autoinst4():
+        # ************** Multilingual support *************************************************************************
+        def page_name(): page_autoinst4()
+        def change_callback(*args): reload_page(lang_var.get(), page_name)
+        lang_list.bind('<<ComboboxSelected>>', change_callback)
+        clear_frame()
+        # *************************************************************************************************************
+
+        title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln_title_autoinst4, font=MEDIUMFONT)
+        title.pack(pady=35, anchor=di_var['w'])
+
+        username_var = tk.StringVar()
+        fullname_var = tk.StringVar()
+
+        lists_frame = ttk.Frame(middle_frame)
+        fullname_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'], text=ln_entry_fullname, font=VERYSMALLFONT)
+        fullname_entry = ttk.Entry(lists_frame, width=20, textvariable=fullname_var)
+        username_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'], text=ln_entry_username, font=VERYSMALLFONT)
+        username_entry = ttk.Entry(lists_frame, width=20, textvariable=username_var)
+
+        lists_frame.pack(fill='x', padx=20)
+        fullname_txt.grid(pady=5, padx=5, column=0, row=0, sticky=di_var['w'])
+        fullname_entry.grid(pady=5, padx=5, column=1, row=0)
+        username_txt.grid(pady=5, padx=5, column=0, row=1, sticky=di_var['w'])
+        username_entry.grid(pady=5, padx=5, column=1, row=1)
+
+        password_reminder = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln_password_reminder_txt, font=VERYSMALLFONT)
+        password_reminder.pack(pady=10,padx=20, anchor=di_var['w'])
+
+        btn_next = ttk.Button(middle_frame, text=ln_btn_next, style="Accentbutton", command=lambda: validate_next_page())
+        btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
+        btn_back = ttk.Button(middle_frame, text=ln_btn_back, command=lambda: page_autoinst2())
+        btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
+
+        def validate_next_page(*args):
+            page_verify()
 
     def page_verify():
         # ************** Multilingual support *************************************************************************
