@@ -1,12 +1,14 @@
 # from APP_INFO import *
 import ctypes
 import importlib
+import re
+import string
 from pathlib import Path
 import sys
 import tkinter as tk
 from tkinter import ttk
 from multiprocessing import Process, Queue
-
+from re import match
 from autoinst import get_available_translations, get_xlated_timezone, langtable, func4, all_timezones, detect_locale, \
     get_available_keymaps
 from APP_INFO import *
@@ -474,7 +476,6 @@ def main():
         keyboards_all = []
 
         if IP_LOCALE:
-            timezone_list.set(IP_LOCALE[1])
             local_keyboards = langtable.list_keyboards(territoryId=IP_LOCALE[0])
             for keyboard in local_keyboards:
                 if keyboard not in keyboards_all:
@@ -489,8 +490,9 @@ def main():
         keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=keyboard_var)
         keyboard_list['values'] = tuple(keyboards_all)
         keyboard_list['state'] = 'readonly'
-        
+
         if IP_LOCALE:
+            timezone_list.set(IP_LOCALE[1])
             keyboard_list.set(keyboards_all[0])
 
         btn_next = ttk.Button(middle_frame, text=ln_btn_next, style="Accentbutton", command=lambda: validate_next_page())
@@ -534,13 +536,15 @@ def main():
         title.pack(pady=35, anchor=di_var['w'])
 
         username_var = tk.StringVar()
+        username_var.trace("w", lambda *args: validate_input(username_var, syntax='username'))
         fullname_var = tk.StringVar()
+        fullname_var.trace("w", lambda *args: validate_input(fullname_var, syntax='fullname'))
 
         lists_frame = ttk.Frame(middle_frame)
         fullname_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'], text=ln_entry_fullname, font=VERYSMALLFONT)
-        fullname_entry = ttk.Entry(lists_frame, width=20, textvariable=fullname_var)
+        fullname_entry = ttk.Entry(lists_frame, width=40, textvariable=fullname_var)
         username_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'], text=ln_entry_username, font=VERYSMALLFONT)
-        username_entry = ttk.Entry(lists_frame, width=20, textvariable=username_var)
+        username_entry = ttk.Entry(lists_frame, width=40, textvariable=username_var)
 
         lists_frame.pack(fill='x', padx=20)
         fullname_txt.grid(pady=5, padx=5, column=0, row=0, sticky=di_var['w'])
@@ -556,8 +560,27 @@ def main():
         btn_back = ttk.Button(middle_frame, text=ln_btn_back, command=lambda: page_autoinst2())
         btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
+        def validate_input(var, syntax=None):
+            if syntax is not None:
+                if syntax == 'username':
+                    portable_fs_chars = r'a-zA-Z0-9._-'
+                    _name_base = r'[a-zA-Z0-9._][' + portable_fs_chars + r']{0,30}([' + portable_fs_chars + r']|\$)?'
+                    regex = re.compile(r'^' + _name_base + '$')
+                elif syntax == 'fullname':
+                    regex = re.compile(r'^[^:]*$')
+                else: return -2
+                while var.get() != '':
+                    if re.match(regex, var.get()):
+                        return True
+                    else:
+                        var.set(var.get()[:-1])
+                return False
+
         def validate_next_page(*args):
-            page_verify()
+            is_username_valid = validate_input(username_var, syntax='username')
+            is_fullname_valid = validate_input(fullname_var, syntax='fullname')
+            if is_username_valid and is_fullname_valid:
+                page_verify()
 
     def page_verify():
         # ************** Multilingual support *************************************************************************
@@ -596,7 +619,7 @@ def main():
         btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
         def validate_back_page(*args):
-            if vAutoinst_t.get(): page_autoinst1()
+            if vAutoinst_t.get(): page_autoinst4()
             else: page_1()
 
     def page_installing():
