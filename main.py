@@ -54,9 +54,9 @@ compatibility_check_status = 0
 IP_LOCALE = []
 AUTOINST = {}
 installer_status = 0
-download_path = ''
-install_iso_name = ''
-install_iso_path = ''
+DOWNLOAD_PATH = ''
+ISO_NAME = ''
+ISO_PATH = ''
 mount_iso_letter = ''
 tmp_part_letter = ''
 grub_config_dir = current_dir + '\\resources\\grub_conf\\'
@@ -67,6 +67,15 @@ vAutoinst_option = tk.IntVar(app, -1)
 vWifi_t = tk.IntVar(app, 1)
 vAutorestart_t = tk.IntVar(app, 0)
 vTorrent_t = tk.IntVar(app, 0)
+# autoinstaller variables
+vKeymap_timezone_source = tk.IntVar(app, value=1)
+vKeyboard = tk.StringVar(app)
+vTimezone = tk.StringVar(app)
+vFullname = tk.StringVar(app)
+vUsername = tk.StringVar(app)
+SELECTED_LOCALE = ''
+USERNAME_WINDOWS = ''
+
 #   MULTI-LINGUAL /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 lang_var = tk.StringVar()
 lang_list = ttk.Combobox(top_frame, name="language", textvariable=lang_var, background=top_bg)
@@ -250,10 +259,11 @@ def main():
         elif compatibility_results['bitlocker'] == 0: errors.append(ln_error_bitlocker_0)
 
         if not errors:
-            global download_path, install_iso_name, install_iso_path
-            download_path = get_user_home_dir() + "\\win2linux_tmpdir"
-            install_iso_name = 'install_media.iso'
-            install_iso_path = download_path + "\\" + install_iso_name
+            global DOWNLOAD_PATH, ISO_NAME, ISO_PATH, USERNAME_WINDOWS
+            DOWNLOAD_PATH = get_user_home_dir() + "\\win2linux_tmpdir"
+            ISO_NAME = 'install_media.iso'
+            ISO_PATH = DOWNLOAD_PATH + "\\" + ISO_NAME
+            USERNAME_WINDOWS = get_windows_username()
             page_1()
         else:
             title.pack_forget()
@@ -360,6 +370,8 @@ def main():
         r3_autoinst = ttk.Radiobutton(middle_frame, text=ln_windows_options[2], variable=vAutoinst_option, value=2)
         r3_autoinst.pack(anchor=di_var['w'], ipady=5)
 
+        c1_add = ttk.Checkbutton(middle_frame, text=ln_add_import_wifi, variable=vWifi_t, onvalue=1, offvalue=0)
+        c1_add.pack(anchor=di_var['w'], ipady=5, pady=30)
         btn_next = ttk.Button(middle_frame, text=ln_btn_next, style="Accentbutton", command=lambda: validate_next_page())
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
         btn_back = ttk.Button(middle_frame, text=ln_btn_back, command=lambda: page_1())
@@ -448,28 +460,26 @@ def main():
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln_title_autoinst3, font=MEDIUMFONT)
         title.pack(pady=35, anchor=di_var['w'])
         
-        var_keymaps_tz = tk.IntVar(value=1)
         chosen_locale_name = langtable.language_name(languageId=SELECTED_LOCALE)
         if IP_LOCALE:
             locale_from_ip = langtable.list_locales(territoryId=IP_LOCALE[0])[0]
             locale_from_ip_name = langtable.language_name(languageId=locale_from_ip)
             if locale_from_ip != SELECTED_LOCALE:
                 r1_keymaps_tz = ttk.Radiobutton(middle_frame, text=ln_keymap_tz_option % locale_from_ip_name,
-                                                variable=var_keymaps_tz, value=0, command=lambda: validate_input())
+                                                variable=vKeymap_timezone_source, value=0, command=lambda: validate_input())
                 r1_keymaps_tz.pack(anchor=di_var['w'], ipady=5)
 
         r2_keymaps_tz = ttk.Radiobutton(middle_frame, text=ln_keymap_tz_option % chosen_locale_name,
-                                        variable=var_keymaps_tz, value=1, command=lambda: validate_input())
-        r3_keymaps_tz = ttk.Radiobutton(middle_frame, text=ln_keymap_tz_custom, variable=var_keymaps_tz,
+                                        variable=vKeymap_timezone_source, value=1, command=lambda: validate_input())
+        r3_keymaps_tz = ttk.Radiobutton(middle_frame, text=ln_keymap_tz_custom, variable=vKeymap_timezone_source,
                                         value=2, command=lambda: validate_input())
         r2_keymaps_tz.pack(anchor=di_var['w'], ipady=5)
         r3_keymaps_tz.pack(anchor=di_var['w'], ipady=5)
 
         timezone_all = sorted(all_timezones())
         lists_frame = ttk.Frame(middle_frame)
-        timezone_var = tk.StringVar()
         timezone_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'], text=ln_list_timezones, font=VERYSMALLFONT)
-        timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=timezone_var)
+        timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=vTimezone)
         timezone_list['values'] = tuple(timezone_all)
         timezone_list['state'] = 'readonly'
 
@@ -485,9 +495,8 @@ def main():
         for keyboard in all_keymaps:
             if keyboard not in keyboards_all:
                 keyboards_all.append(keyboard)
-        keyboard_var = tk.StringVar()
         keyboards_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'], text=ln_list_keymaps, font=VERYSMALLFONT)
-        keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=keyboard_var)
+        keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=vKeyboard)
         keyboard_list['values'] = tuple(keyboards_all)
         keyboard_list['state'] = 'readonly'
 
@@ -501,7 +510,7 @@ def main():
         btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
         def validate_input(*args):
-            if var_keymaps_tz.get() == 2:
+            if vKeymap_timezone_source.get() == 2:
                 lists_frame.pack(fill='x', padx=20)
                 keyboards_txt.grid(pady=5, padx=5, column=0, row=1, sticky=di_var['w'])
                 keyboard_list.grid(pady=5, padx=5, column=1, row=1)
@@ -511,15 +520,15 @@ def main():
                 lists_frame.pack_forget()
 
         def validate_next_page(*args):
-            if var_keymaps_tz.get() == 0:
+            if vKeymap_timezone_source.get() == 0:
                 AUTOINST['keymap'] = langtable.list_keyboards(territoryId=IP_LOCALE[0])[0]
                 AUTOINST['timezone'] = langtable.list_timezones(territoryId=IP_LOCALE[0])[0]
-            elif var_keymaps_tz.get() == 1:
+            elif vKeymap_timezone_source.get() == 1:
                 AUTOINST['keymap'] = langtable.list_keyboards(languageId=SELECTED_LOCALE)[0]
                 AUTOINST['timezone'] = langtable.list_timezones(languageId=SELECTED_LOCALE)[0]
-            elif var_keymaps_tz.get() == 2:
-                AUTOINST['keymap'] = keyboard_var.get()
-                AUTOINST['timezone'] = timezone_var.get()
+            elif vKeymap_timezone_source.get() == 2:
+                AUTOINST['keymap'] = vKeyboard.get()
+                AUTOINST['timezone'] = vTimezone.get()
 
             if AUTOINST['keymap'] and AUTOINST['timezone']:
                 page_autoinst4()
@@ -535,16 +544,14 @@ def main():
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln_title_autoinst4, font=MEDIUMFONT)
         title.pack(pady=35, anchor=di_var['w'])
 
-        username_var = tk.StringVar()
-        username_var.trace("w", lambda *args: validate_input(username_var, syntax='username'))
-        fullname_var = tk.StringVar()
-        fullname_var.trace("w", lambda *args: validate_input(fullname_var, syntax='fullname'))
+        vFullname.trace_add("write", lambda *args: validate_input(vFullname, syntax='fullname'))
+        vUsername.trace_add("write", lambda *args: validate_input(vUsername, syntax='username'))
 
         lists_frame = ttk.Frame(middle_frame)
         fullname_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'], text=ln_entry_fullname, font=VERYSMALLFONT)
-        fullname_entry = ttk.Entry(lists_frame, width=40, textvariable=fullname_var)
+        fullname_entry = ttk.Entry(lists_frame, width=40, textvariable=vFullname)
         username_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'], text=ln_entry_username, font=VERYSMALLFONT)
-        username_entry = ttk.Entry(lists_frame, width=40, textvariable=username_var)
+        username_entry = ttk.Entry(lists_frame, width=40, textvariable=vUsername)
 
         lists_frame.pack(fill='x', padx=20)
         fullname_txt.grid(pady=5, padx=5, column=0, row=0, sticky=di_var['w'])
@@ -554,7 +561,6 @@ def main():
 
         password_reminder = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln_password_reminder_txt, font=VERYSMALLFONT)
         password_reminder.pack(pady=10,padx=20, anchor=di_var['w'])
-
         btn_next = ttk.Button(middle_frame, text=ln_btn_next, style="Accentbutton", command=lambda: validate_next_page())
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
         btn_back = ttk.Button(middle_frame, text=ln_btn_back, command=lambda: page_autoinst2())
@@ -563,6 +569,8 @@ def main():
         def validate_input(var, syntax=None):
             if syntax is not None:
                 if syntax == 'username':
+                    print('username was identified')
+
                     portable_fs_chars = r'a-zA-Z0-9._-'
                     _name_base = r'[a-zA-Z0-9._][' + portable_fs_chars + r']{0,30}([' + portable_fs_chars + r']|\$)?'
                     regex = re.compile(r'^' + _name_base + '$')
@@ -571,14 +579,21 @@ def main():
                 else: return -2
                 while var.get() != '':
                     if re.match(regex, var.get()):
+                        print('name was returned')
                         return True
                     else:
                         var.set(var.get()[:-1])
-                return False
+                        print('name was modified')
+                # Username cannot be empty, Full name can
+                if syntax == 'username': return False
+                elif syntax == 'fullname': return True
+        if not vUsername.get():
+            username_entry.insert(index=0, string=USERNAME_WINDOWS)
+            username_entry.select_range(start=0, end=999)
 
         def validate_next_page(*args):
-            is_username_valid = validate_input(username_var, syntax='username')
-            is_fullname_valid = validate_input(fullname_var, syntax='fullname')
+            is_username_valid = validate_input(vUsername, syntax='username')
+            is_fullname_valid = validate_input(vFullname, syntax='fullname')
             if is_username_valid and is_fullname_valid:
                 page_verify()
 
@@ -604,15 +619,13 @@ def main():
         review_text.configure(state='disabled')
         review_text.pack(anchor=di_var['w'], pady=5)
         # additions options (checkboxes)
-        c1_add = ttk.Checkbutton(middle_frame, text=ln_add_import_wifi, variable=vWifi_t, onvalue=1, offvalue=0)
-        c1_add.pack(anchor=di_var['w'])
         c2_add = ttk.Checkbutton(middle_frame, text=ln_add_auto_restart, variable=vAutorestart_t, onvalue=1, offvalue=0)
         c2_add.pack(anchor=di_var['w'])
         c3_add = ttk.Checkbutton(middle_frame, text=ln_add_torrent, variable=vTorrent_t, onvalue=1, offvalue=0)
         more_options_btn = ttk.Label(middle_frame, justify="center", text=ln_more_options, font=VERYSMALLFONT, foreground='#3aa9ff')
         more_options_btn.pack(pady=10, padx=10, anchor=di_var['w'])
         more_options_btn.bind("<Button-1>",
-                               lambda x: (more_options_btn.pack_forget(), c3_add.pack(anchor=di_var['w'])))
+                              lambda x: (more_options_btn.pack_forget(), c3_add.pack(anchor=di_var['w'])))
         btn_next = ttk.Button(middle_frame, text=ln_btn_install, style="Accentbutton", command=lambda: page_installing())
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
         btn_back = ttk.Button(middle_frame, text=ln_btn_back, command=lambda: validate_back_page())
@@ -640,13 +653,13 @@ def main():
         current_job.pack(padx=10, anchor=di_var['w'])
 
         global installer_status, mount_iso_letter, tmp_part_letter
-        if check_file_if_exists(install_iso_path) == 'True':
+        if check_file_if_exists(ISO_PATH) == 'True':
             # checking if files from previous runs are present and if so, ask if user wishes to use them.
             question = open_popup('yes-no', ln_old_download_detected, ln_old_download_detected_text)
             if question:
                 installer_status = 2
             else:
-                cleanup_remove_folder(download_path)
+                cleanup_remove_folder(DOWNLOAD_PATH)
 
         while True:
             if not installer_status:  # first step, start the download
@@ -654,15 +667,15 @@ def main():
                 progressbar_install['value'] = 0
                 job_var.set(ln_job_starting_download)
                 app.update()
-                create_dir(download_path)
+                create_dir(DOWNLOAD_PATH)
 
                 aria2_location = current_dir + '\\resources\\aria2c.exe'
                 if vTorrent_t.get() and distros['torrent'][vDist.get()]:
                     # if torrent is selected and a torrent link is available
-                    args = (aria2_location, distros['torrent'][vDist.get()], download_path, 1, queue1,)
+                    args = (aria2_location, distros['torrent'][vDist.get()], DOWNLOAD_PATH, 1, queue1,)
                 else:
                     # if torrent is not selected or not available (direct download)
-                    args = (aria2_location, distros['dl_link'][vDist.get()], download_path, 0, queue1,)
+                    args = (aria2_location, distros['dl_link'][vDist.get()], DOWNLOAD_PATH, 0, queue1,)
                 Process(target=download_with_aria2, args=args).start()
                 installer_status = 1
 
@@ -680,13 +693,13 @@ def main():
                                                                             dl_status['eta'])
                     job_var.set(txt)
                     app.after(100, app.update())
-                move_files_to_dir(download_path, download_path)
-                rename_file(download_path, '*.iso', install_iso_name)
+                move_files_to_dir(DOWNLOAD_PATH, DOWNLOAD_PATH)
+                rename_file(DOWNLOAD_PATH, '*.iso', ISO_NAME)
                 installer_status = 2
 
             if installer_status == 2:  # step 2: create temporary boot partition
                 while queue1.qsize(): queue1.get()  # to empty the queue
-                Process(target=check_hash, args=(install_iso_path, distros['hash256'][vDist.get()], queue1,)).start()
+                Process(target=check_hash, args=(ISO_PATH, distros['hash256'][vDist.get()], queue1,)).start()
                 job_var.set(ln_job_checksum)
                 progressbar_install['value'] = 90
                 while not queue1.qsize(): app.after(50, app.update())
@@ -697,7 +710,7 @@ def main():
                     if question: installer_status = 2.5
                     else:
                         question = open_popup('yes-no', ln_cleanup_question, ln_cleanup_question_txt)
-                        if question: cleanup_remove_folder(download_path)
+                        if question: cleanup_remove_folder(DOWNLOAD_PATH)
                         app.destroy()
                 else:
                     question = open_popup('abort-retry-continue', ln_job_checksum_mismatch, ln_job_checksum_mismatch_txt % out)
@@ -705,7 +718,7 @@ def main():
                     if question == 2: installer_status = 2.5
                     if question == 0:
                         question = open_popup('yes-no', ln_cleanup_question, ln_cleanup_question_txt)
-                        if question: cleanup_remove_folder(download_path)
+                        if question: cleanup_remove_folder(DOWNLOAD_PATH)
                         app.destroy()
             if installer_status == 2.5:  # step 2: create temporary boot partition
                 while queue1.qsize(): queue1.get()  # to empty the queue
@@ -724,7 +737,7 @@ def main():
                     installer_status = 4
             if installer_status == 4:  # step 3: mount iso and copy files to temporary boot partition
                 while queue1.qsize(): queue1.get()  # to empty the queue
-                mount_iso_letter = mount_iso(install_iso_path)
+                mount_iso_letter = mount_iso(ISO_PATH)
                 source_files = mount_iso_letter + ':\\'
                 destination_files = tmp_part_letter + ':\\'
                 Process(target=copy_files, args=(source_files, destination_files, queue1,)).start()
@@ -751,8 +764,8 @@ def main():
                 if queue1.get() == 1:
                     installer_status = 8
             if installer_status == 8:  # step 5: clean up iso and other downloaded files since install is complete
-                unmount_iso(install_iso_path)
-                cleanup_remove_folder(download_path)
+                unmount_iso(ISO_PATH)
+                cleanup_remove_folder(DOWNLOAD_PATH)
                 installer_status = 9
             if installer_status == 9:  # step 6: redirect to next page
                 break

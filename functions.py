@@ -133,6 +133,12 @@ def get_user_home_dir():
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5].replace(r'\\', '\\')
 
 
+def get_windows_username():
+    return str(subprocess.run(
+        [r'powershell.exe', r'$env:UserName'],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5].replace(r'\\', '\\')
+
+
 def create_dir(path):
     arg = "New-Item -Path '" + path + "' -ItemType Directory"
     subprocess.run(
