@@ -218,7 +218,7 @@ def main():
             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
             quit()
         global compatibility_results, compatibility_check_status, IP_LOCALE
-        #compatibility_results = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 32008358400, 'bitlocker': 1, 'arch': 'amd64'}
+        compatibility_results = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 32008358400, 'bitlocker': 1, 'arch': 'amd64'}
         if not compatibility_results:
             if not compatibility_check_status:
                 Process(target=compatibility_test, args=(minimal_required_space, queue1,)).start()
@@ -236,8 +236,7 @@ def main():
                     elif queue_out == 'bitlocker': job_var.set(ln_check_bitlocker)
                     elif isinstance(queue_out, tuple) and queue_out[0] == 'detect_locale':
                         IP_LOCALE = queue_out[1:]
-                        print(IP_LOCALE)
-                    else:
+                    elif isinstance(queue_out, dict):
                         compatibility_results = queue_out
                         print(compatibility_results)
                         compatibility_check_status = 2
@@ -380,7 +379,6 @@ def main():
         # LOGIC
         space_dualboot = gigabyte(distros['size'][vDist.get()] + dualboot_required_space + additional_failsafe_space)
         if compatibility_results['resizable'] < space_dualboot:
-            vAutoinst_option.set(-1)
             r1_space.pack(padx=20, anchor=di_var['e'], side=di_var['l'])
             r1_autoinst.configure(state='disabled')
 
@@ -423,10 +421,10 @@ def main():
         temp_frame.pack()
         lang_list_fedora = ttk.Treeview(temp_frame, columns='lang', show='headings', height=8)
         lang_list_fedora.heading('lang', text=ln_lang)
-        lang_list_fedora.pack(anchor=di_var['w'], side=di_var['l'], ipady=5)
+        lang_list_fedora.pack(anchor=di_var['w'], side=di_var['l'], ipady=5, padx=5)
         locale_list_fedora = ttk.Treeview(temp_frame, columns='locale', show='headings', height=8)
         locale_list_fedora.heading('locale', text=ln_locale)
-        locale_list_fedora.pack(anchor=di_var['w'], side=di_var['l'], ipady=5)
+        locale_list_fedora.pack(anchor=di_var['w'], side=di_var['l'], ipady=5, padx=5)
 
         for i in range(len(langs_and_locales)):
             lang_list_fedora.insert(parent='', index='end', iid=str(i), values=('%s (%s)' % langs_and_locales[i][0][:2],))
@@ -440,14 +438,14 @@ def main():
             for item in locale_list_fedora.get_children():
                 locale_list_fedora.delete(item)
             for locale in langs_and_locales[int(lang_list_fedora.focus())][1]:
-                locale_list_fedora.insert(parent='', index='end', iid=locale[2], values=locale[0:1])
+                locale_list_fedora.insert(parent='', index='end', iid=locale[2], values=locale[1:2])
         lang_list_fedora.bind('<<TreeviewSelect>>', on_lang_click)
 
         def validate_next_page(*args):
             global SELECTED_LOCALE
             SELECTED_LOCALE = locale_list_fedora.focus()
             if langtable.parse_locale(SELECTED_LOCALE).language:
-                page_autoinst3()
+                return page_autoinst3()
 
     def page_autoinst3():
         # ************** Multilingual support *************************************************************************
@@ -547,13 +545,13 @@ def main():
         vFullname.trace_add("write", lambda *args: validate_input(vFullname, syntax='fullname'))
         vUsername.trace_add("write", lambda *args: validate_input(vUsername, syntax='username'))
 
-        lists_frame = ttk.Frame(middle_frame)
-        fullname_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'], text=ln_entry_fullname, font=VERYSMALLFONT)
-        fullname_entry = ttk.Entry(lists_frame, width=40, textvariable=vFullname)
-        username_txt = ttk.Label(lists_frame, wraplength=540, justify=di_var['l'], text=ln_entry_username, font=VERYSMALLFONT)
-        username_entry = ttk.Entry(lists_frame, width=40, textvariable=vUsername)
+        entries_frame = ttk.Frame(middle_frame)
+        fullname_txt = ttk.Label(entries_frame, wraplength=540, justify=di_var['l'], text=ln_entry_fullname, font=VERYSMALLFONT)
+        fullname_entry = ttk.Entry(entries_frame, width=40, textvariable=vFullname)
+        username_txt = ttk.Label(entries_frame, wraplength=540, justify=di_var['l'], text=ln_entry_username, font=VERYSMALLFONT)
+        username_entry = ttk.Entry(entries_frame, width=40, textvariable=vUsername)
 
-        lists_frame.pack(fill='x', padx=20)
+        entries_frame.pack(fill='x', padx=20)
         fullname_txt.grid(pady=5, padx=5, column=0, row=0, sticky=di_var['w'])
         fullname_entry.grid(pady=5, padx=5, column=1, row=0)
         username_txt.grid(pady=5, padx=5, column=0, row=1, sticky=di_var['w'])
@@ -563,7 +561,7 @@ def main():
         password_reminder.pack(pady=10,padx=20, anchor=di_var['w'])
         btn_next = ttk.Button(middle_frame, text=ln_btn_next, style="Accentbutton", command=lambda: validate_next_page())
         btn_next.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
-        btn_back = ttk.Button(middle_frame, text=ln_btn_back, command=lambda: page_autoinst2())
+        btn_back = ttk.Button(middle_frame, text=ln_btn_back, command=lambda: page_autoinst3())
         btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
         def validate_input(var, syntax=None):
@@ -584,7 +582,7 @@ def main():
                     else:
                         var.set(var.get()[:-1])
                         print('name was modified')
-                # Username cannot be empty, Full name can
+                # Username cannot be empty, Full name can, so:
                 if syntax == 'username': return False
                 elif syntax == 'fullname': return True
         if not vUsername.get():
@@ -813,7 +811,7 @@ def main():
     #print(get_wifi_profiles())
 
     change_lang('English')
-    page_autoinst2()
+    page_check()
 
     app.mainloop()
 

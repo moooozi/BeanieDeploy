@@ -98,7 +98,7 @@ ln_job_dl_install_media = "Downloading install media..."
 ln_dl_timeleft = "Time left: "
 ln_dl_speed = "Speed: "
 
-ln_keymap_tz_option = "Use timezone and keyboard layout for %s"
+ln_keymap_tz_option = "%s - Use default timezone and keyboard layout for this region"
 ln_keymap_tz_custom = "Custom timezone and keyboard layout"
 
 ln_job_checksum = "Checking downloaded file's integrity"
