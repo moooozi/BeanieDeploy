@@ -8,8 +8,7 @@ import sys
 import tkinter as tk
 from tkinter import ttk
 from multiprocessing import Process, Queue
-from re import match
-from autoinst import get_available_translations, get_xlated_timezone, langtable, func4, all_timezones, detect_locale, \
+from autoinst import get_available_translations, get_xlated_timezone, langtable, get_locales_and_langs_sorted_with_names, all_timezones, detect_locale, \
     get_available_keymaps
 from APP_INFO import *
 from multilingual import language_list, right_to_left_lang
@@ -123,40 +122,36 @@ def reload_page(lang, current_page):
     current_page()
 
 
-def open_popup(question_type, title_txt, msg_txt):
+def validate_with_regex(var, regex, mode='read'):
+    regex_compiled = re.compile(regex)
+    while var.get() != '':
+        if re.match(regex_compiled, var.get()):
+            print('name was returned')
+            return True
+        elif mode == 'read':
+            return False
+        elif mode == 'fix':
+            var.set(var.get()[:-1])
+            print('name was modified')
+    # indicate the string is empty now
+    return 'empty'
+
+
+def open_popup(question_type, title_txt, msg_txt, regex=None):
     """
 Pops up window to get input from user and freezes the main GUI while waiting for response
+    :type regex: Pattern[str]
     :param question_type: can be a 'yes-no','cancel-confirm', 'abort-retry-continue', and 'entry' for text input
     :param title_txt: the title for the popup in big font
     :param msg_txt: the smaller text beneath the title
     :return:
     """
     pop = tk.Toplevel(app)
-    pop_var = tk.IntVar()
-    x = app.winfo_x()
-    y = app.winfo_y()
-    if len(msg_txt) > 120:
-        geometry = "600x300+%d+%d" % (x+125, y+125)
-        msg_font = VERYSMALLFONT
-    else:
-        geometry = "600x200+%d+%d" % (x+125, y+200)
-        msg_font = SMALLFONT
-    pop.geometry(geometry)
-    pop.overrideredirect(True)
-    pop.focus_set()
-    pop.grab_set()
     border_frame = tk.Frame(pop, highlightbackground="gray", highlightthickness=1)
-    border_frame.pack(expand=1, fill='both', pady=5, padx=5)
     pop_frame = tk.Frame(border_frame)
-    pop_frame.pack(expand=1, fill='both', pady=5, padx=10)
-    btn_danger_txt = None
-    btn_true_txt = None
-    btn_false_txt = None
-    title = ttk.Label(pop_frame, wraplength=600, font=('Mistral 18 bold'), justify=di_var['l'], text=title_txt)
-    title.pack(pady=20, anchor=di_var['w'])
-    msg = ttk.Label(pop_frame, wraplength=600, justify=di_var['l'], text=msg_txt, font=msg_font)
-    msg.pack(pady=10, anchor=di_var['w'])
-
+    btn_true_txt = ''
+    btn_false_txt = ''
+    btn_danger_txt = ''
     if question_type == 'cancel-confirm':
         btn_true_txt = ln_btn_confirm
         btn_false_txt = ln_btn_cancel
@@ -170,28 +165,58 @@ Pops up window to get input from user and freezes the main GUI while waiting for
     elif question_type in ('yes-no', 'yn'):
         btn_true_txt = ln_btn_yes
         btn_false_txt = ln_btn_no
-    elif question_type in ('entry', 'e'):
+    elif question_type == 'entry':
         btn_true_txt = ln_btn_confirm
         btn_false_txt = ln_btn_cancel
-        entry_var = tk.StringVar()
-        entry = ttk.Entry(pop_frame, width=20, textvariable=entry_var)
-        entry.pack(pady=20, padx=20, anchor=di_var['w'])
+    else: return -2
 
-    btn_true = ttk.Button(pop_frame, text=btn_true_txt, style="Accentbutton", command=lambda: validate_pop_input(1))
+    pop_var = tk.IntVar()
+    x = app.winfo_x()
+    y = app.winfo_y()
+    if len(msg_txt) > 120:
+        geometry = "600x300+%d+%d" % (x+125, y+125)
+        msg_font = VERYSMALLFONT
+    else:
+        geometry = "600x250+%d+%d" % (x+125, y+160)
+        msg_font = SMALLFONT
+    pop.geometry(geometry)
+    pop.overrideredirect(True)
+    pop.focus_set()
+    pop.grab_set()
+    border_frame.pack(expand=1, fill='both', pady=5, padx=5)
+    pop_frame.pack(expand=1, fill='both', pady=5, padx=10)
+    title = ttk.Label(pop_frame, wraplength=600, font=('Mistral 18 bold'), justify=di_var['l'], text=title_txt)
+    title.pack(pady=20, anchor=di_var['w'])
+    msg = ttk.Label(pop_frame, wraplength=600, justify=di_var['l'], text=msg_txt, font=msg_font)
+    msg.pack(pady=10, anchor=di_var['w'])
+    if question_type == 'entry':
+        temp_frame = ttk.Frame(pop_frame)
+        temp_frame.pack(fill='x', pady=(20, 0))
+        entry_var = tk.StringVar(pop)
+        entry = ttk.Entry(temp_frame, width=20, textvariable=entry_var)
+        entry.pack(padx=(20, 10), anchor=di_var['w'], side=di_var['l'])
+        if regex:
+            entry_var.trace_add('write', lambda *args: validate_with_regex(var=entry_var, regex=regex, mode='fix'))
+        entry_suffix = ttk.Label(temp_frame, text='GB', font=msg_font)
+        entry_suffix.pack(anchor=di_var['w'], side=di_var['l'])
+    btn_true = ttk.Button(pop_frame, text=btn_true_txt, style="Accentbutton", command=lambda *args: validate_pop_input(1))
     btn_true.pack(anchor=di_var['se'], side=di_var['r'], ipadx=15, padx=10)
-    btn_false = ttk.Button(pop_frame, text=btn_false_txt, command=lambda: validate_pop_input(0))
+    btn_false = ttk.Button(pop_frame, text=btn_false_txt, command=lambda *args: validate_pop_input(0))
     btn_false.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
-    btn_danger = ttk.Button(pop_frame, text=btn_danger_txt, style="Dangerbutton", command=lambda: validate_pop_input(2))
+    btn_danger = ttk.Button(pop_frame, text=btn_danger_txt, style="Dangerbutton", command=lambda *args: validate_pop_input(2))
     more_options_btn = ttk.Label(pop_frame, justify="center", text=ln_more_options, font=VERYSMALLFONT, foreground='#3aa9ff')
     more_options_btn.bind("<Button-1>",
-                          lambda xy: (more_options_btn.pack_forget(), btn_danger.pack(anchor=di_var['se'], side=di_var['r'], padx=5)))
-    if btn_danger_txt is not None: more_options_btn.pack(anchor=di_var['se'], side=di_var['r'], padx=5, pady=8)
+                          lambda *args: (more_options_btn.pack_forget(),
+                                         btn_danger.pack(anchor=di_var['se'], side=di_var['r'], padx=5)))
+    if btn_danger_txt: more_options_btn.pack(anchor=di_var['se'], side=di_var['r'], padx=5, pady=8)
 
     def validate_pop_input(inputted):
         pop_var.set(inputted)
         pop.destroy()
     pop.wait_window()
-    if question_type == 'entry' and pop_var.get() == 1: return entry_var.get()
+    if question_type == 'entry' and pop_var.get() == 1:
+
+        return entry_var.get()
     return pop_var.get()
 
 
@@ -218,7 +243,7 @@ def main():
             ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
             quit()
         global compatibility_results, compatibility_check_status, IP_LOCALE
-        compatibility_results = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 32008358400, 'bitlocker': 1, 'arch': 'amd64'}
+        compatibility_results = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'bitlocker': 1, 'arch': 'amd64'}
         if not compatibility_results:
             if not compatibility_check_status:
                 Process(target=compatibility_test, args=(minimal_required_space, queue1,)).start()
@@ -243,7 +268,6 @@ def main():
                         break
         # if not LOCALE_IP: LOCALE_IP = ('US', 'America/New_York')
         errors = []
-        print(compatibility_results['arch'])
         if compatibility_results['arch'] == -1: errors.append(ln_error_arch_9)
         elif compatibility_results['arch'] != 'amd64': errors.append(ln_error_arch_0)
         if compatibility_results['uefi'] == -1: errors.append(ln_error_uefi_9)
@@ -385,9 +409,12 @@ def main():
         def ask_dualboot_size():
             min_size = dualboot_required_space
             max_size = byte_to_gb(compatibility_results['resizable']) - distros['size'][vDist.get()] - additional_failsafe_space
+            float_regex = r'^[0-9]*\.?[0-9]{0,3}$'
             while True:
-                result = open_popup('entry', ln_dualboot_size_question % distros['name'][vDist.get()],
-                                    ln_dualboot_size_txt % (min_size, max_size))
+                result = open_popup(question_type='entry',
+                                    title_txt=ln_dualboot_size_question % distros['name'][vDist.get()],
+                                    msg_txt=ln_dualboot_size_txt % (min_size, max_size),
+                                    regex=float_regex)
                 if result == 0:
                     vAutoinst_option.set(-1)
                     break
@@ -413,9 +440,9 @@ def main():
 
         all_languages = get_available_translations()
         if IP_LOCALE:
-            langs_and_locales = func4(territory=IP_LOCALE[0], other_langs=all_languages)
+            langs_and_locales = get_locales_and_langs_sorted_with_names(territory=IP_LOCALE[0], other_langs=all_languages)
         else:
-            langs_and_locales = func4(other_langs=all_languages)
+            langs_and_locales = get_locales_and_langs_sorted_with_names(other_langs=all_languages)
 
         temp_frame = ttk.Frame(middle_frame)
         temp_frame.pack()
@@ -542,8 +569,14 @@ def main():
         title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=ln_title_autoinst4, font=MEDIUMFONT)
         title.pack(pady=35, anchor=di_var['w'])
 
-        vFullname.trace_add("write", lambda *args: validate_input(vFullname, syntax='fullname'))
-        vUsername.trace_add("write", lambda *args: validate_input(vUsername, syntax='username'))
+        # Regex Syntax *****
+        portable_fs_chars = r'a-zA-Z0-9._-'
+        _name_base = r'[a-zA-Z0-9._][' + portable_fs_chars + r']{0,30}([' + portable_fs_chars + r']|\$)?'
+        username_regex = r'^' + _name_base + '$'
+        fullname_regex = r'^[^:]*$'
+        # Only allow username and fullname that meet the regex syntax above
+        vFullname.trace_add("write", lambda *args: validate_with_regex(vFullname, regex=fullname_regex, mode='fix'))
+        vUsername.trace_add("write", lambda *args: validate_with_regex(vUsername, regex=username_regex, mode='fix'))
 
         entries_frame = ttk.Frame(middle_frame)
         fullname_txt = ttk.Label(entries_frame, wraplength=540, justify=di_var['l'], text=ln_entry_fullname, font=VERYSMALLFONT)
@@ -564,34 +597,14 @@ def main():
         btn_back = ttk.Button(middle_frame, text=ln_btn_back, command=lambda: page_autoinst3())
         btn_back.pack(anchor=di_var['se'], side=di_var['r'], padx=5)
 
-        def validate_input(var, syntax=None):
-            if syntax is not None:
-                if syntax == 'username':
-                    print('username was identified')
-
-                    portable_fs_chars = r'a-zA-Z0-9._-'
-                    _name_base = r'[a-zA-Z0-9._][' + portable_fs_chars + r']{0,30}([' + portable_fs_chars + r']|\$)?'
-                    regex = re.compile(r'^' + _name_base + '$')
-                elif syntax == 'fullname':
-                    regex = re.compile(r'^[^:]*$')
-                else: return -2
-                while var.get() != '':
-                    if re.match(regex, var.get()):
-                        print('name was returned')
-                        return True
-                    else:
-                        var.set(var.get()[:-1])
-                        print('name was modified')
-                # Username cannot be empty, Full name can, so:
-                if syntax == 'username': return False
-                elif syntax == 'fullname': return True
         if not vUsername.get():
             username_entry.insert(index=0, string=USERNAME_WINDOWS)
             username_entry.select_range(start=0, end=999)
 
         def validate_next_page(*args):
-            is_username_valid = validate_input(vUsername, syntax='username')
-            is_fullname_valid = validate_input(vFullname, syntax='fullname')
+            # Username cannot be empty
+            is_username_valid = validate_with_regex(vUsername, regex=username_regex, mode='read') not in (False, 'empty')
+            is_fullname_valid = validate_with_regex(vFullname, regex=fullname_regex, mode='read')
             if is_username_valid and is_fullname_valid:
                 page_verify()
 
