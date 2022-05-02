@@ -1,3 +1,4 @@
+import re
 import subprocess
 import time
 import webbrowser
@@ -169,6 +170,7 @@ def download_with_aria2(app_path, url, destination, is_torrent, queue):
                 if (txt := output.strip())[0:2] == '[#':
                     txt = txt[1:-1]
                     try:
+                        txt.replace('iB', 'B')
                         if (eta_key := 'ETA:') in txt:
                             index = txt.index(eta_key)
                             tracker['eta'] = txt[index + len(eta_key):].split(' ', 1)[0]
@@ -180,7 +182,6 @@ def download_with_aria2(app_path, url, destination, is_torrent, queue):
                             index2 = txt.index('(')
                             tracker['size'] = txt.split()[1]
                             tracker['%'] = int(txt[index2 + 1:index1])
-
                         queue.put(tracker)
                     except (ValueError, IndexError): pass
 
@@ -301,7 +302,7 @@ def copy_one_file(source, destination):
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def cleanup_remove_folder(location):
+def remove_folder(location):
     arg = r'Remove-Item "' + location + '" -Recurse'
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
@@ -375,6 +376,20 @@ def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None, username
     ks_file.write(ks_file_text)
     print(ks_file_text)
 
+
+def validate_with_regex(var, regex, mode='read'):
+    regex_compiled = re.compile(regex)
+    while var.get() != '':
+        if re.match(regex_compiled, var.get()):
+            print('name was returned')
+            return True
+        elif mode == 'read':
+            return False
+        elif mode == 'fix':
+            var.set(var.get()[:-1])
+            print('name was modified')
+    # indicate the string is empty now
+    return 'empty'
 
 def gigabyte(gb): return gb * 1073741824
 def byte_to_gb(byte): return round(byte / 1073741824, 2)

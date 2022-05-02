@@ -1,79 +1,76 @@
-import APP_INFO
 
+btn_next = "Next"
+btn_yes = "Yes"
+btn_no = "No"
+btn_back = "Back"
+btn_quit = "Quit"
+btn_cancel = "Cancel"
+btn_continue = "Continue"
+btn_abort = "Abort"
+btn_confirm = "Confirm"
+btn_install = "Install now"
+btn_restart_now = "Restart now"
+btn_restart_later = "Restart later"
+btn_dl_again = "Download Again"
 
-ln_btn_next = "Next"
-ln_btn_yes = "Yes"
-ln_btn_no = "No"
-ln_btn_back = "Back"
-ln_btn_quit = "Quit"
-ln_btn_cancel = "Cancel"
-ln_btn_continue = "Continue"
-ln_btn_abort = "Abort"
-ln_btn_confirm = "Confirm"
-ln_btn_install = "Install now"
-ln_btn_restart_now = "Restart now"
-ln_btn_restart_later = "Restart later"
-ln_btn_dl_again = "Download Again"
+check_running = "Checking System compatibility. please wait..."
+check_ram = "Checking available RAM capacity"
+check_uefi = "Checking UEFI compliance"
+check_space = "Checking available space"
+check_resizable = "Checking system drive resizability"
+check_bitlocker = "Checking system drive bitlocker status"
 
+error_title = "%s can't run on your system"
+error_list = "Following issues detected:"
+error_arch_0 = "This device's CPU architecture is incompatible."
+error_arch_9 = "CPU architecture could not be verified."
+error_uefi_0 = "Your system does not support (or is not using) UEFI boot."
+error_uefi_9 = "UEFI boot support could not be verified."
+error_totalram_0 = "Your system does not have sufficient RAM capacity."
+error_totalram_9 = "Failed to check available RAM capacity."
+error_space_0 = "Not enough space on your system drive. Free up space and try again"
+error_space_9 = "Failed to check available disk space on your system drive."
+error_resizable_0 = "Not enough shrink room on system drive."
+error_resizable_9 = "Failed to check system drive resizability."
+error_bitlocker_0 = "System drive has Bitlocker enabled. Compatibility cannot be ensured"
+error_bitlocker_9 = "Failed to verify system drive bitlocker status."
 
-ln_check_running = "Checking System compatibility. please wait..."
-ln_check_ram = "Checking available RAM capacity"
-ln_check_uefi = "Checking UEFI compliance"
-ln_check_space = "Checking available space"
-ln_check_resizable = "Checking system drive resizability"
-ln_check_bitlocker = "Checking system drive bitlocker status"
+lang = "Language"
+locale = "Locale"
+recommended = "Recommended"
+adv = "Advanced"
+net_install = "Network Install"
+warn_space = "Not enough space"
+total_download = "Total download: %sGB"
+init_download = "Initial download: %sGB"
 
-ln_error_title = "%s can't run on your system"
-ln_error_list = "Following issues detected:"
-ln_error_arch_0 = "This device's CPU architecture is incompatible."
-ln_error_arch_9 = "CPU architecture could not be verified."
-ln_error_uefi_0 = "Your system does not support (or is not using) UEFI boot."
-ln_error_uefi_9 = "UEFI boot support could not be verified."
-ln_error_totalram_0 = "Your system does not have sufficient RAM capacity."
-ln_error_totalram_9 = "Failed to check available RAM capacity."
-ln_error_space_0 = "Not enough space on your system drive. Free up space and try again"
-ln_error_space_9 = "Failed to check available disk space on your system drive."
-ln_error_resizable_0 = "Not enough shrink room on system drive."
-ln_error_resizable_9 = "Failed to check system drive resizability."
-ln_error_bitlocker_0 = "System drive has Bitlocker enabled. Compatibility cannot be ensured"
-ln_error_bitlocker_9 = "Failed to verify system drive bitlocker status."
+install_running = "Installing..."
+install_question = "How do you want to install Linux?"
+install_auto = "Quick & guided install"
+install_help = "Help me decide"
+title_autoinst2 = "Choose your language and locale"
+title_autoinst3 = "Choose your timezone and keyboard layout"
+title_autoinst4 = "Create your local user account"
 
-ln_lang = "Language"
-ln_locale = "Locale"
-ln_recommended = "Recommended"
-ln_adv = "Advanced"
-ln_net_install = "Network Install"
-ln_warn_space = "Not enough space"
-ln_total_download = "Total download: %sGB"
-ln_init_download = "Initial download: %sGB"
+entry_username = "Username"
+entry_fullname = "Full name (optional)"
+password_reminder_txt = "(You will be able to set password for your user account after the installation)"
 
-ln_install_running = "Installing..."
-ln_install_question = "How do you want to install Linux?"
-ln_install_auto = "Quick & guided install"
-ln_install_help = "Help me decide"
-ln_title_autoinst2 = "Choose your language and locale"
-ln_title_autoinst3 = "Choose your timezone and keyboard layout"
-ln_title_autoinst4 = "Create your local user account"
+list_keymaps = "Keyboard Layout"
+list_timezones = "Timezone"
 
-ln_entry_username = "Username"
-ln_entry_fullname = "Full name (optional)"
-ln_password_reminder_txt = "(You will be able to set password for your user account after the installation)"
+adv_confirm = "Advanced option selected..."
+adv_confirm_text = "This option isn't recommended for new users."
 
-ln_list_keymaps = "Keyboard Layout"
-ln_list_timezones = "Timezone"
-
-ln_adv_confirm = "Advanced option selected..."
-ln_adv_confirm_text = "This option isn't recommended for new users."
-
-ln_windows_question = "Okay! How should %s be installed?"
-ln_windows_options = ('Install alongside Windows',
+windows_question = "Okay! How should %s be installed?"
+windows_options = ('Install alongside Windows',
                       'Remove Windows & migrate my Library (Music, Photos, Videos)',
                       'Nuke Windows and all data and start fresh')
-ln_dualboot_size_question = "How much storage for %s?"
-ln_dualboot_size_txt = "Enter how many gigabytes should be allocated between %sGB and %sGB"
+dualboot_size_question = "How much storage for %s?"
+dualboot_size_txt = "Enter how many gigabytes should be allocated between %sGB and %sGB"
 
-ln_verify_question = "This is what is going to happen. Click %s once ready" % ln_btn_install
-ln_verify_text = \
+verify_question = "This is what is going to happen. Click %s once ready" % btn_install
+verify_text = \
     (
      "%s will be downloaded",
      (" and booted after restart to begin installation", " and installed"),
@@ -83,39 +80,39 @@ ln_verify_text = \
       "Everything on this device will be removed ")
     )
 
-ln_add_import_wifi = "Export my Wi-Fi networks to the new OS"
-ln_add_auto_restart = "Restart automatically"
-ln_add_torrent = "Download using torrent"
-ln_more_options = "More options"
+add_import_wifi = "Export my Wi-Fi networks to the new OS"
+add_auto_restart = "Restart automatically"
+add_torrent = "Download using torrent"
+more_options = "More options"
 
-ln_old_download_detected = "Previously downloaded files found"
-ln_old_download_detected_text = "Do you wish to use these previously downloaded files? " \
+old_download_detected = "Previously downloaded files found"
+old_download_detected_text = "Do you wish to use these previously downloaded files? " \
                                 "(if not, these files will be deleted and a new download will start)"
 
-ln_job_starting_download = "Starting download..."
+job_starting_download = "Starting download..."
 
-ln_job_dl_install_media = "Downloading install media..."
-ln_dl_timeleft = "Time left: "
-ln_dl_speed = "Speed: "
+job_dl_install_media = "Downloading install media..."
+dl_timeleft = "Time left"
+dl_speed = "Speed"
 
-ln_keymap_tz_option = "%s - Use default timezone and keyboard layout for this region"
-ln_keymap_tz_custom = "Custom timezone and keyboard layout"
+keymap_tz_option = "%s - Use default timezone and keyboard layout for this region"
+keymap_tz_custom = "Custom timezone and keyboard layout"
 
-ln_job_checksum = "Checking downloaded file's integrity"
-ln_job_checksum_failed = "Integrity check failed"
-ln_job_checksum_failed_txt = "Failed to check downloaded file integrity, continue anyways?"
-ln_job_checksum_mismatch = "Checksum Mismatch"
-ln_job_checksum_mismatch_txt = "The downloaded file has bad fingerprint (Hash) and cannot be trusted.\n\nFile Hash:\n%s\n" \
+job_checksum = "Checking downloaded file's integrity"
+job_checksum_failed = "Integrity check failed"
+job_checksum_failed_txt = "Failed to check downloaded file integrity, continue anyways?"
+job_checksum_mismatch = "Checksum Mismatch"
+job_checksum_mismatch_txt = "The downloaded file has bad fingerprint (Hash) and cannot be trusted.\n\nFile Hash:\n%s\n" \
                                "Expected Hash:\n%s\n\n" \
                                "This could also mean the downloaded file is corrupted"
 
-ln_job_creating_tmp_part = "Creating temporary boot partition for installer media..."
-ln_job_copying_to_tmp_part = "Copying required installer media files to temporary boot partition..."
-ln_job_adding_tmp_boot_entry = "Adding boot entry..."
+job_creating_tmp_part = "Creating temporary boot partition for installer media..."
+job_copying_to_tmp_part = "Copying required installer media files to temporary boot partition..."
+job_adding_tmp_boot_entry = "Adding boot entry..."
 
-ln_cleanup_question = "Clean up downloaded files?"
-ln_cleanup_question_txt = "These files are not useful anymore unless you plan to reuse the app later.\n\nDelete them?"
-ln_finished_title = "Restart required"
-ln_finished_text = "A restart is required to continue installation, " \
-                   "click '%s' to restart now or '%s' to manually restart later" % (ln_btn_restart_now, ln_btn_restart_later)
-ln_finished_text_restarting_now = "Automatic restart in %s seconds"
+cleanup_question = "Clean up downloaded files?"
+cleanup_question_txt = "These files are not useful anymore unless you plan to reuse the app later.\n\nDelete them?"
+finished_title = "Restart required"
+finished_text = "A restart is required to continue installation, " \
+                   "click '%s' to restart now or '%s' to manually restart later" % (btn_restart_now, btn_restart_later)
+finished_text_restarting_now = "Automatic restart in %s seconds"
