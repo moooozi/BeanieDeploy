@@ -1,74 +1,113 @@
-import APP_INFO
+btn_next = "Weiter"
+btn_yes = "Ja"
+btn_no = "Nein"
+btn_back = "Zurück"
+btn_quit = "Beenden"
+btn_cancel = "Abbrechen"
+btn_continue = "Weiter"
+btn_abort = "Abbruch"
+btn_confirm = "Bestätigen"
+btn_install = "Jetzt installieren"
+btn_restart_now = "Jetzt neu starten"
+btn_restart_later = "Später neu starten"
+btn_dl_again = "Erneut herunterladen"
 
-ln_btn_next = "Weiter"
-ln_btn_back = "Zurück"
-ln_btn_quit = "Beenden"
-ln_btn_start = "Starten"
-ln_btn_restart_now = "Jetzt neustarten"
-ln_btn_restart_later = "Später neustarten"
+check_running = "Überprüfe die Systemkompatibilität. Bitte warten..."
+check_ram = "Überprüfe verfügbare RAM-Kapazität"
+check_uefi = "Überprüfe die UEFI-Konformität"
+check_space = "Überprüfe verfügbaren Speicherplatz"
+check_resizable = "Veränderbarkeit des Systemlaufwerks prüfen"
+check_bitlocker = "Überprüfe den Bitlocker-Status des Systemlaufwerks"
 
-ln_check_running = "Systemkompatibilität wird überprüft. Bitte warten..."
-ln_check_ram = "Wird überprüft: Verfügbare RAM-Kapazität"
-ln_check_uefi = "Wird überprüft: UEFI-Konformität"
-ln_check_space = "Wird überprüft: Verfügbaren Speicherplatz"
-ln_check_resizable = "Wird überprüft: Veränderbarkeit des Systemlaufwerks"
-ln_check_bitlocker = "Wird überprüft: den Bitlocker-Status des Systemlaufwerks"
+error_title = "%s kann auf Ihrem System nicht ausgeführt werden"
+error_list = "Folgende Probleme erkannt:"
+error_arch_0 = "Die CPU-Architektur dieses Geräts ist nicht kompatibel."
+error_arch_9 = "CPU-Architektur konnte nicht verifiziert werden."
+error_uefi_0 = "Ihr System unterstützt (oder verwendet) UEFI-Boot nicht."
+error_uefi_9 = "UEFI-Boot-Unterstützung konnte nicht verifiziert werden."
+error_totalram_0 = "Ihr System hat nicht genügend RAM-Kapazität."
+error_totalram_9 = "Verfügbare RAM-Kapazität konnte nicht geprüft werden."
+error_space_0 = "Nicht genügend Speicherplatz auf Ihrem Systemlaufwerk. Geben Sie Speicherplatz frei und versuchen Sie es erneut."
+error_space_9 = "Der verfügbare Speicherplatz auf Ihrem Systemlaufwerk konnte nicht überprüft werden."
+error_resizable_0 = "Nicht genug Speicherplatz auf dem Systemlaufwerk."
+error_resizable_9 = "Die Größenänderung des Systemlaufwerks konnte nicht überprüft werden."
+error_bitlocker_0 = "Systemlaufwerk hat Bitlocker aktiviert. Kompatibilität kann nicht gewährleistet werden"
+error_bitlocker_9 = "Bitlocker-Status des Systemlaufwerks konnte nicht überprüft werden."
 
-ln_install_running = "Installieren..."
+lang = "Sprache"
+locale = "Gebietsschema"
+recommended = "empfohlen"
+adv = "Erweitert"
+net_install = "Netzwerkinstallation"
+warn_space = "Nicht genug Platz"
+total_download = "Download insgesamt: %sGB"
+init_download = "Erster Download: %sGB"
 
-ln_error_title = "%s kann auf Ihrem System nicht ausgeführt werden" % APP_INFO.SW_NAME
-ln_error_list = "Folgende Voraussetzungen fehlen:"
-ln_error_uefi_0 = "Ihr System unterstützt (oder verwendet) UEFI-Boot nicht."
-ln_error_uefi_9 = "UEFI-Boot-Unterstützung konnte nicht verifiziert werden."
-ln_error_totalram_0 = "Ihr System hat nicht genügend RAM-Kapazität."
-ln_error_totalram_9 = "Verfügbare RAM-Kapazität konnte nicht geprüft werden."
-ln_error_space_0 = "Nicht genügend Speicherplatz auf dem Systemlaufwerk."
-ln_error_space_9 = "Der verfügbare Speicherplatz auf dem Systemlaufwerk konnte nicht überprüft werden."
-ln_error_resizable_0 = "Die Größenänderung des Systemlaufwerks konnte nicht überprüft werden."
-ln_error_resizable_9 = "Nicht genug Platz zum Verkleinern auf dem Systemlaufwerk."
-ln_error_bitlocker_0 = "Fehler beim Prüfen, ob auf dem Systemlaufwerk Bitlocker aktiviert ist."
-ln_error_bitlocker_9 = "Auf dem Systemlaufwerk ist Bitlocker aktiviert. Kompatibilität kann nicht gesichert werden"
+install_running = "Installieren..."
+install_question = "Wie möchten Sie Linux installieren?"
+install_auto = "Schnelle & geführte Installation"
+install_help = "Hilfe bei der Entscheidung"
+title_autoinst2 = "Wählen Sie Ihre Sprache und Ihr Gebietsschema"
+title_autoinst3 = "Wählen Sie Ihre Zeitzone und Ihr Tastaturlayout"
+title_autoinst4 = "Erstellen Sie Ihr lokales Benutzerkonto"
 
-ln_install_question = "Wie möchten Sie %s installieren?" % APP_INFO.distro_name
+entry_username = "Benutzername"
+entry_fullname = "Vollständiger Name (optional)"
+password_reminder_txt = "(Sie können nach der Installation ein Passwort für Ihr Benutzerkonto festlegen)"
 
-ln_install_options = ("%s automatisch installieren (%s Desktop)"
-                      % (APP_INFO.distro_flavors_names[0], APP_INFO.distro_flavors_de[0]),
-                      "%s automatisch installieren (%s Desktop)"
-                      % (APP_INFO.distro_flavors_names[1], APP_INFO.distro_flavors_de[1]),
-                      "Erweitert: Net-install verwenden & Pakete später auswählen")
-ln_install_help = "Hilfe mir zu entscheiden"
+list_keymaps = "Tastaturlayout"
+list_timezones = "Zeitzone"
 
-ln_adv_confirm = "Erweiterte Option ausgewählt..."
-ln_adv_confirm_text = "Ich habe eine erweiterte Option ausgewählt und weiß, was ich tue"
+adv_confirm = "Erweiterte Option ausgewählt..."
+adv_confirm_text = "Diese Option wird neuen Benutzern nicht empfohlen."
 
-ln_windows_question = "Okay! Was soll ich mit Windows und Ihren Datein tun?"
-ln_windows_options = ("%s neben Windows installieren" % APP_INFO.distro_name,
-                      "Windows entfernen und meine Bibliothek (Musik, Fotos, Videos) nach %s migrieren" % APP_INFO.distro_name,
-                      "Lösche Windows und alle meine Daten und starte neu mit %s" % APP_INFO.distro_name,
-                      "Erweitert: Nichts tun und mich später partitionieren lassen")
-ln_windows_option1_disabled = "%s (nicht genug Speicherplatz)" % ln_windows_options[1]
+windows_question = "Okay! Wie soll %s installiert werden?"
+windows_options = ('Neben Windows installieren',
+                      'Windows entfernen & meine Bibliothek migrieren (Musik, Fotos, Videos)',
+                      'Nuke Windows und alle Daten und starte neu')
+dualboot_size_question = "Wie viel Speicherplatz für %s?"
+dualboot_size_txt = "Geben Sie ein, wie viele Gigabyte zwischen %sGB und %sGB zugewiesen werden sollen"
 
-ln_verify_question = "Das wird getan. Klicken Sie auf %s, sobald Sie bereit sind." % ln_btn_start
-ln_add_import_wifi = "Meine WLAN-Netzwerke nach %s exportieren" % APP_INFO.distro_name
-ln_add_auto_restart = "Automatisch neustarten"
-ln_show_advanced = "Erweiterte Einstellungen anzeigen"
-ln_adv_torrent = "Torrent zum Download verwenden"
+verify_question = "Das wird passieren. Klicken Sie auf %s, sobald Sie fertig sind." % btn_install
+verify_text = \
+    (
+     "%s wird heruntergeladen",
+     (" und nach Neustart gestartet, um mit der Installation zu beginnen", " und installiert"),
+     (" neben Windows", " Windows ersetzen", ", Windows und alle vorhandenen Dateien werden entfernt"),
+     ("Keine Ihrer Dateien wird gelöscht oder in irgendeiner Weise verändert",
+      "Alles auf dem Systemlaufwerk (%s:\\) wird entfernt, dies umfasst normalerweise Ihre Bibliotheksordner (Downloads, Videos, Musik, Bilder usw.)",
+      "Alles auf diesem Gerät wird entfernt")
+    )
 
-ln_old_download_detected = "Nicht abgeschlossene Installation erkannt"
-ln_old_download_detected_text = "Eine nicht abgeschlossene Installation erkannt, zuvor heruntergeladene Dateien verwenden? " \
-                                "(wählen Sie 'Nein', um zu bereinigen und einen neuen Download zu starten)"
+add_import_wifi = "Meine WLAN-Netzwerke in das neue Betriebssystem exportieren"
+add_auto_restart = "Automatisch neu starten"
+add_torrent = "Download über Torrent"
+more_options = "Weitere Optionen"
 
-ln_job_starting_download = "Download wird gestartet"
-ln_dl_timeleft = "Verbleibende Zeit: "
-ln_dl_speed = "Geschwindigkeit: "
+old_download_detected = "Zuvor heruntergeladene Dateien gefunden"
+old_download_detected_text = "Möchten Sie diese zuvor heruntergeladenen Dateien verwenden? " \
+                                "(wenn nicht, werden diese Dateien gelöscht und ein neuer Download wird gestartet)"
 
-ln_job_dl_install_media = "Installationsmedium werden heruntergeladen"
-ln_job_creating_tmp_part = "Temporäre Boot-Partition für Installationsmedium wird erstellt..."
-ln_job_copying_to_tmp_part = "Installationsmediumdateien werden auf temporäre Boot-Partition kopiert..."
-ln_job_adding_tmp_boot_entry = "Boot-Eintrag wird hinzugefügt..."
+job_starting_download = "Starte Download..."
 
-ln_finished_title = "Neustart erforderlich"
-ln_finished_text = "Ein Neustart ist erforderlich, um die Installation fortzusetzen, Klicken Sie auf " \
-                   "'%s', um jetzt neu zu starten oder '%s' " \
-                   "um später manuell neuzustarten" % (ln_btn_restart_now, ln_btn_restart_later)
-ln_finished_text_restarting_now = "Automatischer Neustart in %s Sekunden"
+job_dl_install_media = "Installationsmedien werden heruntergeladen..."
+dl_timeleft = "Verbleibende Zeit"
+dl_speed = "Geschwindigkeit"
+
+keymap_tz_option = "%s - Standardzeitzone und Tastaturlayout für diese Region verwenden"
+keymap_tz_custom = "Benutzerdefinierte Zeitzone und Tastaturlayout"
+
+job_checksum = "Überprüfe die Integrität der heruntergeladenen Datei"
+job_checksum_failed = "Integritätsprüfung fehlgeschlagen"
+job_checksum_failed_txt = "Fehler beim Überprüfen der Integrität der heruntergeladenen Datei, trotzdem fortfahren?"
+job_checksum_mismatch = "Nicht übereinstimmende Prüfsumme"
+job_checksum_mismatch_txt = "Die heruntergeladene Datei hat einen ungültigen Fingerabdruck (Hash) und ist nicht vertrauenswürdig.\n\nDatei-Hash:\n%s\n" \
+                               "Erwarteter Hash:\n%s\n\n" \
+                               "Dies könnte auch bedeuten, dass die heruntergeladene Datei beschädigt ist"
+
+job_creating_tmp_part = "Temporäre Bootpartition für Installationsmedium erstellen..."
+job_copying_to_tmp_part = "Erforderliche Installationsmediendateien werden auf temporäre Boot-Partition kopiert..."
+job_adding_tmp_boot_entry = "Starteintrag wird hinzugefügt..."
+
+cleanup_question = "Heruntergeladene Dateien bereinigen?"
+cleanup_question_txt = "Diese Dateien sind nicht mehr nützlich, es sei denn, Sie planen eine Wiederverwendung"

@@ -1,7 +1,4 @@
 # from APP_INFO import *
-import ctypes
-from pathlib import Path
-import sys
 import tkinter as tk
 from tkinter import ttk
 from multiprocessing import Process, Queue
@@ -11,11 +8,20 @@ from APP_INFO import *
 from multilingual import language_list, change_lang
 import functions as fn
 from style import *
+import translations.en as LN
 #   DRIVER CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
+MAXWIDTH = 800
+MAXHEIGHT = 500
+LARGEFONT = ("Ariel", 24)
+MEDIUMFONT = ("Ariel Bold", 15)
+SMALLFONT = ("Ariel", 12)
+VERYSMALLFONT = ("Ariel", 10)
+top_background = '#474747'
+CURRENT_DIR = str(Path(__file__).parent.absolute())
+
 app = tk.Tk()
 app.title(SW_NAME)
 app.geometry(str("%sx%s" % (MAXWIDTH, MAXHEIGHT)))
-CURRENT_DIR = str(Path(__file__).parent.absolute())
 # app.iconbitmap("yourimage.ico")
 app.resizable(False, False)
 app.option_add('*Font', 'Ariel 11')
@@ -25,15 +31,16 @@ app.tk.call('source', CURRENT_DIR + '/theme/azure-dark.tcl')
 style.theme_use('azure')
 style.configure("Accentbutton", foreground='white')
 style.configure("Togglebutton", foreground='white')
+
 #   MAIN CONTAINER & FRAMES   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
-CONTAINER = tk.Frame(app)
+CONTAINER = ttk.Frame(app)
 TOP_FRAME = tk.Frame(CONTAINER, height=100, width=MAXWIDTH, background=top_background)
-LEFT_FRAME = tk.Frame(CONTAINER, width=200, height=MAXHEIGHT)
-MID_FRAME = tk.Frame(CONTAINER, height=700)
+LEFT_FRAME = ttk.Frame(CONTAINER, width=200, height=MAXHEIGHT)
+MID_FRAME = ttk.Frame(CONTAINER, height=700)
 vTitleText = tk.StringVar(app)
 TOP_TITLE = ttk.Label(TOP_FRAME, justify='center', textvariable=vTitleText, font=LARGEFONT, background=top_background)
 left_frame_img = tk.PhotoImage(file='resources/leftframe.png')
-left_frame_label = tk.Label(LEFT_FRAME, image=left_frame_img)
+left_frame_label = ttk.Label(LEFT_FRAME, image=left_frame_img)
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 GLOBAL_QUEUE = Queue()
 COMPATIBILITY_RESULTS = {}
@@ -51,16 +58,16 @@ GRUB_CONFIG_DIR = CURRENT_DIR + '\\resources\\grub_conf\\'
 vDist = tk.IntVar(app, -2)
 vAutoinst_t = tk.IntVar(app, 1)
 vAutoinst_option = tk.IntVar(app, -1)
-vWifi_t = tk.IntVar(app, 1)
+vAutoinst_Wifi_t = tk.IntVar(app, 1)
 vAutorestart_t = tk.IntVar(app, 0)
 vTorrent_t = tk.IntVar(app, 0)
 # autoinstaller variables
 vKeymap_timezone_source = tk.IntVar(app, value=1)
-vKeyboard = tk.StringVar(app)
-vTimezone = tk.StringVar(app)
-vFullname = tk.StringVar(app)
-vUsername = tk.StringVar(app)
-SELECTED_LOCALE = ''
+vAutoinst_Keyboard = tk.StringVar(app)
+vAutoinst_Timezone = tk.StringVar(app)
+vAutoinst_Fullname = tk.StringVar(app)
+vAutoinst_Username = tk.StringVar(app)
+Autoinst_SELECTED_LOCALE = ''
 USERNAME_WINDOWS = ''
 #   MULTI-LINGUAL /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 lang_var = tk.StringVar()
@@ -69,9 +76,9 @@ LANG_LIST['values'] = tuple(language_list.keys())
 LANG_LIST['state'] = 'readonly'
 # Set to English initially
 LANG_LIST.set('English')
-DI_VAR, LN = change_lang('English')
+DI_VAR = change_lang('English')
 CURRENT_LANGUAGE = language_list['English']
-
+CURRENT_PAGE = ''
 
 def build_container():
     """Used to build or rebuild the main frames after language change to a language with different direction
@@ -88,47 +95,39 @@ def build_container():
     MID_FRAME.pack_propagate(False)
 
 
-def open_popup(question_type, title_txt, msg_txt, regex=None):
+def language_handler(new_language=None, current_page=None):
+    global DI_VAR, LN, CURRENT_LANGUAGE
+    if new_language is None: new_language = lang_var.get()
+    if new_language == CURRENT_LANGUAGE: return -2
+    DI_VAR, LN = change_lang(new_lang=new_language)
+    CURRENT_LANGUAGE = new_language
+    build_container()
+    if current_page is not None: return current_page()
+
+
+def open_popup(parent, title_txt, msg_txt, is_entry=None, regex=None, true_string=None, false_string=None):
     """
 Pops up window to get input from user and freezes the main GUI while waiting for response
+    :param is_entry: typing input? or just a yes-no-like question
+    :param parent: the parent for the Tkinter Toplevel
+    :param false_string: the string text for the secondary button
+    :param true_string: the string text for the primary button
     :type regex: Pattern[str]
-    :param question_type: can be a 'yes-no','cancel-confirm', 'abort-retry-continue', and 'entry' for text input
     :param title_txt: the title for the popup in big font
     :param msg_txt: the smaller text beneath the title
     :return:
     """
-    pop = tk.Toplevel(app)
+    pop = tk.Toplevel(parent)
     border_frame = tk.Frame(pop, highlightbackground="gray", highlightthickness=1)
     pop_frame = tk.Frame(border_frame)
-    btn_true_txt = ''
-    btn_false_txt = ''
-    btn_danger_txt = ''
-    if question_type == 'cancel-confirm':
-        btn_true_txt = LN.btn_confirm
-        btn_false_txt = LN.btn_cancel
-    elif question_type == 'cancel-continue':
-        btn_true_txt = LN.btn_continue
-        btn_false_txt = LN.btn_cancel
-    elif question_type in ('abort-retry-continue', 'arc'):
-        btn_true_txt = LN.btn_dl_again
-        btn_false_txt = LN.btn_abort
-        btn_danger_txt = LN.btn_continue
-    elif question_type in ('yes-no', 'yn'):
-        btn_true_txt = LN.btn_yes
-        btn_false_txt = LN.btn_no
-    elif question_type == 'entry':
-        btn_true_txt = LN.btn_confirm
-        btn_false_txt = LN.btn_cancel
-    else: return -2
-
-    pop_var = tk.IntVar()
-    x = app.winfo_x()
-    y = app.winfo_y()
+    pop_var = tk.IntVar(pop)
+    x_position = parent.winfo_x()
+    y_position = parent.winfo_y()
     if len(msg_txt) > 120:
-        geometry = "600x300+%d+%d" % (x+125, y+125)
+        geometry = "600x300+%d+%d" % (x_position+125, y_position+125)
         msg_font = VERYSMALLFONT
     else:
-        geometry = "600x250+%d+%d" % (x+125, y+160)
+        geometry = "600x250+%d+%d" % (x_position+125, y_position+160)
         msg_font = SMALLFONT
     pop.geometry(geometry)
     pop.overrideredirect(True)
@@ -140,7 +139,7 @@ Pops up window to get input from user and freezes the main GUI while waiting for
     title.pack(pady=20, anchor=DI_VAR['w'])
     msg = ttk.Label(pop_frame, wraplength=600, justify=DI_VAR['l'], text=msg_txt, font=msg_font)
     msg.pack(pady=10, anchor=DI_VAR['w'])
-    if question_type == 'entry':
+    if is_entry:
         temp_frame = ttk.Frame(pop_frame)
         temp_frame.pack(fill='x', pady=(20, 0))
         entry_var = tk.StringVar(pop)
@@ -150,37 +149,22 @@ Pops up window to get input from user and freezes the main GUI while waiting for
             entry_var.trace_add('write', lambda *args: fn.validate_with_regex(var=entry_var, regex=regex, mode='fix'))
         entry_suffix = ttk.Label(temp_frame, text='GB', font=msg_font)
         entry_suffix.pack(anchor=DI_VAR['w'], side=DI_VAR['l'])
-    btn_true = ttk.Button(pop_frame, text=btn_true_txt, style="Accentbutton", command=lambda *args: validate_pop_input(1))
+    btn_true = ttk.Button(pop_frame, text=true_string, style="Accentbutton", command=lambda *args: validate_pop_input(1))
     btn_true.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
-    btn_false = ttk.Button(pop_frame, text=btn_false_txt, command=lambda *args: validate_pop_input(0))
+    btn_false = ttk.Button(pop_frame, text=false_string, command=lambda *args: validate_pop_input(0))
     btn_false.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5)
-    btn_danger = ttk.Button(pop_frame, text=btn_danger_txt, style="Dangerbutton", command=lambda *args: validate_pop_input(2))
-    more_options_btn = ttk.Label(pop_frame, justify="center", text=LN.more_options, font=VERYSMALLFONT, foreground='#3aa9ff')
-    more_options_btn.bind("<Button-1>",
-                          lambda *args: (more_options_btn.pack_forget(),
-                                         btn_danger.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5)))
-    if btn_danger_txt: more_options_btn.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5, pady=8)
 
     def validate_pop_input(inputted):
         pop_var.set(inputted)
         pop.destroy()
     pop.wait_window()
-    if question_type == 'entry' and pop_var.get() == 1:
+    if is_entry and pop_var.get() == 1:
         return entry_var.get()
     return pop_var.get()
 
 
-def language_handler(new_language=None, current_page=None):
-    global DI_VAR, LN, CURRENT_LANGUAGE
-    if new_language is None: new_language = lang_var.get()
-    if new_language == CURRENT_LANGUAGE: return
-    DI_VAR, LN = change_lang(new_lang=new_language)
-    CURRENT_LANGUAGE = new_language
-    build_container()
-    if current_page is not None: return current_page()
-
-
 def main():
+
     def page_check():
         """The page on which is decided whether the app can run on the device or not"""
         # ************** Multilingual support *************************************************************************
@@ -197,11 +181,9 @@ def main():
         job_var = tk.StringVar()
         current_job = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], textvariable=job_var, font=SMALLFONT)
         current_job.pack(padx=10, anchor=DI_VAR['w'])
+        app.update()
         # Request elevation (admin) if not running as admin
-        if not ctypes.windll.shell32.IsUserAnAdmin():
-            app.update()
-            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
-            quit()
+        get_admin()
         global COMPATIBILITY_RESULTS, COMPATIBILITY_CHECK_STATUS, IP_LOCALE
         COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'bitlocker': 1, 'arch': 'amd64'}
         if not COMPATIBILITY_RESULTS:
@@ -312,8 +294,8 @@ def main():
 
         def validate_input(*args):
             if distros['advanced'][vDist.get()]:
-                question = open_popup('cancel-continue', LN.adv_confirm, LN.adv_confirm_text)
-                print('hi')
+                question = open_popup(parent=app, title_txt=LN.adv_confirm, msg_txt=LN.adv_confirm_text,
+                                      true_string=LN.btn_continue, false_string=LN.btn_cancel)
                 if not question: vDist.set(-1)
                 else: pass
             if distros['auto-installable'][vDist.get()]:
@@ -353,7 +335,7 @@ def main():
         r3_autoinst = ttk.Radiobutton(MID_FRAME, text=LN.windows_options[2], variable=vAutoinst_option, value=2)
         r3_autoinst.pack(anchor=DI_VAR['w'], ipady=5)
 
-        c1_add = ttk.Checkbutton(MID_FRAME, text=LN.add_import_wifi, variable=vWifi_t, onvalue=1, offvalue=0)
+        c1_add = ttk.Checkbutton(MID_FRAME, text=LN.add_import_wifi, variable=vAutoinst_Wifi_t, onvalue=1, offvalue=0)
         c1_add.pack(anchor=DI_VAR['w'], ipady=5, pady=30)
         btn_next = ttk.Button(MID_FRAME, text=LN.btn_next, style="Accentbutton", command=lambda: validate_next_page())
         btn_next.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
@@ -371,10 +353,10 @@ def main():
             max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable']) - distros['size'][vDist.get()] - additional_failsafe_space
             float_regex = r'^[0-9]*\.?[0-9]{0,3}$'
             while True:
-                result = open_popup(question_type='entry',
+                result = open_popup(parent=app, is_entry=True,
                                     title_txt=LN.dualboot_size_question % distros['name'][vDist.get()],
                                     msg_txt=LN.dualboot_size_txt % (min_size, max_size),
-                                    regex=float_regex)
+                                    true_string=LN.btn_confirm, false_string=LN.btn_cancel,  regex=float_regex)
                 if result == 0:
                     vAutoinst_option.set(-1)
                     break
@@ -429,9 +411,9 @@ def main():
         lang_list_fedora.bind('<<TreeviewSelect>>', on_lang_click)
 
         def validate_next_page(*args):
-            global SELECTED_LOCALE
-            SELECTED_LOCALE = locale_list_fedora.focus()
-            if langtable.parse_locale(SELECTED_LOCALE).language:
+            global Autoinst_SELECTED_LOCALE
+            Autoinst_SELECTED_LOCALE = locale_list_fedora.focus()
+            if langtable.parse_locale(Autoinst_SELECTED_LOCALE).language:
                 return page_autoinst3()
 
     def page_autoinst3():
@@ -445,26 +427,26 @@ def main():
         title = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.title_autoinst3, font=MEDIUMFONT)
         title.pack(pady=35, anchor=DI_VAR['w'])
         
-        chosen_locale_name = langtable.language_name(languageId=SELECTED_LOCALE)
+        chosen_locale_name = langtable.language_name(languageId=Autoinst_SELECTED_LOCALE)
         if IP_LOCALE:
             locale_from_ip = langtable.list_locales(territoryId=IP_LOCALE[0])[0]
             locale_from_ip_name = langtable.language_name(languageId=locale_from_ip)
-            if locale_from_ip != SELECTED_LOCALE:
+            if locale_from_ip != Autoinst_SELECTED_LOCALE:
                 r1_keymaps_tz = ttk.Radiobutton(MID_FRAME, text=LN.keymap_tz_option % locale_from_ip_name,
-                                                variable=vKeymap_timezone_source, value=0, command=lambda: validate_input())
+                                                variable=vKeymap_timezone_source, value=0, command=lambda: spawn_more_widgets())
                 r1_keymaps_tz.pack(anchor=DI_VAR['w'], ipady=5)
 
         r2_keymaps_tz = ttk.Radiobutton(MID_FRAME, text=LN.keymap_tz_option % chosen_locale_name,
-                                        variable=vKeymap_timezone_source, value=1, command=lambda: validate_input())
+                                        variable=vKeymap_timezone_source, value=1, command=lambda: spawn_more_widgets())
         r3_keymaps_tz = ttk.Radiobutton(MID_FRAME, text=LN.keymap_tz_custom, variable=vKeymap_timezone_source,
-                                        value=2, command=lambda: validate_input())
+                                        value=2, command=lambda: spawn_more_widgets())
         r2_keymaps_tz.pack(anchor=DI_VAR['w'], ipady=5)
         r3_keymaps_tz.pack(anchor=DI_VAR['w'], ipady=5)
 
         timezone_all = sorted(all_timezones())
         lists_frame = ttk.Frame(MID_FRAME)
         timezone_txt = ttk.Label(lists_frame, wraplength=540, justify=DI_VAR['l'], text=LN.list_timezones, font=VERYSMALLFONT)
-        timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=vTimezone)
+        timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=vAutoinst_Timezone)
         timezone_list['values'] = tuple(timezone_all)
         timezone_list['state'] = 'readonly'
 
@@ -480,7 +462,7 @@ def main():
             if keyboard not in keyboards_all:
                 keyboards_all.append(keyboard)
         keyboards_txt = ttk.Label(lists_frame, wraplength=540, justify=DI_VAR['l'], text=LN.list_keymaps, font=VERYSMALLFONT)
-        keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=vKeyboard)
+        keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=vAutoinst_Keyboard)
         keyboard_list['values'] = tuple(keyboards_all)
         keyboard_list['state'] = 'readonly'
 
@@ -493,7 +475,7 @@ def main():
         btn_back = ttk.Button(MID_FRAME, text=LN.btn_back, command=lambda: page_autoinst2())
         btn_back.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5)
 
-        def validate_input(*args):
+        def spawn_more_widgets(*args):
             if vKeymap_timezone_source.get() == 2:
                 lists_frame.pack(fill='x', padx=20)
                 keyboards_txt.grid(pady=5, padx=5, column=0, row=1, sticky=DI_VAR['w'])
@@ -508,11 +490,11 @@ def main():
                 AUTOINST['keymap'] = langtable.list_keyboards(territoryId=IP_LOCALE[0])[0]
                 AUTOINST['timezone'] = langtable.list_timezones(territoryId=IP_LOCALE[0])[0]
             elif vKeymap_timezone_source.get() == 1:
-                AUTOINST['keymap'] = langtable.list_keyboards(languageId=SELECTED_LOCALE)[0]
-                AUTOINST['timezone'] = langtable.list_timezones(languageId=SELECTED_LOCALE)[0]
+                AUTOINST['keymap'] = langtable.list_keyboards(languageId=Autoinst_SELECTED_LOCALE)[0]
+                AUTOINST['timezone'] = langtable.list_timezones(languageId=Autoinst_SELECTED_LOCALE)[0]
             elif vKeymap_timezone_source.get() == 2:
-                AUTOINST['keymap'] = vKeyboard.get()
-                AUTOINST['timezone'] = vTimezone.get()
+                AUTOINST['keymap'] = vAutoinst_Keyboard.get()
+                AUTOINST['timezone'] = vAutoinst_Timezone.get()
 
             if AUTOINST['keymap'] and AUTOINST['timezone']:
                 page_autoinst4()
@@ -534,14 +516,14 @@ def main():
         username_regex = r'^' + _name_base + '$'
         fullname_regex = r'^[^:]*$'
         # Only allow username and fullname that meet the regex syntax above
-        vFullname.trace_add("write", lambda *args: fn.validate_with_regex(vFullname, regex=fullname_regex, mode='fix'))
-        vUsername.trace_add("write", lambda *args: fn.validate_with_regex(vUsername, regex=username_regex, mode='fix'))
+        vAutoinst_Fullname.trace_add("write", lambda *args: fn.validate_with_regex(vAutoinst_Fullname, regex=fullname_regex, mode='fix'))
+        vAutoinst_Username.trace_add("write", lambda *args: fn.validate_with_regex(vAutoinst_Username, regex=username_regex, mode='fix'))
 
         entries_frame = ttk.Frame(MID_FRAME)
         fullname_txt = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'], text=LN.entry_fullname, font=VERYSMALLFONT)
-        fullname_entry = ttk.Entry(entries_frame, width=40, textvariable=vFullname)
+        fullname_entry = ttk.Entry(entries_frame, width=40, textvariable=vAutoinst_Fullname)
         username_txt = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'], text=LN.entry_username, font=VERYSMALLFONT)
-        username_entry = ttk.Entry(entries_frame, width=40, textvariable=vUsername)
+        username_entry = ttk.Entry(entries_frame, width=40, textvariable=vAutoinst_Username)
 
         entries_frame.pack(fill='x', padx=20)
         fullname_txt.grid(pady=5, padx=5, column=0, row=0, sticky=DI_VAR['w'])
@@ -556,14 +538,14 @@ def main():
         btn_back = ttk.Button(MID_FRAME, text=LN.btn_back, command=lambda: page_autoinst3())
         btn_back.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5)
 
-        if not vUsername.get():
+        if not vAutoinst_Username.get():
             username_entry.insert(index=0, string=USERNAME_WINDOWS)
             username_entry.select_range(start=0, end=999)
 
         def validate_next_page(*args):
             # Username cannot be empty
-            is_username_valid = fn.validate_with_regex(vUsername, regex=username_regex, mode='read') not in (False, 'empty')
-            is_fullname_valid = fn.validate_with_regex(vFullname, regex=fullname_regex, mode='read')
+            is_username_valid = fn.validate_with_regex(vAutoinst_Username, regex=username_regex, mode='read') not in (False, 'empty')
+            is_fullname_valid = fn.validate_with_regex(vAutoinst_Fullname, regex=fullname_regex, mode='read')
             if is_username_valid and is_fullname_valid:
                 page_verify()
 
@@ -623,9 +605,10 @@ def main():
         current_job.pack(padx=10, anchor=DI_VAR['w'])
 
         global INSTALLER_STATUS, MOUNT_ISO_LETTER, TMP_PARTITION_LETTER
+        # checking if files from previous runs are present and if so, ask if user wishes to use them.
         if fn.check_file_if_exists(ISO_PATH) == 'True':
-            # checking if files from previous runs are present and if so, ask if user wishes to use them.
-            question = open_popup('yes-no', LN.old_download_detected, LN.old_download_detected_text)
+            question = open_popup(parent=app, title_txt=LN.old_download_detected, msg_txt=LN.old_download_detected_text,
+                                  true_string=LN.btn_yes, false_string=LN.btn_no)
             if question:
                 INSTALLER_STATUS = 2
             else:
@@ -637,7 +620,17 @@ def main():
                 job_var.set(LN.job_starting_download)
                 app.update()
                 fn.create_dir(DOWNLOAD_PATH)
-
+                with open(DOWNLOAD_PATH + '\\last_run.txt', 'x') as run_log:
+                    file = '\nvDist.get() = %s' % vDist.get() + \
+                           '\nvAutorestart_t.get() = %s' % vAutorestart_t.get() + \
+                           '\nvAutoinst_t.get() = %s' % vAutoinst_t.get() + \
+                           '\nvAutoinst_option.get() = %s' % vAutoinst_option.get() + \
+                           '\nSELECTED_LOCALE = %s' % Autoinst_SELECTED_LOCALE + \
+                           '\nvAutoinst_Username.get() = %s' % vAutoinst_Username.get() +\
+                           '\nvAutoinst_Fullname.get() = %s' % vAutoinst_Fullname.get() + \
+                           '\nvAutoinst_Timezone.get() = %s' % vAutoinst_Timezone.get() + \
+                           '\nvAutoinst_Keyboard.get() = %s' % vAutoinst_Keyboard.get()
+                    run_log.write(file)
                 aria2_location = CURRENT_DIR + '\\resources\\aria2c.exe'
                 if vTorrent_t.get() and distros['torrent'][vDist.get()]:
                     # if torrent is selected and a torrent link is available
@@ -674,18 +667,23 @@ def main():
                 out = GLOBAL_QUEUE.get()
                 if out == 1: INSTALLER_STATUS = 2.5
                 elif out == -1:
-                    question = open_popup('yes-no', LN.job_checksum_failed, LN.job_checksum_failed_txt)
+                    question = open_popup(parent=app, title_txt=LN.job_checksum_failed, msg_txt=LN.job_checksum_failed_txt,
+                                          true_string=LN.btn_yes, false_string=LN.btn_no)
                     if question: INSTALLER_STATUS = 2.5
                     else:
-                        question = open_popup('yes-no', LN.cleanup_question, LN.cleanup_question_txt)
+                        question = open_popup(parent=app, title_txt=LN.cleanup_question, msg_txt=LN.cleanup_question_txt,
+                                              true_string=LN.btn_yes, false_string=LN.btn_no)
                         if question: fn.remove_folder(DOWNLOAD_PATH)
                         app.destroy()
                 else:
-                    question = open_popup('abort-retry-continue', LN.job_checksum_mismatch, LN.job_checksum_mismatch_txt % out)
+                    question = open_popup(parent=app, title_txt=LN.job_checksum_mismatch,
+                                          msg_txt=LN.job_checksum_mismatch_txt % out,
+                                          true_string=LN.btn_yes, false_string=LN.btn_no)
                     if question == 1: pass
                     if question == 2: INSTALLER_STATUS = 2.5
                     if question == 0:
-                        question = open_popup('yes-no', LN.cleanup_question, LN.cleanup_question_txt)
+                        question = open_popup(parent=app, title_txt=LN.cleanup_question, msg_txt=LN.cleanup_question_txt,
+                                              true_string=LN.btn_yes, false_string=LN.btn_no)
                         if question: fn.remove_folder(DOWNLOAD_PATH)
                         else: app.destroy()
             if INSTALLER_STATUS == 2.5:  # step 2: create temporary boot partition
@@ -713,7 +711,7 @@ def main():
                 INSTALLER_STATUS = 5
             if INSTALLER_STATUS == 5:  # while copying files is ongoing...
                 while not GLOBAL_QUEUE.qsize():
-                    app.after(200, app.update())
+                    app.after(100, app.update())
                 if GLOBAL_QUEUE.get() == 1:
                     INSTALLER_STATUS = 6
             if INSTALLER_STATUS == 6:  # step 4: adding boot entry
@@ -727,7 +725,7 @@ def main():
                 INSTALLER_STATUS = 7
             if INSTALLER_STATUS == 7:  # while adding boot entry is ongoing...
                 while not GLOBAL_QUEUE.qsize():
-                    app.after(200, app.update())
+                    app.after(100, app.update())
                 if GLOBAL_QUEUE.get() == 1:
                     INSTALLER_STATUS = 8
             if INSTALLER_STATUS == 8:  # step 5: clean up iso and other downloaded files since install is complete
@@ -771,15 +769,8 @@ def main():
             fn.restart_windows()
             app.destroy()
 
-    #if not ctypes.windll.shell32.IsUserAnAdmin():
-    #    app.update()
-    #    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
-    #    quit()
-    #add_boot_entry(APP_INFO.efi_file_path, 'G', queue1)
-    #relabel_volume('C', 'Windows OS')
-    #print(get_wifi_profiles())
-
     # language_handler(new_language='English')
+    LANG_LIST.bind('<<ComboboxSelected>>', language_handler(current_page=exec(CURRENT_PAGE)))
 
     build_container()
     page_check()
