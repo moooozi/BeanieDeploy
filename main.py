@@ -79,8 +79,8 @@ def main():
         # Request elevation (admin) if not running as admin
         fn.get_admin()
         global COMPATIBILITY_RESULTS, COMPATIBILITY_CHECK_STATUS, IP_LOCALE
-        # COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
-        COMPATIBILITY_RESULTS = {'uefi': 0, 'ram': 3434559, 'space': 1332642488, 'resizable': 4320083, 'arch': 'arm'}
+        COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
+        # COMPATIBILITY_RESULTS = {'uefi': 0, 'ram': 3434559, 'space': 1332642488, 'resizable': 4320083, 'arch': 'arm'}
         if not COMPATIBILITY_RESULTS:
             if not COMPATIBILITY_CHECK_STATUS:
                 Process(target=fn.compatibility_test, args=(minimal_required_space, GLOBAL_QUEUE,)).start()
@@ -129,8 +129,8 @@ def main():
             tkt.add_text_label(MID_FRAME, LN.error_list, pady=10)
 
             errors_tree = ttk.Treeview(MID_FRAME, columns='error', show='', height=6)
-            errors_tree.pack(anchor=DI_VAR['w'], ipady=5, padx=5, fill='x')
-
+            errors_tree.pack(anchor=DI_VAR['w'], ipady=5, padx=(0, 5), fill='x')
+            errors_tree.configure(selectmode='none')
             for i in range(len(errors)):
                 errors_tree.insert('', index='end', iid=str(i), values=(errors[i],))
 
@@ -417,17 +417,30 @@ def main():
         vTitleText.set('')
         tkt.add_page_title(MID_FRAME, LN.verify_question)
 
-        # Construction user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
-        review_sel = 'x  ' + LN.verify_text[0] % distros['name'][vDist.get()] + LN.verify_text[1][vAutoinst_t.get()]
-        if vAutoinst_t.get():
-            review_sel += LN.verify_text[2][vAutoinst_option.get()]
-            review_sel += '\nx  ' + LN.verify_text[3][vAutoinst_option.get()]
-            if vAutoinst_option.get() == 1: review_sel = review_sel % fn.get_sys_drive_letter()
+        # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
+        review_sel = []
+        if vAutoinst_t.get() == 0:
+            review_sel.append(LN.verify_text['no_autoinst'])
+        else:
+            if vAutoinst_option.get() == 0:
+                review_sel.append(LN.verify_text['autoinst_dualboot'] % distros['name'][vDist.get()])
+                review_sel.append(LN.verify_text['autoinst_keep_data'])
+            elif vAutoinst_option.get() == 1:
+                review_sel.append(LN.verify_text['autoinst_clean'] % distros['name'][vDist.get()])
+                review_sel.append(LN.verify_text['autoinst_rm_sys'] % fn.get_sys_drive_letter())
+            elif vAutoinst_option.get() == 2:
+                review_sel.append(LN.verify_text['autoinst_clean'] % distros['name'][vDist.get()])
+                review_sel.append(LN.verify_text['autoinst_rm_all'])
+            if vAutoinst_Wifi_t.get():
+                review_sel.append(LN.verify_text['autoinst_wifi'] % distros['name'][vDist.get()])
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        review_text = tk.Text(MID_FRAME, spacing1=1, height=5, width=100, wrap='word')
-        review_text.insert(1.0, review_sel)
-        review_text.configure(state='disabled')
-        review_text.pack(anchor=DI_VAR['w'], pady=5)
+
+        review_tree = ttk.Treeview(MID_FRAME, columns='error', show='', height=3)
+        review_tree.pack(anchor=DI_VAR['w'], ipady=5, padx=(0, 5), fill='x')
+        review_tree.configure(selectmode='none')
+
+        for i in range(len(review_sel)):
+            review_tree.insert('', index='end', iid=str(i), values=(review_sel[i],))
         # additions options (checkboxes)
         c2_add = ttk.Checkbutton(MID_FRAME, text=LN.add_auto_restart, variable=vAutorestart_t, onvalue=1, offvalue=0)
         c2_add.pack(anchor=DI_VAR['w'])
@@ -536,6 +549,7 @@ def main():
             if INSTALLER_STATUS == 2.5:  # step 2: create temporary boot partition
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 tmp_part_size = fn.gigabyte(distros['size'][vDist.get()])
+                app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
                 Process(target=fn.create_temp_boot_partition, args=(tmp_part_size, GLOBAL_QUEUE,)).start()
                 job_var.set(LN.job_creating_tmp_part)
                 progressbar_install['value'] = 92
@@ -549,6 +563,7 @@ def main():
                     INSTALLER_STATUS = 4
             if INSTALLER_STATUS == 4:  # step 3: mount iso and copy files to temporary boot partition
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
+                app.protocol("WM_DELETE_WINDOW", None)  # re-enable closing the app
                 MOUNT_ISO_LETTER = fn.mount_iso(ISO_PATH)
                 source_files = MOUNT_ISO_LETTER + ':\\'
                 destination_files = TMP_PARTITION_LETTER + ':\\'
@@ -568,6 +583,7 @@ def main():
                 if vAutoinst_t.get(): grub_cfg_file = GRUB_CONFIG_DIR + 'grub_autoinst.cfg'
                 else: grub_cfg_file = GRUB_CONFIG_DIR + 'grub_default.cfg'
                 fn.copy_one_file(grub_cfg_file, TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg')
+                app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app
                 Process(target=fn.add_boot_entry, args=(default_efi_file_path, TMP_PARTITION_LETTER, GLOBAL_QUEUE,)).start()
                 INSTALLER_STATUS = 7
             if INSTALLER_STATUS == 7:  # while adding boot entry is ongoing...
@@ -580,6 +596,7 @@ def main():
                 fn.remove_folder(DOWNLOAD_PATH)
                 INSTALLER_STATUS = 9
             if INSTALLER_STATUS == 9:  # step 6: redirect to next page
+                app.protocol("WM_DELETE_WINDOW", None)  # re-enable closing the app
                 break
 
         page_restart_required()

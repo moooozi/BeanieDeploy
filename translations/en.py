@@ -64,25 +64,24 @@ adv_confirm_text = "This option isn't recommended for new users."
 
 windows_question = "Okay! How should %s be installed?"
 windows_options = ('Install alongside Windows',
-                      'Remove Windows & migrate my Library (Music, Photos, Videos)',
-                      'Nuke Windows and all data and start fresh')
+                   'Remove Windows and data on system drive',
+                   'Erase everything and start fresh')
 dualboot_size_question = "How much storage for %s?"
 dualboot_size_txt = "Enter how many gigabytes should be allocated between %sGB and %sGB"
 
 verify_question = "This is what is going to happen. Click %s once ready" % btn_install
-verify_text = \
-    (
-     "%s will be downloaded",
-     (" and booted after restart to begin installation", " and installed"),
-     (" alongside Windows", " replacing Windows", ", Windows and all existing files will be removed"),
-     ("None of your files will be deleted or changed in any way",
-      "Everything on system drive (%s:\\) will be removed, this usually includes your Library folders (Downloads, Videos, Music, Pictures, etc)",
-      "Everything on this device will be removed ")
-    )
-
+verify_text = {
+    'no_autoinst': "%s will be downloaded and will boot on the next restart to begin custom installation.",
+    'autoinst_dualboot': "%s will be downloaded and installed alongside Windows on next restart.",
+    'autoinst_clean': "%s will be downloaded and installed on next restart.",
+    'autoinst_keep_data': "None of your files will be deleted or changed in any way.",
+    'autoinst_rm_sys': "Everything on the %s:\\ drive will be erased.",
+    'autoinst_rm_all': "Everything on this device will be erased.",
+    'autoinst_wifi': "Existing Wi-Fi profiles will be exported to %s."
+}
 add_import_wifi = "Export my Wi-Fi networks to the new OS"
 add_auto_restart = "Restart automatically"
-add_torrent = "Download using torrent"
+add_torrent = "Download with torrent"
 more_options = "More options"
 
 old_download_detected = "Previously downloaded files found"

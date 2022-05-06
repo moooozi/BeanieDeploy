@@ -84,12 +84,14 @@ def add_primary_btn(parent, text, command):
     from multilingual import DI_VAR
     btn_next = ttk.Button(parent, text=text, style="Accentbutton", command=command)
     btn_next.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
+    return btn_next
 
 
 def add_secondary_btn(parent, text, command):
     from multilingual import DI_VAR
     btn_back = ttk.Button(parent, text=text, command=command)
     btn_back.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5)
+    return btn_back
 
 
 def add_page_title(parent, text, pady=35):
@@ -101,7 +103,6 @@ def add_page_title(parent, text, pady=35):
 
 def add_radio_btn(parent, text, var, value, command=None, is_disabled=None, ipady=5, side=None):
     from multilingual import DI_VAR
-
     radio = ttk.Radiobutton(parent, text=text, variable=var, value=value)
     radio.pack(anchor=DI_VAR['w'], ipady=ipady, side=side)
     if command: radio.configure(command=command)
