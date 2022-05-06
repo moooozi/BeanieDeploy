@@ -600,15 +600,10 @@ def main():
         tkt.add_page_title(MID_FRAME, LN.finished_title)
 
         text_var = tk.StringVar()
-        text1 = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.finished_text, font=FONTS['small'])
-        text1.pack(pady=10, anchor=DI_VAR['w'])
-        text2 = ttk.Label(MID_FRAME, wraplength=540, justify="center", textvariable=text_var, font=FONTS['small'])
-        text2.pack(pady=10, anchor=DI_VAR['w'])
-
-        button1 = ttk.Button(MID_FRAME, text=LN.btn_restart_now, style="Accentbutton", command=lambda: (fn.restart_windows(), app.destroy()))
-        button1.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
-        button2 = ttk.Button(MID_FRAME, text=LN.btn_restart_later, command=lambda: app.destroy())
-        button2.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5)
+        tkt.add_text_label(MID_FRAME, text=LN.finished_text, font=FONTS['small'], pady=10)
+        tkt.add_text_label(MID_FRAME, var=text_var, font=FONTS['small'], pady=10)
+        tkt.add_primary_btn(MID_FRAME, LN.btn_restart_now, lambda: (fn.restart_windows(), app.destroy()))
+        tkt.add_secondary_btn(MID_FRAME, LN.btn_restart_later, lambda: app.destroy())
 
         if vAutorestart_t.get():
             time_left = 10

@@ -141,6 +141,17 @@ def build_main_gui_frames(parent, main_title_var, mode='build', left_frame_img_p
     return top_frame, mid_frame, left_frame
 
 
+def add_text_label(parent, text=None, font=FONTS['small'], var=None, pady=20):
+    from multilingual import DI_VAR
+    if not var and text:
+        label = ttk.Label(parent, wraplength=540, justify=DI_VAR['l'], text=text, font=font)
+    elif var and not text:
+        label = ttk.Label(parent, wraplength=540, justify=DI_VAR['l'], textvariable=var, font=font)
+    else: return -1
+    label.pack(pady=pady, anchor=DI_VAR['w'])
+    return label
+
+
 def add_lang_list(parent, var, languages):
     from multilingual import DI_VAR
     lang_list = ttk.Combobox(parent, name="language", textvariable=var, background=top_background)
