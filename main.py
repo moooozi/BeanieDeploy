@@ -1,46 +1,19 @@
-# from APP_INFO import *
-import tkinter as tk
-from tkinter import ttk
 from multiprocessing import Process, Queue
-from autoinst import get_available_translations, get_xlated_timezone, langtable, get_locales_and_langs_sorted_with_names, all_timezones, detect_locale, \
-    get_available_keymaps
-from APP_INFO import *
-from multilingual import language_list, change_lang
 import functions as fn
-from style import *
-import translations.en as LN
+import multilingual
+import tkinter_templates as tkt
+from APP_INFO import *
+from autoinst import get_available_translations, langtable, get_locales_and_langs_sorted_with_names, all_timezones, \
+    detect_locale, get_available_keymaps
+from tkinter_templates import tk, ttk, FONTS
 #   DRIVER CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
-MAXWIDTH = 800
-MAXHEIGHT = 500
-LARGEFONT = ("Ariel", 24)
-MEDIUMFONT = ("Ariel Bold", 15)
-SMALLFONT = ("Ariel", 12)
-VERYSMALLFONT = ("Ariel", 10)
-top_background = '#474747'
-CURRENT_DIR = str(Path(__file__).parent.absolute())
-
-app = tk.Tk()
-app.title(SW_NAME)
-app.geometry(str("%sx%s" % (MAXWIDTH, MAXHEIGHT)))
-# app.iconbitmap("yourimage.ico")
-app.resizable(False, False)
-app.option_add('*Font', 'Ariel 11')
-#   STYLE     /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
-style = ttk.Style(app)
-app.tk.call('source', CURRENT_DIR + '/theme/azure-dark.tcl')
-style.theme_use('azure')
-style.configure("Accentbutton", foreground='white')
-style.configure("Togglebutton", foreground='white')
-
+CURRENT_DIR = fn.get_current_dir_path()
+app = tkt.init_tkinter(SW_NAME)
+tkt.stylize(app, CURRENT_DIR + '/theme/azure-dark.tcl')
 #   MAIN CONTAINER & FRAMES   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 CONTAINER = ttk.Frame(app)
-TOP_FRAME = tk.Frame(CONTAINER, height=100, width=MAXWIDTH, background=top_background)
-LEFT_FRAME = ttk.Frame(CONTAINER, width=200, height=MAXHEIGHT)
-MID_FRAME = ttk.Frame(CONTAINER, height=700)
 vTitleText = tk.StringVar(app)
-TOP_TITLE = ttk.Label(TOP_FRAME, justify='center', textvariable=vTitleText, font=LARGEFONT, background=top_background)
-left_frame_img = tk.PhotoImage(file='resources/leftframe.png')
-left_frame_label = ttk.Label(LEFT_FRAME, image=left_frame_img)
+TOP_FRAME, MID_FRAME, LEFT_FRAME = tkt.build_main_gui_frames(CONTAINER, vTitleText, 'resources/left_frame.png')
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 GLOBAL_QUEUE = Queue()
 COMPATIBILITY_RESULTS = {}
@@ -69,121 +42,43 @@ vAutoinst_Fullname = tk.StringVar(app)
 vAutoinst_Username = tk.StringVar(app)
 Autoinst_SELECTED_LOCALE = ''
 USERNAME_WINDOWS = ''
-#   MULTI-LINGUAL /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 lang_var = tk.StringVar()
-LANG_LIST = ttk.Combobox(TOP_FRAME, name="language", textvariable=lang_var, background=top_background)
-LANG_LIST['values'] = tuple(language_list.keys())
-LANG_LIST['state'] = 'readonly'
-# Set to English initially
-LANG_LIST.set('English')
-DI_VAR = change_lang('English')
-CURRENT_LANGUAGE = language_list['English']
-CURRENT_PAGE = ''
-
-def build_container():
-    """Used to build or rebuild the main frames after language change to a language with different direction
-(see function right_to_left_lang)"""
-    CONTAINER.pack(side="top", fill="both", expand=True)
-    TOP_FRAME.pack(fill="x", expand=1)
-    TOP_FRAME.pack_propagate(False)
-    LANG_LIST.pack(anchor=DI_VAR['w'], side='left', padx=30)
-    TOP_TITLE.pack(anchor='center', side='left', padx=15)
-    LEFT_FRAME.pack(fill="y", side=DI_VAR['l'])
-    LEFT_FRAME.pack_propagate(False)
-    left_frame_label.pack(side='bottom')
-    MID_FRAME.pack(fill="both", expand=1, padx=15, pady=20)
-    MID_FRAME.pack_propagate(False)
+LANG_LIST = tkt.add_lang_list(TOP_FRAME, lang_var, multilingual.available_languages.keys())
 
 
-def language_handler(new_language=None, current_page=None):
-    global DI_VAR, LN, CURRENT_LANGUAGE
+#   MULTI-LINGUAL /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
+def language_handler(new_language=None, current_page=None, mode='rebuild'):
+    global DI_VAR, LN, TOP_FRAME, MID_FRAME, LEFT_FRAME
     if new_language is None: new_language = lang_var.get()
-    if new_language == CURRENT_LANGUAGE: return -2
-    DI_VAR, LN = change_lang(new_lang=new_language)
-    CURRENT_LANGUAGE = new_language
-    build_container()
+    # if new_language == CURRENT_LANGUAGE: return -2
+    DI_VAR, LN = multilingual.change_lang(new_lang=new_language)
+    TOP_FRAME, MID_FRAME, LEFT_FRAME = tkt.build_main_gui_frames(app, vTitleText, 'resources/left_frame.png')
     if current_page is not None: return current_page()
 
 
-def open_popup(parent, title_txt, msg_txt, is_entry=None, regex=None, true_string=None, false_string=None):
-    """
-Pops up window to get input from user and freezes the main GUI while waiting for response
-    :param is_entry: typing input? or just a yes-no-like question
-    :param parent: the parent for the Tkinter Toplevel
-    :param false_string: the string text for the secondary button
-    :param true_string: the string text for the primary button
-    :type regex: Pattern[str]
-    :param title_txt: the title for the popup in big font
-    :param msg_txt: the smaller text beneath the title
-    :return:
-    """
-    pop = tk.Toplevel(parent)
-    border_frame = tk.Frame(pop, highlightbackground="gray", highlightthickness=1)
-    pop_frame = tk.Frame(border_frame)
-    pop_var = tk.IntVar(pop)
-    x_position = parent.winfo_x()
-    y_position = parent.winfo_y()
-    if len(msg_txt) > 120:
-        geometry = "600x300+%d+%d" % (x_position+125, y_position+125)
-        msg_font = VERYSMALLFONT
-    else:
-        geometry = "600x250+%d+%d" % (x_position+125, y_position+160)
-        msg_font = SMALLFONT
-    pop.geometry(geometry)
-    pop.overrideredirect(True)
-    pop.focus_set()
-    pop.grab_set()
-    border_frame.pack(expand=1, fill='both', pady=5, padx=5)
-    pop_frame.pack(expand=1, fill='both', pady=5, padx=10)
-    title = ttk.Label(pop_frame, wraplength=600, font=('Mistral 18 bold'), justify=DI_VAR['l'], text=title_txt)
-    title.pack(pady=20, anchor=DI_VAR['w'])
-    msg = ttk.Label(pop_frame, wraplength=600, justify=DI_VAR['l'], text=msg_txt, font=msg_font)
-    msg.pack(pady=10, anchor=DI_VAR['w'])
-    if is_entry:
-        temp_frame = ttk.Frame(pop_frame)
-        temp_frame.pack(fill='x', pady=(20, 0))
-        entry_var = tk.StringVar(pop)
-        entry = ttk.Entry(temp_frame, width=20, textvariable=entry_var)
-        entry.pack(padx=(20, 10), anchor=DI_VAR['w'], side=DI_VAR['l'])
-        if regex:
-            entry_var.trace_add('write', lambda *args: fn.validate_with_regex(var=entry_var, regex=regex, mode='fix'))
-        entry_suffix = ttk.Label(temp_frame, text='GB', font=msg_font)
-        entry_suffix.pack(anchor=DI_VAR['w'], side=DI_VAR['l'])
-    btn_true = ttk.Button(pop_frame, text=true_string, style="Accentbutton", command=lambda *args: validate_pop_input(1))
-    btn_true.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
-    btn_false = ttk.Button(pop_frame, text=false_string, command=lambda *args: validate_pop_input(0))
-    btn_false.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5)
-
-    def validate_pop_input(inputted):
-        pop_var.set(inputted)
-        pop.destroy()
-    pop.wait_window()
-    if is_entry and pop_var.get() == 1:
-        return entry_var.get()
-    return pop_var.get()
+language_handler(new_language='English')
 
 
 def main():
-
     def page_check():
         """The page on which is decided whether the app can run on the device or not"""
         # ************** Multilingual support *************************************************************************
         def page_name(): page_check()
         def change_callback(*args): language_handler(current_page=page_name)
         LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
-        clear_frame(MID_FRAME)
+        tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
-        title = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.check_running, font=MEDIUMFONT)
-        title.pack(pady=35, anchor=DI_VAR['w'])
+        title = tkt.add_page_title(MID_FRAME, LN.check_running)
+
         progressbar_check = ttk.Progressbar(MID_FRAME, orient='horizontal', length=550, mode='indeterminate')
         progressbar_check.pack(pady=25)
         progressbar_check.start(10)
         job_var = tk.StringVar()
-        current_job = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], textvariable=job_var, font=SMALLFONT)
+        current_job = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], textvariable=job_var, font=FONTS['small'])
         current_job.pack(padx=10, anchor=DI_VAR['w'])
         app.update()
         # Request elevation (admin) if not running as admin
-        get_admin()
+        fn.get_admin()
         global COMPATIBILITY_RESULTS, COMPATIBILITY_CHECK_STATUS, IP_LOCALE
         COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'bitlocker': 1, 'arch': 'amd64'}
         if not COMPATIBILITY_RESULTS:
@@ -200,7 +95,6 @@ def main():
                     elif queue_out == 'ram': job_var.set(LN.check_ram)
                     elif queue_out == 'space': job_var.set(LN.check_space)
                     elif queue_out == 'resizable': job_var.set(LN.check_resizable)
-                    elif queue_out == 'bitlocker': job_var.set(LN.check_bitlocker)
                     elif isinstance(queue_out, tuple) and queue_out[0] == 'detect_locale':
                         IP_LOCALE = queue_out[1:]
                     elif isinstance(queue_out, dict):
@@ -220,8 +114,6 @@ def main():
         elif COMPATIBILITY_RESULTS['space'] < fn.gigabyte(minimal_required_space): errors.append(LN.error_space_0)
         if COMPATIBILITY_RESULTS['resizable'] == -1: errors.append(LN.error_resizable_9)
         elif COMPATIBILITY_RESULTS['resizable'] < fn.gigabyte(minimal_required_space): errors.append(LN.error_resizable_0)
-        if COMPATIBILITY_RESULTS['bitlocker'] == -1: errors.append(LN.error_bitlocker_9)
-        elif COMPATIBILITY_RESULTS['bitlocker'] == 0: errors.append(LN.error_bitlocker_0)
 
         if not errors:
             global DOWNLOAD_PATH, ISO_NAME, ISO_PATH, USERNAME_WINDOWS
@@ -234,11 +126,11 @@ def main():
             title.pack_forget()
             progressbar_check.pack_forget()
             title = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.error_title % SW_NAME,
-                              font=MEDIUMFONT)
+                              font=FONTS['medium'])
             title.pack(pady=35, anchor=DI_VAR['nw'])
 
             errors_text_label = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.error_list + '\n',
-                                          font=SMALLFONT)
+                                          font=FONTS['small'])
             errors_text_label.pack(padx=10, anchor=DI_VAR['w'])
 
             errors_listed = 'x  ' + ("\nx  ".join(errors))
@@ -256,11 +148,10 @@ def main():
         def page_name(): page_1()
         def change_callback(*args): language_handler(current_page=page_name)
         LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
-        clear_frame(MID_FRAME)
+        tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set('Welcome to Lnixify')
-        title = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.install_question, font=MEDIUMFONT)
-        title.pack(pady=35, anchor=DI_VAR['w'])
+        tkt.add_page_title(MID_FRAME, LN.install_question)
 
         for index, distro in enumerate(distros['name']):
             txt = ''  # Generating Text for each list member of installable flavors/distros
@@ -279,30 +170,29 @@ def main():
             if distros['netinstall'][index]: dl_size_txt = LN.init_download % distros['size'][index]
             else: dl_size_txt = LN.total_download % distros['size'][index]
             ttk.Label(temp_frame, wraplength=540, justify="center", text=dl_size_txt,
-                      font=VERYSMALLFONT, foreground='#3aa9ff').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
+                      font=FONTS['tiny'], foreground='#3aa9ff').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
             if COMPATIBILITY_RESULTS['resizable'] < fn.gigabyte(distros['size'][index]):
                 radio.configure(state='disabled')
                 ttk.Label(temp_frame, wraplength=540, justify="center", text=LN.warn_space,
-                          font=VERYSMALLFONT, foreground='#ff4a4a').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
+                          font=FONTS['tiny'], foreground='#ff4a4a').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
                 if distros['recommended'][index]:
                     vDist.set(-1)
 
-        c1_autoinst = ttk.Checkbutton(MID_FRAME, text=LN.install_auto, variable=vAutoinst_t, onvalue=1, offvalue=0)
-        c1_autoinst.pack(anchor=DI_VAR['w'], pady=40)
+        check_autoinst = tkt.add_check_btn(MID_FRAME, LN.install_auto, vAutoinst_t, pady=40)
         btn_next = ttk.Button(MID_FRAME, text=LN.btn_next, style="Accentbutton", command=lambda: validate_next_page())
         btn_next.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
 
         def validate_input(*args):
             if distros['advanced'][vDist.get()]:
-                question = open_popup(parent=app, title_txt=LN.adv_confirm, msg_txt=LN.adv_confirm_text,
-                                      true_string=LN.btn_continue, false_string=LN.btn_cancel)
+                question = tkt.open_popup(parent=app, title_txt=LN.adv_confirm, msg_txt=LN.adv_confirm_text,
+                                          primary_btn_str=LN.btn_continue, secondary_btn_str=LN.btn_cancel)
                 if not question: vDist.set(-1)
                 else: pass
             if distros['auto-installable'][vDist.get()]:
-                c1_autoinst['state'] = 'enabled'
+                check_autoinst.configure(state='enabled')
                 vAutoinst_t.set(1)
             else:
-                c1_autoinst['state'] = 'disabled'
+                check_autoinst.configure(state='disabled')
                 vAutoinst_t.set(0)
 
         def validate_next_page(*args):
@@ -316,32 +206,21 @@ def main():
         def page_name(): page_autoinst1()
         def change_callback(*args): language_handler(current_page=page_name)
         LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
-        clear_frame(MID_FRAME)
+        tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
-        title = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'],
-                          text=LN.windows_question % distros['name'][vDist.get()], font=MEDIUMFONT)
-        title.pack(pady=35, anchor=DI_VAR['w'])
+        tkt.add_page_title(MID_FRAME, LN.windows_question % distros['name'][vDist.get()])
 
         r1_frame = ttk.Frame(MID_FRAME)
         r1_frame.pack(fill="x")
-        r1_autoinst = ttk.Radiobutton(r1_frame, text=LN.windows_options[0], variable=vAutoinst_option, value=0,
-                                      command=lambda: ask_dualboot_size())
-        r1_autoinst.pack(anchor=DI_VAR['w'], side=DI_VAR['l'], ipady=5)
-        r1_space = ttk.Label(r1_frame, wraplength=540, justify="center", text=LN.warn_space, font=VERYSMALLFONT,
+        r1_autoinst = tkt.add_radio_btn(r1_frame, LN.windows_options[0], vAutoinst_option, 0, lambda: ask_dualboot_size())
+        r1_space = ttk.Label(r1_frame, wraplength=540, justify="center", text=LN.warn_space, font=FONTS['tiny'],
                              foreground='#ff4a4a')
-        r2_autoinst = ttk.Radiobutton(MID_FRAME, text=LN.windows_options[1], variable=vAutoinst_option, value=1)
-        r2_autoinst.pack(anchor=DI_VAR['w'], ipady=5)
-        r3_autoinst = ttk.Radiobutton(MID_FRAME, text=LN.windows_options[2], variable=vAutoinst_option, value=2)
-        r3_autoinst.pack(anchor=DI_VAR['w'], ipady=5)
-
-        c1_add = ttk.Checkbutton(MID_FRAME, text=LN.add_import_wifi, variable=vAutoinst_Wifi_t, onvalue=1, offvalue=0)
-        c1_add.pack(anchor=DI_VAR['w'], ipady=5, pady=30)
-        btn_next = ttk.Button(MID_FRAME, text=LN.btn_next, style="Accentbutton", command=lambda: validate_next_page())
-        btn_next.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
-        btn_back = ttk.Button(MID_FRAME, text=LN.btn_back, command=lambda: page_1())
-        btn_back.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5)
-
+        tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], vAutoinst_option, 1)
+        tkt.add_radio_btn(MID_FRAME, LN.windows_options[2], vAutoinst_option, 2)
+        tkt.add_check_btn(MID_FRAME, LN.add_import_wifi, vAutoinst_Wifi_t)
+        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
+        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_1())
         # LOGIC
         space_dualboot = fn.gigabyte(distros['size'][vDist.get()] + dualboot_required_space + additional_failsafe_space)
         if COMPATIBILITY_RESULTS['resizable'] < space_dualboot:
@@ -353,10 +232,9 @@ def main():
             max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable']) - distros['size'][vDist.get()] - additional_failsafe_space
             float_regex = r'^[0-9]*\.?[0-9]{0,3}$'
             while True:
-                result = open_popup(parent=app, is_entry=True,
-                                    title_txt=LN.dualboot_size_question % distros['name'][vDist.get()],
-                                    msg_txt=LN.dualboot_size_txt % (min_size, max_size),
-                                    true_string=LN.btn_confirm, false_string=LN.btn_cancel,  regex=float_regex)
+                result = tkt.open_popup(app, LN.dualboot_size_question % distros['name'][vDist.get()],
+                                        LN.dualboot_size_txt % (min_size, max_size), LN.btn_confirm, LN.btn_cancel,
+                                        is_entry=True, regex=float_regex)
                 if result == 0:
                     vAutoinst_option.set(-1)
                     break
@@ -375,10 +253,9 @@ def main():
         def page_name(): page_autoinst2()
         def change_callback(*args): language_handler(current_page=page_name)
         LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
-        clear_frame(MID_FRAME)
+        tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
-        title = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.title_autoinst2, font=MEDIUMFONT)
-        title.pack(pady=35, anchor=DI_VAR['w'])
+        tkt.add_page_title(MID_FRAME, LN.title_autoinst2)
 
         all_languages = get_available_translations()
         if IP_LOCALE:
@@ -398,10 +275,8 @@ def main():
         for i in range(len(langs_and_locales)):
             lang_list_fedora.insert(parent='', index='end', iid=str(i), values=('%s (%s)' % langs_and_locales[i][0][:2],))
 
-        btn_next = ttk.Button(MID_FRAME, text=LN.btn_next, style="Accentbutton", command=lambda: validate_next_page())
-        btn_next.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
-        btn_back = ttk.Button(MID_FRAME, text=LN.btn_back, command=lambda: page_autoinst1())
-        btn_back.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5)
+        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
+        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_autoinst1())
 
         def on_lang_click(*args):
             for item in locale_list_fedora.get_children():
@@ -421,31 +296,24 @@ def main():
         def page_name(): page_autoinst3()
         def change_callback(*args): language_handler(current_page=page_name)
         LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
-        clear_frame(MID_FRAME)
+        tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
-
-        title = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.title_autoinst3, font=MEDIUMFONT)
-        title.pack(pady=35, anchor=DI_VAR['w'])
+        tkt.add_page_title(MID_FRAME, LN.title_autoinst3)
         
         chosen_locale_name = langtable.language_name(languageId=Autoinst_SELECTED_LOCALE)
         if IP_LOCALE:
             locale_from_ip = langtable.list_locales(territoryId=IP_LOCALE[0])[0]
             locale_from_ip_name = langtable.language_name(languageId=locale_from_ip)
             if locale_from_ip != Autoinst_SELECTED_LOCALE:
-                r1_keymaps_tz = ttk.Radiobutton(MID_FRAME, text=LN.keymap_tz_option % locale_from_ip_name,
-                                                variable=vKeymap_timezone_source, value=0, command=lambda: spawn_more_widgets())
-                r1_keymaps_tz.pack(anchor=DI_VAR['w'], ipady=5)
+                tkt.add_radio_btn(MID_FRAME, LN.keymap_tz_option % locale_from_ip_name, vKeymap_timezone_source,
+                                  0, command=lambda: spawn_more_widgets())
 
-        r2_keymaps_tz = ttk.Radiobutton(MID_FRAME, text=LN.keymap_tz_option % chosen_locale_name,
-                                        variable=vKeymap_timezone_source, value=1, command=lambda: spawn_more_widgets())
-        r3_keymaps_tz = ttk.Radiobutton(MID_FRAME, text=LN.keymap_tz_custom, variable=vKeymap_timezone_source,
-                                        value=2, command=lambda: spawn_more_widgets())
-        r2_keymaps_tz.pack(anchor=DI_VAR['w'], ipady=5)
-        r3_keymaps_tz.pack(anchor=DI_VAR['w'], ipady=5)
+        tkt.add_radio_btn(MID_FRAME, LN.keymap_tz_option % chosen_locale_name, vKeymap_timezone_source, 1, lambda: spawn_more_widgets())
+        tkt.add_radio_btn(MID_FRAME, LN.keymap_tz_custom, vKeymap_timezone_source, 2, lambda: spawn_more_widgets())
 
         timezone_all = sorted(all_timezones())
         lists_frame = ttk.Frame(MID_FRAME)
-        timezone_txt = ttk.Label(lists_frame, wraplength=540, justify=DI_VAR['l'], text=LN.list_timezones, font=VERYSMALLFONT)
+        timezone_txt = ttk.Label(lists_frame, wraplength=540, justify=DI_VAR['l'], text=LN.list_timezones, font=FONTS['tiny'])
         timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=vAutoinst_Timezone)
         timezone_list['values'] = tuple(timezone_all)
         timezone_list['state'] = 'readonly'
@@ -461,7 +329,7 @@ def main():
         for keyboard in all_keymaps:
             if keyboard not in keyboards_all:
                 keyboards_all.append(keyboard)
-        keyboards_txt = ttk.Label(lists_frame, wraplength=540, justify=DI_VAR['l'], text=LN.list_keymaps, font=VERYSMALLFONT)
+        keyboards_txt = ttk.Label(lists_frame, wraplength=540, justify=DI_VAR['l'], text=LN.list_keymaps, font=FONTS['tiny'])
         keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=vAutoinst_Keyboard)
         keyboard_list['values'] = tuple(keyboards_all)
         keyboard_list['state'] = 'readonly'
@@ -470,10 +338,8 @@ def main():
             timezone_list.set(IP_LOCALE[1])
             keyboard_list.set(keyboards_all[0])
 
-        btn_next = ttk.Button(MID_FRAME, text=LN.btn_next, style="Accentbutton", command=lambda: validate_next_page())
-        btn_next.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
-        btn_back = ttk.Button(MID_FRAME, text=LN.btn_back, command=lambda: page_autoinst2())
-        btn_back.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5)
+        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
+        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_autoinst2())
 
         def spawn_more_widgets(*args):
             if vKeymap_timezone_source.get() == 2:
@@ -504,11 +370,9 @@ def main():
         def page_name(): page_autoinst4()
         def change_callback(*args): language_handler(current_page=page_name)
         LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
-        clear_frame(MID_FRAME)
+        tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
-
-        title = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.title_autoinst4, font=MEDIUMFONT)
-        title.pack(pady=35, anchor=DI_VAR['w'])
+        tkt.add_page_title(MID_FRAME, LN.title_autoinst4)
 
         # Regex Syntax *****
         portable_fs_chars = r'a-zA-Z0-9._-'
@@ -520,9 +384,9 @@ def main():
         vAutoinst_Username.trace_add("write", lambda *args: fn.validate_with_regex(vAutoinst_Username, regex=username_regex, mode='fix'))
 
         entries_frame = ttk.Frame(MID_FRAME)
-        fullname_txt = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'], text=LN.entry_fullname, font=VERYSMALLFONT)
+        fullname_txt = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'], text=LN.entry_fullname, font=FONTS['tiny'])
         fullname_entry = ttk.Entry(entries_frame, width=40, textvariable=vAutoinst_Fullname)
-        username_txt = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'], text=LN.entry_username, font=VERYSMALLFONT)
+        username_txt = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'], text=LN.entry_username, font=FONTS['tiny'])
         username_entry = ttk.Entry(entries_frame, width=40, textvariable=vAutoinst_Username)
 
         entries_frame.pack(fill='x', padx=20)
@@ -531,12 +395,11 @@ def main():
         username_txt.grid(pady=5, padx=5, column=0, row=1, sticky=DI_VAR['w'])
         username_entry.grid(pady=5, padx=5, column=1, row=1)
 
-        password_reminder = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.password_reminder_txt, font=VERYSMALLFONT)
+        password_reminder = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.password_reminder_txt, font=FONTS['tiny'])
         password_reminder.pack(pady=10, padx=20, anchor=DI_VAR['w'])
-        btn_next = ttk.Button(MID_FRAME, text=LN.btn_next, style="Accentbutton", command=lambda: validate_next_page())
-        btn_next.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
-        btn_back = ttk.Button(MID_FRAME, text=LN.btn_back, command=lambda: page_autoinst3())
-        btn_back.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5)
+
+        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
+        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_autoinst3())
 
         if not vAutoinst_Username.get():
             username_entry.insert(index=0, string=USERNAME_WINDOWS)
@@ -554,11 +417,11 @@ def main():
         def page_name(): page_verify()
         def change_callback(*args): language_handler(current_page=page_name)
         LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
-        clear_frame(MID_FRAME)
+        tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set('')
-        title = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.verify_question, font=MEDIUMFONT)
-        title.pack(pady=35, anchor=DI_VAR['w'])
+        tkt.add_page_title(MID_FRAME, LN.title_autoinst4)
+
         # Construction user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = 'x  ' + LN.verify_text[0] % distros['name'][vDist.get()] + LN.verify_text[1][vAutoinst_t.get()]
         if vAutoinst_t.get():
@@ -574,14 +437,13 @@ def main():
         c2_add = ttk.Checkbutton(MID_FRAME, text=LN.add_auto_restart, variable=vAutorestart_t, onvalue=1, offvalue=0)
         c2_add.pack(anchor=DI_VAR['w'])
         c3_add = ttk.Checkbutton(MID_FRAME, text=LN.add_torrent, variable=vTorrent_t, onvalue=1, offvalue=0)
-        more_options_btn = ttk.Label(MID_FRAME, justify="center", text=LN.more_options, font=VERYSMALLFONT, foreground='#3aa9ff')
+        more_options_btn = ttk.Label(MID_FRAME, justify="center", text=LN.more_options, font=FONTS['tiny'], foreground='#3aa9ff')
         more_options_btn.pack(pady=10, padx=10, anchor=DI_VAR['w'])
         more_options_btn.bind("<Button-1>",
                               lambda x: (more_options_btn.pack_forget(), c3_add.pack(anchor=DI_VAR['w'])))
-        btn_next = ttk.Button(MID_FRAME, text=LN.btn_install, style="Accentbutton", command=lambda: page_installing())
-        btn_next.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
-        btn_back = ttk.Button(MID_FRAME, text=LN.btn_back, command=lambda: validate_back_page())
-        btn_back.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5)
+
+        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: page_installing())
+        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: validate_back_page())
 
         def validate_back_page(*args):
             if vAutoinst_t.get(): page_autoinst4()
@@ -592,23 +454,23 @@ def main():
         def page_name(): page_installing()
         def change_callback(*args): language_handler(current_page=page_name)
         LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
-        clear_frame(MID_FRAME)
+        tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_running)
         LANG_LIST.pack_forget()
-        # title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=LN.install_running, font=MEDIUMFONT)
+        # title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=LN.install_running, font=FONTS['medium'])
         # title.pack(pady=35, anchor=di_var['w'])
         progressbar_install = ttk.Progressbar(MID_FRAME, orient='horizontal', length=550, mode='determinate')
         progressbar_install.pack(pady=25)
         job_var = tk.StringVar()
-        current_job = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], textvariable=job_var, font=SMALLFONT)
+        current_job = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], textvariable=job_var, font=FONTS['small'])
         current_job.pack(padx=10, anchor=DI_VAR['w'])
 
         global INSTALLER_STATUS, MOUNT_ISO_LETTER, TMP_PARTITION_LETTER
         # checking if files from previous runs are present and if so, ask if user wishes to use them.
         if fn.check_file_if_exists(ISO_PATH) == 'True':
-            question = open_popup(parent=app, title_txt=LN.old_download_detected, msg_txt=LN.old_download_detected_text,
-                                  true_string=LN.btn_yes, false_string=LN.btn_no)
+            question = tkt.open_popup(parent=app, title_txt=LN.old_download_detected, msg_txt=LN.old_download_detected_text,
+                                      primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
             if question:
                 INSTALLER_STATUS = 2
             else:
@@ -620,17 +482,7 @@ def main():
                 job_var.set(LN.job_starting_download)
                 app.update()
                 fn.create_dir(DOWNLOAD_PATH)
-                with open(DOWNLOAD_PATH + '\\last_run.txt', 'x') as run_log:
-                    file = '\nvDist.get() = %s' % vDist.get() + \
-                           '\nvAutorestart_t.get() = %s' % vAutorestart_t.get() + \
-                           '\nvAutoinst_t.get() = %s' % vAutoinst_t.get() + \
-                           '\nvAutoinst_option.get() = %s' % vAutoinst_option.get() + \
-                           '\nSELECTED_LOCALE = %s' % Autoinst_SELECTED_LOCALE + \
-                           '\nvAutoinst_Username.get() = %s' % vAutoinst_Username.get() +\
-                           '\nvAutoinst_Fullname.get() = %s' % vAutoinst_Fullname.get() + \
-                           '\nvAutoinst_Timezone.get() = %s' % vAutoinst_Timezone.get() + \
-                           '\nvAutoinst_Keyboard.get() = %s' % vAutoinst_Keyboard.get()
-                    run_log.write(file)
+
                 aria2_location = CURRENT_DIR + '\\resources\\aria2c.exe'
                 if vTorrent_t.get() and distros['torrent'][vDist.get()]:
                     # if torrent is selected and a torrent link is available
@@ -667,23 +519,23 @@ def main():
                 out = GLOBAL_QUEUE.get()
                 if out == 1: INSTALLER_STATUS = 2.5
                 elif out == -1:
-                    question = open_popup(parent=app, title_txt=LN.job_checksum_failed, msg_txt=LN.job_checksum_failed_txt,
-                                          true_string=LN.btn_yes, false_string=LN.btn_no)
+                    question = tkt.open_popup(parent=app, title_txt=LN.job_checksum_failed, msg_txt=LN.job_checksum_failed_txt,
+                                              primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
                     if question: INSTALLER_STATUS = 2.5
                     else:
-                        question = open_popup(parent=app, title_txt=LN.cleanup_question, msg_txt=LN.cleanup_question_txt,
-                                              true_string=LN.btn_yes, false_string=LN.btn_no)
+                        question = tkt.open_popup(parent=app, title_txt=LN.cleanup_question, msg_txt=LN.cleanup_question_txt,
+                                                  primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
                         if question: fn.remove_folder(DOWNLOAD_PATH)
                         app.destroy()
                 else:
-                    question = open_popup(parent=app, title_txt=LN.job_checksum_mismatch,
-                                          msg_txt=LN.job_checksum_mismatch_txt % out,
-                                          true_string=LN.btn_yes, false_string=LN.btn_no)
+                    question = tkt.open_popup(parent=app, title_txt=LN.job_checksum_mismatch,
+                                              msg_txt=LN.job_checksum_mismatch_txt % out,
+                                              primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
                     if question == 1: pass
                     if question == 2: INSTALLER_STATUS = 2.5
                     if question == 0:
-                        question = open_popup(parent=app, title_txt=LN.cleanup_question, msg_txt=LN.cleanup_question_txt,
-                                              true_string=LN.btn_yes, false_string=LN.btn_no)
+                        question = tkt.open_popup(parent=app, title_txt=LN.cleanup_question, msg_txt=LN.cleanup_question_txt,
+                                                  primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
                         if question: fn.remove_folder(DOWNLOAD_PATH)
                         else: app.destroy()
             if INSTALLER_STATUS == 2.5:  # step 2: create temporary boot partition
@@ -742,17 +594,15 @@ def main():
         def page_name(): page_restart_required()
         def change_callback(*args): language_handler(current_page=page_name)
         LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
-        clear_frame(MID_FRAME)
+        tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         LANG_LIST.pack(anchor=DI_VAR['nw'], padx=10, pady=10)
-
-        title = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.finished_title, font=MEDIUMFONT)
-        title.pack(pady=35, anchor=DI_VAR['w'])
+        tkt.add_page_title(MID_FRAME, LN.finished_title)
 
         text_var = tk.StringVar()
-        text1 = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.finished_text, font=SMALLFONT)
+        text1 = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.finished_text, font=FONTS['small'])
         text1.pack(pady=10, anchor=DI_VAR['w'])
-        text2 = ttk.Label(MID_FRAME, wraplength=540, justify="center", textvariable=text_var, font=SMALLFONT)
+        text2 = ttk.Label(MID_FRAME, wraplength=540, justify="center", textvariable=text_var, font=FONTS['small'])
         text2.pack(pady=10, anchor=DI_VAR['w'])
 
         button1 = ttk.Button(MID_FRAME, text=LN.btn_restart_now, style="Accentbutton", command=lambda: (fn.restart_windows(), app.destroy()))
@@ -769,10 +619,6 @@ def main():
             fn.restart_windows()
             app.destroy()
 
-    # language_handler(new_language='English')
-    LANG_LIST.bind('<<ComboboxSelected>>', language_handler(current_page=exec(CURRENT_PAGE)))
-
-    build_container()
     page_check()
     app.mainloop()
 

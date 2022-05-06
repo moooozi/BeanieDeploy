@@ -1,10 +1,9 @@
 import re
 import subprocess
-import time
-import webbrowser
 
 
 def open_url(url):
+    import webbrowser
     webbrowser.open_new_tab(url)
 
 
@@ -32,12 +31,6 @@ def compatibility_test(required_space_min, queue):
         return subprocess.run([r'powershell.exe',
                                r'((Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).Size - (Get-PartitionSupportedSize -DriveLetter $env:SystemDrive.Substring(0, 1)).SizeMin)'],
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
-
-    def check_bitlocker_status():
-        return subprocess.run(
-            [r'powershell.exe', r'(Get-BitLockerVolume -MountPoint $env:SystemDrive).EncryptionPercentage'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
 
     # check starting...
     queue.put('arch')
@@ -77,19 +70,10 @@ def compatibility_test(required_space_min, queue):
     else:
         result_resizable_check = -2
 
-    queue.put('bitlocker')
-    if check_bitlocker_status().returncode != 0:
-        result_bitlocker_check = 9
-    elif check_bitlocker_status().stdout[:1] == '0':
-        result_bitlocker_check = 1
-    else:
-        result_bitlocker_check = 0
-
     check_results = {'uefi': result_uefi_check,
                      'ram': result_totalram_check,
                      'space': result_space_check,
                      'resizable': result_resizable_check,
-                     'bitlocker': result_bitlocker_check,
                      'arch': result_arch_check}
     queue.put(check_results)
 
@@ -142,9 +126,7 @@ def get_windows_username():
 
 def create_dir(path):
     arg = "New-Item -Path '" + path + "' -ItemType Directory"
-    subprocess.run(
-        [r'powershell.exe', arg],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
 def download_with_aria2(app_path, url, destination, is_torrent, queue):
@@ -372,7 +354,7 @@ def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None, username
     part_const4 = "\nrootpw --lock"
     ks_file_text = part_const1 + part_pre + part_post + part_keymap + part_lang + part_const2 + part_ostree + \
                    part_const3 + part_timezone + part_partition + part_user + part_const4
-    ks_file = open('anaconda-ks.cfg', 'w')
+    ks_file = open('anaconda-ks.cfg', 'x')
     ks_file.write(ks_file_text)
     print(ks_file_text)
 
@@ -381,15 +363,43 @@ def validate_with_regex(var, regex, mode='read'):
     regex_compiled = re.compile(regex)
     while var.get() != '':
         if re.match(regex_compiled, var.get()):
-            print('name was returned')
+            print('variable has been accepted')
             return True
         elif mode == 'read':
             return False
         elif mode == 'fix':
             var.set(var.get()[:-1])
-            print('name was modified')
+            print('variable has been modified')
     # indicate the string is empty now
     return 'empty'
+
+
+def get_current_dir_path():
+    from pathlib import Path
+    return str(Path(__file__).parent.absolute())
+
+
+def get_admin():
+    from sys import executable, argv
+    from ctypes import windll
+    if not windll.shell32.IsUserAnAdmin():
+        windll.shell32.ShellExecuteW(None, "runas", executable, " ".join(argv), None, 1)
+        quit()
+
+
+'''def logger():
+    with open(DOWNLOAD_PATH + '\\last_run.txt', 'x') as run_log:
+        file = '\nvDist.get() = %s' % vDist.get() + \
+               '\nvAutorestart_t.get() = %s' % vAutorestart_t.get() + \
+               '\nvAutoinst_t.get() = %s' % vAutoinst_t.get() + \
+               '\nvAutoinst_option.get() = %s' % vAutoinst_option.get() + \
+               '\nSELECTED_LOCALE = %s' % Autoinst_SELECTED_LOCALE + \
+               '\nvAutoinst_Username.get() = %s' % vAutoinst_Username.get() + \
+               '\nvAutoinst_Fullname.get() = %s' % vAutoinst_Fullname.get() + \
+               '\nvAutoinst_Timezone.get() = %s' % vAutoinst_Timezone.get() + \
+               '\nvAutoinst_Keyboard.get() = %s' % vAutoinst_Keyboard.get()
+        run_log.write(file)'''
+
 
 def gigabyte(gb): return gb * 1073741824
 def byte_to_gb(byte): return round(byte / 1073741824, 2)
