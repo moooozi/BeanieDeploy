@@ -9,7 +9,7 @@ from tkinter_templates import tk, ttk, FONTS
 #   DRIVER CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 CURRENT_DIR = fn.get_current_dir_path()
 app = tkt.init_tkinter(SW_NAME)
-tkt.stylize(app, CURRENT_DIR + '/theme/azure-dark.tcl')
+tkt.stylize(app, theme_dir=CURRENT_DIR + '/theme/azure-dark.tcl', theme_name='azure')
 #   MAIN CONTAINER & FRAMES   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 CONTAINER = ttk.Frame(app)
 vTitleText = tk.StringVar(app)
@@ -22,7 +22,7 @@ INSTALLER_STATUS = 0
 IP_LOCALE = []
 AUTOINST = {}
 DOWNLOAD_PATH = ''
-ISO_NAME = ''
+ISO_NAME = 'install_media.iso'
 ISO_PATH = ''
 MOUNT_ISO_LETTER = ''
 TMP_PARTITION_LETTER = ''
@@ -47,7 +47,7 @@ LANG_LIST = tkt.add_lang_list(TOP_FRAME, lang_var, multilingual.available_langua
 
 
 #   MULTI-LINGUAL /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
-def language_handler(new_language=None, current_page=None, mode='rebuild'):
+def language_handler(new_language=None, current_page=None):
     global DI_VAR, LN, TOP_FRAME, MID_FRAME, LEFT_FRAME
     if new_language is None: new_language = lang_var.get()
     # if new_language == CURRENT_LANGUAGE: return -2
@@ -74,16 +74,17 @@ def main():
         progressbar_check.pack(pady=25)
         progressbar_check.start(10)
         job_var = tk.StringVar()
-        current_job = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], textvariable=job_var, font=FONTS['small'])
-        current_job.pack(padx=10, anchor=DI_VAR['w'])
+        tkt.add_text_label(MID_FRAME, var=job_var, pady=0, padx=10)
         app.update()
         # Request elevation (admin) if not running as admin
         fn.get_admin()
         global COMPATIBILITY_RESULTS, COMPATIBILITY_CHECK_STATUS, IP_LOCALE
-        COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'bitlocker': 1, 'arch': 'amd64'}
+        # COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
+        COMPATIBILITY_RESULTS = {'uefi': 0, 'ram': 3434559, 'space': 1332642488, 'resizable': 4320083, 'arch': 'arm'}
         if not COMPATIBILITY_RESULTS:
             if not COMPATIBILITY_CHECK_STATUS:
                 Process(target=fn.compatibility_test, args=(minimal_required_space, GLOBAL_QUEUE,)).start()
+                # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
                 Process(target=detect_locale, args=(GLOBAL_QUEUE,)).start()
                 COMPATIBILITY_CHECK_STATUS = 1
             if COMPATIBILITY_CHECK_STATUS == 1:
@@ -116,31 +117,24 @@ def main():
         elif COMPATIBILITY_RESULTS['resizable'] < fn.gigabyte(minimal_required_space): errors.append(LN.error_resizable_0)
 
         if not errors:
-            global DOWNLOAD_PATH, ISO_NAME, ISO_PATH, USERNAME_WINDOWS
+            global DOWNLOAD_PATH, ISO_PATH, USERNAME_WINDOWS
             DOWNLOAD_PATH = fn.get_user_home_dir() + "\\win2linux_tmpdir"
-            ISO_NAME = 'install_media.iso'
             ISO_PATH = DOWNLOAD_PATH + "\\" + ISO_NAME
             USERNAME_WINDOWS = fn.get_windows_username()
             page_1()
         else:
             title.pack_forget()
             progressbar_check.pack_forget()
-            title = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.error_title % SW_NAME,
-                              font=FONTS['medium'])
-            title.pack(pady=35, anchor=DI_VAR['nw'])
+            tkt.add_page_title(MID_FRAME, LN.error_title % SW_NAME, pady=20)
+            tkt.add_text_label(MID_FRAME, LN.error_list, pady=10)
 
-            errors_text_label = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.error_list + '\n',
-                                          font=FONTS['small'])
-            errors_text_label.pack(padx=10, anchor=DI_VAR['w'])
+            errors_tree = ttk.Treeview(MID_FRAME, columns='error', show='', height=6)
+            errors_tree.pack(anchor=DI_VAR['w'], ipady=5, padx=5, fill='x')
 
-            errors_listed = 'x  ' + ("\nx  ".join(errors))
-            errors_text = tk.Text(MID_FRAME, spacing1=6, height=6)
-            errors_text.insert(1.0, errors_listed)
-            errors_text.configure(state='disabled')
-            errors_text.pack(padx=10, pady=5, anchor=DI_VAR['w'])
+            for i in range(len(errors)):
+                errors_tree.insert('', index='end', iid=str(i), values=(errors[i],))
 
-            btn_quit = ttk.Button(MID_FRAME, text=LN.btn_quit, command=lambda: app.destroy())
-            btn_quit.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
+            tkt.add_secondary_btn(MID_FRAME, LN.btn_quit, lambda: app.destroy())
 
     # page_1
     def page_1():
@@ -161,12 +155,10 @@ def main():
             if distros['netinstall'][index]: txt += ' (%s)' % LN.net_install
             if distros['recommended'][index]:
                 if vDist.get() == -2: vDist.set(index)  # If unset, set it to the default recommended entry
-                if distros['auto-installable'][index]: vAutoinst_t.set(1)  # by default turn on autoinstall if supported
                 txt += ' (%s)' % LN.recommended
             temp_frame = ttk.Frame(MID_FRAME)
             temp_frame.pack(fill="x", pady=5)
-            radio = ttk.Radiobutton(temp_frame, text=txt, variable=vDist, value=index, command=lambda: validate_input())
-            radio.pack(anchor=DI_VAR['w'], side=DI_VAR['l'])
+            radio = tkt.add_radio_btn(temp_frame, txt, vDist, index, ipady=0, side=DI_VAR['l'], command=lambda: validate_input())
             if distros['netinstall'][index]: dl_size_txt = LN.init_download % distros['size'][index]
             else: dl_size_txt = LN.total_download % distros['size'][index]
             ttk.Label(temp_frame, wraplength=540, justify="center", text=dl_size_txt,
@@ -175,12 +167,15 @@ def main():
                 radio.configure(state='disabled')
                 ttk.Label(temp_frame, wraplength=540, justify="center", text=LN.warn_space,
                           font=FONTS['tiny'], foreground='#ff4a4a').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
-                if distros['recommended'][index]:
+                if vDist.get() == [index]:
                     vDist.set(-1)
 
         check_autoinst = tkt.add_check_btn(MID_FRAME, LN.install_auto, vAutoinst_t, pady=40)
-        btn_next = ttk.Button(MID_FRAME, text=LN.btn_next, style="Accentbutton", command=lambda: validate_next_page())
-        btn_next.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
+        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
+        # BUGFIX
+        if not distros['auto-installable'][vDist.get()]:
+            check_autoinst.configure(state='disabled')
+            vAutoinst_t.set(0)
 
         def validate_input(*args):
             if distros['advanced'][vDist.get()]:
@@ -198,7 +193,7 @@ def main():
         def validate_next_page(*args):
             if vDist.get() == -1: return
             if vAutoinst_t.get(): return page_autoinst1()
-            return page_verify()
+            else: return page_verify()
 
     # page_autoinst1
     def page_autoinst1():
@@ -420,7 +415,7 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set('')
-        tkt.add_page_title(MID_FRAME, LN.title_autoinst4)
+        tkt.add_page_title(MID_FRAME, LN.verify_question)
 
         # Construction user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = 'x  ' + LN.verify_text[0] % distros['name'][vDist.get()] + LN.verify_text[1][vAutoinst_t.get()]

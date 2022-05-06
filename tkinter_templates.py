@@ -55,8 +55,8 @@ Pops up window to get input from user and freezes the main GUI while waiting for
     pop_frame.pack(expand=1, fill='both', pady=5, padx=10)
     title = ttk.Label(pop_frame, wraplength=600, font=('Mistral 18 bold'), justify=DI_VAR['l'], text=title_txt)
     title.pack(pady=20, anchor=DI_VAR['w'])
-    msg = ttk.Label(pop_frame, wraplength=600, justify=DI_VAR['l'], text=msg_txt, font=msg_font)
-    msg.pack(pady=10, anchor=DI_VAR['w'])
+    add_text_label(pop_frame, msg_txt, msg_font, pady=10)
+
     if is_entry:
         temp_frame = ttk.Frame(pop_frame)
         temp_frame.pack(fill='x', pady=(20, 0))
@@ -96,13 +96,14 @@ def add_page_title(parent, text, pady=35):
     from multilingual import DI_VAR
     title = ttk.Label(parent, wraplength=540, justify=DI_VAR['l'], text=text, font=FONTS['medium'])
     title.pack(pady=pady, anchor=DI_VAR['w'])
+    return title
 
 
-def add_radio_btn(parent, text, var, value, command=None, is_disabled=None):
+def add_radio_btn(parent, text, var, value, command=None, is_disabled=None, ipady=5, side=None):
     from multilingual import DI_VAR
 
     radio = ttk.Radiobutton(parent, text=text, variable=var, value=value)
-    radio.pack(anchor=DI_VAR['w'], ipady=5)
+    radio.pack(anchor=DI_VAR['w'], ipady=ipady, side=side)
     if command: radio.configure(command=command)
     if is_disabled: radio.configure(state='disabled')
     return radio
@@ -141,14 +142,13 @@ def build_main_gui_frames(parent, main_title_var, mode='build', left_frame_img_p
     return top_frame, mid_frame, left_frame
 
 
-def add_text_label(parent, text=None, font=FONTS['small'], var=None, pady=20):
+def add_text_label(parent, text=None, font=FONTS['small'], var=None, pady=20, padx=0, foreground=None):
     from multilingual import DI_VAR
-    if not var and text:
-        label = ttk.Label(parent, wraplength=540, justify=DI_VAR['l'], text=text, font=font)
-    elif var and not text:
-        label = ttk.Label(parent, wraplength=540, justify=DI_VAR['l'], textvariable=var, font=font)
+    if (not var and text) or (var and not text):
+        label = ttk.Label(parent, wraplength=540, justify=DI_VAR['l'],
+                          text=text, textvariable=var, foreground=foreground, font=font)
     else: return -1
-    label.pack(pady=pady, anchor=DI_VAR['w'])
+    label.pack(pady=pady, padx=padx, anchor=DI_VAR['w'])
     return label
 
 
@@ -162,10 +162,10 @@ def add_lang_list(parent, var, languages):
     return lang_list
 
 
-def stylize(parent, theme_dir):
+def stylize(parent, theme_dir, theme_name):
     style = ttk.Style(parent)
     parent.tk.call('source', theme_dir)
-    style.theme_use('azure')
+    style.theme_use(theme_name)
     style.configure("Accentbutton", foreground='white')
     style.configure("Togglebutton", foreground='white')
 
