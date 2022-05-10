@@ -135,6 +135,7 @@ def download_with_aria2(app_path, url, destination, is_torrent, queue):
         arg = arg + ' --seed-time=0'
     p = subprocess.Popen(app_path + arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                          universal_newlines=True)
+    # Parsing output
     tracker = {
         'speed': '0',
         'eta': 'N/A',

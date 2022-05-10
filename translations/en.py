@@ -45,7 +45,7 @@ total_download = "Total download: %sGB"
 init_download = "Initial download: %sGB"
 
 install_running = "Installing..."
-install_question = "How do you want to install Linux?"
+distro_question = "Which flavor of Fedora do you want to install?"
 install_auto = "Quick & guided install"
 install_help = "Help me decide"
 title_autoinst2 = "Choose your language and locale"
@@ -64,7 +64,6 @@ adv_confirm_text = "This option isn't recommended for new users."
 
 windows_question = "Okay! How should %s be installed?"
 windows_options = ('Install alongside Windows',
-                   'Remove Windows and data on system drive',
                    'Erase everything and start fresh')
 dualboot_size_question = "How much storage for %s?"
 dualboot_size_txt = "Enter how many gigabytes should be allocated between %sGB and %sGB"
@@ -75,7 +74,6 @@ verify_text = {
     'autoinst_dualboot': "%s will be downloaded and installed alongside Windows on next restart.",
     'autoinst_clean': "%s will be downloaded and installed on next restart.",
     'autoinst_keep_data': "None of your files will be deleted or changed in any way.",
-    'autoinst_rm_sys': "Everything on the %s:\\ drive will be erased.",
     'autoinst_rm_all': "Everything on this device will be erased.",
     'autoinst_wifi': "Existing Wi-Fi profiles will be exported to %s."
 }
@@ -86,7 +84,7 @@ more_options = "More options"
 
 old_download_detected = "Previously downloaded files found"
 old_download_detected_text = "Do you wish to use these previously downloaded files? " \
-                                "(if not, these files will be deleted and a new download will start)"
+                             "(if not, these files will be deleted and a new download will start)"
 
 job_starting_download = "Starting download..."
 

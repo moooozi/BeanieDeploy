@@ -145,7 +145,7 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set('Welcome to Lnixify')
-        tkt.add_page_title(MID_FRAME, LN.install_question)
+        tkt.add_page_title(MID_FRAME, LN.distro_question)
 
         for index, distro in enumerate(distros['name']):
             txt = ''  # Generating Text for each list member of installable flavors/distros
@@ -212,7 +212,6 @@ def main():
         r1_space = ttk.Label(r1_frame, wraplength=540, justify="center", text=LN.warn_space, font=FONTS['tiny'],
                              foreground='#ff4a4a')
         tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], vAutoinst_option, 1)
-        tkt.add_radio_btn(MID_FRAME, LN.windows_options[2], vAutoinst_option, 2)
         tkt.add_check_btn(MID_FRAME, LN.add_import_wifi, vAutoinst_Wifi_t)
         tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
         tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_1())
@@ -225,7 +224,8 @@ def main():
         def ask_dualboot_size():
             min_size = dualboot_required_space
             max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable']) - distros['size'][vDist.get()] - additional_failsafe_space
-            float_regex = r'^[0-9]*\.?[0-9]{0,3}$'
+            max_size = round(max_size, 2)
+            float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
             while True:
                 result = tkt.open_popup(app, LN.dualboot_size_question % distros['name'][vDist.get()],
                                         LN.dualboot_size_txt % (min_size, max_size), LN.btn_confirm, LN.btn_cancel,
@@ -356,7 +356,6 @@ def main():
             elif vKeymap_timezone_source.get() == 2:
                 AUTOINST['keymap'] = vAutoinst_Keyboard.get()
                 AUTOINST['timezone'] = vAutoinst_Timezone.get()
-
             if AUTOINST['keymap'] and AUTOINST['timezone']:
                 page_autoinst4()
 
@@ -436,7 +435,7 @@ def main():
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
         review_tree = ttk.Treeview(MID_FRAME, columns='error', show='', height=3)
-        review_tree.pack(anchor=DI_VAR['w'], ipady=5, padx=(0, 5), fill='x')
+        review_tree.pack(anchor=DI_VAR['w'], ipady=5, pady=10, padx=(0, 5), fill='x')
         review_tree.configure(selectmode='none')
 
         for i in range(len(review_sel)):
@@ -548,7 +547,7 @@ def main():
                         else: app.destroy()
             if INSTALLER_STATUS == 2.5:  # step 2: create temporary boot partition
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
-                tmp_part_size = fn.gigabyte(distros['size'][vDist.get()])
+                tmp_part_size = fn.gigabyte(distros['size'][vDist.get()] + temp_part_failsafe_space)
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
                 Process(target=fn.create_temp_boot_partition, args=(tmp_part_size, GLOBAL_QUEUE,)).start()
                 job_var.set(LN.job_creating_tmp_part)
