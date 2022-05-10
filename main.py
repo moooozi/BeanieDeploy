@@ -40,6 +40,7 @@ vAutoinst_Keyboard = tk.StringVar(app)
 vAutoinst_Timezone = tk.StringVar(app)
 vAutoinst_Fullname = tk.StringVar(app)
 vAutoinst_Username = tk.StringVar(app)
+vAutoinst_dualboot_size = tk.StringVar(app)
 Autoinst_SELECTED_LOCALE = ''
 USERNAME_WINDOWS = ''
 lang_var = tk.StringVar()
@@ -208,39 +209,54 @@ def main():
 
         r1_frame = ttk.Frame(MID_FRAME)
         r1_frame.pack(fill="x")
-        r1_autoinst = tkt.add_radio_btn(r1_frame, LN.windows_options[0], vAutoinst_option, 0, lambda: ask_dualboot_size())
+        r1_autoinst = tkt.add_radio_btn(r1_frame, LN.windows_options[0], vAutoinst_option, 0, lambda: show_dualboot_options(True))
         r1_space = ttk.Label(r1_frame, wraplength=540, justify="center", text=LN.warn_space, font=FONTS['tiny'],
                              foreground='#ff4a4a')
-        tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], vAutoinst_option, 1)
+        entries_frame = ttk.Frame(MID_FRAME)
+        entries_frame.pack(fill='x', padx=10)
+        tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], vAutoinst_option, 1, lambda: show_dualboot_options(False))
         tkt.add_check_btn(MID_FRAME, LN.add_import_wifi, vAutoinst_Wifi_t)
-        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
-        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_1())
+
+        min_size = dualboot_required_space
+        max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable']) - distros['size'][vDist.get()] - additional_failsafe_space
+        max_size = round(max_size, 2)
+        float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
+        size_dualboot_txt_pre = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'],
+                                          text=LN.dualboot_size_txt, font=FONTS['tiny'])
+        size_dualboot_txt_post = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'],
+                                           text='(%sGB - %sGB)' % (min_size, max_size), font=FONTS['tiny'])
+        size_dualboot_entry = ttk.Entry(entries_frame, width=10, textvariable=vAutoinst_dualboot_size)
+        vAutoinst_dualboot_size.trace_add("write", lambda *args: fn.validate_with_regex(vAutoinst_dualboot_size,
+                                                                                        regex=float_regex, mode='fix'))
+
         # LOGIC
         space_dualboot = fn.gigabyte(distros['size'][vDist.get()] + dualboot_required_space + additional_failsafe_space)
         if COMPATIBILITY_RESULTS['resizable'] < space_dualboot:
             r1_space.pack(padx=20, anchor=DI_VAR['e'], side=DI_VAR['l'])
             r1_autoinst.configure(state='disabled')
 
-        def ask_dualboot_size():
-            min_size = dualboot_required_space
-            max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable']) - distros['size'][vDist.get()] - additional_failsafe_space
-            max_size = round(max_size, 2)
-            float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
-            while True:
-                result = tkt.open_popup(app, LN.dualboot_size_question % distros['name'][vDist.get()],
-                                        LN.dualboot_size_txt % (min_size, max_size), LN.btn_confirm, LN.btn_cancel,
-                                        is_entry=True, regex=float_regex)
-                if result == 0:
-                    vAutoinst_option.set(-1)
-                    break
-                try:
-                    result = float(result)
-                    if min_size <= result <= max_size: return result
-                except ValueError: pass
+        def show_dualboot_options(is_true: bool):
+            if is_true:
+                size_dualboot_txt_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=DI_VAR['w'])
+                size_dualboot_entry.grid(pady=5, padx=5, column=1, row=0)
+                size_dualboot_txt_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=DI_VAR['w'])
+            else:
+                size_dualboot_txt_pre.grid_forget()
+                size_dualboot_entry.grid_forget()
+                size_dualboot_txt_post.grid_forget()
 
         def validate_next_page(*args):
-            if vAutoinst_option.get() == -1: return
+            if vAutoinst_option.get() == 1: pass
+            elif vAutoinst_option.get() == 0:
+                try:
+                    result = float(vAutoinst_dualboot_size.get())
+                    if not (min_size <= result <= max_size): return -1
+                except ValueError: return -1
+            else: return -1
             page_autoinst2()
+
+        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
+        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_1())
 
     # page_autoinst2
     def page_autoinst2():
@@ -270,9 +286,6 @@ def main():
         for i in range(len(langs_and_locales)):
             lang_list_fedora.insert(parent='', index='end', iid=str(i), values=('%s (%s)' % langs_and_locales[i][0][:2],))
 
-        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
-        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_autoinst1())
-
         def on_lang_click(*args):
             for item in locale_list_fedora.get_children():
                 locale_list_fedora.delete(item)
@@ -285,6 +298,9 @@ def main():
             Autoinst_SELECTED_LOCALE = locale_list_fedora.focus()
             if langtable.parse_locale(Autoinst_SELECTED_LOCALE).language:
                 return page_autoinst3()
+
+        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
+        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_autoinst1())
 
     def page_autoinst3():
         # ************** Multilingual support *************************************************************************

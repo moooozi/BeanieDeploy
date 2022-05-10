@@ -65,9 +65,7 @@ adv_confirm_text = "This option isn't recommended for new users."
 windows_question = "Okay! How should %s be installed?"
 windows_options = ('Install alongside Windows',
                    'Erase everything and start fresh')
-dualboot_size_question = "How much storage for %s?"
-dualboot_size_txt = "Enter how many gigabytes should be allocated between %sGB and %sGB"
-
+dualboot_size_txt = "Size:"
 verify_question = "This is what is going to happen. Click %s once ready" % btn_install
 verify_text = {
     'no_autoinst': "%s will be downloaded and will boot on the next restart to begin custom installation.",
