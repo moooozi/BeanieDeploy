@@ -12,8 +12,11 @@ app = tkt.init_tkinter(SW_NAME)
 tkt.stylize(app, theme_dir=CURRENT_DIR + '/theme/azure-dark.tcl', theme_name='azure')
 #   MAIN CONTAINER & FRAMES   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 CONTAINER = ttk.Frame(app)
+CONTAINER.pack()
 vTitleText = tk.StringVar(app)
-TOP_FRAME, MID_FRAME, LEFT_FRAME = tkt.build_main_gui_frames(CONTAINER, vTitleText, 'resources/left_frame.png')
+def gui_builder(mode='build'):
+    return tkt.build_main_gui_frames(CONTAINER, vTitleText, mode=mode,  left_frame_img_path='resources/left_frame.png')
+TOP_FRAME, MID_FRAME, LEFT_FRAME = gui_builder()
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 GLOBAL_QUEUE = Queue()
 COMPATIBILITY_RESULTS = {}
@@ -53,7 +56,7 @@ def language_handler(new_language=None, current_page=None):
     if new_language is None: new_language = lang_var.get()
     # if new_language == CURRENT_LANGUAGE: return -2
     DI_VAR, LN = multilingual.change_lang(new_lang=new_language)
-    TOP_FRAME, MID_FRAME, LEFT_FRAME = tkt.build_main_gui_frames(app, vTitleText, 'resources/left_frame.png')
+    #TOP_FRAME, MID_FRAME, LEFT_FRAME = gui_builder()
     if current_page is not None: return current_page()
 
 

@@ -39,12 +39,12 @@ locale = "Gebietsschema"
 recommended = "empfohlen"
 adv = "Erweitert"
 net_install = "Netzwerkinstallation"
-warn_space = "Nicht genug Platz"
+warn_space = "Nicht genug Speicherplatz"
 total_download = "Download insgesamt: %sGB"
 init_download = "Erster Download: %sGB"
 
 install_running = "Installieren..."
-install_question = "Wie möchten Sie Linux installieren?"
+distro_question = "Welche Version von Fedora möchten Sie installieren?"
 install_auto = "Schnelle & geführte Installation"
 install_help = "Hilfe bei der Entscheidung"
 title_autoinst2 = "Wählen Sie Ihre Sprache und Ihr Gebietsschema"
@@ -63,30 +63,25 @@ adv_confirm_text = "Diese Option wird neuen Benutzern nicht empfohlen."
 
 windows_question = "Okay! Wie soll %s installiert werden?"
 windows_options = ('Neben Windows installieren',
-                      'Windows entfernen & meine Bibliothek migrieren (Musik, Fotos, Videos)',
-                      'Nuke Windows und alle Daten und starte neu')
-dualboot_size_question = "Wie viel Speicherplatz für %s?"
-dualboot_size_txt = "Geben Sie ein, wie viele Gigabyte zwischen %sGB und %sGB zugewiesen werden sollen"
-
+                   'Alles löschen und neu anfangen')
+dualboot_size_txt = "Größe:"
 verify_question = "Das wird passieren. Klicken Sie auf %s, sobald Sie fertig sind." % btn_install
-verify_text = \
-    (
-     "%s wird heruntergeladen",
-     (" und nach Neustart gestartet, um mit der Installation zu beginnen", " und installiert"),
-     (" neben Windows", " Windows ersetzen", ", Windows und alle vorhandenen Dateien werden entfernt"),
-     ("Keine Ihrer Dateien wird gelöscht oder in irgendeiner Weise verändert",
-      "Alles auf dem Systemlaufwerk (%s:\\) wird entfernt, dies umfasst normalerweise Ihre Bibliotheksordner (Downloads, Videos, Musik, Bilder usw.)",
-      "Alles auf diesem Gerät wird entfernt")
-    )
-
+verify_text = {
+    'no_autoinst': "%s wird heruntergeladen und beim nächsten Neustart gestartet, um die benutzerdefinierte Installation zu beginnen.",
+    'autoinst_dualboot': "%s wird beim nächsten Neustart zusammen mit Windows heruntergeladen und installiert.",
+    'autoinst_clean': "%s wird heruntergeladen und beim nächsten Neustart installiert.",
+    'autoinst_keep_data': "Keine Ihrer Dateien wird gelöscht oder in irgendeiner Weise verändert.",
+    'autoinst_rm_all': "Alles auf diesem Gerät wird gelöscht.",
+    'autoinst_wifi': "Vorhandene WLAN-Profile werden nach %s exportiert."
+}
 add_import_wifi = "Meine WLAN-Netzwerke in das neue Betriebssystem exportieren"
 add_auto_restart = "Automatisch neu starten"
-add_torrent = "Download über Torrent"
+add_torrent = "Herunterladen mit Torrent"
 more_options = "Weitere Optionen"
 
 old_download_detected = "Zuvor heruntergeladene Dateien gefunden"
 old_download_detected_text = "Möchten Sie diese zuvor heruntergeladenen Dateien verwenden? " \
-                                "(wenn nicht, werden diese Dateien gelöscht und ein neuer Download wird gestartet)"
+                             "(wenn nicht, werden diese Dateien gelöscht und ein neuer Download wird gestartet)"
 
 job_starting_download = "Starte Download..."
 
@@ -110,4 +105,8 @@ job_copying_to_tmp_part = "Erforderliche Installationsmediendateien werden auf t
 job_adding_tmp_boot_entry = "Starteintrag wird hinzugefügt..."
 
 cleanup_question = "Heruntergeladene Dateien bereinigen?"
-cleanup_question_txt = "Diese Dateien sind nicht mehr nützlich, es sei denn, Sie planen eine Wiederverwendung"
+cleanup_question_txt = "Diese Dateien sind nicht mehr nützlich, es sei denn, Sie planen, die App später wiederzuverwenden.\n\nSie löschen?"
+finished_title = "Neustart erforderlich"
+finished_text = "Ein Neustart ist erforderlich, um die Installation fortzusetzen, " \
+                    "Klicken Sie auf '%s', um jetzt neu zu starten, oder auf '%s', um später manuell neu zu starten" % (btn_restart_now, btn_restart_later)
+finished_text_restarting_now = "Automatischer Neustart in %s Sekunden"

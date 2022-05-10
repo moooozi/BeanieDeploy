@@ -173,8 +173,8 @@ def stylize(parent, theme_dir, theme_name):
 
 def clear_frame(frame):
     """removes all elements inside the middle frame, which contains all page-specific content"""
-    for widgets in frame.winfo_children():
-        widgets.destroy()
+    for widget in frame.winfo_children():
+        widget.destroy()
 
 
 def var_tracer(var, mode, cb):
