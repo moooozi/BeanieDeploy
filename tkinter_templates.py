@@ -177,3 +177,9 @@ def clear_frame(frame):
         widgets.destroy()
 
 
+def var_tracer(var, mode, cb):
+    tracers_list = var.trace_info()
+    if tracers_list:
+        return 'tracer exists'
+    else:
+        var.trace_add(mode=mode, callback=cb)

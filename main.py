@@ -226,9 +226,8 @@ def main():
         size_dualboot_txt_post = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'],
                                            text='(%sGB - %sGB)' % (min_size, max_size), font=FONTS['tiny'])
         size_dualboot_entry = ttk.Entry(entries_frame, width=10, textvariable=vAutoinst_dualboot_size)
-        vAutoinst_dualboot_size.trace_add("write", lambda *args: fn.validate_with_regex(vAutoinst_dualboot_size,
-                                                                                        regex=float_regex, mode='fix'))
-
+        tkt.var_tracer(vAutoinst_dualboot_size, "write",
+                       lambda *args: fn.validate_with_regex(vAutoinst_dualboot_size, regex=float_regex, mode='fix'))
         # LOGIC
         space_dualboot = fn.gigabyte(distros['size'][vDist.get()] + dualboot_required_space + additional_failsafe_space)
         if COMPATIBILITY_RESULTS['resizable'] < space_dualboot:
@@ -245,13 +244,19 @@ def main():
                 size_dualboot_entry.grid_forget()
                 size_dualboot_txt_post.grid_forget()
 
+        if vAutoinst_option.get() == 0: show_dualboot_options(True)  # GUI bugfix
+
         def validate_next_page(*args):
             if vAutoinst_option.get() == 1: pass
             elif vAutoinst_option.get() == 0:
-                try:
-                    result = float(vAutoinst_dualboot_size.get())
-                    if not (min_size <= result <= max_size): return -1
-                except ValueError: return -1
+                syntax_valid = fn.validate_with_regex(vAutoinst_dualboot_size, regex=float_regex,
+                                                      mode='read') not in (False, 'empty')
+                if syntax_valid:
+                    is_dualboot_size_valid = min_size <= float(vAutoinst_dualboot_size.get()) <= max_size
+                else:
+                    is_dualboot_size_valid = False
+                if not is_dualboot_size_valid:
+                    return -1
             else: return -1
             page_autoinst2()
 
@@ -390,8 +395,8 @@ def main():
         username_regex = r'^' + _name_base + '$'
         fullname_regex = r'^[^:]*$'
         # Only allow username and fullname that meet the regex syntax above
-        vAutoinst_Fullname.trace_add("write", lambda *args: fn.validate_with_regex(vAutoinst_Fullname, regex=fullname_regex, mode='fix'))
-        vAutoinst_Username.trace_add("write", lambda *args: fn.validate_with_regex(vAutoinst_Username, regex=username_regex, mode='fix'))
+        tkt.var_tracer(vAutoinst_Fullname, "write", lambda *args: fn.validate_with_regex(vAutoinst_Fullname, regex=fullname_regex, mode='fix'))
+        tkt.var_tracer(vAutoinst_Username, "write", lambda *args: fn.validate_with_regex(vAutoinst_Username, regex=username_regex, mode='fix'))
 
         entries_frame = ttk.Frame(MID_FRAME)
         fullname_txt = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'], text=LN.entry_fullname, font=FONTS['tiny'])
