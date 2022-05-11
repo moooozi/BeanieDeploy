@@ -205,8 +205,8 @@ def get_disk_number(drive_letter):
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def get_drive_size_after_resize(drive_letter, required_space):
-    arg = r'(Get-Volume | Where DriveLetter -eq ' + drive_letter + ').Size -' + str(required_space)
+def get_drive_size_after_resize(drive_letter, minus_space):
+    arg = r'(Get-Volume | Where DriveLetter -eq ' + drive_letter + ').Size -' + str(minus_space)
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                           shell=True, universal_newlines=True).stdout.strip()
 
@@ -247,12 +247,14 @@ def format_volume(drive_letter, filesystem, label):
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def create_temp_boot_partition(tmp_part_size, queue):
+def create_temp_boot_partition(tmp_part_size, queue, shrink_space=None):
     print('create_temp_boot_partition')
     sys_drive_letter = get_sys_drive_letter()
     relabel_volume(sys_drive_letter, 'WindowsOS')
     sys_disk_number = str(get_disk_number(sys_drive_letter).stdout)[2:-5]
-    sys_drive_new_size = get_drive_size_after_resize(sys_drive_letter, tmp_part_size + 1100000)
+    if shrink_space is None:
+        shrink_space = tmp_part_size
+    sys_drive_new_size = get_drive_size_after_resize(sys_drive_letter, shrink_space + 1100000)
     resize_partition(sys_drive_letter, sys_drive_new_size)
 
     tmp_part_letter = get_unused_drive_letter()
@@ -355,9 +357,7 @@ def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None, username
     part_const4 = "\nrootpw --lock"
     ks_file_text = part_const1 + part_pre + part_post + part_keymap + part_lang + part_const2 + part_ostree + \
                    part_const3 + part_timezone + part_partition + part_user + part_const4
-    ks_file = open('anaconda-ks.cfg', 'x')
-    ks_file.write(ks_file_text)
-    print(ks_file_text)
+    return ks_file_text
 
 
 def validate_with_regex(var, regex, mode='read'):

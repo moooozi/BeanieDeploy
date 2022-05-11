@@ -215,8 +215,8 @@ def main():
         r1_autoinst = tkt.add_radio_btn(r1_frame, LN.windows_options[0], vAutoinst_option, 0, lambda: show_dualboot_options(True))
         r1_space = ttk.Label(r1_frame, wraplength=540, justify="center", text=LN.warn_space, font=FONTS['tiny'],
                              foreground='#ff4a4a')
-        entries_frame = ttk.Frame(MID_FRAME)
-        entries_frame.pack(fill='x', padx=10)
+        entry_frame = ttk.Frame(MID_FRAME)
+        entry_frame.pack(fill='x', padx=10)
         tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], vAutoinst_option, 1, lambda: show_dualboot_options(False))
         tkt.add_check_btn(MID_FRAME, LN.add_import_wifi, vAutoinst_Wifi_t)
 
@@ -224,11 +224,11 @@ def main():
         max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable']) - distros['size'][vDist.get()] - additional_failsafe_space
         max_size = round(max_size, 2)
         float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
-        size_dualboot_txt_pre = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'],
+        size_dualboot_txt_pre = ttk.Label(entry_frame, wraplength=540, justify=DI_VAR['l'],
                                           text=LN.dualboot_size_txt, font=FONTS['tiny'])
-        size_dualboot_txt_post = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'],
+        size_dualboot_txt_post = ttk.Label(entry_frame, wraplength=540, justify=DI_VAR['l'],
                                            text='(%sGB - %sGB)' % (min_size, max_size), font=FONTS['tiny'])
-        size_dualboot_entry = ttk.Entry(entries_frame, width=10, textvariable=vAutoinst_dualboot_size)
+        size_dualboot_entry = ttk.Entry(entry_frame, width=10, textvariable=vAutoinst_dualboot_size)
         tkt.var_tracer(vAutoinst_dualboot_size, "write",
                        lambda *args: fn.validate_with_regex(vAutoinst_dualboot_size, regex=float_regex, mode='fix'))
         # LOGIC
@@ -573,7 +573,8 @@ def main():
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 tmp_part_size = fn.gigabyte(distros['size'][vDist.get()] + temp_part_failsafe_space)
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
-                Process(target=fn.create_temp_boot_partition, args=(tmp_part_size, GLOBAL_QUEUE,)).start()
+                Process(target=fn.create_temp_boot_partition, args=(tmp_part_size, GLOBAL_QUEUE,
+                                                                    fn.gigabyte(vAutoinst_dualboot_size.get()),)).start()
                 job_var.set(LN.job_creating_tmp_part)
                 progressbar_install['value'] = 92
                 INSTALLER_STATUS = 3
@@ -584,6 +585,7 @@ def main():
                 if tmp_part_result[0] == 1:
                     TMP_PARTITION_LETTER = tmp_part_result[1]
                     INSTALLER_STATUS = 4
+                else: return
             if INSTALLER_STATUS == 4:  # step 3: mount iso and copy files to temporary boot partition
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 app.protocol("WM_DELETE_WINDOW", None)  # re-enable closing the app
@@ -606,6 +608,11 @@ def main():
                 if vAutoinst_t.get(): grub_cfg_file = GRUB_CONFIG_DIR + 'grub_autoinst.cfg'
                 else: grub_cfg_file = GRUB_CONFIG_DIR + 'grub_default.cfg'
                 fn.copy_one_file(grub_cfg_file, TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg')
+                kickstart_txt = fn.build_autoinstall_ks_file(AUTOINST['keymap'], Autoinst_SELECTED_LOCALE, AUTOINST['timezone'],
+                                             distros['ostree'][vDist.get()], vAutoinst_Username.get(),
+                                             vAutoinst_Fullname.get())
+                kickstart = open(TMP_PARTITION_LETTER + ':\\ks.cfg','w')
+                kickstart.write(kickstart_txt)
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app
                 Process(target=fn.add_boot_entry, args=(default_efi_file_path, TMP_PARTITION_LETTER, GLOBAL_QUEUE,)).start()
                 INSTALLER_STATUS = 7
