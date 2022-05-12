@@ -14,8 +14,8 @@ tkt.stylize(app, theme_dir=CURRENT_DIR + '/theme/azure-dark.tcl', theme_name='az
 CONTAINER = ttk.Frame(app)
 CONTAINER.pack()
 vTitleText = tk.StringVar(app)
-def gui_builder(mode='build'):
-    return tkt.build_main_gui_frames(CONTAINER, vTitleText, mode=mode,  left_frame_img_path='resources/left_frame.png')
+def gui_builder(frames=None):
+    return tkt.build_main_gui_frames(CONTAINER, vTitleText,  left_frame_img_path='resources/left_frame.png', frames=frames)
 TOP_FRAME, MID_FRAME, LEFT_FRAME = gui_builder()
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 GLOBAL_QUEUE = Queue()
@@ -55,9 +55,8 @@ LANG_LIST = tkt.add_lang_list(TOP_FRAME, lang_var, multilingual.available_langua
 def language_handler(new_language=None, current_page=None):
     global DI_VAR, LN, TOP_FRAME, MID_FRAME, LEFT_FRAME
     if new_language is None: new_language = lang_var.get()
-    # if new_language == CURRENT_LANGUAGE: return -2
     DI_VAR, LN = multilingual.change_lang(new_lang=new_language)
-    #TOP_FRAME, MID_FRAME, LEFT_FRAME = gui_builder()
+    gui_builder(frames=[TOP_FRAME, LEFT_FRAME, MID_FRAME])
     if current_page is not None:
         return current_page()
 
@@ -139,7 +138,7 @@ def main():
             for i in range(len(errors)):
                 errors_tree.insert('', index='end', iid=str(i), values=(errors[i],))
 
-            tkt.add_secondary_btn(MID_FRAME, LN.btn_quit, lambda: app.destroy())
+            tkt.add_secondary_btn(MID_FRAME, LN.btn_quit, lambda: tkt.app_quite())
 
     # page_1
     def page_1():
@@ -545,7 +544,7 @@ def main():
                         question = tkt.open_popup(parent=app, title_txt=LN.cleanup_question, msg_txt=LN.cleanup_question_txt,
                                                   primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
                         if question: fn.remove_folder(DOWNLOAD_PATH)
-                        app.destroy()
+                        tkt.app_quite()
                 else:
                     question = tkt.open_popup(parent=app, title_txt=LN.job_checksum_mismatch,
                                               msg_txt=LN.job_checksum_mismatch_txt % out,
@@ -556,7 +555,7 @@ def main():
                         question = tkt.open_popup(parent=app, title_txt=LN.cleanup_question, msg_txt=LN.cleanup_question_txt,
                                                   primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
                         if question: fn.remove_folder(DOWNLOAD_PATH)
-                        else: app.destroy()
+                        else: tkt.app_quite()
             if INSTALLER_STATUS == 2.5:  # step 2: create temporary boot partition
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 tmp_part_size: int = fn.gigabyte(distros['size'][vDist.get()] + temp_part_failsafe_space)
@@ -622,7 +621,7 @@ def main():
                 app.protocol("WM_DELETE_WINDOW", None)  # re-enable closing the app
                 break
 
-        page_restart_required()
+        return page_restart_required()
 
     def page_restart_required():
         """the page on which user is promoted to restart the device to continue installation (boot into install media)"""
@@ -634,9 +633,6 @@ def main():
         text_var = tk.StringVar()
         tkt.add_text_label(MID_FRAME, text=LN.finished_text, font=FONTS['small'], pady=10)
         tkt.add_text_label(MID_FRAME, var=text_var, font=FONTS['small'], pady=10)
-        tkt.add_primary_btn(MID_FRAME, LN.btn_restart_now, lambda: (fn.restart_windows(), app.destroy()))
-        tkt.add_secondary_btn(MID_FRAME, LN.btn_restart_later, lambda: app.destroy())
-
         if vAutorestart_t.get():
             time_left = 10
             while time_left > 0:
@@ -644,7 +640,10 @@ def main():
                 time_left = time_left - 0.01
                 app.after(10, app.update())
             fn.restart_windows()
-            app.destroy()
+            tkt.app_quite()
+
+        tkt.add_primary_btn(MID_FRAME, LN.btn_restart_now, lambda: (fn.restart_windows(), tkt.app_quite()))
+        tkt.add_secondary_btn(MID_FRAME, LN.btn_restart_later, lambda: tkt.app_quite())
 
     page_check()
     app.mainloop()

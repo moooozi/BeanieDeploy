@@ -23,8 +23,9 @@ def change_lang(new_lang):
     from importlib import import_module
     lang_new = available_languages[new_lang]
     ln = import_module('.' + lang_new[0], 'translations')
-    directions = right_to_left_lang(lang_new[1])
-    return directions, ln
+    global DI_VAR
+    DI_VAR = right_to_left_lang(lang_new[1])
+    return DI_VAR, ln
 
 
 

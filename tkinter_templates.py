@@ -126,25 +126,33 @@ def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=30):
     return check
 
 
-def build_main_gui_frames(parent, main_title_var, mode='build', left_frame_img_path=None,
-                          top_frame_height=100, left_frame_width=200):
-    """Used to build or rebuild the main frames after language change to a language with different direction
-(see function right_to_left_lang)"""
+def build_main_gui_frames(parent, main_title_var, left_frame_img_path=None,
+                          top_frame_height=100, left_frame_width=200, frames: list = None):
+    """
+Used to build or rebuild the main frames after language change to a language with different direction
+(see function right_to_left_lang)
+    """
     from multilingual import DI_VAR
-    if mode == 'rebuild': clear_frame(parent)
-    top_frame = tk.Frame(parent, height=top_frame_height, width=MAXWIDTH, background=top_background)
+    if not frames:
+        top_frame = tk.Frame(parent, height=top_frame_height, width=MAXWIDTH, background=top_background)
+        left_frame = ttk.Frame(parent, width=left_frame_width, height=MAXHEIGHT)
+        mid_frame = ttk.Frame(parent, height=MAXHEIGHT - top_frame_height)
+    else:
+        top_frame = frames[0]
+        left_frame = frames[1]
+        mid_frame = frames[2]
+
     top_frame.pack(fill="x", expand=1)
     top_frame.pack_propagate(False)
-    top_title = ttk.Label(top_frame, justify='center', textvariable=main_title_var, font=FONTS['large'], background=top_background)
+    top_title = ttk.Label(top_frame, justify='center', textvariable=main_title_var, font=FONTS['large'],
+                          background=top_background)
     top_title.pack(anchor='center', side='left', padx=15)
 
-    left_frame = ttk.Frame(parent, width=left_frame_width, height=MAXHEIGHT)
     left_frame.pack(fill="y", side=DI_VAR['l'])
     left_frame.pack_propagate(False)
     if left_frame_img_path:
         left_frame_label = ttk.Label(left_frame, image=tk.PhotoImage(file=left_frame_img_path))
         left_frame_label.pack(side='bottom')
-    mid_frame = ttk.Frame(parent, height=MAXHEIGHT - top_frame_height)
     mid_frame.pack(fill="both", expand=1, padx=15, pady=20)
     mid_frame.pack_propagate(False)
     return top_frame, mid_frame, left_frame
@@ -200,3 +208,7 @@ add tkinter variable tracer if no tracer exists
         return 'tracer exists'
     else:
         var.trace_add(mode=mode, callback=cb)
+
+
+def app_quite():
+    raise SystemExit
