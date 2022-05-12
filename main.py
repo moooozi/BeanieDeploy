@@ -2,10 +2,10 @@ from multiprocessing import Process, Queue
 import functions as fn
 import multilingual
 import tkinter_templates as tkt
+from tkinter_templates import tk, ttk, FONTS
 from APP_INFO import *
 from autoinst import get_available_translations, langtable, get_locales_and_langs_sorted_with_names, all_timezones, \
     detect_locale, get_available_keymaps
-from tkinter_templates import tk, ttk, FONTS
 #   DRIVER CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 CURRENT_DIR = fn.get_current_dir_path()
 app = tkt.init_tkinter(SW_NAME)
@@ -662,12 +662,7 @@ def main():
             fn.restart_windows()
             app.destroy()
 
-
-    #    page_check()
-    grub_cfg_txt = fn.build_grub_cfg_file(TMP_PARTITION_LABEL, vAutoinst_t.get())
-    grub_cfg = open('G' + ':\\EFI\\BOOT\\grub.cfg', 'w')
-    grub_cfg.write(grub_cfg_txt)
-    grub_cfg.close()
+    page_check()
     app.mainloop()
 
 

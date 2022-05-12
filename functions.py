@@ -368,14 +368,14 @@ def build_grub_cfg_file(root_partition_label, is_autoinst=False):
     if is_autoinst:
         entry1 = """\nmenuentry 'Auto Install Fedora 36' --class fedora --class gnu-linux --class gnu --class os {\n\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% rd.live.check inst.ks=hd:LABEL=%root_label%/ks.cfg quiet\n\tinitrdefi /images/pxeboot/initrd.img \n}"""
     else:
-        entry1 = ""
+        entry1 = ''
     entry2 = """\nmenuentry 'Install Fedora 36' --class fedora --class gnu-linux --class gnu --class os {\n\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% rd.live.check quiet\n\tinitrdefi /images/pxeboot/initrd.img\n}"""
     entry3 = """\nmenuentry 'Install Fedora 36 with RAM-Boot' --class fedora --class gnu-linux --class gnu --class os {\n\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% rd.live.check rd.live.ram=1 quiet\n\tinitrdefi /images/pxeboot/initrd.img\n}"""
     entry4 = """\nmenuentry 'Install Fedora 36 without testing the media' --class fedora --class gnu-linux --class gnu --class os {\n\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% quiet\n\tinitrdefi /images/pxeboot/initrd.img\n}"""
     submenu = """\nsubmenu 'Troubleshooting -->' {\n
                 \tmenuentry 'Install Fedora 36 in basic graphics mode' --class fedora --class gnu-linux --class gnu --class os {\n\t\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% nomodeset quiet\n\t\tinitrdefi /images/pxeboot/initrd.img\n\t}
                 \tmenuentry 'Rescue a Fedora system' --class fedora --class gnu-linux --class gnu --class os {\n\t\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% inst.rescue quiet\n\t\tinitrdefi /images/pxeboot/initrd.img\n\t}\n}
-                """
+              """
 
     grub_file_text = part_pre + part_const1 + part_scan + entry1 + entry2 + entry3 + entry4 + submenu
     grub_file_text = grub_file_text.replace('%root_label%', root_partition_label)
@@ -407,7 +407,7 @@ def get_admin(app):
     from ctypes import windll
     if not windll.shell32.IsUserAnAdmin():
         windll.shell32.ShellExecuteW(None, "runas", executable, " ".join(argv), None, 1)
-        app.destroy()
+        raise SystemExit
 
 
 '''def logger():

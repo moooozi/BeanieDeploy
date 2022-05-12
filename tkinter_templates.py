@@ -53,8 +53,7 @@ Pops up window to get input from user and freezes the main GUI while waiting for
     pop.grab_set()
     border_frame.pack(expand=1, fill='both', pady=5, padx=5)
     pop_frame.pack(expand=1, fill='both', pady=5, padx=10)
-    title = ttk.Label(pop_frame, wraplength=600, font=('Mistral 18 bold'), justify=DI_VAR['l'], text=title_txt)
-    title.pack(pady=20, anchor=DI_VAR['w'])
+    add_page_title(pop_frame, title_txt, 20)
     add_text_label(pop_frame, msg_txt, msg_font, pady=10)
 
     if is_entry:
@@ -81,6 +80,10 @@ Pops up window to get input from user and freezes the main GUI while waiting for
 
 
 def add_primary_btn(parent, text, command):
+    """
+a preset for adding a tkinter button. Used for the likes of "Next" and "Install" buttons
+    :return: tkinter button object
+    """
     from multilingual import DI_VAR
     btn_next = ttk.Button(parent, text=text, style="Accentbutton", command=command)
     btn_next.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], ipadx=15, padx=10)
@@ -88,6 +91,10 @@ def add_primary_btn(parent, text, command):
 
 
 def add_secondary_btn(parent, text, command):
+    """
+a preset for adding a tkinter button. Used for the likes of "Back", "Cancel" and "Abort" buttons
+    :return: tkinter button object
+    """
     from multilingual import DI_VAR
     btn_back = ttk.Button(parent, text=text, command=command)
     btn_back.pack(anchor=DI_VAR['se'], side=DI_VAR['r'], padx=5)
@@ -144,6 +151,10 @@ def build_main_gui_frames(parent, main_title_var, mode='build', left_frame_img_p
 
 
 def add_text_label(parent, text=None, font=FONTS['small'], var=None, pady=20, padx=0, foreground=None):
+    """
+a preset for tkinter text label that packs by default
+    :return: the tkinter label "ttk.Label" object
+    """
     from multilingual import DI_VAR
     if (not var and text) or (var and not text):
         label = ttk.Label(parent, wraplength=540, justify=DI_VAR['l'],
@@ -178,6 +189,12 @@ def clear_frame(frame):
 
 
 def var_tracer(var, mode, cb):
+    """
+add tkinter variable tracer if no tracer exists
+    :param var: tkinter variable
+    :param mode: tkinter tracer mode (see trace_add docs)
+    :param cb: the callback function
+    """
     tracers_list = var.trace_info()
     if tracers_list:
         return 'tracer exists'
