@@ -58,7 +58,8 @@ def language_handler(new_language=None, current_page=None):
     # if new_language == CURRENT_LANGUAGE: return -2
     DI_VAR, LN = multilingual.change_lang(new_lang=new_language)
     #TOP_FRAME, MID_FRAME, LEFT_FRAME = gui_builder()
-    if current_page is not None: return current_page()
+    if current_page is not None:
+        return current_page()
 
 
 language_handler(new_language='English')
@@ -68,8 +69,8 @@ def main():
     def page_check():
         """The page on which is decided whether the app can run on the device or not"""
         # ************** Multilingual support *************************************************************************
-        def page_name(): page_check()
-        def change_callback(*args): language_handler(current_page=page_name)
+        def current_page(): page_check()
+        def change_callback(*args): language_handler(current_page=current_page)
         LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
@@ -108,7 +109,6 @@ def main():
                         print(COMPATIBILITY_RESULTS)
                         COMPATIBILITY_CHECK_STATUS = 2
                         break
-        # if not LOCALE_IP: LOCALE_IP = ('US', 'America/New_York')
         errors = []
         if COMPATIBILITY_RESULTS['arch'] == -1: errors.append(LN.error_arch_9)
         elif COMPATIBILITY_RESULTS['arch'] != 'amd64': errors.append(LN.error_arch_0)
@@ -559,7 +559,7 @@ def main():
                         else: app.destroy()
             if INSTALLER_STATUS == 2.5:  # step 2: create temporary boot partition
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
-                tmp_part_size = fn.gigabyte(distros['size'][vDist.get()] + temp_part_failsafe_space)
+                tmp_part_size: int = fn.gigabyte(distros['size'][vDist.get()] + temp_part_failsafe_space)
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
                 Process(target=fn.create_temp_boot_partition, args=(tmp_part_size, GLOBAL_QUEUE,
                                                                     fn.gigabyte(int(vAutoinst_dualboot_size.get())),)).start()
@@ -626,10 +626,6 @@ def main():
 
     def page_restart_required():
         """the page on which user is promoted to restart the device to continue installation (boot into install media)"""
-        # ************** Multilingual support *************************************************************************
-        def page_name(): page_restart_required()
-        def change_callback(*args): language_handler(current_page=page_name)
-        LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         LANG_LIST.pack(anchor=DI_VAR['nw'], padx=10, pady=10)

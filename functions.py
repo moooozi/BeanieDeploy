@@ -200,23 +200,21 @@ def get_sys_drive_letter():
                           stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout.strip()
 
 
-def get_disk_number(drive_letter):
+def get_disk_number(drive_letter: str):
     arg = r'(Get-Partition | Where DriveLetter -eq ' + drive_letter + r' | Get-Disk).Number'
-    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    return int(subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                              universal_newlines=True).stdout.strip())
 
 
-def get_drive_size_after_resize(drive_letter, minus_space):
+def get_drive_size_after_resize(drive_letter: str, minus_space: int):
     arg = r'(Get-Volume | Where DriveLetter -eq ' + drive_letter + ').Size -' + str(minus_space)
-    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                          shell=True, universal_newlines=True).stdout.strip()
+    return int(subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                              shell=True, universal_newlines=True).stdout.strip())
 
 
-def resize_partition(drive_letter, new_size):
-    arg = r'Resize-Partition -DriveLetter ' + drive_letter + r' -Size ' + new_size
-    return subprocess.run(
-        [r'powershell.exe', arg],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT, shell=True)
+def resize_partition(drive_letter: str, new_size: int):
+    arg = r'Resize-Partition -DriveLetter ' + drive_letter + r' -Size ' + str(new_size)
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
 def get_unused_drive_letter():
@@ -224,34 +222,35 @@ def get_unused_drive_letter():
 
     def test(test_letter):
         return str(subprocess.run([r'powershell.exe', r'Get-Volume | Where-Object DriveLetter -eq ' + test_letter],
-                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout.strip())
 
     for letter in drive_letters:
         if not test(letter):
             return letter
 
 
-def relabel_volume(drive_letter, new_label):
+def relabel_volume(drive_letter: str, new_label: str):
     arg = r'Set-Volume -DriveLetter "' + drive_letter + '" -NewFileSystemLabel "' + new_label + '"'
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def new_partition(disk_number, size, drive_letter):
+def new_partition(disk_number: int, size: int, drive_letter: str):
     arg = r'New-Partition -DiskNumber ' + str(disk_number) + r' -Size ' + str(size) + r' -DriveLetter ' + drive_letter
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def format_volume(drive_letter, filesystem, label):
+def format_volume(drive_letter: str, filesystem: str, label: str):
     arg = r'Format-Volume -DriveLetter ' + drive_letter + ' -FileSystem ' + filesystem \
           + ' -NewFileSystemLabel "' + label + '"'
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def create_temp_boot_partition(tmp_part_size, queue, shrink_space=None):
+def create_temp_boot_partition(tmp_part_size: int, queue, shrink_space: int = None):
     print('create_temp_boot_partition')
     sys_drive_letter = get_sys_drive_letter()
     relabel_volume(sys_drive_letter, 'WindowsOS')
-    sys_disk_number = str(get_disk_number(sys_drive_letter).stdout)[2:-5]
+    sys_disk_number = get_disk_number(sys_drive_letter)
     if shrink_space is None:
         shrink_space = tmp_part_size
     sys_drive_new_size = get_drive_size_after_resize(sys_drive_letter, shrink_space + 1100000)
@@ -265,14 +264,14 @@ def create_temp_boot_partition(tmp_part_size, queue, shrink_space=None):
 
 def mount_iso(iso_path):
     arg = '(Mount-DiskImage -ImagePath "' + iso_path + '" | Get-Volume).DriveLetter'
-    return str(subprocess.run(
-        [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+    return str(subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                              shell=True, universal_newlines=True).stdout.strip())
 
 
 def unmount_iso(iso_path):
     arg = 'Dismount-DiskImage -ImagePath "' + iso_path + '"'
-    return str(subprocess.run(
-        [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+    return str(subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                              shell=True, universal_newlines=True).stdout.strip())
 
 
 def copy_files(source, destination, queue):

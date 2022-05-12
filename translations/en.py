@@ -32,8 +32,8 @@ error_space_0 = "Not enough space on your system drive. Free up space and try ag
 error_space_9 = "Failed to check available disk space on your system drive."
 error_resizable_0 = "Not enough shrink room on system drive."
 error_resizable_9 = "Failed to check system drive resizability."
-error_bitlocker_0 = "System drive has Bitlocker enabled. Compatibility cannot be ensured"
-error_bitlocker_9 = "Failed to verify system drive bitlocker status."
+# error_bitlocker_0 = "System drive has Bitlocker enabled. Compatibility cannot be ensured"
+# error_bitlocker_9 = "Failed to verify system drive bitlocker status."
 
 lang = "Language"
 locale = "Locale"
