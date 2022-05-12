@@ -95,6 +95,14 @@ def create_dir(path):
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
+def set_file_readonly(filepath, is_true: bool):
+    if is_true: value = '$true'
+    else: value = '$false'
+    return subprocess.run([r'powershell.exe',
+                           r'Set-ItemProperty ' + filepath + ' -name IsReadOnly -value ' + value],
+                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+
+
 def download_with_aria2(app_path, url, destination, is_torrent, queue):
     arg = r' --dir="' + destination + '" ' + url
     if is_torrent:
@@ -119,7 +127,7 @@ def download_with_aria2(app_path, url, destination, is_torrent, queue):
                 if (txt := output.strip())[0:2] == '[#':
                     txt = txt[1:-1]
                     try:
-                        txt.replace('iB', 'B')
+                        txt = txt.replace('iB', 'B')
                         if (eta_key := 'ETA:') in txt:
                             index = txt.index(eta_key)
                             tracker['eta'] = txt[index + len(eta_key):].split(' ', 1)[0]
@@ -212,7 +220,7 @@ def format_volume(drive_letter: str, filesystem: str, label: str):
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def create_temp_boot_partition(tmp_part_size: int, queue, shrink_space: int = None):
+def create_temp_boot_partition(tmp_part_size: int, temp_part_label: str, queue, shrink_space: int = None):
     print('create_temp_boot_partition')
     sys_drive_letter = get_sys_drive_letter()
     relabel_volume(sys_drive_letter, 'WindowsOS')
@@ -224,7 +232,7 @@ def create_temp_boot_partition(tmp_part_size: int, queue, shrink_space: int = No
 
     tmp_part_letter = get_unused_drive_letter()
     new_partition(sys_disk_number, tmp_part_size, tmp_part_letter)
-    format_volume(tmp_part_letter, 'FAT32', 'INSTALL-MED')
+    format_volume(tmp_part_letter, 'FAT32', temp_part_label)
     queue.put((1, tmp_part_letter))
 
 
@@ -318,7 +326,7 @@ def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None, username
     else: part_ostree = ""
     part_const3 = "\nfirstboot --enable"
     part_timezone = "\ntimezone " + timezone + " --utc"
-    part_partition = "\n"
+    part_partition = "\nautopart"
     part_user = "\nuser --name=" + username + " --gecos='" + fullname + "' --groups=wheel"
     part_const4 = "\nrootpw --lock"
     ks_file_text = part_const1 + part_pre + part_post + part_keymap + part_lang + part_const2 + part_ostree + \
@@ -331,7 +339,7 @@ def build_grub_cfg_file(root_partition_label, is_autoinst=False):
     part_const1 = """\nset default="0"\nfunction load_video {\n  insmod efi_gop\n  insmod efi_uga\n  insmod video_bochs\n  insmod video_cirrus\n  insmod all_video\n}\nload_video\nset gfxpayload=keep\ninsmod gzio\ninsmod part_gpt\ninsmod ext2\nset timeout=5"""
     part_scan = """\nsearch --no-floppy --set=root -l '%root_label%'\n"""
     if is_autoinst:
-        entry1 = """\nmenuentry 'Auto Install Fedora 36' --class fedora --class gnu-linux --class gnu --class os {\n\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% rd.live.check inst.ks=hd:LABEL=%root_label%/ks.cfg quiet\n\tinitrdefi /images/pxeboot/initrd.img \n}"""
+        entry1 = """\nmenuentry 'Auto Install Fedora 36' --class fedora --class gnu-linux --class gnu --class os {\n\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% rd.live.check inst.ks=hd:LABEL=%root_label% quiet\n\tinitrdefi /images/pxeboot/initrd.img \n}"""
     else:
         entry1 = ''
     entry2 = """\nmenuentry 'Install Fedora 36' --class fedora --class gnu-linux --class gnu --class os {\n\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% rd.live.check quiet\n\tinitrdefi /images/pxeboot/initrd.img\n}"""

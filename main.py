@@ -560,8 +560,8 @@ def main():
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 tmp_part_size: int = fn.gigabyte(distros['size'][vDist.get()] + temp_part_failsafe_space)
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
-                Process(target=fn.create_temp_boot_partition, args=(tmp_part_size, GLOBAL_QUEUE,
-                                                                    fn.gigabyte(int(vAutoinst_dualboot_size.get())),)).start()
+                Process(target=fn.create_temp_boot_partition, args=(tmp_part_size, TMP_PARTITION_LABEL, GLOBAL_QUEUE,
+                                                                    fn.gigabyte(float(vAutoinst_dualboot_size.get())),)).start()
                 job_var.set(LN.job_creating_tmp_part)
                 progressbar_install['value'] = 92
                 INSTALLER_STATUS = 3
@@ -594,11 +594,14 @@ def main():
                 progressbar_install['value'] = 98
                 if vAutoinst_t.get(): grub_cfg_file = GRUB_CONFIG_DIR + 'grub_autoinst.cfg'
                 else: grub_cfg_file = GRUB_CONFIG_DIR + 'grub_default.cfg'
-                fn.copy_one_file(grub_cfg_file, TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg')
+                grub_cfg_file_path = TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg'
+                fn.copy_one_file(grub_cfg_file, grub_cfg_file_path)
                 grub_cfg_txt = fn.build_grub_cfg_file(TMP_PARTITION_LABEL, vAutoinst_t.get())
-                grub_cfg = open(TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg', 'w')
+                fn.set_file_readonly(grub_cfg_file_path, False)
+                grub_cfg = open(grub_cfg_file_path, 'w')
                 grub_cfg.write(grub_cfg_txt)
                 grub_cfg.close()
+                fn.set_file_readonly(grub_cfg_file_path, True)
                 kickstart_txt = fn.build_autoinstall_ks_file(AUTOINST['keymap'], Autoinst_SELECTED_LOCALE, AUTOINST['timezone'],
                                                              distros['ostree'][vDist.get()], vAutoinst_Username.get(),
                                                              vAutoinst_Fullname.get())
