@@ -126,7 +126,7 @@ def main():
             DOWNLOAD_PATH = fn.get_user_home_dir() + "\\win2linux_tmpdir"
             ISO_PATH = DOWNLOAD_PATH + "\\" + ISO_NAME
             USERNAME_WINDOWS = fn.get_windows_username()
-            page_1()
+            return page_1()
         else:
             title.pack_forget()
             progressbar_check.pack_forget()
@@ -143,6 +143,7 @@ def main():
 
     # page_1
     def page_1():
+        """the page on which you choose which distro/flaver and whether Autoinstall should be on or off"""
         # ************** Multilingual support *************************************************************************
         def page_name(): page_1()
         def change_callback(*args): language_handler(current_page=page_name)
@@ -196,16 +197,17 @@ def main():
                 vAutoinst_t.set(0)
 
         def validate_next_page(*args):
-            if vDist.get() == -1: return
-            if vAutoinst_t.get(): return page_autoinst1()
-            else: return page_verify()
+            if vDist.get() == -1: return -1
+            else:
+                LANG_LIST.pack_forget()
+                if vAutoinst_t.get():
+                    return page_autoinst1()
+                else:
+                    return page_verify()
 
     # page_autoinst1
     def page_autoinst1():
-        # ************** Multilingual support *************************************************************************
-        def page_name(): page_autoinst1()
-        def change_callback(*args): language_handler(current_page=page_name)
-        LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
+        """the autoinstall page on which you choose whether to install alongside windows or start clean install"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
@@ -261,18 +263,16 @@ def main():
                     is_dualboot_size_valid = False
                 if not is_dualboot_size_valid:
                     return -1
-            else: return -1
-            page_autoinst2()
+            else:
+                return -1
+            return page_autoinst2()
 
         tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
         tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_1())
 
     # page_autoinst2
     def page_autoinst2():
-        # ************** Multilingual support *************************************************************************
-        def page_name(): page_autoinst2()
-        def change_callback(*args): language_handler(current_page=page_name)
-        LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
+        """the autoinstall page on which you choose your language and locale"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         tkt.add_page_title(MID_FRAME, LN.title_autoinst2)
@@ -312,10 +312,7 @@ def main():
         tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_autoinst1())
 
     def page_autoinst3():
-        # ************** Multilingual support *************************************************************************
-        def page_name(): page_autoinst3()
-        def change_callback(*args): language_handler(current_page=page_name)
-        LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
+        """the autoinstall page on which you choose your timezone and keyboard layout"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         tkt.add_page_title(MID_FRAME, LN.title_autoinst3)
@@ -385,10 +382,7 @@ def main():
                 page_autoinst4()
 
     def page_autoinst4():
-        # ************** Multilingual support *************************************************************************
-        def page_name(): page_autoinst4()
-        def change_callback(*args): language_handler(current_page=page_name)
-        LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
+        """the autoinstall page on which you choose your input your username and fullname"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         tkt.add_page_title(MID_FRAME, LN.title_autoinst4)
@@ -432,10 +426,7 @@ def main():
                 page_verify()
 
     def page_verify():
-        # ************** Multilingual support *************************************************************************
-        def page_name(): page_verify()
-        def change_callback(*args): language_handler(current_page=page_name)
-        LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
+        """the page on which you get to review your selection before starting to install"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set('')
@@ -482,14 +473,10 @@ def main():
         tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: validate_back_page())
 
     def page_installing():
-        # ************** Multilingual support *************************************************************************
-        def page_name(): page_installing()
-        def change_callback(*args): language_handler(current_page=page_name)
-        LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
+        """the  page on which the initial installation (creating bootable media) takes place"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_running)
-        LANG_LIST.pack_forget()
         # title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=LN.install_running, font=FONTS['medium'])
         # title.pack(pady=35, anchor=di_var['w'])
         progressbar_install = ttk.Progressbar(MID_FRAME, orient='horizontal', length=550, mode='determinate')
@@ -638,6 +625,7 @@ def main():
         page_restart_required()
 
     def page_restart_required():
+        """the page on which user is promoted to restart the device to continue installation (boot into install media)"""
         # ************** Multilingual support *************************************************************************
         def page_name(): page_restart_required()
         def change_callback(*args): language_handler(current_page=page_name)

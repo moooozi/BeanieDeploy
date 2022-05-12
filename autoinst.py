@@ -1,6 +1,3 @@
-import re
-import zoneinfo
-from collections import OrderedDict
 from functools import cache
 import requests, json
 from libs import langtable
@@ -71,16 +68,6 @@ ALL_KEYMAPS = ['al', 'al-plisi', 'at', 'at-mac', 'at-nodeadkeys', 'az', 'ba', 'b
                'uz-latin', 'vn', 'vn-fr', 'vn-us']
 
 
-
-LAYOUT_VARIANT_RE = re.compile(r'^\s*([/\w]+)\s*'  # layout plus
-                               r'(?:(?:\(\s*([-\w]+)\s*\))'  # variant in parentheses
-                               r'|(?:$))\s*')  # or nothing
-
-langtable.language_name()
-langtable.territory_name()
-langtable.timezone_name()
-langtable.list_keyboards()
-
 @cache
 def all_timezones():
     """
@@ -90,6 +77,7 @@ def all_timezones():
     return ALL_TIMEZONES
 
 
+'''
 def get_all_regions_and_timezones():
     """
     Get a dictionary mapping the regions to the list of their timezones.
@@ -107,12 +95,10 @@ def get_all_regions_and_timezones():
             result[parts[0]].add(parts[1])
 
     return result
+'''
 
 
 def get_available_translations():
-    """
-
-    """
     return ALL_LANGUAGES
 
 
@@ -136,7 +122,7 @@ def get_timezone(timezone):
     :param str timezone: the timezone name
     :rtype: datetime.tzinfo
     """
-
+    import zoneinfo
     return zoneinfo.ZoneInfo(timezone)
 
 
@@ -173,12 +159,12 @@ def get_locales_in_territory(territory):
     return langtable.list_locales(territoryId=territory)
 
 
-def get_language_in_locale(locale):
-    return langtable.parse_locale(locale).language
-
-
 def get_locales_in_language(lang):
     return langtable.list_locales(languageId=lang)
+
+
+def get_language_in_locale(locale):
+    return langtable.parse_locale(locale).language
 
 
 def get_lang_or_locale_native_and_en_name(lang_or_locale):
