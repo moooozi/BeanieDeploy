@@ -29,6 +29,7 @@ ISO_NAME = 'install_media.iso'
 ISO_PATH = ''
 MOUNT_ISO_LETTER = ''
 TMP_PARTITION_LETTER = ''
+TMP_PARTITION_LABEL = 'FEDORA-INST'  # Max 12 Chars
 GRUB_CONFIG_DIR = CURRENT_DIR + '\\resources\\grub_conf\\'
 # Tkinter variables, the '_t' suffix means Toggle
 vDist = tk.IntVar(app, -2)
@@ -81,9 +82,9 @@ def main():
         tkt.add_text_label(MID_FRAME, var=job_var, pady=0, padx=10)
         app.update()
         # Request elevation (admin) if not running as admin
-        fn.get_admin()
+        fn.get_admin(app)
         global COMPATIBILITY_RESULTS, COMPATIBILITY_CHECK_STATUS, IP_LOCALE
-        COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
+        # COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
         # COMPATIBILITY_RESULTS = {'uefi': 0, 'ram': 3434559, 'space': 1332642488, 'resizable': 4320083, 'arch': 'arm'}
         if not COMPATIBILITY_RESULTS:
             if not COMPATIBILITY_CHECK_STATUS:
@@ -473,12 +474,12 @@ def main():
         more_options_btn.bind("<Button-1>",
                               lambda x: (more_options_btn.pack_forget(), c3_add.pack(anchor=DI_VAR['w'])))
 
-        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: page_installing())
-        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: validate_back_page())
-
         def validate_back_page(*args):
             if vAutoinst_t.get(): page_autoinst4()
             else: page_1()
+
+        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: page_installing())
+        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: validate_back_page())
 
     def page_installing():
         # ************** Multilingual support *************************************************************************
@@ -574,7 +575,7 @@ def main():
                 tmp_part_size = fn.gigabyte(distros['size'][vDist.get()] + temp_part_failsafe_space)
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
                 Process(target=fn.create_temp_boot_partition, args=(tmp_part_size, GLOBAL_QUEUE,
-                                                                    fn.gigabyte(vAutoinst_dualboot_size.get()),)).start()
+                                                                    fn.gigabyte(int(vAutoinst_dualboot_size.get())),)).start()
                 job_var.set(LN.job_creating_tmp_part)
                 progressbar_install['value'] = 92
                 INSTALLER_STATUS = 3
@@ -608,11 +609,16 @@ def main():
                 if vAutoinst_t.get(): grub_cfg_file = GRUB_CONFIG_DIR + 'grub_autoinst.cfg'
                 else: grub_cfg_file = GRUB_CONFIG_DIR + 'grub_default.cfg'
                 fn.copy_one_file(grub_cfg_file, TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg')
+                grub_cfg_txt = fn.build_grub_cfg_file(TMP_PARTITION_LABEL, vAutoinst_t.get())
+                grub_cfg = open(TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg', 'w')
+                grub_cfg.write(grub_cfg_txt)
+                grub_cfg.close()
                 kickstart_txt = fn.build_autoinstall_ks_file(AUTOINST['keymap'], Autoinst_SELECTED_LOCALE, AUTOINST['timezone'],
-                                             distros['ostree'][vDist.get()], vAutoinst_Username.get(),
-                                             vAutoinst_Fullname.get())
-                kickstart = open(TMP_PARTITION_LETTER + ':\\ks.cfg','w')
+                                                             distros['ostree'][vDist.get()], vAutoinst_Username.get(),
+                                                             vAutoinst_Fullname.get())
+                kickstart = open(TMP_PARTITION_LETTER + ':\\ks.cfg', 'w')
                 kickstart.write(kickstart_txt)
+                kickstart.close()
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app
                 Process(target=fn.add_boot_entry, args=(default_efi_file_path, TMP_PARTITION_LETTER, GLOBAL_QUEUE,)).start()
                 INSTALLER_STATUS = 7
@@ -656,7 +662,12 @@ def main():
             fn.restart_windows()
             app.destroy()
 
-    page_check()
+
+    #    page_check()
+    grub_cfg_txt = fn.build_grub_cfg_file(TMP_PARTITION_LABEL, vAutoinst_t.get())
+    grub_cfg = open('G' + ':\\EFI\\BOOT\\grub.cfg', 'w')
+    grub_cfg.write(grub_cfg_txt)
+    grub_cfg.close()
     app.mainloop()
 
 

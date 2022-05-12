@@ -11,7 +11,7 @@ distros = {
     'name': ('Fedora Silverblue', 'Fedora Kinoite', 'Fedora Everything'),
     'version': ('36', '36', '36'),
     'de': ('GNOME', 'KDE', ''),
-    'size': [2.6, 2.8, 0.8],
+    'size': (2.6, 2.8, 0.8),
     'auto-installable': (True, True, False),
     'recommended': (True, False, False),
     'advanced': (False, False, True),
