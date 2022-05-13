@@ -62,6 +62,7 @@ language_handler(new_language='English')
 lang_var = tk.StringVar()
 LANG_LIST = tkt.add_lang_list(TOP_FRAME, lang_var, multilingual.available_languages.keys())
 
+
 def main():
     def page_check():
         """The page on which is decided whether the app can run on the device or not"""
@@ -388,7 +389,7 @@ def main():
         # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = []
         if vAutoinst_t.get() == 0:
-            review_sel.append(LN.verify_text['no_autoinst'])
+            review_sel.append(LN.verify_text['no_autoinst'] % distros['name'][vDist.get()])
         else:
             if vAutoinst_option.get() == 0:
                 review_sel.append(LN.verify_text['autoinst_dualboot'] % distros['name'][vDist.get()])
