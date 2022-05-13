@@ -314,8 +314,9 @@ def check_file_if_exists(path):
         [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
-def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None, username=None, fullname="", wifi_profiles=None):
-    part_const1 = "graphical"
+def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None, username='', fullname='', wifi_profiles=None):
+    part_comment1 = "# Kickstart file created by Lnixify."
+    part_const1 = "\ngraphical"
     part_pre = "\n"
     if wifi_profiles: pass
     part_post = "\n"
@@ -327,10 +328,13 @@ def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None, username
     part_const3 = "\nfirstboot --enable"
     part_timezone = "\ntimezone " + timezone + " --utc"
     part_partition = "\nautopart"
-    part_user = "\nuser --name=" + username + " --gecos='" + fullname + "' --groups=wheel"
+    if username:
+        part_user = "\nuser --name=" + username + " --gecos='" + fullname + "' --groups=wheel"
+    else:
+        part_user = ""
     part_const4 = "\nrootpw --lock"
-    ks_file_text = part_const1 + part_pre + part_post + part_keymap + part_lang + part_const2 + part_ostree + \
-                   part_const3 + part_timezone + part_partition + part_user + part_const4
+    ks_file_text = part_comment1 + part_const1 + part_pre + part_post + part_keymap + part_lang + part_const2 + \
+                   part_ostree + part_const3 + part_timezone + part_partition + part_user + part_const4
     return ks_file_text
 
 

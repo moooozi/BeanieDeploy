@@ -22,9 +22,12 @@ def init_tkinter(title, icon=None):
     return tkinter
 
 
-def open_popup(parent, title_txt, msg_txt, primary_btn_str=None, secondary_btn_str=None, is_entry=None, regex=None):
+def open_popup(parent, title_txt, msg_txt, primary_btn_str=None, secondary_btn_str=None, is_entry=None, regex=None,
+               x_size: int = None, y_size: int = None):
     """
 Pops up window to get input from user and freezes the main GUI while waiting for response
+    :param y_size: window height in pixels
+    :param x_size: window width in pixels
     :param is_entry: typing input? or just a yes-no-like question
     :param parent: the parent for the Tkinter Toplevel
     :param secondary_btn_str: the string text for the secondary button
@@ -41,12 +44,21 @@ Pops up window to get input from user and freezes the main GUI while waiting for
     pop_var = tk.IntVar(pop)
     x_position = parent.winfo_x()
     y_position = parent.winfo_y()
-    if len(msg_txt) > 120:
-        geometry = "600x300+%d+%d" % (x_position+125, y_position+125)
+    if x_size and y_size:
+        geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position + MAXWIDTH - x_size / 2, y_position + y_size/2 + 25)
         msg_font = FONTS['tiny']
     else:
-        geometry = "600x250+%d+%d" % (x_position+125, y_position+160)
-        msg_font = FONTS['small']
+        if len(msg_txt) > 120:
+            x_size = 600
+            y_size = 300
+            geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position+MAXWIDTH-x_size/2, y_position+y_size/2 + 25)
+            msg_font = FONTS['tiny']
+        else:
+            x_size = 600
+            y_size = 250
+            geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position+MAXWIDTH/2-x_size/2, y_position+MAXHEIGHT/2-y_size/2 + 25)
+            msg_font = FONTS['small']
+
     pop.geometry(geometry)
     pop.overrideredirect(True)
     pop.focus_set()
@@ -137,22 +149,19 @@ Used to build or rebuild the main frames after language change to a language wit
         top_frame = tk.Frame(parent, height=top_frame_height, width=MAXWIDTH, background=top_background)
         left_frame = ttk.Frame(parent, width=left_frame_width, height=MAXHEIGHT)
         mid_frame = ttk.Frame(parent, height=MAXHEIGHT - top_frame_height)
+        top_title = ttk.Label(top_frame, justify='center', textvariable=main_title_var, font=FONTS['large'],
+                              background=top_background)
+        top_title.pack(anchor='center', side='left', padx=15)
+        if left_frame_img_path:
+            ttk.Label(left_frame, image=tk.PhotoImage(file=left_frame_img_path)).pack(side='bottom')
     else:
         top_frame = frames[0]
         left_frame = frames[1]
         mid_frame = frames[2]
-
     top_frame.pack(fill="x", expand=1)
     top_frame.pack_propagate(False)
-    top_title = ttk.Label(top_frame, justify='center', textvariable=main_title_var, font=FONTS['large'],
-                          background=top_background)
-    top_title.pack(anchor='center', side='left', padx=15)
-
     left_frame.pack(fill="y", side=DI_VAR['l'])
     left_frame.pack_propagate(False)
-    if left_frame_img_path:
-        left_frame_label = ttk.Label(left_frame, image=tk.PhotoImage(file=left_frame_img_path))
-        left_frame_label.pack(side='bottom')
     mid_frame.pack(fill="both", expand=1, padx=15, pady=20)
     mid_frame.pack_propagate(False)
     return top_frame, mid_frame, left_frame

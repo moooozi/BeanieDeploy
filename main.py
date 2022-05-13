@@ -15,7 +15,7 @@ CONTAINER = ttk.Frame(app)
 CONTAINER.pack()
 vTitleText = tk.StringVar(app)
 def gui_builder(frames=None):
-    return tkt.build_main_gui_frames(CONTAINER, vTitleText,  left_frame_img_path='resources/left_frame.png', frames=frames)
+    return tkt.build_main_gui_frames(CONTAINER, vTitleText,  left_frame_img_path='resources\\left_frame.png', frames=frames)
 TOP_FRAME, MID_FRAME, LEFT_FRAME = gui_builder()
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 GLOBAL_QUEUE = Queue()
@@ -42,14 +42,11 @@ vTorrent_t = tk.IntVar(app, 0)
 vKeymap_timezone_source = tk.IntVar(app, value=1)
 vAutoinst_Keyboard = tk.StringVar(app)
 vAutoinst_Timezone = tk.StringVar(app)
-vAutoinst_Fullname = tk.StringVar(app)
-vAutoinst_Username = tk.StringVar(app)
+vAutoinst_Fullname = tk.StringVar(app, '')
+vAutoinst_Username = tk.StringVar(app, '')
 vAutoinst_dualboot_size = tk.StringVar(app)
 Autoinst_SELECTED_LOCALE = ''
 USERNAME_WINDOWS = ''
-lang_var = tk.StringVar()
-LANG_LIST = tkt.add_lang_list(TOP_FRAME, lang_var, multilingual.available_languages.keys())
-
 
 #   MULTI-LINGUAL /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 def language_handler(new_language=None, current_page=None):
@@ -62,7 +59,8 @@ def language_handler(new_language=None, current_page=None):
 
 
 language_handler(new_language='English')
-
+lang_var = tk.StringVar()
+LANG_LIST = tkt.add_lang_list(TOP_FRAME, lang_var, multilingual.available_languages.keys())
 
 def main():
     def page_check():
@@ -84,7 +82,7 @@ def main():
         # Request elevation (admin) if not running as admin
         fn.get_admin(app)
         global COMPATIBILITY_RESULTS, COMPATIBILITY_CHECK_STATUS, IP_LOCALE
-        # COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
+        COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
         # COMPATIBILITY_RESULTS = {'uefi': 0, 'ram': 3434559, 'space': 1332642488, 'resizable': 4320083, 'arch': 'arm'}
         if not COMPATIBILITY_RESULTS:
             if not COMPATIBILITY_CHECK_STATUS:
@@ -127,8 +125,8 @@ def main():
             USERNAME_WINDOWS = fn.get_windows_username()
             return page_1()
         else:
-            title.pack_forget()
-            progressbar_check.pack_forget()
+            title.destroy()
+            progressbar_check.destroy()
             tkt.add_page_title(MID_FRAME, LN.error_title % SW_NAME, pady=20)
             tkt.add_text_label(MID_FRAME, LN.error_list, pady=10)
 
@@ -378,50 +376,6 @@ def main():
                 AUTOINST['keymap'] = vAutoinst_Keyboard.get()
                 AUTOINST['timezone'] = vAutoinst_Timezone.get()
             if AUTOINST['keymap'] and AUTOINST['timezone']:
-                page_autoinst4()
-
-    def page_autoinst4():
-        """the autoinstall page on which you choose your input your username and fullname"""
-        tkt.clear_frame(MID_FRAME)
-        # *************************************************************************************************************
-        tkt.add_page_title(MID_FRAME, LN.title_autoinst4)
-
-        # Regex Syntax *****
-        portable_fs_chars = r'a-zA-Z0-9._-'
-        _name_base = r'[a-zA-Z0-9._][' + portable_fs_chars + r']{0,30}([' + portable_fs_chars + r']|\$)?'
-        username_regex = r'^' + _name_base + '$'
-        fullname_regex = r'^[^:]*$'
-        # Only allow username and fullname that meet the regex syntax above
-        tkt.var_tracer(vAutoinst_Fullname, "write", lambda *args: fn.validate_with_regex(vAutoinst_Fullname, regex=fullname_regex, mode='fix'))
-        tkt.var_tracer(vAutoinst_Username, "write", lambda *args: fn.validate_with_regex(vAutoinst_Username, regex=username_regex, mode='fix'))
-
-        entries_frame = ttk.Frame(MID_FRAME)
-        fullname_txt = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'], text=LN.entry_fullname, font=FONTS['tiny'])
-        fullname_entry = ttk.Entry(entries_frame, width=40, textvariable=vAutoinst_Fullname)
-        username_txt = ttk.Label(entries_frame, wraplength=540, justify=DI_VAR['l'], text=LN.entry_username, font=FONTS['tiny'])
-        username_entry = ttk.Entry(entries_frame, width=40, textvariable=vAutoinst_Username)
-
-        entries_frame.pack(fill='x', padx=20)
-        fullname_txt.grid(pady=5, padx=5, column=0, row=0, sticky=DI_VAR['w'])
-        fullname_entry.grid(pady=5, padx=5, column=1, row=0)
-        username_txt.grid(pady=5, padx=5, column=0, row=1, sticky=DI_VAR['w'])
-        username_entry.grid(pady=5, padx=5, column=1, row=1)
-
-        password_reminder = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], text=LN.password_reminder_txt, font=FONTS['tiny'])
-        password_reminder.pack(pady=10, padx=20, anchor=DI_VAR['w'])
-
-        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
-        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_autoinst3())
-
-        if not vAutoinst_Username.get():
-            username_entry.insert(index=0, string=USERNAME_WINDOWS)
-            username_entry.select_range(start=0, end=999)
-
-        def validate_next_page(*args):
-            # Username cannot be empty
-            is_username_valid = fn.validate_with_regex(vAutoinst_Username, regex=username_regex, mode='read') not in (False, 'empty')
-            is_fullname_valid = fn.validate_with_regex(vAutoinst_Fullname, regex=fullname_regex, mode='read')
-            if is_username_valid and is_fullname_valid:
                 page_verify()
 
     def page_verify():
@@ -462,10 +416,10 @@ def main():
         more_options_btn = ttk.Label(MID_FRAME, justify="center", text=LN.more_options, font=FONTS['tiny'], foreground='#3aa9ff')
         more_options_btn.pack(pady=10, padx=10, anchor=DI_VAR['w'])
         more_options_btn.bind("<Button-1>",
-                              lambda x: (more_options_btn.pack_forget(), c3_add.pack(anchor=DI_VAR['w'])))
+                              lambda x: (more_options_btn.destroy(), c3_add.pack(anchor=DI_VAR['w'])))
 
         def validate_back_page(*args):
-            if vAutoinst_t.get(): page_autoinst4()
+            if vAutoinst_t.get(): page_autoinst3()
             else: page_1()
 
         tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: page_installing())
@@ -476,8 +430,6 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_running)
-        # title = ttk.Label(middle_frame, wraplength=540, justify=di_var['l'], text=LN.install_running, font=FONTS['medium'])
-        # title.pack(pady=35, anchor=di_var['w'])
         progressbar_install = ttk.Progressbar(MID_FRAME, orient='horizontal', length=550, mode='determinate')
         progressbar_install.pack(pady=25)
         job_var = tk.StringVar()
@@ -512,7 +464,7 @@ def main():
                 INSTALLER_STATUS = 1
             if INSTALLER_STATUS == 1:  # While downloading, track download stats...
                 while True:
-                    while not GLOBAL_QUEUE.qsize(): app.after(50, app.update())
+                    while not GLOBAL_QUEUE.qsize(): app.after(500, app.update())
                     while GLOBAL_QUEUE.qsize() != 1: GLOBAL_QUEUE.get()
                     dl_status = GLOBAL_QUEUE.get()
                     if dl_status == 'OK':
@@ -523,7 +475,7 @@ def main():
                                                                                 dl_status['speed'], LN.dl_timeleft,
                                                                                 dl_status['eta'])
                     job_var.set(txt)
-                    app.after(100, app.update())
+                    app.after(200, app.update())
                 fn.move_files_to_dir(DOWNLOAD_PATH, DOWNLOAD_PATH)
                 fn.rename_file(DOWNLOAD_PATH, '*.iso', ISO_NAME)
                 INSTALLER_STATUS = 2
@@ -585,7 +537,7 @@ def main():
                 INSTALLER_STATUS = 5
             if INSTALLER_STATUS == 5:  # while copying files is ongoing...
                 while not GLOBAL_QUEUE.qsize():
-                    app.after(100, app.update())
+                    app.after(200, app.update())
                 if GLOBAL_QUEUE.get() == 1:
                     INSTALLER_STATUS = 6
             if INSTALLER_STATUS == 6:  # step 4: adding boot entry
@@ -613,7 +565,7 @@ def main():
                 INSTALLER_STATUS = 7
             if INSTALLER_STATUS == 7:  # while adding boot entry is ongoing...
                 while not GLOBAL_QUEUE.qsize():
-                    app.after(100, app.update())
+                    app.after(200, app.update())
                 if GLOBAL_QUEUE.get() == 1:
                     INSTALLER_STATUS = 8
             if INSTALLER_STATUS == 8:  # step 5: clean up iso and other downloaded files since install is complete
@@ -640,12 +592,12 @@ def main():
             time_left = 10
             while time_left > 0:
                 text_var.set(LN.finished_text_restarting_now % (int(time_left)))
-                time_left = time_left - 0.01
-                app.after(10, app.update())
+                time_left = time_left - 0.2
+                app.after(200, app.update())
             fn.restart_windows()
             tkt.app_quite()
 
-        tkt.add_primary_btn(MID_FRAME, LN.btn_restart_now, lambda: (fn.restart_windows(), tkt.app_quite()))
+        tkt.add_primary_btn(MID_FRAME, LN.btn_restart_now, lambda: [fn.restart_windows(), tkt.app_quite()])
         tkt.add_secondary_btn(MID_FRAME, LN.btn_restart_later, lambda: tkt.app_quite())
 
     page_check()
