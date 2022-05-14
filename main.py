@@ -601,7 +601,9 @@ def main():
         tkt.add_primary_btn(MID_FRAME, LN.btn_restart_now, lambda: [fn.restart_windows(), tkt.app_quite()])
         tkt.add_secondary_btn(MID_FRAME, LN.btn_restart_later, lambda: tkt.app_quite())
 
-    page_check()
+    #page_check()
+    print(fn.build_autoinstall_ks_file('de', 'de', 'tz',wifi_profiles=[['hamburger cheese','fdr'],
+                                                                     ['hambusddsgrger cheese','fsdfsdfsdfdr']]))
     app.mainloop()
 
 

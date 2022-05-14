@@ -318,8 +318,14 @@ def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None, username
     part_comment1 = "# Kickstart file created by Lnixify."
     part_const1 = "\ngraphical"
     part_pre = "\n"
-    if wifi_profiles: pass
-    part_post = "\n"
+    if wifi_profiles:
+        part_post = "\n%post"
+        template = r"""[connection]\nid=%ssid%\ntype=wifi\n\n[wifi]\nhidden=false\nssid=%ssid%\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%password%\n\n[ipv4]\nmethod=auto\n\n[ipv6]\naddr-gen-mode=stable-privacy\nmethod=auto\n\n[proxy]\n"""
+        for profile in wifi_profiles:
+            part_post = part_post + "\necho $'" + template.replace('%ssid%', profile[0]).replace('%password%', profile[1]) + \
+                        "' > " + "'/mnt/sysimage/etc/NetworkManager/system-connections/%s.nmconnection'" % profile[0]
+    else:
+        part_post = ""
     part_keymap = "\nkeyboard --vckeymap=" + keymap
     part_lang = "\nlang " + lang
     part_const2 = "\nfirewall --use-system-defaults"
@@ -327,7 +333,8 @@ def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None, username
     else: part_ostree = ""
     part_const3 = "\nfirstboot --enable"
     part_timezone = "\ntimezone " + timezone + " --utc"
-    part_partition = "\nautopart"
+    part_partition = "\n" \
+                     "part btrfs / --label=fedora"
     if username:
         part_user = "\nuser --name=" + username + " --gecos='" + fullname + "' --groups=wheel"
     else:

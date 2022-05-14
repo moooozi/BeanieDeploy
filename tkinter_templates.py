@@ -44,6 +44,7 @@ Pops up window to get input from user and freezes the main GUI while waiting for
     pop_var = tk.IntVar(pop)
     x_position = parent.winfo_x()
     y_position = parent.winfo_y()
+    #  position the pop up window at the center of its parent
     if x_size and y_size:
         geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position + MAXWIDTH - x_size / 2, y_position + y_size/2 + 25)
         msg_font = FONTS['tiny']
