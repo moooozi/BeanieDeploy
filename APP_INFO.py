@@ -13,7 +13,7 @@ distros = {
     'de': ('GNOME', 'KDE', ''),
     'size': (2.6, 2.8, 0.8),
     'auto-installable': (True, True, False),
-    'recommended': (True, False, False),
+    'recommended': (False, False, False),
     'advanced': (False, False, True),
     'netinstall': (False, False, True),
     'dl_link':

@@ -74,16 +74,15 @@ def main():
         # *************************************************************************************************************
         title = tkt.add_page_title(MID_FRAME, LN.check_running)
 
-        progressbar_check = ttk.Progressbar(MID_FRAME, orient='horizontal', length=550, mode='indeterminate')
+        progressbar_check = ttk.Progressbar(MID_FRAME, orient='horizontal', length=550, mode='determinate')
         progressbar_check.pack(pady=25)
-        progressbar_check.start(10)
         job_var = tk.StringVar()
         tkt.add_text_label(MID_FRAME, var=job_var, pady=0, padx=10)
         app.update()
         # Request elevation (admin) if not running as admin
         fn.get_admin(app)
         global COMPATIBILITY_RESULTS, COMPATIBILITY_CHECK_STATUS, IP_LOCALE
-        COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
+        # COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
         # COMPATIBILITY_RESULTS = {'uefi': 0, 'ram': 3434559, 'space': 1332642488, 'resizable': 4320083, 'arch': 'arm'}
         if not COMPATIBILITY_RESULTS:
             if not COMPATIBILITY_CHECK_STATUS:
@@ -93,13 +92,22 @@ def main():
                 COMPATIBILITY_CHECK_STATUS = 1
             if COMPATIBILITY_CHECK_STATUS == 1:
                 while True:
-                    while not GLOBAL_QUEUE.qsize(): app.after(10, app.update())
+                    while not GLOBAL_QUEUE.qsize(): app.after(200, app.update())
                     queue_out = GLOBAL_QUEUE.get()
-                    if queue_out == 'arch': pass
-                    elif queue_out == 'uefi': job_var.set(LN.check_uefi)
-                    elif queue_out == 'ram': job_var.set(LN.check_ram)
-                    elif queue_out == 'space': job_var.set(LN.check_space)
-                    elif queue_out == 'resizable': job_var.set(LN.check_resizable)
+                    if queue_out == 'arch':
+                        progressbar_check['value'] = 10
+                    elif queue_out == 'uefi':
+                        job_var.set(LN.check_uefi)
+                        progressbar_check['value'] = 20
+                    elif queue_out == 'ram':
+                        job_var.set(LN.check_ram)
+                        progressbar_check['value'] = 30
+                    elif queue_out == 'space':
+                        job_var.set(LN.check_space)
+                        progressbar_check['value'] = 50
+                    elif queue_out == 'resizable':
+                        job_var.set(LN.check_resizable)
+                        progressbar_check['value'] = 80
                     elif isinstance(queue_out, tuple) and queue_out[0] == 'detect_locale':
                         IP_LOCALE = queue_out[1:]
                     elif isinstance(queue_out, dict):
@@ -213,7 +221,8 @@ def main():
 
         r1_frame = ttk.Frame(MID_FRAME)
         r1_frame.pack(fill="x")
-        r1_autoinst = tkt.add_radio_btn(r1_frame, LN.windows_options[0], vAutoinst_option, 0, lambda: show_dualboot_options(True))
+        r1_autoinst = tkt.add_radio_btn(r1_frame, LN.windows_options[0], vAutoinst_option, 0, lambda: show_dualboot_options(True)
+                                        , side=DI_VAR['l'])
         r1_space = ttk.Label(r1_frame, wraplength=540, justify="center", text=LN.warn_space, font=FONTS['tiny'],
                              foreground='#ff4a4a')
         entry_frame = ttk.Frame(MID_FRAME)
@@ -235,7 +244,7 @@ def main():
         # LOGIC
         space_dualboot = fn.gigabyte(distros['size'][vDist.get()] + dualboot_required_space + additional_failsafe_space)
         if COMPATIBILITY_RESULTS['resizable'] < space_dualboot:
-            r1_space.pack(padx=20, anchor=DI_VAR['e'], side=DI_VAR['l'])
+            r1_space.pack(padx=20, side=DI_VAR['l'])
             r1_autoinst.configure(state='disabled')
 
         def show_dualboot_options(is_true: bool):
@@ -427,7 +436,7 @@ def main():
         tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: validate_back_page())
 
     def page_installing():
-        """the  page on which the initial installation (creating bootable media) takes place"""
+        """the page on which the initial installation (creating bootable media) takes place"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_running)
@@ -513,8 +522,8 @@ def main():
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 tmp_part_size: int = fn.gigabyte(distros['size'][vDist.get()] + temp_part_failsafe_space)
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
-                Process(target=fn.create_temp_boot_partition, args=(tmp_part_size, TMP_PARTITION_LABEL, GLOBAL_QUEUE,
-                                                                    fn.gigabyte(float(vAutoinst_dualboot_size.get())),)).start()
+                Process(target=fn.partition_procedure, args=(tmp_part_size, TMP_PARTITION_LABEL, GLOBAL_QUEUE,
+                                                             fn.gigabyte(float(vAutoinst_dualboot_size.get())),)).start()
                 job_var.set(LN.job_creating_tmp_part)
                 progressbar_install['value'] = 92
                 INSTALLER_STATUS = 3
@@ -562,7 +571,8 @@ def main():
                 kickstart.write(kickstart_txt)
                 kickstart.close()
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app
-                Process(target=fn.add_boot_entry, args=(default_efi_file_path, TMP_PARTITION_LETTER, GLOBAL_QUEUE,)).start()
+                Process(target=fn.add_boot_entry, args=(default_efi_file_path, TMP_PARTITION_LETTER,
+                                                        vAutoinst_option.get(), GLOBAL_QUEUE,)).start()
                 INSTALLER_STATUS = 7
             if INSTALLER_STATUS == 7:  # while adding boot entry is ongoing...
                 while not GLOBAL_QUEUE.qsize():
@@ -593,17 +603,17 @@ def main():
             time_left = 10
             while time_left > 0:
                 text_var.set(LN.finished_text_restarting_now % (int(time_left)))
-                time_left = time_left - 0.2
-                app.after(200, app.update())
+                time_left = time_left - 0.4
+                app.after(400, app.update())
             fn.restart_windows()
             tkt.app_quite()
 
         tkt.add_primary_btn(MID_FRAME, LN.btn_restart_now, lambda: [fn.restart_windows(), tkt.app_quite()])
         tkt.add_secondary_btn(MID_FRAME, LN.btn_restart_later, lambda: tkt.app_quite())
 
-    #page_check()
-    print(fn.build_autoinstall_ks_file('de', 'de', 'tz',wifi_profiles=[['hamburger cheese','fdr'],
-                                                                     ['hambusddsgrger cheese','fsdfsdfsdfdr']]))
+    fn.get_admin(app)
+    fn.partition_procedure(fn.gigabyte(1), 'HAHU', GLOBAL_QUEUE, fn.gigabyte(5.34),
+                           fn.megabyte(512), fn.megabyte(100))
     app.mainloop()
 
 

@@ -222,3 +222,4 @@ add tkinter variable tracer if no tracer exists
 
 def app_quite():
     raise SystemExit
+

@@ -220,19 +220,32 @@ def format_volume(drive_letter: str, filesystem: str, label: str):
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def create_temp_boot_partition(tmp_part_size: int, temp_part_label: str, queue, shrink_space: int = None):
+def new_volume(disk_number: int, size: int, filesystem: str, label: str, drive_letter: str = None):
+    arg = 'New-Partition -DiskNumber ' + str(disk_number) + r' -Size ' + str(size)
+    if drive_letter is not None:
+        arg += ' -DriveLetter ' + drive_letter
+    arg += ' | Format-Volume' + ' -FileSystem ' + filesystem + ' -NewFileSystemLabel "' + label + '"'
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+
+def partition_procedure(tmp_part_size: int, temp_part_label: str, queue, shrink_space: int = None,
+                        boot_part_size: int = None, efi_part_size: int = None,):
     print('create_temp_boot_partition')
     sys_drive_letter = get_sys_drive_letter()
-    relabel_volume(sys_drive_letter, 'WindowsOS')
+    print(relabel_volume(sys_drive_letter, 'WindowsOS'))
     sys_disk_number = get_disk_number(sys_drive_letter)
     if shrink_space is None:
         shrink_space = tmp_part_size
     sys_drive_new_size = get_drive_size_after_resize(sys_drive_letter, shrink_space + 1100000)
     resize_partition(sys_drive_letter, sys_drive_new_size)
+    if efi_part_size and boot_part_size and shrink_space:
+        root_space = shrink_space - (tmp_part_size + efi_part_size + boot_part_size + 1100000)
+        new_volume(sys_disk_number, root_space, 'EXFAT', 'ALLOC-ROOT')
+        new_volume(sys_disk_number, boot_part_size, 'EXFAT', 'ALLOC-BOOT')
+        new_volume(sys_disk_number, efi_part_size, 'EXFAT', 'ALLOC-EFI')
 
     tmp_part_letter = get_unused_drive_letter()
-    new_partition(sys_disk_number, tmp_part_size, tmp_part_letter)
-    format_volume(tmp_part_letter, 'FAT32', temp_part_label)
+    new_volume(sys_disk_number, tmp_part_size, 'FAT32', temp_part_label, tmp_part_letter)
     queue.put((1, tmp_part_letter))
 
 
@@ -269,24 +282,41 @@ def restart_windows():
     subprocess.run([r'powershell.exe', r'Restart-Computer'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def add_boot_entry(boot_efi_file_path, boot_drive_letter, queue):
-    arg = r'bcdedit /copy "{bootmgr}" /d "Linux Install Media"'
-    bootguid = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout.strip()
-    print(bootguid)
-    bootguid = bootguid[bootguid.index('{'):bootguid.index('}') + 1]
-    print(bootguid)
-    arg = r'bcdedit /set  "' + bootguid + '" path ' + boot_efi_file_path + ''
-    out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    print(out)
-    arg = r'bcdedit /set "' + bootguid + '" device partition=' + boot_drive_letter + ':'
-    out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    print(out)
-    arg = r'bcdedit /set "{fwbootmgr}" bootsequence "' + bootguid + '" /addfirst'
-    out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    print(out)
-    if True:
-        queue.put(1)
+def add_boot_entry(boot_efi_file_path, boot_drive_letter, is_permanent: bool = False, queue=None):
+
+    def make_boot_entry_first(bootguid, is_permanent: bool = False):
+        """
+
+        :param bootguid:
+        :param is_permanent:
+        """
+        if is_permanent:
+            arg = r'bcdedit /set "{fwbootmgr}" displayorder "' + bootguid + '" /addfirst'
+        else:
+            arg = r'bcdedit /set "{fwbootmgr}" bootsequence "' + bootguid + '" /addfirst'
+
+        out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        print(out)
+
+    def create_new_wbm(boot_efi_file_path, boot_drive_letter):
+        arg = r'bcdedit /copy "{bootmgr}" /d "Linux Install Media"'
+        bootguid = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout.strip()
+        print(bootguid)
+        bootguid = bootguid[bootguid.index('{'):bootguid.index('}') + 1]
+        print(bootguid)
+        arg = r'bcdedit /set  "' + bootguid + '" path ' + boot_efi_file_path + ''
+        out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        print(out)
+        arg = r'bcdedit /set "' + bootguid + '" device partition=' + boot_drive_letter + ':'
+        out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        print(out)
+        return bootguid
+
+    bootguid = create_new_wbm(boot_efi_file_path, boot_drive_letter)
+    make_boot_entry_first(bootguid)
+    if queue: queue.put(1)
+    else: return 1
 
 
 def get_wifi_profiles():
@@ -408,6 +438,7 @@ def get_admin(app):
         run_log.write(file)'''
 
 
-def gigabyte(gb): return gb * 1073741824
+def gigabyte(gb): return int(gb * 1073741824)
+def megabyte(mb): return int(mb * 1048576)
 def byte_to_gb(byte): return round(byte / 1073741824, 2)
 
