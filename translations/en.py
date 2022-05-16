@@ -49,8 +49,7 @@ title_autoinst2 = "Choose your language and locale"
 title_autoinst3 = "Choose your timezone and keyboard layout"
 title_autoinst4 = "Create your local user account"
 
-additional_setup_now = "Setup language, locale, Timezone and keyboard layout now"
-additional_setup_later = "Setup language, locale, Timezone and keyboard layout later"
+additional_setup_now = "Setup your locale, Timezone and keyboard layout now"
 
 encrypted_root = "Encrypt the new operating system"
 entry_encrypt_passphrase_pre = "Enter encryption PIN"

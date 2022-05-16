@@ -277,17 +277,17 @@ def main():
                     return -1
             else:
                 return -1
-            return page_autoinst1_addition()
+            return page_autoinst2()
 
-    def page_autoinst1_addition():
+    def page_autoinst2():
         """the autoinstall page on which you choose whether to install alongside windows or start clean install"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
         tkt.generic_page_layout(MID_FRAME, LN.windows_question % distros['name'][vDist.get()],
-                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_1())
+                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_autoinst1())
 
-        # tkt.add_check_btn(MID_FRAME, LN.additional_setup_later, additional_setup_var)
+        # tkt.add_check_btn(MID_FRAME, LN.additional_setup_now, vAutoinst_additional_setup_t)
 
         tkt.add_check_btn(MID_FRAME, LN.add_import_wifi, vAutoinst_Wifi_t, pady=(5, 0))
         tkt.add_check_btn(MID_FRAME, LN.encrypted_root, vAutoinst_Encrypt_t, lambda: show_encrypt_options(vAutoinst_Encrypt_t))
@@ -342,15 +342,15 @@ def main():
             if vAutoinst_additional_setup_t.get() == 0:
                 page_verify()
             elif vAutoinst_additional_setup_t.get() == 1:
-                page_autoinst2()
+                page_autoinst_addition_1()
 
     # page_autoinst2
-    def page_autoinst2():
+    def page_autoinst_addition_1():
         """the autoinstall page on which you choose your language and locale"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         tkt.generic_page_layout(MID_FRAME, LN.title_autoinst2,
-                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_autoinst1())
+                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_autoinst2())
         all_languages = get_available_translations()
         if IP_LOCALE:
             langs_and_locales = get_locales_and_langs_sorted_with_names(territory=IP_LOCALE[0], other_langs=all_languages)
@@ -380,14 +380,14 @@ def main():
             global Autoinst_SELECTED_LOCALE
             Autoinst_SELECTED_LOCALE = locale_list_fedora.focus()
             if langtable.parse_locale(Autoinst_SELECTED_LOCALE).language:
-                return page_autoinst3()
+                return page_autoinst_addition_2()
 
-    def page_autoinst3():
+    def page_autoinst_addition_2():
         """the autoinstall page on which you choose your timezone and keyboard layout"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         tkt.generic_page_layout(MID_FRAME, LN.title_autoinst3,
-                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_autoinst2())
+                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_autoinst_addition_1())
 
         chosen_locale_name = langtable.language_name(languageId=Autoinst_SELECTED_LOCALE)
         if IP_LOCALE:
@@ -488,9 +488,12 @@ def main():
                               lambda x: (more_options_btn.destroy(), c3_add.pack(anchor=DI_VAR['w'])))
 
         def validate_back_page(*args):
-            if vAutoinst_t.get(): page_autoinst3()
-            else: page_1()
-
+            if not vAutoinst_t.get():
+                page_1()
+            elif vAutoinst_additional_setup_t.get():
+                page_autoinst_addition_2()
+            else:
+                page_autoinst2()
 
     def page_installing():
         """the page on which the initial installation (creating bootable media) takes place"""
