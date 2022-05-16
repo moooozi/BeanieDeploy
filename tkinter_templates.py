@@ -130,7 +130,7 @@ def add_radio_btn(parent, text, var, value, command=None, is_disabled=None, ipad
     return radio
 
 
-def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=30):
+def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=5):
     from multilingual import DI_VAR
     check = ttk.Checkbutton(parent, text=text, variable=var, onvalue=1, offvalue=0)
     check.pack(anchor=DI_VAR['w'], ipady=5, pady=pady)
@@ -218,6 +218,19 @@ add tkinter variable tracer if no tracer exists
         return 'tracer exists'
     else:
         var.trace_add(mode=mode, callback=cb)
+
+
+def generic_page_layout(parent, title, primary_btn_txt=None, primary_btn_command=None, secondary_btn_txt=None,
+                        secondary_btn_command=None):
+    add_page_title(parent, title)
+    if primary_btn_txt or secondary_btn_txt:
+        button_frame = tk.Frame(parent, height=34)
+        button_frame.pack(side='bottom', fill='x')
+        button_frame.pack_propagate(False)
+        if primary_btn_txt:
+            add_primary_btn(button_frame, primary_btn_txt, primary_btn_command)
+        if secondary_btn_txt:
+            add_secondary_btn(button_frame, secondary_btn_txt, secondary_btn_command)
 
 
 def app_quite():

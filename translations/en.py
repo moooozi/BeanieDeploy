@@ -49,6 +49,17 @@ title_autoinst2 = "Choose your language and locale"
 title_autoinst3 = "Choose your timezone and keyboard layout"
 title_autoinst4 = "Create your local user account"
 
+additional_setup_now = "Setup language, locale, Timezone and keyboard layout now"
+additional_setup_later = "Setup language, locale, Timezone and keyboard layout later"
+
+encrypted_root = "Encrypt the new operating system"
+entry_encrypt_passphrase_pre = "Enter encryption PIN"
+entry_encrypt_passphrase_post = "(numbers only)"
+entry_encrypt_passphrase_confirm_pre = "Confirm PIN"
+not_matched = "Not matched"
+
+encrypt_reminder_txt = "(This can be changed to include characters after the installation)"
+
 entry_username = "Username"
 entry_fullname = "Full name (optional)"
 password_reminder_txt = "(You will be able to set password for your user account after the installation)"

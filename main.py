@@ -4,6 +4,7 @@ import multilingual
 import tkinter_templates as tkt
 from tkinter_templates import tk, ttk, FONTS
 from APP_INFO import *
+import translations.en as LN
 from autoinst import get_available_translations, langtable, get_locales_and_langs_sorted_with_names, all_timezones, \
     detect_locale, get_available_keymaps
 #   DRIVER CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
@@ -36,6 +37,9 @@ vDist = tk.IntVar(app, -2)
 vAutoinst_t = tk.IntVar(app, 1)
 vAutoinst_option = tk.IntVar(app, -1)
 vAutoinst_Wifi_t = tk.IntVar(app, 1)
+vAutoinst_Encrypt_t = tk.IntVar(app, 0)
+vAutoinst_additional_setup_t = tk.IntVar(app, 0)
+
 vAutorestart_t = tk.IntVar(app, 0)
 vTorrent_t = tk.IntVar(app, 0)
 # autoinstaller variables
@@ -44,6 +48,7 @@ vAutoinst_Keyboard = tk.StringVar(app)
 vAutoinst_Timezone = tk.StringVar(app)
 vAutoinst_Fullname = tk.StringVar(app, '')
 vAutoinst_Username = tk.StringVar(app, '')
+vAutoinst_Encrypt_Passphrase = tk.StringVar(app)
 vAutoinst_dualboot_size = tk.StringVar(app)
 Autoinst_SELECTED_LOCALE = ''
 USERNAME_WINDOWS = ''
@@ -82,7 +87,7 @@ def main():
         # Request elevation (admin) if not running as admin
         fn.get_admin(app)
         global COMPATIBILITY_RESULTS, COMPATIBILITY_CHECK_STATUS, IP_LOCALE
-        # COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
+        COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
         # COMPATIBILITY_RESULTS = {'uefi': 0, 'ram': 3434559, 'space': 1332642488, 'resizable': 4320083, 'arch': 'arm'}
         if not COMPATIBILITY_RESULTS:
             if not COMPATIBILITY_CHECK_STATUS:
@@ -157,7 +162,7 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set('Welcome to Lnixify')
-        tkt.add_page_title(MID_FRAME, LN.distro_question)
+        tkt.generic_page_layout(MID_FRAME,LN.distro_question, LN.btn_next, lambda: validate_next_page())
 
         for index, distro in enumerate(distros['name']):
             txt = ''  # Generating Text for each list member of installable flavors/distros
@@ -183,7 +188,6 @@ def main():
                     vDist.set(-1)
 
         check_autoinst = tkt.add_check_btn(MID_FRAME, LN.install_auto, vAutoinst_t, pady=40)
-        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
         # BUGFIX
         if not distros['auto-installable'][vDist.get()]:
             check_autoinst.configure(state='disabled')
@@ -217,7 +221,8 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
-        tkt.add_page_title(MID_FRAME, LN.windows_question % distros['name'][vDist.get()])
+        tkt.generic_page_layout(MID_FRAME, LN.windows_question % distros['name'][vDist.get()],
+                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_1())
 
         r1_frame = ttk.Frame(MID_FRAME)
         r1_frame.pack(fill="x")
@@ -225,22 +230,22 @@ def main():
                                         , side=DI_VAR['l'])
         r1_space = ttk.Label(r1_frame, wraplength=540, justify="center", text=LN.warn_space, font=FONTS['tiny'],
                              foreground='#ff4a4a')
-        entry_frame = ttk.Frame(MID_FRAME)
-        entry_frame.pack(fill='x', padx=10)
+        entry1_frame = ttk.Frame(MID_FRAME)
+        entry1_frame.pack(fill='x', padx=10)
         tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], vAutoinst_option, 1, lambda: show_dualboot_options(False))
-        tkt.add_check_btn(MID_FRAME, LN.add_import_wifi, vAutoinst_Wifi_t)
 
         min_size = dualboot_required_space
         max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable']) - distros['size'][vDist.get()] - additional_failsafe_space
         max_size = round(max_size, 2)
         float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
-        size_dualboot_txt_pre = ttk.Label(entry_frame, wraplength=540, justify=DI_VAR['l'],
+        size_dualboot_txt_pre = ttk.Label(entry1_frame, wraplength=540, justify=DI_VAR['l'],
                                           text=LN.dualboot_size_txt, font=FONTS['tiny'])
-        size_dualboot_txt_post = ttk.Label(entry_frame, wraplength=540, justify=DI_VAR['l'],
+        size_dualboot_entry = ttk.Entry(entry1_frame, width=10, textvariable=vAutoinst_dualboot_size)
+        size_dualboot_txt_post = ttk.Label(entry1_frame, wraplength=540, justify=DI_VAR['l'],
                                            text='(%sGB - %sGB)' % (min_size, max_size), font=FONTS['tiny'])
-        size_dualboot_entry = ttk.Entry(entry_frame, width=10, textvariable=vAutoinst_dualboot_size)
         tkt.var_tracer(vAutoinst_dualboot_size, "write",
                        lambda *args: fn.validate_with_regex(vAutoinst_dualboot_size, regex=float_regex, mode='fix'))
+
         # LOGIC
         space_dualboot = fn.gigabyte(distros['size'][vDist.get()] + dualboot_required_space + additional_failsafe_space)
         if COMPATIBILITY_RESULTS['resizable'] < space_dualboot:
@@ -272,18 +277,80 @@ def main():
                     return -1
             else:
                 return -1
-            return page_autoinst2()
+            return page_autoinst1_addition()
 
-        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
-        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_1())
+    def page_autoinst1_addition():
+        """the autoinstall page on which you choose whether to install alongside windows or start clean install"""
+        tkt.clear_frame(MID_FRAME)
+        # *************************************************************************************************************
+        vTitleText.set(LN.install_auto)
+        tkt.generic_page_layout(MID_FRAME, LN.windows_question % distros['name'][vDist.get()],
+                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_1())
+
+        # tkt.add_check_btn(MID_FRAME, LN.additional_setup_later, additional_setup_var)
+
+        tkt.add_check_btn(MID_FRAME, LN.add_import_wifi, vAutoinst_Wifi_t, pady=(5, 0))
+        tkt.add_check_btn(MID_FRAME, LN.encrypted_root, vAutoinst_Encrypt_t, lambda: show_encrypt_options(vAutoinst_Encrypt_t))
+
+        only_digit_regex = r'^[0-9]+$'  # digits
+        entry2_frame = ttk.Frame(MID_FRAME)
+
+        encrypt_pass_pre = ttk.Label(entry2_frame, wraplength=540, justify=DI_VAR['l'],
+                                     text=LN.entry_encrypt_passphrase_pre, font=FONTS['tiny'])
+        encrypt_passphrase_entry = ttk.Entry(entry2_frame, show="\u2022", width=10,
+                                             textvariable=vAutoinst_Encrypt_Passphrase)
+        encrypt_pass_post = ttk.Label(entry2_frame, wraplength=540, justify=DI_VAR['l'],
+                                      text=LN.entry_encrypt_passphrase_post, font=FONTS['tiny'])
+        tkt.var_tracer(vAutoinst_Encrypt_Passphrase, "write",
+                       lambda *args: fn.validate_with_regex(vAutoinst_Encrypt_Passphrase,
+                                                            regex=only_digit_regex, mode='fix'))
+        pass_confirm_var = tk.StringVar()
+        encrypt_pass_confirm_pre = ttk.Label(entry2_frame, wraplength=540, justify=DI_VAR['l'],
+                                             text=LN.entry_encrypt_passphrase_confirm_pre, font=FONTS['tiny'])
+        encrypt_pass_confirm_entry = ttk.Entry(entry2_frame, show="\u2022", width=10, textvariable=pass_confirm_var)
+        encrypt_pass_confirm_not_matched = ttk.Label(entry2_frame, wraplength=540, justify=DI_VAR['l'],
+                                                     text=LN.not_matched, font=FONTS['tiny'], foreground='#ff4a4a')
+        encrypt_pass_note = ttk.Label(entry2_frame, wraplength=540, justify=DI_VAR['l'],
+                                      text=LN.encrypt_reminder_txt, font=FONTS['tiny'])
+        tkt.var_tracer(pass_confirm_var, "write",
+                       lambda *args:
+                       show_not_matched_warning(not verify_match(pass_confirm_var, vAutoinst_Encrypt_Passphrase)))
+
+        encrypt_pass_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=DI_VAR['w'])
+        encrypt_passphrase_entry.grid(pady=5, padx=5, column=1, row=0)
+        encrypt_pass_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=DI_VAR['w'])
+        encrypt_pass_confirm_pre.grid(pady=5, padx=(10, 0), column=0, row=1, sticky=DI_VAR['w'])
+        encrypt_pass_confirm_entry.grid(pady=5, padx=5, column=1, row=1)
+        encrypt_pass_note.grid(pady=5, padx=(0, 0), column=0, columnspan=4, row=2, sticky=DI_VAR['w'])
+
+        # LOGIC
+        def show_not_matched_warning(is_true: bool):
+            if is_true: encrypt_pass_confirm_not_matched.grid(pady=5, padx=(0, 0), column=2, row=1, sticky=DI_VAR['w'])
+            else: encrypt_pass_confirm_not_matched.grid_forget()
+
+        def verify_match(var1, var2):
+            if var1.get() == var2.get(): return True
+            else: return False
+
+        def show_encrypt_options(var):
+            if var.get():
+                entry2_frame.pack(fill='x')
+            else:
+                entry2_frame.pack_forget()
+
+        def validate_next_page(*args):
+            if vAutoinst_additional_setup_t.get() == 0:
+                page_verify()
+            elif vAutoinst_additional_setup_t.get() == 1:
+                page_autoinst2()
 
     # page_autoinst2
     def page_autoinst2():
         """the autoinstall page on which you choose your language and locale"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
-        tkt.add_page_title(MID_FRAME, LN.title_autoinst2)
-
+        tkt.generic_page_layout(MID_FRAME, LN.title_autoinst2,
+                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_autoinst1())
         all_languages = get_available_translations()
         if IP_LOCALE:
             langs_and_locales = get_locales_and_langs_sorted_with_names(territory=IP_LOCALE[0], other_langs=all_languages)
@@ -315,15 +382,13 @@ def main():
             if langtable.parse_locale(Autoinst_SELECTED_LOCALE).language:
                 return page_autoinst3()
 
-        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
-        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_autoinst1())
-
     def page_autoinst3():
         """the autoinstall page on which you choose your timezone and keyboard layout"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
-        tkt.add_page_title(MID_FRAME, LN.title_autoinst3)
-        
+        tkt.generic_page_layout(MID_FRAME, LN.title_autoinst3,
+                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_autoinst2())
+
         chosen_locale_name = langtable.language_name(languageId=Autoinst_SELECTED_LOCALE)
         if IP_LOCALE:
             locale_from_ip = langtable.list_locales(territoryId=IP_LOCALE[0])[0]
@@ -362,9 +427,6 @@ def main():
             timezone_list.set(IP_LOCALE[1])
             keyboard_list.set(keyboards_all[0])
 
-        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: validate_next_page())
-        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: page_autoinst2())
-
         def spawn_more_widgets(*args):
             if vKeymap_timezone_source.get() == 2:
                 lists_frame.pack(fill='x', padx=20)
@@ -393,8 +455,8 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set('')
-        tkt.add_page_title(MID_FRAME, LN.verify_question)
-
+        tkt.generic_page_layout(MID_FRAME, LN.verify_question,
+                                LN.btn_next, lambda: page_installing(), LN.btn_back, lambda: validate_back_page())
         # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = []
         if vAutoinst_t.get() == 0:
@@ -404,9 +466,6 @@ def main():
                 review_sel.append(LN.verify_text['autoinst_dualboot'] % distros['name'][vDist.get()])
                 review_sel.append(LN.verify_text['autoinst_keep_data'])
             elif vAutoinst_option.get() == 1:
-                review_sel.append(LN.verify_text['autoinst_clean'] % distros['name'][vDist.get()])
-                review_sel.append(LN.verify_text['autoinst_rm_sys'] % fn.get_sys_drive_letter())
-            elif vAutoinst_option.get() == 2:
                 review_sel.append(LN.verify_text['autoinst_clean'] % distros['name'][vDist.get()])
                 review_sel.append(LN.verify_text['autoinst_rm_all'])
             if vAutoinst_Wifi_t.get():
@@ -432,8 +491,6 @@ def main():
             if vAutoinst_t.get(): page_autoinst3()
             else: page_1()
 
-        tkt.add_primary_btn(MID_FRAME, LN.btn_next, lambda: page_installing())
-        tkt.add_secondary_btn(MID_FRAME, LN.btn_next, lambda: validate_back_page())
 
     def page_installing():
         """the page on which the initial installation (creating bootable media) takes place"""
@@ -594,11 +651,13 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         LANG_LIST.pack(anchor=DI_VAR['nw'], padx=10, pady=10)
-        tkt.add_page_title(MID_FRAME, LN.finished_title)
-
+        tkt.generic_page_layout(MID_FRAME, LN.finished_title,
+                                LN.btn_restart_now, lambda: [fn.restart_windows(), tkt.app_quite()],
+                                LN.btn_restart_later, lambda: tkt.app_quite())
         text_var = tk.StringVar()
         tkt.add_text_label(MID_FRAME, text=LN.finished_text, font=FONTS['small'], pady=10)
         tkt.add_text_label(MID_FRAME, var=text_var, font=FONTS['small'], pady=10)
+
         if vAutorestart_t.get():
             time_left = 10
             while time_left > 0:
@@ -608,12 +667,7 @@ def main():
             fn.restart_windows()
             tkt.app_quite()
 
-        tkt.add_primary_btn(MID_FRAME, LN.btn_restart_now, lambda: [fn.restart_windows(), tkt.app_quite()])
-        tkt.add_secondary_btn(MID_FRAME, LN.btn_restart_later, lambda: tkt.app_quite())
-
-    fn.get_admin(app)
-    fn.partition_procedure(fn.gigabyte(1), 'HAHU', GLOBAL_QUEUE, fn.gigabyte(5.34),
-                           fn.megabyte(512), fn.megabyte(100))
+    page_check()
     app.mainloop()
 
 

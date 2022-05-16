@@ -209,17 +209,6 @@ def relabel_volume(drive_letter: str, new_label: str):
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def new_partition(disk_number: int, size: int, drive_letter: str):
-    arg = r'New-Partition -DiskNumber ' + str(disk_number) + r' -Size ' + str(size) + r' -DriveLetter ' + drive_letter
-    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-
-
-def format_volume(drive_letter: str, filesystem: str, label: str):
-    arg = r'Format-Volume -DriveLetter ' + drive_letter + ' -FileSystem ' + filesystem \
-          + ' -NewFileSystemLabel "' + label + '"'
-    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-
-
 def new_volume(disk_number: int, size: int, filesystem: str, label: str, drive_letter: str = None):
     arg = 'New-Partition -DiskNumber ' + str(disk_number) + r' -Size ' + str(size)
     if drive_letter is not None:
@@ -230,7 +219,6 @@ def new_volume(disk_number: int, size: int, filesystem: str, label: str, drive_l
 
 def partition_procedure(tmp_part_size: int, temp_part_label: str, queue, shrink_space: int = None,
                         boot_part_size: int = None, efi_part_size: int = None,):
-    print('create_temp_boot_partition')
     sys_drive_letter = get_sys_drive_letter()
     print(relabel_volume(sys_drive_letter, 'WindowsOS'))
     sys_disk_number = get_disk_number(sys_drive_letter)
@@ -344,35 +332,43 @@ def check_file_if_exists(path):
         [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
-def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None, username='', fullname='', wifi_profiles=None):
-    part_comment1 = "# Kickstart file created by Lnixify."
-    part_const1 = "\ngraphical"
-    part_pre = "\n"
+def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None, username='', fullname='', wifi_profiles=None,
+                              encrypted: bool = False, passphrase: str = None):
+    kickstart_txt = "# Kickstart file created by Lnixify."
+    kickstart_txt += "\ngraphical"
     if wifi_profiles:
-        part_post = "\n%post"
+        kickstart_txt += "\n%post"
         template = r"""[connection]\nid=%ssid%\ntype=wifi\n\n[wifi]\nhidden=false\nssid=%ssid%\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%password%\n\n[ipv4]\nmethod=auto\n\n[ipv6]\naddr-gen-mode=stable-privacy\nmethod=auto\n\n[proxy]\n"""
         for profile in wifi_profiles:
-            part_post = part_post + "\necho $'" + template.replace('%ssid%', profile[0]).replace('%password%', profile[1]) + \
-                        "' > " + "'/mnt/sysimage/etc/NetworkManager/system-connections/%s.nmconnection'" % profile[0]
-    else:
-        part_post = ""
-    part_keymap = "\nkeyboard --vckeymap=" + keymap
-    part_lang = "\nlang " + lang
-    part_const2 = "\nfirewall --use-system-defaults"
-    if ostree_args: part_ostree = "\nostreesetup " + ostree_args
-    else: part_ostree = ""
-    part_const3 = "\nfirstboot --enable"
-    part_timezone = "\ntimezone " + timezone + " --utc"
-    part_partition = "\n" \
-                     "part btrfs / --label=fedora"
+            kickstart_txt += "\necho $'" + template.replace('%ssid%', profile[0]).replace('%password%', profile[1]) + \
+                             "' > " + "'/mnt/sysimage/etc/NetworkManager/system-connections/%s.nmconnection'" % profile[0]
+    kickstart_txt += "\nkeyboard --vckeymap=" + keymap
+    kickstart_txt += "\nlang " + lang
+    kickstart_txt += "\nfirewall --use-system-defaults"
+    if ostree_args:
+        kickstart_txt += "\nostreesetup " + ostree_args
+    kickstart_txt += "\nfirstboot --enable"
+    kickstart_txt += "\ntimezone " + timezone + " --utc"
+    kickstart_txt += "\nignoredisk --drives=" \
+                     "\npart btrfs.01 --onpart=/dev/disk/by-label/ALLOC-ROOT"
+    if encrypted:
+        kickstart_txt += ' --encrypted'
+        if passphrase:
+            kickstart_txt += ' --passphrase=' + passphrase
+        kickstart_txt += "\nbtrfs none --label=fedora btrfs.01" \
+                         "\nbtrfs / --subvol --name=root fedora" \
+                         "\nbtrfs /home --subvol --name=home fedora" \
+                         "\nbtrfs /var --subvol --name=var fedora" \
+                         "\npart /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-label/ALLOC-BOOT " \
+                         "\npart /boot/efi --fstype=efi --label=fedora_efi --onpart=/dev/disk/by-label/ALLOC-EFI" \
+                         "\nbootloader --location=none"
+
     if username:
-        part_user = "\nuser --name=" + username + " --gecos='" + fullname + "' --groups=wheel"
-    else:
-        part_user = ""
-    part_const4 = "\nrootpw --lock"
-    ks_file_text = part_comment1 + part_const1 + part_pre + part_post + part_keymap + part_lang + part_const2 + \
-                   part_ostree + part_const3 + part_timezone + part_partition + part_user + part_const4
-    return ks_file_text
+        kickstart_txt += "\nuser --name=" + username + " --gecos='" + fullname + "' --groups=wheel"
+    kickstart_txt += "\nrootpw --lock"
+    kickstart_txt += "\nreboot"
+
+    return kickstart_txt
 
 
 def build_grub_cfg_file(root_partition_label, is_autoinst=False):
