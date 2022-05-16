@@ -1,10 +1,10 @@
 from multiprocessing import Process, Queue
+
 import functions as fn
 import multilingual
 import tkinter_templates as tkt
 from tkinter_templates import tk, ttk, FONTS
 from APP_INFO import *
-import translations.en as LN
 from autoinst import get_available_translations, langtable, get_locales_and_langs_sorted_with_names, all_timezones, \
     detect_locale, get_available_keymaps
 #   DRIVER CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
@@ -24,7 +24,7 @@ COMPATIBILITY_RESULTS = {}
 COMPATIBILITY_CHECK_STATUS = 0
 INSTALLER_STATUS = 0
 IP_LOCALE = []
-AUTOINST = {}
+AUTOINST = {'locale': '', 'timezone': '', 'keymap': '', 'username': '', 'fullname': ''}
 DOWNLOAD_PATH = ''
 ISO_NAME = 'install_media.iso'
 ISO_PATH = ''
@@ -52,6 +52,7 @@ vAutoinst_Encrypt_Passphrase = tk.StringVar(app)
 vAutoinst_dualboot_size = tk.StringVar(app)
 Autoinst_SELECTED_LOCALE = ''
 USERNAME_WINDOWS = ''
+
 
 #   MULTI-LINGUAL /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 def language_handler(new_language=None, current_page=None):
@@ -87,7 +88,7 @@ def main():
         # Request elevation (admin) if not running as admin
         fn.get_admin(app)
         global COMPATIBILITY_RESULTS, COMPATIBILITY_CHECK_STATUS, IP_LOCALE
-        COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
+        # COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
         # COMPATIBILITY_RESULTS = {'uefi': 0, 'ram': 3434559, 'space': 1332642488, 'resizable': 4320083, 'arch': 'arm'}
         if not COMPATIBILITY_RESULTS:
             if not COMPATIBILITY_CHECK_STATUS:
@@ -162,7 +163,7 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set('Welcome to Lnixify')
-        tkt.generic_page_layout(MID_FRAME,LN.distro_question, LN.btn_next, lambda: validate_next_page())
+        tkt.generic_page_layout(MID_FRAME, LN.distro_question, LN.btn_next, lambda: validate_next_page())
 
         for index, distro in enumerate(distros['name']):
             txt = ''  # Generating Text for each list member of installable flavors/distros
@@ -222,7 +223,8 @@ def main():
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
         tkt.generic_page_layout(MID_FRAME, LN.windows_question % distros['name'][vDist.get()],
-                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_1())
+                                LN.btn_next, lambda: validate_next_page(),
+                                LN.btn_back, lambda: page_1())
 
         r1_frame = ttk.Frame(MID_FRAME)
         r1_frame.pack(fill="x")
@@ -285,7 +287,8 @@ def main():
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
         tkt.generic_page_layout(MID_FRAME, LN.windows_question % distros['name'][vDist.get()],
-                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_autoinst1())
+                                LN.btn_next, lambda: validate_next_page(),
+                                LN.btn_back, lambda: page_autoinst1())
 
         # tkt.add_check_btn(MID_FRAME, LN.additional_setup_now, vAutoinst_additional_setup_t)
 
@@ -350,7 +353,8 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         tkt.generic_page_layout(MID_FRAME, LN.title_autoinst2,
-                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_autoinst2())
+                                LN.btn_next, lambda: validate_next_page(),
+                                LN.btn_back, lambda: page_autoinst2())
         all_languages = get_available_translations()
         if IP_LOCALE:
             langs_and_locales = get_locales_and_langs_sorted_with_names(territory=IP_LOCALE[0], other_langs=all_languages)
@@ -377,9 +381,9 @@ def main():
         lang_list_fedora.bind('<<TreeviewSelect>>', on_lang_click)
 
         def validate_next_page(*args):
-            global Autoinst_SELECTED_LOCALE
-            Autoinst_SELECTED_LOCALE = locale_list_fedora.focus()
-            if langtable.parse_locale(Autoinst_SELECTED_LOCALE).language:
+            selected_locale = locale_list_fedora.focus()
+            if langtable.parse_locale(selected_locale).language:
+                AUTOINST['locale'] = selected_locale
                 return page_autoinst_addition_2()
 
     def page_autoinst_addition_2():
@@ -387,7 +391,8 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         tkt.generic_page_layout(MID_FRAME, LN.title_autoinst3,
-                                LN.btn_next, lambda: validate_next_page(), LN.btn_back, lambda: page_autoinst_addition_1())
+                                LN.btn_next, lambda: validate_next_page(),
+                                LN.btn_back, lambda: page_autoinst_addition_1())
 
         chosen_locale_name = langtable.language_name(languageId=Autoinst_SELECTED_LOCALE)
         if IP_LOCALE:
@@ -456,7 +461,8 @@ def main():
         # *************************************************************************************************************
         vTitleText.set('')
         tkt.generic_page_layout(MID_FRAME, LN.verify_question,
-                                LN.btn_next, lambda: page_installing(), LN.btn_back, lambda: validate_back_page())
+                                LN.btn_next, lambda: page_installing(),
+                                LN.btn_back, lambda: validate_back_page())
         # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = []
         if vAutoinst_t.get() == 0:
@@ -515,6 +521,30 @@ def main():
                 INSTALLER_STATUS = 2
             else:
                 fn.remove_folder(DOWNLOAD_PATH)
+        # GETTING ARGUMENTS READY
+        tmp_part_size: int = fn.gigabyte(distros['size'][vDist.get()] + temp_part_failsafe_space)
+        if vAutoinst_Wifi_t.get():
+            wifi_profiles = fn.get_wifi_profiles()
+        else:
+            wifi_profiles = None
+        part_kwargs = {"tmp_part_size": tmp_part_size, "temp_part_label": TMP_PARTITION_LABEL, "queue": GLOBAL_QUEUE}
+        if vAutoinst_t.get():
+            ks_kwargs = {'ostree_args': distros['ostree'][vDist.get()],
+                         'encrypted': bool(vAutoinst_Encrypt_t.get()),
+                         'passphrase': vAutoinst_Encrypt_Passphrase.get(),
+                         'wifi_profiles': wifi_profiles,
+                         'keymap': AUTOINST['keymap'],
+                         'lang': AUTOINST['locale'],
+                         'timezone': AUTOINST['timezone'],
+                         'username': AUTOINST['username'],
+                         'fullname': AUTOINST['fullname']}
+            if vAutoinst_option.get() == 0:
+                part_kwargs["shrink_space"] = fn.gigabyte(float(vAutoinst_dualboot_size.get()))
+                part_kwargs["boot_part_size"] = fn.gigabyte(linux_boot_partition_size)
+                part_kwargs["efi_part_size"] = fn.megabyte(linux_efi_partition_size)
+        else:
+            ks_kwargs = {}
+
         while True:
             if not INSTALLER_STATUS:  # first step, start the download
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
@@ -580,10 +610,9 @@ def main():
                         else: tkt.app_quite()
             if INSTALLER_STATUS == 2.5:  # step 2: create temporary boot partition
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
-                tmp_part_size: int = fn.gigabyte(distros['size'][vDist.get()] + temp_part_failsafe_space)
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
-                Process(target=fn.partition_procedure, args=(tmp_part_size, TMP_PARTITION_LABEL, GLOBAL_QUEUE,
-                                                             fn.gigabyte(float(vAutoinst_dualboot_size.get())),)).start()
+
+                Process(target=fn.partition_procedure, kwargs=part_kwargs).start()
                 job_var.set(LN.job_creating_tmp_part)
                 progressbar_install['value'] = 92
                 INSTALLER_STATUS = 3
@@ -624,12 +653,13 @@ def main():
                 grub_cfg.write(grub_cfg_txt)
                 grub_cfg.close()
                 fn.set_file_readonly(grub_cfg_file_path, True)
-                kickstart_txt = fn.build_autoinstall_ks_file(AUTOINST['keymap'], Autoinst_SELECTED_LOCALE, AUTOINST['timezone'],
-                                                             distros['ostree'][vDist.get()], vAutoinst_Username.get(),
-                                                             vAutoinst_Fullname.get())
-                kickstart = open(TMP_PARTITION_LETTER + ':\\ks.cfg', 'w')
-                kickstart.write(kickstart_txt)
-                kickstart.close()
+
+                if vAutoinst_t.get():
+                    kickstart_txt = fn.build_autoinstall_ks_file(**ks_kwargs)
+                    if kickstart_txt:
+                        kickstart = open(TMP_PARTITION_LETTER + ':\\ks.cfg', 'w')
+                        kickstart.write(kickstart_txt)
+                        kickstart.close()
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app
                 Process(target=fn.add_boot_entry, args=(default_efi_file_path, TMP_PARTITION_LETTER,
                                                         vAutoinst_option.get(), GLOBAL_QUEUE,)).start()

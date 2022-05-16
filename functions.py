@@ -231,7 +231,6 @@ def partition_procedure(tmp_part_size: int, temp_part_label: str, queue, shrink_
         new_volume(sys_disk_number, root_space, 'EXFAT', 'ALLOC-ROOT')
         new_volume(sys_disk_number, boot_part_size, 'EXFAT', 'ALLOC-BOOT')
         new_volume(sys_disk_number, efi_part_size, 'EXFAT', 'ALLOC-EFI')
-
     tmp_part_letter = get_unused_drive_letter()
     new_volume(sys_disk_number, tmp_part_size, 'FAT32', temp_part_label, tmp_part_letter)
     queue.put((1, tmp_part_letter))
@@ -332,25 +331,34 @@ def check_file_if_exists(path):
         [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
-def build_autoinstall_ks_file(keymap, lang, timezone, ostree_args=None, username='', fullname='', wifi_profiles=None,
-                              encrypted: bool = False, passphrase: str = None):
+def build_autoinstall_ks_file(keymap=None, lang=None, timezone=None, ostree_args=None, username='', fullname='',
+                              wifi_profiles=None, encrypted: bool = False, passphrase: str = None):
+
     kickstart_txt = "# Kickstart file created by Lnixify."
     kickstart_txt += "\ngraphical"
-    if wifi_profiles:
+    if wifi_profiles and isinstance(wifi_profiles, list):
         kickstart_txt += "\n%post"
         template = r"""[connection]\nid=%ssid%\ntype=wifi\n\n[wifi]\nhidden=false\nssid=%ssid%\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%password%\n\n[ipv4]\nmethod=auto\n\n[ipv6]\naddr-gen-mode=stable-privacy\nmethod=auto\n\n[proxy]\n"""
         for profile in wifi_profiles:
             kickstart_txt += "\necho $'" + template.replace('%ssid%', profile[0]).replace('%password%', profile[1]) + \
-                             "' > " + "'/mnt/sysimage/etc/NetworkManager/system-connections/%s.nmconnection'" % profile[0]
+                             "' > " + "/mnt/sysimage/etc/NetworkManager/system-connections/'%s.nmconnection'" % profile[0]
+        kickstart_txt += '\n%end'
+    if not (keymap and lang and timezone):
+        if not keymap: keymap = 'us'
+        if not lang: lang = 'en_US.UTF-8'
+        if not timezone: timezone = 'America/New_York'
+        kickstart_txt += "\nfirstboot --reconfig"
+    else:
+        kickstart_txt += "\nfirstboot --enable"
     kickstart_txt += "\nkeyboard --vckeymap=" + keymap
     kickstart_txt += "\nlang " + lang
     kickstart_txt += "\nfirewall --use-system-defaults"
     if ostree_args:
         kickstart_txt += "\nostreesetup " + ostree_args
-    kickstart_txt += "\nfirstboot --enable"
+
     kickstart_txt += "\ntimezone " + timezone + " --utc"
-    kickstart_txt += "\nignoredisk --drives=" \
-                     "\npart btrfs.01 --onpart=/dev/disk/by-label/ALLOC-ROOT"
+    # kickstart_txt += "\nignoredisk --drives="
+    kickstart_txt += "\npart btrfs.01 --onpart=/dev/disk/by-label/ALLOC-ROOT"
     if encrypted:
         kickstart_txt += ' --encrypted'
         if passphrase:
