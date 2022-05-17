@@ -338,6 +338,7 @@ def build_autoinstall_ks_file(keymap=None, lang=None, timezone=None, ostree_args
     kickstart_txt += "\ngraphical"
     if wifi_profiles and isinstance(wifi_profiles, list):
         kickstart_txt += "\n%post"
+        kickstart_txt += "\nmkdir -p /mnt/sysimage/etc/NetworkManager/system-connections"
         template = r"""[connection]\nid=%ssid%\ntype=wifi\n\n[wifi]\nhidden=false\nssid=%ssid%\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%password%\n\n[ipv4]\nmethod=auto\n\n[ipv6]\naddr-gen-mode=stable-privacy\nmethod=auto\n\n[proxy]\n"""
         for profile in wifi_profiles:
             kickstart_txt += "\necho $'" + template.replace('%ssid%', profile[0]).replace('%password%', profile[1]) + \
