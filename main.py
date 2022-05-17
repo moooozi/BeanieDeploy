@@ -19,7 +19,7 @@ def gui_builder(frames=None):
     return tkt.build_main_gui_frames(CONTAINER, vTitleText,  left_frame_img_path='resources\\left_frame.png', frames=frames)
 TOP_FRAME, MID_FRAME, LEFT_FRAME = gui_builder()
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
-GLOBAL_QUEUE = Queue()
+GLOBAL_QUEUE = Queue() #sdf
 COMPATIBILITY_RESULTS = {}
 COMPATIBILITY_CHECK_STATUS = 0
 INSTALLER_STATUS = 0
