@@ -1,70 +1,109 @@
-import APP_INFO
+btn_next = "التالي"
+btn_yes = "نعم"
+btn_no = "لا"
+btn_back = "رجوع"
+btn_quit = "إنهاء"
+btn_cancel = "إلغاء"
+btn_continue = "متابعة"
+btn_abort = "إحباط"
+btn_confirm = "تأكيد"
+btn_install = "التثبيت الآن"
+btn_restart_now = "إعادة التشغيل الآن"
+btn_restart_later = "إعادة التشغيل لاحقًا"
+btn_dl_again = "تنزيل مرة أخرى"
 
-ln_btn_next = "التالي"
-ln_btn_back = "السابق"
-ln_btn_quit = "إنهاء"
-ln_btn_start = "ابدأ"
-ln_btn_restart_now = "إعادة التشغيل الآن"
-ln_btn_restart_later = "إعادة التشغيل لاحقًا"
+check_running = "جاري التحقق من توافق النظام. الرجاء الانتظار ..."
+check_ram = "التحقق من سعة ذاكرة الوصول العشوائي المتاحة"
+check_uefi = "التحقق من توافق UEFI"
+check_space = "التحقق من المساحة المتوفرة"
+check_resizable = "التحقق من تغيير حجم محرك أقراص النظام"
 
-ln_check_running = "...جاري التحقق من توافق النظام. الرجاء الانتظار"
-ln_check_ram = "التحقق من سعة ذاكرة الوصول العشوائي المتاحة"
-ln_check_uefi = "UEFI التحقق من توافق"
-ln_check_space = "التحقق من المساحة المتوفرة"
-ln_check_resizable = "التحقق من تغيير حجم محرك أقراص النظام"
-ln_check_bitlocker = "التحقق من حالة قفل محرك أقراص النظام"
+error_title = "لا يمكن تشغيل%s على نظامك"
+error_list = "تم اكتشاف المشكلات التالية:"
+error_arch_0 = "بنية وحدة المعالجة المركزية لهذا الجهاز غير متوافقة."
+error_arch_9 = "لا يمكن التحقق من بنية وحدة المعالجة المركزية."
+error_uefi_0 = "نظامك لا يدعم (أو لا يستخدم) تمهيد UEFI."
+error_uefi_9 = "تعذر التحقق من دعم تمهيد UEFI."
+error_totalram_0 = "لا يحتوي نظامك على سعة ذاكرة RAM كافية."
+error_totalram_9 = "فشل التحقق من سعة ذاكرة الوصول العشوائي المتوفرة."
+error_space_0 = "لا توجد مساحة كافية على محرك أقراص النظام. حرر مساحة وحاول مرة أخرى"
+error_space_9 = "فشل التحقق من مساحة القرص المتوفرة على محرك أقراص النظام الخاص بك."
+error_resizable_0 = "لا توجد مساحة تقليص كافية على محرك أقراص النظام."
+error_resizable_9 = "فشل التحقق من تغيير حجم محرك أقراص النظام."
 
-ln_install_running = "...جارٍ التثبيت"
+lang = "اللغة"
+locale = "لغة"
+recommended = "مستحسن"
+adv = "متقدم"
+net_install = "تثبيت الشبكة"
+warn_space = "المساحة غير كافية"
+total_download = "إجمالي التنزيل:%sGB"
+init_download = "التنزيل الأولي:%sGB"
 
-ln_error_title = "على نظامك %s لا يمكن تشغيل" % APP_INFO.SW_NAME
-ln_error_list = ":المتطلبات التالية مفقودة"
-ln_error_uefi_0 = ".UEFI Boot نظامك لا يدعم (أو لا يستخدم)"
-ln_error_uefi_9 = ".UEFI Boot تعذر التحقق من دعم"
-ln_error_totalram_0 = ".كافية RAM لا يحتوي نظامك على سعة ذاكرة"
-ln_error_totalram_9 = ".فشل التحقق من سعة ذاكرة الوصول العشوائي المتاحة"
-ln_error_space_0 = ".لا توجد مساحة كافية على محرك أقراص النظام. حرر بعض المساحة وحاول مرة أخرى"
-ln_error_space_9 = ".فشل التحقق من مساحة القرص المتوفرة على محرك أقراص النظام."
-ln_error_resizable_0 = ".لا توجد مساحة تقلص كافية على محرك أقراص النظام."
-ln_error_resizable_9 = ".فشل التحقق من تغيير حجم محرك أقراص النظام."
-ln_error_bitlocker_0 = "لمحرك أقراص النظام. لا يمكن ضمان التوافق على هذا النظام Bitlocker تم تمكين"
-ln_error_bitlocker_9 = ".Bitlockerفشل التحقق مما إذا كان محرك أقراص النظام ممكّنًا لـ"
+install_running = "جارٍ التثبيت ..."
+distro_question = "ما هي نكهة Fedora التي تريد تثبيتها؟"
+install_auto = "تثبيت سريع وموجه"
+install_help = "ساعدني في اتخاذ القرار"
+title_autoinst2 = "اختر لغتك ولغتك"
+title_autoinst3 = "اختر المنطقة الزمنية وتخطيط لوحة المفاتيح"
+title_autoinst4 = "إنشاء حساب المستخدم المحلي الخاص بك"
 
-ln_install_question = "؟%s كيف تريد تثبيت" % APP_INFO.distro_name
-ln_install_options = ("(موصى به)(%s سطح المكتب) %sتثبيت التلقائي ل" % (APP_INFO.distro_flavors_de[0], APP_INFO.distro_flavors_names[0]),
-                       "(%s سطح المكتب) %sتثبيت التلقائي ل" % (APP_INFO.distro_flavors_de[1], APP_INFO.distro_flavors_names[1]),
-                       "واختر الحزم لاحقًا net-install متقدم: استخدم ")
-ln_install_help = "ساعدني في اتخاذ القرار"
+entry_username = "اسم المستخدم"
+entry_fullname = "الاسم الكامل (اختياري)"
+password_reminder_txt = "(ستتمكن من تعيين كلمة مرور لحساب المستخدم الخاص بك بعد التثبيت)"
 
-ln_adv_confirm = "تم تحديد الخيار المتقدم ..."
-ln_adv_confirm_text = "لقد اخترت خياراً متقدماً وأعرف تماما ما أفعله"
-ln_windows_question = "وبياناتك؟ Windows حسنًا , ماذا عن "
+list_keymaps = "تخطيط لوحة المفاتيح"
+list_timezones = "المنطقة الزمنية"
 
-ln_windows_options = ["Windows بجانب %s تثبيت" % APP_INFO.distro_name,
-                      " %s وترحيل مكتبتي (الموسيقى والصور ومقاطع الفيديو) إلى  Windows إزالة" % APP_INFO.distro_name,
-                      " %s وجميع البيانات وابدأ من جديد باستخدام Windows إزالة" % APP_INFO.distro_name,
-                      "متقدم: لا تفعل شيئًا ودعني أقسم لاحقًا"]
-ln_windows_option1_disabled = "(مساحة غير كافية) %s" % ln_windows_options[1]
+adv_confirm = "تم تحديد خيار متقدم ..."
+adv_confirm_text = "هذا الخيار غير مستحسن للمستخدمين الجدد."
 
-ln_verify_question = "هذا ما سيتم القيام به. انقر فوق % s عندما تجهز" % ln_btn_start
-ln_add_import_wifi = " %s تصدير شبكات واي فاي الخاصة بي إلى" % APP_INFO.distro_name
-ln_add_auto_restart = "إعادة التشغيل تلقائيًا"
-ln_show_advanced = "إظهار الإعدادات المتقدمة"
-ln_adv_torrent = "استخدم تورينت للتنزيل"
+windows_question = "حسنًا! كيف يجب تثبيت%s؟"
+windows_options = ('التثبيت بجانب Windows',
+                   "امسح كل شيء وابدأ من جديد")
+dualboot_size_txt = "الحجم:"
+check_question = "هذا ما سيحدث. انقر فوق%s مرة واحدة جاهزًا" % btn_install
+Verify_text = {
+    'no_autoinst': "سيتم تنزيل%s وسيتم التمهيد عند إعادة التشغيل التالية لبدء التثبيت المخصص.",
+    'autoinst_dualboot': "سيتم تنزيل%s وتثبيته جنبًا إلى جنب مع Windows عند إعادة التشغيل التالية.",
+    'autoinst_clean': "سيتم تنزيل%s وتثبيته عند إعادة التشغيل التالية.",
+    'autoinst_keep_data': "لن يتم حذف أي من ملفاتك أو تغييرها بأي شكل من الأشكال.",
+    'autoinst_rm_all': "سيتم مسح كل شيء على هذا الجهاز.",
+    'autoinst_wifi': "سيتم تصدير ملفات تعريف Wi-Fi الحالية إلى%s."
+}
+add_import_wifi = "تصدير شبكات Wi-Fi الخاصة بي إلى نظام التشغيل الجديد"
+add_auto_restart = "إعادة التشغيل تلقائيًا"
+add_torrent = "تنزيل باستخدام التورنت"
+more_options = "المزيد من الخيارات"
 
-ln_old_download_detected = "تم اكتشاف تثبيت غير مكتمل"
-ln_old_download_detected_text = "تم اكتشاف تثبيت غير مكتمل ، هل تريد استخدام الملفات التي تم تنزيلها مسبقًا؟" \
-                         "(اختر 'لا' للتنظيف وبدء تنزيل جديد)"
+old_download_detected = "تم العثور على الملفات التي تم تنزيلها مسبقًا"
+old_download_detected_text = "هل ترغب في استخدام هذه الملفات التي تم تنزيلها مسبقًا؟" \
+                             "(إذا لم يكن الأمر كذلك , فسيتم حذف هذه الملفات وسيبدأ تنزيل جديد)"
 
-ln_job_starting_download = "جار بدء التنزيل"
-ln_job_dl_install_media = "جارٍ تنزيل وسائط التثبيت"
-ln_dl_timeleft = " الوقت المتبقي "
-ln_dl_speed = " السرعة "
+job_starting_download = "جارٍ بدء التنزيل ..."
 
-ln_job_creating_tmp_part = "إنشاء قرص إقلاع مؤقت لوسائط التثبيت"
-ln_job_copying_to_tmp_part = "نسخ ملفات وسائط المثبّت المطلوبة إلى قسم التمهيد المؤقت"
-ln_job_adding_tmp_boot_entry = "إضافة إدخالات الإقلاع"
+job_dl_install_media = "جارٍ تنزيل وسائط التثبيت ..."
+dl_timeleft = "الوقت المتبقي"
+dl_speed = "السرعة"
 
-ln_finished_title = "إعادة التشغيل مطلوبة"
-ln_finished_text = "إعادة التشغيل مطلوبة لمتابعة التثبيت"
+keymap_tz_option = "%s - استخدم المنطقة الزمنية الافتراضية وتخطيط لوحة المفاتيح لهذه المنطقة"
+keymap_tz_custom = "تخصيص المنطقة الزمنية وتخطيط لوحة المفاتيح"
 
-ln_finished_text_restarting_now = "إعادة التشغيل التلقائية خلال %s ثانية"
+job_checksum = "التحقق من سلامة الملف الذي تم تنزيله"
+job_checksum_failed = "فشل التحقق من السلامة"
+job_checksum_failed_txt = "فشل التحقق من سلامة الملف الذي تم تنزيله , هل تريد المتابعة على أي حال؟"
+job_checksum_mismatch = "عدم تطابق المجموع الاختباري"
+job_checksum_mismatch_txt = "الملف الذي تم تنزيله به بصمة تالفة (Hash) ولا يمكن الوثوق بها. \ n \ n تجزئة الملفات: \ n%s \ n" \
+                               "التجزئة المتوقعة: \ n%s \ n \ n" \
+                               "قد يعني هذا أيضًا أن الملف الذي تم تنزيله تالف"
+
+job_creating_tmp_part = "إنشاء قسم تمهيد مؤقت لوسائط المثبت ..."
+job_copying_to_tmp_part = "نسخ ملفات وسائط المثبّت المطلوبة إلى قسم التمهيد المؤقت ..."
+job_adding_tmp_boot_entry = "إضافة إدخال التمهيد ..."
+
+cleanup_question = "تنظيف الملفات التي تم تنزيلها؟"
+cleanup_question_txt = "لم تعد هذه الملفات مفيدة إلا إذا كنت تخطط لإعادة استخدام التطبيق لاحقًا. \ n \ n هل تريد حذفها؟"
+finish_title = "إعادة التشغيل مطلوبة"
+finish_text = "إعادة التشغيل مطلوبة لمتابعة التثبيت ," \
+                   "انقر فوق '%s' لإعادة التشغيل الآن أو '%s' لإعادة التشغيل يدويًا لاحقًا" % (btn_restart_now, btn_restart_later)
+finish_text_restarting_now = "إعادة التشغيل تلقائيًا في%s ثانية"

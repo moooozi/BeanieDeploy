@@ -1,73 +1,120 @@
-import APP_INFO
 
-ln_btn_next = "Next"
-ln_btn_back = "Back"
-ln_btn_quit = "Quit"
-ln_btn_start = "Start"
-ln_btn_restart_now = "Restart now"
-ln_btn_restart_later = "Restart later"
+btn_next = "Next"
+btn_yes = "Yes"
+btn_no = "No"
+btn_back = "Back"
+btn_quit = "Quit"
+btn_cancel = "Cancel"
+btn_continue = "Continue"
+btn_abort = "Abort"
+btn_confirm = "Confirm"
+btn_install = "Install now"
+btn_restart_now = "Restart now"
+btn_restart_later = "Restart later"
+btn_dl_again = "Download Again"
 
-ln_check_running = "Checking System compatibility. please wait..."
-ln_check_ram = "Checking available RAM capacity"
-ln_check_uefi = "Checking UEFI compliance"
-ln_check_space = "Checking available space"
-ln_check_resizable = "Checking system drive resizability"
-ln_check_bitlocker = "Checking system drive bitlocker status"
+check_running = "Checking System compatibility. please wait..."
+check_ram = "Checking available RAM capacity"
+check_uefi = "Checking UEFI compliance"
+check_space = "Checking available space"
+check_resizable = "Checking system drive resizability"
 
-ln_install_running = "Installing..."
+error_title = "%s can't run on your system"
+error_list = "Following issues detected:"
+error_arch_0 = "This device's CPU architecture is incompatible."
+error_arch_9 = "CPU architecture could not be verified."
+error_uefi_0 = "Your system does not support (or is not using) UEFI boot."
+error_uefi_9 = "UEFI boot support could not be verified."
+error_totalram_0 = "Your system does not have sufficient RAM capacity."
+error_totalram_9 = "Failed to check available RAM capacity."
+error_space_0 = "Not enough space on your system drive. Free up space and try again"
+error_space_9 = "Failed to check available disk space on your system drive."
+error_resizable_0 = "Not enough shrink room on system drive."
+error_resizable_9 = "Failed to check system drive resizability."
 
-ln_error_title = "%s can't run on your system" % APP_INFO.SW_NAME
-ln_error_list = "Following requirements are missing:"
-ln_error_uefi_0 = "Your system does not support (or is not using) UEFI boot."
-ln_error_uefi_9 = "UEFI boot support could not be verified."
-ln_error_totalram_0 = "Your system does not have sufficient RAM capacity."
-ln_error_totalram_9 = "Failed to check available RAM capacity."
-ln_error_space_0 = "Not enough space on your system drive. Free up space and try again"
-ln_error_space_9 = "Failed to check available disk space on your system drive."
-ln_error_resizable_0 = "Not enough shrink room on system drive."
-ln_error_resizable_9 = "Failed to check system drive resizability."
-ln_error_bitlocker_0 = "System drive has Bitlocker enabled. Compatibility cannot be ensured"
-ln_error_bitlocker_9 = "Failed to verify system drive bitlocker status."
+lang = "Language"
+locale = "Locale"
+recommended = "Recommended"
+adv = "Advanced"
+net_install = "Network Install"
+warn_space = "Not enough space"
+total_download = "Total download: %sGB"
+init_download = "Initial download: %sGB"
 
-ln_install_question = "How do you want to install %s?" % APP_INFO.distro_name
+install_running = "Installing..."
+distro_question = "Which flavor of Fedora do you want to install?"
+install_auto = "Quick & guided install"
+install_help = "Help me decide"
+title_autoinst2 = "Choose your language and locale"
+title_autoinst3 = "Choose your timezone and keyboard layout"
+title_autoinst4 = "Create your local user account"
 
-ln_install_options = ("Auto Install %s (%s Desktop) (recommended)" % (APP_INFO.distro_flavors_names[0],APP_INFO.distro_flavors_de[0]),
-                      "Auto Install %s (%s Desktop)" % (APP_INFO.distro_flavors_names[1],APP_INFO.distro_flavors_de[1]),
-                      "Advanced: Use net-install & choose packages later")
-ln_install_help = "Help me decide"
+additional_setup_now = "Setup your locale, Timezone and keyboard layout now"
 
-ln_adv_confirm = "Advanced option selected..."
-ln_adv_confirm_text = "I selected an advanced option and I know what I'm doing"
+encrypted_root = "Encrypt the new operating system"
+entry_encrypt_passphrase_pre = "Enter encryption PIN"
+entry_encrypt_passphrase_post = "(numbers only)"
+entry_encrypt_passphrase_confirm_pre = "Confirm PIN"
+not_matched = "Not matched"
 
-ln_windows_question = "Okay! what about Windows and your files?"
-ln_windows_options = ("Install %s alongside Windows" % APP_INFO.distro_name,
-                      "Remove Windows & migrate my Library (Music, Photos, Videos) to %s" % APP_INFO.distro_name,
-                      "Nuke Windows and all data and start fresh with %s" % APP_INFO.distro_name,
-                      "Advanced: Do nothing and let me partition later")
-ln_windows_option1_disabled = "%s (not enough space)" % ln_windows_options[0]
+encrypt_reminder_txt = "(This can be changed to include characters after the installation)"
 
-ln_verify_question = "This is what is going to be done. Click %s once ready" % ln_btn_start
-ln_add_import_wifi = "Export my Wi-Fi networks to %s" % APP_INFO.distro_name
-ln_add_auto_restart = "Restart automatically"
-ln_show_advanced = "Show advanced settings"
-ln_adv_torrent = "Download using torrent"
+entry_username = "Username"
+entry_fullname = "Full name (optional)"
+password_reminder_txt = "(You will be able to set password for your user account after the installation)"
 
-ln_old_download_detected = "Unfinished installation detected"
-ln_old_download_detected_text = "An unfinished installation detected, use previously downloaded files? " \
-                        "(choose 'No' to clean up and start new download)"
+list_keymaps = "Keyboard Layout"
+list_timezones = "Timezone"
 
+adv_confirm = "Advanced option selected..."
+adv_confirm_text = "This option isn't recommended for new users."
 
-ln_job_starting_download = "Starting download..."
+windows_question = "Okay! How should %s be installed?"
+windows_options = ('Install alongside Windows',
+                   'Erase everything and start fresh')
+dualboot_size_txt = "Size:"
+verify_question = "This is what is going to happen. Click %s once ready" % btn_install
+verify_text = {
+    'no_autoinst': "%s will be downloaded and will boot on the next restart to begin custom installation.",
+    'autoinst_dualboot': "%s will be downloaded and installed alongside Windows on next restart.",
+    'autoinst_clean': "%s will be downloaded and installed on next restart.",
+    'autoinst_keep_data': "None of your files will be deleted or changed in any way.",
+    'autoinst_rm_all': "Everything on this device will be erased.",
+    'autoinst_wifi': "Existing Wi-Fi profiles will be exported to %s."
+}
+add_import_wifi = "Export my Wi-Fi networks to the new OS"
+add_auto_restart = "Restart automatically"
+add_torrent = "Download with torrent"
+more_options = "More options"
 
-ln_job_dl_install_media = "Downloading install media..."
-ln_dl_timeleft = "Time left: "
-ln_dl_speed = "Speed: "
+old_download_detected = "Previously downloaded files found"
+old_download_detected_text = "Do you wish to use these previously downloaded files? " \
+                             "(if not, these files will be deleted and a new download will start)"
 
-ln_job_creating_tmp_part = "Creating temporary boot partition for installer media..."
-ln_job_copying_to_tmp_part = "Copying required installer media files to temporary boot partition..."
-ln_job_adding_tmp_boot_entry = "Adding boot entry..."
+job_starting_download = "Starting download..."
 
-ln_finished_title = "Restart required"
-ln_finished_text = "A restart is required to continue installation, " \
-                   "click '%s' to restart now or '%s' to manually restart later" % (ln_btn_restart_now, ln_btn_restart_later)
-ln_finished_text_restarting_now = "Automatic restart in %s seconds"
+job_dl_install_media = "Downloading install media..."
+dl_timeleft = "Time left"
+dl_speed = "Speed"
+
+keymap_tz_option = "%s - Use default timezone and keyboard layout for this region"
+keymap_tz_custom = "Custom timezone and keyboard layout"
+
+job_checksum = "Checking downloaded file's integrity"
+job_checksum_failed = "Integrity check failed"
+job_checksum_failed_txt = "Failed to check downloaded file integrity, continue anyways?"
+job_checksum_mismatch = "Checksum Mismatch"
+job_checksum_mismatch_txt = "The downloaded file has bad fingerprint (Hash) and cannot be trusted.\n\nFile Hash:\n%s\n" \
+                               "Expected Hash:\n%s\n\n" \
+                               "This could also mean the downloaded file is corrupted"
+
+job_creating_tmp_part = "Creating temporary boot partition for installer media..."
+job_copying_to_tmp_part = "Copying required installer media files to temporary boot partition..."
+job_adding_tmp_boot_entry = "Adding boot entry..."
+
+cleanup_question = "Clean up downloaded files?"
+cleanup_question_txt = "These files are not useful anymore unless you plan to reuse the app later.\n\nDelete them?"
+finished_title = "Restart required"
+finished_text = "A restart is required to continue installation, " \
+                   "click '%s' to restart now or '%s' to manually restart later" % (btn_restart_now, btn_restart_later)
+finished_text_restarting_now = "Automatic restart in %s seconds"
