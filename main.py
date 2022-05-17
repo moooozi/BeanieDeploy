@@ -165,23 +165,23 @@ def main():
         vTitleText.set('Welcome to Lnixify')
         tkt.generic_page_layout(MID_FRAME, LN.distro_question, LN.btn_next, lambda: validate_next_page())
 
-        for index, distro in enumerate(distros['name']):
+        for index, dist in enumerate(dists):
             txt = ''  # Generating Text for each list member of installable flavors/distros
-            if distros['advanced'][index]: txt += LN.adv + ': '
-            txt += distro + ' %s' % distros['version'][index]
-            if distros['de'][index]: txt += ' (%s)' % distros['de'][index]
-            if distros['netinstall'][index]: txt += ' (%s)' % LN.net_install
-            if distros['recommended'][index]:
+            if dist['advanced']: txt += LN.adv + ': '
+            txt += '%s %s' % (dist['name'], dist['version'])
+            if dist['de']: txt += ' (%s)' % dist['de']
+            if dist['netinstall']: txt += ' (%s)' % LN.net_install
+            if dist['recommended']:
                 if vDist.get() == -2: vDist.set(index)  # If unset, set it to the default recommended entry
                 txt += ' (%s)' % LN.recommended
             temp_frame = ttk.Frame(MID_FRAME)
             temp_frame.pack(fill="x", pady=5)
             radio = tkt.add_radio_btn(temp_frame, txt, vDist, index, ipady=0, side=DI_VAR['l'], command=lambda: validate_input())
-            if distros['netinstall'][index]: dl_size_txt = LN.init_download % distros['size'][index]
-            else: dl_size_txt = LN.total_download % distros['size'][index]
+            if dist['netinstall']: dl_size_txt = LN.init_download % dist['size']
+            else: dl_size_txt = LN.total_download % dist['size']
             ttk.Label(temp_frame, wraplength=540, justify="center", text=dl_size_txt,
                       font=FONTS['tiny'], foreground='#3aa9ff').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
-            if COMPATIBILITY_RESULTS['resizable'] < fn.gigabyte(distros['size'][index]):
+            if COMPATIBILITY_RESULTS['resizable'] < fn.gigabyte(dist['size']):
                 radio.configure(state='disabled')
                 ttk.Label(temp_frame, wraplength=540, justify="center", text=LN.warn_space,
                           font=FONTS['tiny'], foreground='#ff4a4a').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
@@ -190,17 +190,17 @@ def main():
 
         check_autoinst = tkt.add_check_btn(MID_FRAME, LN.install_auto, vAutoinst_t, pady=40)
         # BUGFIX
-        if not distros['auto-installable'][vDist.get()]:
+        if not dists[vDist.get()]['auto-installable']:
             check_autoinst.configure(state='disabled')
             vAutoinst_t.set(0)
 
         def validate_input(*args):
-            if distros['advanced'][vDist.get()]:
+            if dists[vDist.get()]['advanced']:
                 question = tkt.open_popup(parent=app, title_txt=LN.adv_confirm, msg_txt=LN.adv_confirm_text,
                                           primary_btn_str=LN.btn_continue, secondary_btn_str=LN.btn_cancel)
                 if not question: vDist.set(-1)
                 else: pass
-            if distros['auto-installable'][vDist.get()]:
+            if dists[vDist.get()]['auto-installable']:
                 check_autoinst.configure(state='enabled')
                 vAutoinst_t.set(1)
             else:
@@ -222,7 +222,7 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
-        tkt.generic_page_layout(MID_FRAME, LN.windows_question % distros['name'][vDist.get()],
+        tkt.generic_page_layout(MID_FRAME, LN.windows_question % dists[vDist.get()]['name'],
                                 LN.btn_next, lambda: validate_next_page(),
                                 LN.btn_back, lambda: page_1())
 
@@ -237,7 +237,7 @@ def main():
         tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], vAutoinst_option, 1, lambda: show_dualboot_options(False))
 
         min_size = dualboot_required_space
-        max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable']) - distros['size'][vDist.get()] - additional_failsafe_space
+        max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable']) - dists[vDist.get()]['size'] - additional_failsafe_space
         max_size = round(max_size, 2)
         float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
         size_dualboot_txt_pre = ttk.Label(entry1_frame, wraplength=540, justify=DI_VAR['l'],
@@ -249,7 +249,7 @@ def main():
                        lambda *args: fn.validate_with_regex(vAutoinst_dualboot_size, regex=float_regex, mode='fix'))
 
         # LOGIC
-        space_dualboot = fn.gigabyte(distros['size'][vDist.get()] + dualboot_required_space + additional_failsafe_space)
+        space_dualboot = fn.gigabyte(dists[vDist.get()]['size'] + dualboot_required_space + additional_failsafe_space)
         if COMPATIBILITY_RESULTS['resizable'] < space_dualboot:
             r1_space.pack(padx=20, side=DI_VAR['l'])
             r1_autoinst.configure(state='disabled')
@@ -286,7 +286,7 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
-        tkt.generic_page_layout(MID_FRAME, LN.windows_question % distros['name'][vDist.get()],
+        tkt.generic_page_layout(MID_FRAME, LN.windows_question % dists[vDist.get()]['name'],
                                 LN.btn_next, lambda: validate_next_page(),
                                 LN.btn_back, lambda: page_autoinst1())
 
@@ -473,16 +473,16 @@ def main():
         # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = []
         if vAutoinst_t.get() == 0:
-            review_sel.append(LN.verify_text['no_autoinst'] % distros['name'][vDist.get()])
+            review_sel.append(LN.verify_text['no_autoinst'] % dists[vDist.get()]['name'])
         else:
             if vAutoinst_option.get() == 0:
-                review_sel.append(LN.verify_text['autoinst_dualboot'] % distros['name'][vDist.get()])
+                review_sel.append(LN.verify_text['autoinst_dualboot'] % dists[vDist.get()]['name'])
                 review_sel.append(LN.verify_text['autoinst_keep_data'])
             elif vAutoinst_option.get() == 1:
-                review_sel.append(LN.verify_text['autoinst_clean'] % distros['name'][vDist.get()])
+                review_sel.append(LN.verify_text['autoinst_clean'] % dists[vDist.get()]['name'])
                 review_sel.append(LN.verify_text['autoinst_rm_all'])
             if vAutoinst_Wifi_t.get():
-                review_sel.append(LN.verify_text['autoinst_wifi'] % distros['name'][vDist.get()])
+                review_sel.append(LN.verify_text['autoinst_wifi'] % dists[vDist.get()]['name'])
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
         review_tree = ttk.Treeview(MID_FRAME, columns='error', show='', height=3)
@@ -529,14 +529,14 @@ def main():
             else:
                 fn.remove_folder(DOWNLOAD_PATH)
         # GETTING ARGUMENTS READY
-        tmp_part_size: int = fn.gigabyte(distros['size'][vDist.get()] + temp_part_failsafe_space)
+        tmp_part_size: int = fn.gigabyte(dists[vDist.get()]['size'] + temp_part_failsafe_space)
         if vAutoinst_Wifi_t.get():
             wifi_profiles = fn.get_wifi_profiles()
         else:
             wifi_profiles = None
         part_kwargs = {"tmp_part_size": tmp_part_size, "temp_part_label": TMP_PARTITION_LABEL, "queue": GLOBAL_QUEUE}
         if vAutoinst_t.get():
-            ks_kwargs = {'ostree_args': distros['ostree'][vDist.get()],
+            ks_kwargs = {'ostree_args': dists[vDist.get()]['ostree'],
                          'encrypted': bool(vAutoinst_Encrypt_t.get()),
                          'passphrase': vAutoinst_Encrypt_Passphrase.get(),
                          'wifi_profiles': wifi_profiles,
@@ -561,12 +561,12 @@ def main():
                 fn.create_dir(DOWNLOAD_PATH)
 
                 aria2_location = CURRENT_DIR + '\\resources\\aria2c.exe'
-                if vTorrent_t.get() and distros['torrent'][vDist.get()]:
+                if vTorrent_t.get() and dists[vDist.get()]['torrent']:
                     # if torrent is selected and a torrent link is available
-                    args = (aria2_location, distros['torrent'][vDist.get()], DOWNLOAD_PATH, 1, GLOBAL_QUEUE,)
+                    args = (aria2_location, dists[vDist.get()]['torrent'], DOWNLOAD_PATH, 1, GLOBAL_QUEUE,)
                 else:
                     # if torrent is not selected or not available (direct download)
-                    args = (aria2_location, distros['dl_link'][vDist.get()], DOWNLOAD_PATH, 0, GLOBAL_QUEUE,)
+                    args = (aria2_location, dists[vDist.get()]['dl_link'], DOWNLOAD_PATH, 0, GLOBAL_QUEUE,)
                 Process(target=fn.download_with_aria2, args=args).start()
                 INSTALLER_STATUS = 1
             if INSTALLER_STATUS == 1:  # While downloading, track download stats...
@@ -589,7 +589,7 @@ def main():
 
             if INSTALLER_STATUS == 2:  # step 2: create temporary boot partition
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
-                Process(target=fn.check_hash, args=(ISO_PATH, distros['hash256'][vDist.get()], GLOBAL_QUEUE,)).start()
+                Process(target=fn.check_hash, args=(ISO_PATH, dists[vDist.get()]['hash256'], GLOBAL_QUEUE,)).start()
                 job_var.set(LN.job_checksum)
                 progressbar_install['value'] = 90
                 while not GLOBAL_QUEUE.qsize(): app.after(50, app.update())
