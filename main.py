@@ -332,17 +332,24 @@ def main():
             else: encrypt_pass_confirm_not_matched.grid_forget()
 
         def verify_match(var1, var2):
-            if var1.get() == var2.get(): return True
-            else: return False
+            if var1.get() == '':
+                return ''
+            elif var1.get() == var2.get():
+                return True
+            else:
+                return False
 
         def show_encrypt_options(var):
             if var.get():
                 entry2_frame.pack(fill='x')
             else:
                 entry2_frame.pack_forget()
+        show_encrypt_options(vAutoinst_Encrypt_t)
 
         def validate_next_page(*args):
-            if vAutoinst_additional_setup_t.get() == 0:
+            if vAutoinst_Encrypt_t.get() and not verify_match(vAutoinst_Encrypt_Passphrase, pass_confirm_var):
+                return
+            elif vAutoinst_additional_setup_t.get() == 0:
                 page_verify()
             elif vAutoinst_additional_setup_t.get() == 1:
                 page_autoinst_addition_1()
