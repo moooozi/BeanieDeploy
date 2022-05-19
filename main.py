@@ -24,7 +24,7 @@ COMPATIBILITY_RESULTS = {}
 COMPATIBILITY_CHECK_STATUS = 0
 INSTALLER_STATUS = 0
 IP_LOCALE = []
-AUTOINST = {'locale': '', 'timezone': '', 'keymap': '', 'username': '', 'fullname': ''}
+AUTOINST = {'locale': '', 'timezone': '', 'keymap': '', 'keymap_type': '', 'username': '', 'fullname': ''}
 DOWNLOAD_PATH = ''
 ISO_NAME = 'install_media.iso'
 ISO_PATH = ''
@@ -163,7 +163,7 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set('Welcome to Lnixify')
-        tkt.generic_page_layout(MID_FRAME, LN.distro_question, LN.btn_next, lambda: validate_next_page())
+        tkt.generic_page_layout(MID_FRAME, LN.distro_question, LN.btn_next, lambda: next_btn_action())
 
         for index, dist in enumerate(dists):
             txt = ''  # Generating Text for each list member of installable flavors/distros
@@ -207,7 +207,7 @@ def main():
                 check_autoinst.configure(state='disabled')
                 vAutoinst_t.set(0)
 
-        def validate_next_page(*args):
+        def next_btn_action(*args):
             if vDist.get() == -1: return -1
             else:
                 LANG_LIST.pack_forget()
@@ -223,7 +223,7 @@ def main():
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
         tkt.generic_page_layout(MID_FRAME, LN.windows_question % dists[vDist.get()]['name'],
-                                LN.btn_next, lambda: validate_next_page(),
+                                LN.btn_next, lambda: next_btn_action(),
                                 LN.btn_back, lambda: page_1())
 
         r1_frame = ttk.Frame(MID_FRAME)
@@ -266,7 +266,7 @@ def main():
 
         if vAutoinst_option.get() == 0: show_dualboot_options(True)  # GUI bugfix
 
-        def validate_next_page(*args):
+        def next_btn_action(*args):
             if vAutoinst_option.get() == 1: pass
             elif vAutoinst_option.get() == 0:
                 syntax_valid = fn.validate_with_regex(vAutoinst_dualboot_size, regex=float_regex,
@@ -287,11 +287,11 @@ def main():
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
         tkt.generic_page_layout(MID_FRAME, LN.windows_question % dists[vDist.get()]['name'],
-                                LN.btn_next, lambda: validate_next_page(),
+                                LN.btn_next, lambda: next_btn_action(),
                                 LN.btn_back, lambda: page_autoinst1())
 
         # tkt.add_check_btn(MID_FRAME, LN.additional_setup_now, vAutoinst_additional_setup_t)
-
+        vAutoinst_additional_setup_t.set(1)
         tkt.add_check_btn(MID_FRAME, LN.add_import_wifi, vAutoinst_Wifi_t, pady=(5, 0))
         tkt.add_check_btn(MID_FRAME, LN.encrypted_root, vAutoinst_Encrypt_t, lambda: show_encrypt_options(vAutoinst_Encrypt_t))
 
@@ -346,7 +346,7 @@ def main():
                 entry2_frame.pack_forget()
         show_encrypt_options(vAutoinst_Encrypt_t)
 
-        def validate_next_page(*args):
+        def next_btn_action(*args):
             if vAutoinst_Encrypt_t.get() and not verify_match(vAutoinst_Encrypt_Passphrase, pass_confirm_var):
                 return
             elif vAutoinst_additional_setup_t.get() == 0:
@@ -360,7 +360,7 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         tkt.generic_page_layout(MID_FRAME, LN.title_autoinst2,
-                                LN.btn_next, lambda: validate_next_page(),
+                                LN.btn_next, lambda: next_btn_action(),
                                 LN.btn_back, lambda: page_autoinst2())
         all_languages = get_available_translations()
         if IP_LOCALE:
@@ -387,7 +387,7 @@ def main():
                 locale_list_fedora.insert(parent='', index='end', iid=locale[2], values=locale[1:2])
         lang_list_fedora.bind('<<TreeviewSelect>>', on_lang_click)
 
-        def validate_next_page(*args):
+        def next_btn_action(*args):
             selected_locale = locale_list_fedora.focus()
             if langtable.parse_locale(selected_locale).language:
                 AUTOINST['locale'] = selected_locale
@@ -398,14 +398,14 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         tkt.generic_page_layout(MID_FRAME, LN.title_autoinst3,
-                                LN.btn_next, lambda: validate_next_page(),
+                                LN.btn_next, lambda: next_btn_action(),
                                 LN.btn_back, lambda: page_autoinst_addition_1())
 
-        chosen_locale_name = langtable.language_name(languageId=Autoinst_SELECTED_LOCALE)
+        chosen_locale_name = langtable.language_name(languageId=AUTOINST['locale'])
         if IP_LOCALE:
             locale_from_ip = langtable.list_locales(territoryId=IP_LOCALE[0])[0]
             locale_from_ip_name = langtable.language_name(languageId=locale_from_ip)
-            if locale_from_ip != Autoinst_SELECTED_LOCALE:
+            if locale_from_ip != AUTOINST['locale']:
                 tkt.add_radio_btn(MID_FRAME, LN.keymap_tz_option % locale_from_ip_name, vKeymap_timezone_source,
                                   0, command=lambda: spawn_more_widgets())
 
@@ -419,25 +419,15 @@ def main():
         timezone_list['values'] = tuple(timezone_all)
         timezone_list['state'] = 'readonly'
 
-        keyboards_all = []
-
-        if IP_LOCALE:
-            local_keyboards = langtable.list_keyboards(territoryId=IP_LOCALE[0])
-            for keyboard in local_keyboards:
-                if keyboard not in keyboards_all:
-                    keyboards_all.append(keyboard)
         all_keymaps = get_available_keymaps()
-        for keyboard in all_keymaps:
-            if keyboard not in keyboards_all:
-                keyboards_all.append(keyboard)
+
         keyboards_txt = ttk.Label(lists_frame, wraplength=540, justify=DI_VAR['l'], text=LN.list_keymaps, font=FONTS['tiny'])
         keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=vAutoinst_Keyboard)
-        keyboard_list['values'] = tuple(keyboards_all)
+        keyboard_list['values'] = tuple(all_keymaps)
         keyboard_list['state'] = 'readonly'
 
         if IP_LOCALE:
             timezone_list.set(IP_LOCALE[1])
-            keyboard_list.set(keyboards_all[0])
 
         def spawn_more_widgets(*args):
             if vKeymap_timezone_source.get() == 2:
@@ -449,15 +439,18 @@ def main():
             else:
                 lists_frame.pack_forget()
 
-        def validate_next_page(*args):
+        def next_btn_action(*args):
             if vKeymap_timezone_source.get() == 0:
-                AUTOINST['keymap'] = langtable.list_keyboards(territoryId=IP_LOCALE[0])[0]
+                AUTOINST['keymap'] = langtable.list_keyboards(territoryId=IP_LOCALE[0])[0].replace('(', ' (')
+                AUTOINST['keymap_type'] = 'xlayout'
                 AUTOINST['timezone'] = langtable.list_timezones(territoryId=IP_LOCALE[0])[0]
             elif vKeymap_timezone_source.get() == 1:
-                AUTOINST['keymap'] = langtable.list_keyboards(languageId=Autoinst_SELECTED_LOCALE)[0]
-                AUTOINST['timezone'] = langtable.list_timezones(languageId=Autoinst_SELECTED_LOCALE)[0]
+                AUTOINST['keymap'] = langtable.list_keyboards(languageId=AUTOINST['locale'])[0].replace('(', ' (')
+                AUTOINST['keymap_type'] = 'xlayout'
+                AUTOINST['timezone'] = langtable.list_timezones(languageId=AUTOINST['locale'])[0]
             elif vKeymap_timezone_source.get() == 2:
                 AUTOINST['keymap'] = vAutoinst_Keyboard.get()
+                AUTOINST['keymap_type'] = 'vc'
                 AUTOINST['timezone'] = vAutoinst_Timezone.get()
             if AUTOINST['keymap'] and AUTOINST['timezone']:
                 page_verify()
@@ -541,6 +534,7 @@ def main():
                          'passphrase': vAutoinst_Encrypt_Passphrase.get(),
                          'wifi_profiles': wifi_profiles,
                          'keymap': AUTOINST['keymap'],
+                         'keymap_type': AUTOINST['keymap_type'],
                          'lang': AUTOINST['locale'],
                          'timezone': AUTOINST['timezone'],
                          'username': AUTOINST['username'],
@@ -690,6 +684,7 @@ def main():
         """the page on which user is promoted to restart the device to continue installation (boot into install media)"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
+        vTitleText.set('')
         LANG_LIST.pack(anchor=DI_VAR['nw'], padx=10, pady=10)
         tkt.generic_page_layout(MID_FRAME, LN.finished_title,
                                 LN.btn_restart_now, lambda: [fn.restart_windows(), tkt.app_quite()],

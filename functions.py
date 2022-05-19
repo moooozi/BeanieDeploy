@@ -331,7 +331,7 @@ def check_file_if_exists(path):
         [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
 
 
-def build_autoinstall_ks_file(keymap=None, lang=None, timezone=None, ostree_args=None, username='', fullname='',
+def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone=None, ostree_args=None, username='', fullname='',
                               wifi_profiles=None, encrypted: bool = False, passphrase: str = None):
 
     kickstart_txt = "# Kickstart file created by Lnixify."
@@ -351,7 +351,11 @@ def build_autoinstall_ks_file(keymap=None, lang=None, timezone=None, ostree_args
         kickstart_txt += "\nfirstboot --reconfig"
     else:
         kickstart_txt += "\nfirstboot --enable"
-    kickstart_txt += "\nkeyboard --vckeymap=" + keymap
+    if keymap_type == 'vc':
+        kickstart_txt += "\nkeyboard --vckeymap=%s" % keymap
+    else:
+        kickstart_txt += "\nkeyboard --xlayouts='%s'" % keymap
+
     kickstart_txt += "\nlang " + lang
     kickstart_txt += "\nfirewall --use-system-defaults"
     if ostree_args:
@@ -369,8 +373,7 @@ def build_autoinstall_ks_file(keymap=None, lang=None, timezone=None, ostree_args
                          "\nbtrfs /home --subvol --name=home fedora" \
                          "\nbtrfs /var --subvol --name=var fedora" \
                          "\npart /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-label/ALLOC-BOOT " \
-                         "\npart /boot/efi --fstype=efi --label=fedora_efi --onpart=/dev/disk/by-label/ALLOC-EFI" \
-                         "\nbootloader --location=none"
+                         "\npart /boot/efi --fstype=efi --label=fedora_efi --onpart=/dev/disk/by-label/ALLOC-EFI"
 
     if username:
         kickstart_txt += "\nuser --name=" + username + " --gecos='" + fullname + "' --groups=wheel"
