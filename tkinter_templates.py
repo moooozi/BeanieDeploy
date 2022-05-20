@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+import tkinter.ttk as ttk
 
 MAXWIDTH = 800
 MAXHEIGHT = 500
@@ -132,7 +132,7 @@ def add_radio_btn(parent, text, var, value, command=None, is_disabled=None, ipad
 
 def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=5):
     from multilingual import DI_VAR
-    check = ttk.Checkbutton(parent, text=text, variable=var, onvalue=1, offvalue=0)
+    check = ttk.Checkbutton(parent, text=text, variable=var, onvalue=True, offvalue=False)
     check.pack(anchor=DI_VAR['w'], ipady=5, pady=pady)
     if command: check.configure(command=command)
     if is_disabled: check.configure(state='disabled')

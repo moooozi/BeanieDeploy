@@ -1,5 +1,8 @@
+import json
 import re
 import subprocess
+
+import requests
 
 
 def open_url(url):
@@ -332,7 +335,7 @@ def check_file_if_exists(path):
 
 
 def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone=None, ostree_args=None, username='', fullname='',
-                              wifi_profiles=None, encrypted: bool = False, passphrase: str = None):
+                              wifi_profiles=None, is_encrypted: bool = False, passphrase: str = None):
 
     kickstart_txt = "# Kickstart file created by Lnixify."
     kickstart_txt += "\ngraphical"
@@ -344,18 +347,17 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
             kickstart_txt += "\necho $'" + template.replace('%ssid%', profile[0]).replace('%password%', profile[1]) + \
                              "' > " + "/mnt/sysimage/etc/NetworkManager/system-connections/'%s.nmconnection'" % profile[0]
         kickstart_txt += '\n%end'
-    if not (keymap and lang and timezone):
-        if not keymap: keymap = 'us'
-        if not lang: lang = 'en_US.UTF-8'
-        if not timezone: timezone = 'America/New_York'
-        kickstart_txt += "\nfirstboot --reconfig"
-    else:
-        kickstart_txt += "\nfirstboot --enable"
+    # if not (keymap and lang and timezone):
+    #     if not keymap: keymap = 'us'
+    #     if not lang: lang = 'en_US.UTF-8'
+    #     if not timezone: timezone = 'America/New_York'
+    #     kickstart_txt += "\nfirstboot --reconfig"
+    # else:
+    kickstart_txt += "\nfirstboot --enable"
     if keymap_type == 'vc':
         kickstart_txt += "\nkeyboard --vckeymap=%s" % keymap
     else:
         kickstart_txt += "\nkeyboard --xlayouts='%s'" % keymap
-
     kickstart_txt += "\nlang " + lang
     kickstart_txt += "\nfirewall --use-system-defaults"
     if ostree_args:
@@ -364,7 +366,7 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
     kickstart_txt += "\ntimezone " + timezone + " --utc"
     # kickstart_txt += "\nignoredisk --drives="
     kickstart_txt += "\npart btrfs.01 --onpart=/dev/disk/by-label/ALLOC-ROOT"
-    if encrypted:
+    if is_encrypted:
         kickstart_txt += ' --encrypted'
         if passphrase:
             kickstart_txt += ' --passphrase=' + passphrase
@@ -424,7 +426,7 @@ def get_current_dir_path():
     return str(Path(__file__).parent.absolute())
 
 
-def get_admin(app):
+def get_admin():
     from sys import executable, argv
     from ctypes import windll
     if not windll.shell32.IsUserAnAdmin():
@@ -444,6 +446,15 @@ def get_admin(app):
                '\nvAutoinst_Timezone.get() = %s' % vAutoinst_Timezone.get() + \
                '\nvAutoinst_Keyboard.get() = %s' % vAutoinst_Keyboard.get()
         run_log.write(file)'''
+
+
+def get_json(url, queue=None):
+    out = requests.get(url).text
+    data = json.loads(out)
+    if queue:
+        queue.put(data)
+    else:
+        return data
 
 
 def gigabyte(gb): return int(gb * 1073741824)

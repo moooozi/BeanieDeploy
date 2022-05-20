@@ -2,7 +2,6 @@ from functools import cache
 import requests, json
 from libs import langtable
 
-FEDORA_DETECT_LOCALE_API = "https://geoip.fedoraproject.org/city"
 ETC_ZONES = ['GMT+1', 'GMT+2', 'GMT+3', 'GMT+4', 'GMT+5', 'GMT+6', 'GMT+7',
              'GMT+8', 'GMT+9', 'GMT+10', 'GMT+11', 'GMT+12',
              'GMT-1', 'GMT-2', 'GMT-3', 'GMT-4', 'GMT-5', 'GMT-6', 'GMT-7',
@@ -138,21 +137,6 @@ def get_xlated_timezone(tz_spec_part):
 
     xlated = langtable.timezone_name(tz_spec_part, languageIdQuery='en')
     return xlated
-
-
-def detect_locale(queue=None):
-    url = requests.get(FEDORA_DETECT_LOCALE_API).text
-    data = json.loads(url)
-    timezone = data['time_zone']
-    country_code = data['country_code']
-    if not is_valid_timezone(timezone):
-        # try to get a timezone from the territory code
-        timezone = langtable.list_timezones(territoryId=country_code)[0]
-    stout = ('detect_locale', country_code, timezone)
-    if queue:
-        queue.put(stout)
-    else:
-        return stout
 
 
 def get_locales_in_territory(territory):

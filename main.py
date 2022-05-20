@@ -1,12 +1,11 @@
 from multiprocessing import Process, Queue
-
+from distributions import Distributions
 import functions as fn
 import multilingual
 import tkinter_templates as tkt
 from tkinter_templates import tk, ttk, FONTS
 from APP_INFO import *
-from autoinst import get_available_translations, langtable, get_locales_and_langs_sorted_with_names, all_timezones, \
-    detect_locale, get_available_keymaps
+from autoinst import get_available_translations, langtable, get_locales_and_langs_sorted_with_names, all_timezones, get_available_keymaps
 #   DRIVER CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 CURRENT_DIR = fn.get_current_dir_path()
 app = tkt.init_tkinter(SW_NAME)
@@ -24,7 +23,11 @@ COMPATIBILITY_RESULTS = {}
 COMPATIBILITY_CHECK_STATUS = 0
 INSTALLER_STATUS = 0
 IP_LOCALE = []
-AUTOINST = {'locale': '', 'timezone': '', 'keymap': '', 'keymap_type': '', 'username': '', 'fullname': ''}
+INSTALL_OPTIONS = {'spin': None, 'spin_index': -2, 'auto_restart': False, 'torrent': False}
+AUTOINST = {'is_on': True, 'method': '', 'dualboot_size': dualboot_required_space,
+            'export_wifi': True, 'enable_encryption': False, 'encryption_pass': '',
+            'locale': '', 'timezone': '', 'keymap_timezone_source': 'select', 'keymap': '', 'keymap_type': '',
+            'username': '', 'fullname': ''}
 DOWNLOAD_PATH = ''
 ISO_NAME = 'install_media.iso'
 ISO_PATH = ''
@@ -33,24 +36,8 @@ TMP_PARTITION_LETTER = ''
 TMP_PARTITION_LABEL = 'FEDORA-INST'  # Max 12 Chars
 GRUB_CONFIG_DIR = CURRENT_DIR + '\\resources\\grub_conf\\'
 # Tkinter variables, the '_t' suffix means Toggle
-vDist = tk.IntVar(app, -2)
-vAutoinst_t = tk.IntVar(app, 1)
-vAutoinst_option = tk.IntVar(app, -1)
-vAutoinst_Wifi_t = tk.IntVar(app, 1)
-vAutoinst_Encrypt_t = tk.IntVar(app, 0)
-vAutoinst_additional_setup_t = tk.IntVar(app, 0)
-
-vAutorestart_t = tk.IntVar(app, 0)
-vTorrent_t = tk.IntVar(app, 0)
+SPINS_LIST = []
 # autoinstaller variables
-vKeymap_timezone_source = tk.IntVar(app, value=1)
-vAutoinst_Keyboard = tk.StringVar(app)
-vAutoinst_Timezone = tk.StringVar(app)
-vAutoinst_Fullname = tk.StringVar(app, '')
-vAutoinst_Username = tk.StringVar(app, '')
-vAutoinst_Encrypt_Passphrase = tk.StringVar(app)
-vAutoinst_dualboot_size = tk.StringVar(app)
-Autoinst_SELECTED_LOCALE = ''
 USERNAME_WINDOWS = ''
 
 
@@ -86,19 +73,20 @@ def main():
         tkt.add_text_label(MID_FRAME, var=job_var, pady=0, padx=10)
         app.update()
         # Request elevation (admin) if not running as admin
-        fn.get_admin(app)
-        global COMPATIBILITY_RESULTS, COMPATIBILITY_CHECK_STATUS, IP_LOCALE
+        fn.get_admin()
+        global COMPATIBILITY_RESULTS, COMPATIBILITY_CHECK_STATUS, IP_LOCALE, SPINS_LIST
         # COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
         # COMPATIBILITY_RESULTS = {'uefi': 0, 'ram': 3434559, 'space': 1332642488, 'resizable': 4320083, 'arch': 'arm'}
         if not COMPATIBILITY_RESULTS:
             if not COMPATIBILITY_CHECK_STATUS:
                 Process(target=fn.compatibility_test, args=(minimal_required_space, GLOBAL_QUEUE,)).start()
                 # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
-                Process(target=detect_locale, args=(GLOBAL_QUEUE,)).start()
+                Process(target=fn.get_json, args=(FEDORA_GEO_IP_URL, GLOBAL_QUEUE,)).start()
+                Process(target=fn.get_json, args=(AVAILABLE_SPINS_LIST, GLOBAL_QUEUE,)).start()
                 COMPATIBILITY_CHECK_STATUS = 1
             if COMPATIBILITY_CHECK_STATUS == 1:
                 while True:
-                    while not GLOBAL_QUEUE.qsize(): app.after(200, app.update())
+                    while not GLOBAL_QUEUE.qsize(): app.after(100, app.update())
                     queue_out = GLOBAL_QUEUE.get()
                     if queue_out == 'arch':
                         progressbar_check['value'] = 10
@@ -114,12 +102,15 @@ def main():
                     elif queue_out == 'resizable':
                         job_var.set(LN.check_resizable)
                         progressbar_check['value'] = 80
-                    elif isinstance(queue_out, tuple) and queue_out[0] == 'detect_locale':
-                        IP_LOCALE = queue_out[1:]
-                    elif isinstance(queue_out, dict):
+                    elif isinstance(queue_out, list):
+                        SPINS_LIST = queue_out
+                    elif isinstance(queue_out, dict) and queue_out.keys() >= {"country_code", "time_zone"}:
+                        IP_LOCALE = (queue_out['country_code'], queue_out['time_zone'])
+                    elif isinstance(queue_out, dict) and queue_out.keys() >= {"arch", "uefi"}:
                         COMPATIBILITY_RESULTS = queue_out
                         print(COMPATIBILITY_RESULTS)
                         COMPATIBILITY_CHECK_STATUS = 2
+                    if COMPATIBILITY_RESULTS and SPINS_LIST:
                         break
         errors = []
         if COMPATIBILITY_RESULTS['arch'] == -1: errors.append(LN.error_arch_9)
@@ -164,20 +155,22 @@ def main():
         # *************************************************************************************************************
         vTitleText.set('Welcome to Lnixify')
         tkt.generic_page_layout(MID_FRAME, LN.distro_question, LN.btn_next, lambda: next_btn_action())
+        spin_var = tk.IntVar(app, INSTALL_OPTIONS['spin_index'])
+        autoinstall_toggle_var = tk.BooleanVar(app, AUTOINST['is_on'])
 
-        for index, dist in enumerate(dists):
+        for index, dist in enumerate(SPINS_LIST):
             txt = ''  # Generating Text for each list member of installable flavors/distros
-            if dist['advanced']: txt += LN.adv + ': '
+            if dist['is_advanced']: txt += LN.adv + ': '
             txt += '%s %s' % (dist['name'], dist['version'])
-            if dist['de']: txt += ' (%s)' % dist['de']
-            if dist['netinstall']: txt += ' (%s)' % LN.net_install
-            if dist['recommended']:
-                if vDist.get() == -2: vDist.set(index)  # If unset, set it to the default recommended entry
+            if dist['desktop']: txt += ' (%s)' % dist['desktop']
+            if dist['is_netinstall']: txt += ' (%s)' % LN.net_install
+            if dist['is_recommended']:
+                if spin_var.get() == -2: spin_var.set(index)  # If unset, set it to the default recommended entry
                 txt += ' (%s)' % LN.recommended
             temp_frame = ttk.Frame(MID_FRAME)
             temp_frame.pack(fill="x", pady=5)
-            radio = tkt.add_radio_btn(temp_frame, txt, vDist, index, ipady=0, side=DI_VAR['l'], command=lambda: validate_input())
-            if dist['netinstall']: dl_size_txt = LN.init_download % dist['size']
+            radio = tkt.add_radio_btn(temp_frame, txt, spin_var, index, ipady=0, side=DI_VAR['l'], command=lambda: validate_input())
+            if dist['is_netinstall']: dl_size_txt = LN.init_download % dist['size']
             else: dl_size_txt = LN.total_download % dist['size']
             ttk.Label(temp_frame, wraplength=540, justify="center", text=dl_size_txt,
                       font=FONTS['tiny'], foreground='#3aa9ff').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
@@ -185,33 +178,36 @@ def main():
                 radio.configure(state='disabled')
                 ttk.Label(temp_frame, wraplength=540, justify="center", text=LN.warn_space,
                           font=FONTS['tiny'], foreground='#ff4a4a').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
-                if vDist.get() == [index]:
-                    vDist.set(-1)
+                if spin_var.get() == [index]:
+                    spin_var.set(-1)
 
-        check_autoinst = tkt.add_check_btn(MID_FRAME, LN.install_auto, vAutoinst_t, pady=40)
+        check_autoinst = tkt.add_check_btn(MID_FRAME, LN.install_auto, autoinstall_toggle_var, pady=40)
         # BUGFIX
-        if not dists[vDist.get()]['auto-installable']:
+        if not SPINS_LIST[spin_var.get()]['is_auto_installable']:
             check_autoinst.configure(state='disabled')
-            vAutoinst_t.set(0)
+            autoinstall_toggle_var.set(False)
 
         def validate_input(*args):
-            if dists[vDist.get()]['advanced']:
+            if SPINS_LIST[spin_var.get()]['is_advanced']:
                 question = tkt.open_popup(parent=app, title_txt=LN.adv_confirm, msg_txt=LN.adv_confirm_text,
                                           primary_btn_str=LN.btn_continue, secondary_btn_str=LN.btn_cancel)
-                if not question: vDist.set(-1)
+                if not question: spin_var.set(-1)
                 else: pass
-            if dists[vDist.get()]['auto-installable']:
+            if SPINS_LIST[spin_var.get()]['is_auto_installable']:
                 check_autoinst.configure(state='enabled')
-                vAutoinst_t.set(1)
+                autoinstall_toggle_var.set(True)
             else:
                 check_autoinst.configure(state='disabled')
-                vAutoinst_t.set(0)
+                autoinstall_toggle_var.set(False)
 
         def next_btn_action(*args):
-            if vDist.get() == -1: return -1
+            if spin_var.get() == -1: return -1
             else:
                 LANG_LIST.pack_forget()
-                if vAutoinst_t.get():
+                INSTALL_OPTIONS['spin_index'] = spin_var.get()
+                INSTALL_OPTIONS['spin'] = SPINS_LIST[INSTALL_OPTIONS['spin_index']]
+                AUTOINST['is_on'] = autoinstall_toggle_var.get()
+                if autoinstall_toggle_var.get():
                     return page_autoinst1()
                 else:
                     return page_verify()
@@ -222,34 +218,37 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
-        tkt.generic_page_layout(MID_FRAME, LN.windows_question % dists[vDist.get()]['name'],
+        tkt.generic_page_layout(MID_FRAME, LN.windows_question % INSTALL_OPTIONS['spin']['name'],
                                 LN.btn_next, lambda: next_btn_action(),
                                 LN.btn_back, lambda: page_1())
 
+        autoinst_method_var = tk.IntVar(app, -1)
+        dualboot_size_var = tk.StringVar(app, str(AUTOINST['dualboot_size']))
+
         r1_frame = ttk.Frame(MID_FRAME)
         r1_frame.pack(fill="x")
-        r1_autoinst = tkt.add_radio_btn(r1_frame, LN.windows_options[0], vAutoinst_option, 0, lambda: show_dualboot_options(True)
+        r1_autoinst = tkt.add_radio_btn(r1_frame, LN.windows_options[0], autoinst_method_var, 0, lambda: show_dualboot_options(True)
                                         , side=DI_VAR['l'])
         r1_space = ttk.Label(r1_frame, wraplength=540, justify="center", text=LN.warn_space, font=FONTS['tiny'],
                              foreground='#ff4a4a')
         entry1_frame = ttk.Frame(MID_FRAME)
         entry1_frame.pack(fill='x', padx=10)
-        tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], vAutoinst_option, 1, lambda: show_dualboot_options(False))
+        tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], autoinst_method_var, 1, lambda: show_dualboot_options(False))
 
         min_size = dualboot_required_space
-        max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable']) - dists[vDist.get()]['size'] - additional_failsafe_space
+        max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable']) - INSTALL_OPTIONS['spin']['size'] - additional_failsafe_space
         max_size = round(max_size, 2)
         float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
         size_dualboot_txt_pre = ttk.Label(entry1_frame, wraplength=540, justify=DI_VAR['l'],
                                           text=LN.dualboot_size_txt, font=FONTS['tiny'])
-        size_dualboot_entry = ttk.Entry(entry1_frame, width=10, textvariable=vAutoinst_dualboot_size)
+        size_dualboot_entry = ttk.Entry(entry1_frame, width=10, textvariable=dualboot_size_var)
         size_dualboot_txt_post = ttk.Label(entry1_frame, wraplength=540, justify=DI_VAR['l'],
                                            text='(%sGB - %sGB)' % (min_size, max_size), font=FONTS['tiny'])
-        tkt.var_tracer(vAutoinst_dualboot_size, "write",
-                       lambda *args: fn.validate_with_regex(vAutoinst_dualboot_size, regex=float_regex, mode='fix'))
+        tkt.var_tracer(dualboot_size_var, "write",
+                       lambda *args: fn.validate_with_regex(dualboot_size_var, regex=float_regex, mode='fix'))
 
         # LOGIC
-        space_dualboot = fn.gigabyte(dists[vDist.get()]['size'] + dualboot_required_space + additional_failsafe_space)
+        space_dualboot = fn.gigabyte(INSTALL_OPTIONS['spin']['size'] + dualboot_required_space + additional_failsafe_space)
         if COMPATIBILITY_RESULTS['resizable'] < space_dualboot:
             r1_space.pack(padx=20, side=DI_VAR['l'])
             r1_autoinst.configure(state='disabled')
@@ -264,36 +263,43 @@ def main():
                 size_dualboot_entry.grid_forget()
                 size_dualboot_txt_post.grid_forget()
 
-        if vAutoinst_option.get() == 0: show_dualboot_options(True)  # GUI bugfix
+        if autoinst_method_var.get() == 0: show_dualboot_options(True)  # GUI bugfix
 
         def next_btn_action(*args):
-            if vAutoinst_option.get() == 1: pass
-            elif vAutoinst_option.get() == 0:
-                syntax_valid = fn.validate_with_regex(vAutoinst_dualboot_size, regex=float_regex,
+            if autoinst_method_var.get() == 1:
+                AUTOINST['method'] = 'clean'
+
+            elif autoinst_method_var.get() == 0:
+                syntax_valid = fn.validate_with_regex(dualboot_size_var, regex=float_regex,
                                                       mode='read') not in (False, 'empty')
-                if syntax_valid:
-                    is_dualboot_size_valid = min_size <= float(vAutoinst_dualboot_size.get()) <= max_size
+                if syntax_valid and min_size <= float(dualboot_size_var.get()) <= max_size:
+                    AUTOINST['method'] = 'dualboot'
+                    AUTOINST['dualboot_size'] = float(dualboot_size_var.get())
                 else:
-                    is_dualboot_size_valid = False
-                if not is_dualboot_size_valid:
                     return -1
             else:
                 return -1
-            return page_autoinst2()
+
+            if AUTOINST['method']:
+                return page_autoinst2()
 
     def page_autoinst2():
         """the autoinstall page on which you choose whether to install alongside windows or start clean install"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
-        tkt.generic_page_layout(MID_FRAME, LN.windows_question % dists[vDist.get()]['name'],
+        tkt.generic_page_layout(MID_FRAME, LN.windows_question % INSTALL_OPTIONS['spin']['name'],
                                 LN.btn_next, lambda: next_btn_action(),
                                 LN.btn_back, lambda: page_autoinst1())
 
         # tkt.add_check_btn(MID_FRAME, LN.additional_setup_now, vAutoinst_additional_setup_t)
-        vAutoinst_additional_setup_t.set(1)
-        tkt.add_check_btn(MID_FRAME, LN.add_import_wifi, vAutoinst_Wifi_t, pady=(5, 0))
-        tkt.add_check_btn(MID_FRAME, LN.encrypted_root, vAutoinst_Encrypt_t, lambda: show_encrypt_options(vAutoinst_Encrypt_t))
+        export_wifi_toggle_var = tk.BooleanVar(app, AUTOINST['export_wifi'])
+        enable_encryption_toggle_var = tk.BooleanVar(app, AUTOINST['enable_encryption'])
+        encrypt_passphrase_var = tk.StringVar(app, AUTOINST['encryption_pass'])
+
+        tkt.add_check_btn(MID_FRAME, LN.add_import_wifi, export_wifi_toggle_var, pady=(5, 0))
+        tkt.add_check_btn(MID_FRAME, LN.encrypted_root, enable_encryption_toggle_var,
+                          lambda: show_encrypt_options(enable_encryption_toggle_var))
 
         only_digit_regex = r'^[0-9]+$'  # digits
         entry2_frame = ttk.Frame(MID_FRAME)
@@ -301,11 +307,11 @@ def main():
         encrypt_pass_pre = ttk.Label(entry2_frame, wraplength=540, justify=DI_VAR['l'],
                                      text=LN.entry_encrypt_passphrase_pre, font=FONTS['tiny'])
         encrypt_passphrase_entry = ttk.Entry(entry2_frame, show="\u2022", width=10,
-                                             textvariable=vAutoinst_Encrypt_Passphrase)
+                                             textvariable=encrypt_passphrase_var)
         encrypt_pass_post = ttk.Label(entry2_frame, wraplength=540, justify=DI_VAR['l'],
                                       text=LN.entry_encrypt_passphrase_post, font=FONTS['tiny'])
-        tkt.var_tracer(vAutoinst_Encrypt_Passphrase, "write",
-                       lambda *args: fn.validate_with_regex(vAutoinst_Encrypt_Passphrase,
+        tkt.var_tracer(encrypt_passphrase_var, "write",
+                       lambda *args: fn.validate_with_regex(encrypt_passphrase_var,
                                                             regex=only_digit_regex, mode='fix'))
         pass_confirm_var = tk.StringVar()
         encrypt_pass_confirm_pre = ttk.Label(entry2_frame, wraplength=540, justify=DI_VAR['l'],
@@ -317,7 +323,7 @@ def main():
                                       text=LN.encrypt_reminder_txt, font=FONTS['tiny'])
         tkt.var_tracer(pass_confirm_var, "write",
                        lambda *args:
-                       show_not_matched_warning(not verify_match(pass_confirm_var, vAutoinst_Encrypt_Passphrase)))
+                       show_not_matched_warning(not verify_match(pass_confirm_var, encrypt_passphrase_var)))
 
         encrypt_pass_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=DI_VAR['w'])
         encrypt_passphrase_entry.grid(pady=5, padx=5, column=1, row=0)
@@ -344,14 +350,16 @@ def main():
                 entry2_frame.pack(fill='x')
             else:
                 entry2_frame.pack_forget()
-        show_encrypt_options(vAutoinst_Encrypt_t)
+        show_encrypt_options(enable_encryption_toggle_var)
 
         def next_btn_action(*args):
-            if vAutoinst_Encrypt_t.get() and not verify_match(vAutoinst_Encrypt_Passphrase, pass_confirm_var):
+            if enable_encryption_toggle_var.get() and not verify_match(encrypt_passphrase_var, pass_confirm_var):
                 return
-            elif vAutoinst_additional_setup_t.get() == 0:
-                page_verify()
-            elif vAutoinst_additional_setup_t.get() == 1:
+            else:
+                AUTOINST['export_wifi'] = export_wifi_toggle_var.get()
+                AUTOINST['enable_encryption'] = enable_encryption_toggle_var.get()
+                if AUTOINST['enable_encryption']:
+                    AUTOINST['encryption_pass'] = encrypt_passphrase_var.get()
                 page_autoinst_addition_1()
 
     # page_autoinst2
@@ -401,28 +409,35 @@ def main():
                                 LN.btn_next, lambda: next_btn_action(),
                                 LN.btn_back, lambda: page_autoinst_addition_1())
 
+        custom_timezone_var = tk.StringVar(app, AUTOINST['timezone'])
+        custom_keymap_var = tk.StringVar(app)
+        if AUTOINST['keymap_type'] == 'vc':
+            custom_keymap_var.set(AUTOINST['keymap'])
+
+        keymap_timezone_source_var = tk.StringVar(app, AUTOINST['keymap_timezone_source'])
+
         chosen_locale_name = langtable.language_name(languageId=AUTOINST['locale'])
         if IP_LOCALE:
             locale_from_ip = langtable.list_locales(territoryId=IP_LOCALE[0])[0]
             locale_from_ip_name = langtable.language_name(languageId=locale_from_ip)
             if locale_from_ip != AUTOINST['locale']:
-                tkt.add_radio_btn(MID_FRAME, LN.keymap_tz_option % locale_from_ip_name, vKeymap_timezone_source,
-                                  0, command=lambda: spawn_more_widgets())
+                tkt.add_radio_btn(MID_FRAME, LN.keymap_tz_option % locale_from_ip_name, keymap_timezone_source_var,
+                                  'ip', command=lambda: spawn_more_widgets())
 
-        tkt.add_radio_btn(MID_FRAME, LN.keymap_tz_option % chosen_locale_name, vKeymap_timezone_source, 1, lambda: spawn_more_widgets())
-        tkt.add_radio_btn(MID_FRAME, LN.keymap_tz_custom, vKeymap_timezone_source, 2, lambda: spawn_more_widgets())
+        tkt.add_radio_btn(MID_FRAME, LN.keymap_tz_option % chosen_locale_name, keymap_timezone_source_var, 'select', lambda: spawn_more_widgets())
+        tkt.add_radio_btn(MID_FRAME, LN.keymap_tz_custom, keymap_timezone_source_var, 'custom', lambda: spawn_more_widgets())
 
         timezone_all = sorted(all_timezones())
         lists_frame = ttk.Frame(MID_FRAME)
         timezone_txt = ttk.Label(lists_frame, wraplength=540, justify=DI_VAR['l'], text=LN.list_timezones, font=FONTS['tiny'])
-        timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=vAutoinst_Timezone)
+        timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=custom_timezone_var)
         timezone_list['values'] = tuple(timezone_all)
         timezone_list['state'] = 'readonly'
 
         all_keymaps = get_available_keymaps()
 
         keyboards_txt = ttk.Label(lists_frame, wraplength=540, justify=DI_VAR['l'], text=LN.list_keymaps, font=FONTS['tiny'])
-        keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=vAutoinst_Keyboard)
+        keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=custom_keymap_var)
         keyboard_list['values'] = tuple(all_keymaps)
         keyboard_list['state'] = 'readonly'
 
@@ -430,7 +445,7 @@ def main():
             timezone_list.set(IP_LOCALE[1])
 
         def spawn_more_widgets(*args):
-            if vKeymap_timezone_source.get() == 2:
+            if keymap_timezone_source_var.get() == 'custom':
                 lists_frame.pack(fill='x', padx=20)
                 keyboards_txt.grid(pady=5, padx=5, column=0, row=1, sticky=DI_VAR['w'])
                 keyboard_list.grid(pady=5, padx=5, column=1, row=1)
@@ -440,20 +455,11 @@ def main():
                 lists_frame.pack_forget()
 
         def next_btn_action(*args):
-            if vKeymap_timezone_source.get() == 0:
-                AUTOINST['keymap'] = langtable.list_keyboards(territoryId=IP_LOCALE[0])[0].replace('(', ' (')
-                AUTOINST['keymap_type'] = 'xlayout'
-                AUTOINST['timezone'] = langtable.list_timezones(territoryId=IP_LOCALE[0])[0]
-            elif vKeymap_timezone_source.get() == 1:
-                AUTOINST['keymap'] = langtable.list_keyboards(languageId=AUTOINST['locale'])[0].replace('(', ' (')
-                AUTOINST['keymap_type'] = 'xlayout'
-                AUTOINST['timezone'] = langtable.list_timezones(languageId=AUTOINST['locale'])[0]
-            elif vKeymap_timezone_source.get() == 2:
-                AUTOINST['keymap'] = vAutoinst_Keyboard.get()
+            if keymap_timezone_source_var.get() == 'custom':
+                AUTOINST['keymap'] = custom_keymap_var.get()
                 AUTOINST['keymap_type'] = 'vc'
-                AUTOINST['timezone'] = vAutoinst_Timezone.get()
-            if AUTOINST['keymap'] and AUTOINST['timezone']:
-                page_verify()
+                AUTOINST['timezone'] = custom_timezone_var.get()
+            page_verify()
 
     def page_verify():
         """the page on which you get to review your selection before starting to install"""
@@ -461,21 +467,25 @@ def main():
         # *************************************************************************************************************
         vTitleText.set('')
         tkt.generic_page_layout(MID_FRAME, LN.verify_question,
-                                LN.btn_next, lambda: page_installing(),
+                                LN.btn_next, lambda: next_btn_action(),
                                 LN.btn_back, lambda: validate_back_page())
+
+        auto_restart_toggle_var = tk.BooleanVar(app, INSTALL_OPTIONS['auto_restart'])
+        torrent_toggle_var = tk.BooleanVar(app, INSTALL_OPTIONS['torrent'])
+
         # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = []
-        if vAutoinst_t.get() == 0:
-            review_sel.append(LN.verify_text['no_autoinst'] % dists[vDist.get()]['name'])
+        if AUTOINST['is_on'] == 0:
+            review_sel.append(LN.verify_text['no_autoinst'] % INSTALL_OPTIONS['spin']['name'])
         else:
-            if vAutoinst_option.get() == 0:
-                review_sel.append(LN.verify_text['autoinst_dualboot'] % dists[vDist.get()]['name'])
+            if AUTOINST['method'] == 'dualboot':
+                review_sel.append(LN.verify_text['autoinst_dualboot'] % INSTALL_OPTIONS['spin']['name'])
                 review_sel.append(LN.verify_text['autoinst_keep_data'])
-            elif vAutoinst_option.get() == 1:
-                review_sel.append(LN.verify_text['autoinst_clean'] % dists[vDist.get()]['name'])
+            elif AUTOINST['method'] == 'clean':
+                review_sel.append(LN.verify_text['autoinst_clean'] % INSTALL_OPTIONS['spin']['name'])
                 review_sel.append(LN.verify_text['autoinst_rm_all'])
-            if vAutoinst_Wifi_t.get():
-                review_sel.append(LN.verify_text['autoinst_wifi'] % dists[vDist.get()]['name'])
+            if AUTOINST['export_wifi']:
+                review_sel.append(LN.verify_text['autoinst_wifi'] % INSTALL_OPTIONS['spin']['name'])
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
         review_tree = ttk.Treeview(MID_FRAME, columns='error', show='', height=3)
@@ -485,21 +495,24 @@ def main():
         for i in range(len(review_sel)):
             review_tree.insert('', index='end', iid=str(i), values=(review_sel[i],))
         # additions options (checkboxes)
-        c2_add = ttk.Checkbutton(MID_FRAME, text=LN.add_auto_restart, variable=vAutorestart_t, onvalue=1, offvalue=0)
+        c2_add = ttk.Checkbutton(MID_FRAME, text=LN.add_auto_restart, variable=auto_restart_toggle_var, onvalue=1, offvalue=0)
         c2_add.pack(anchor=DI_VAR['w'])
-        c3_add = ttk.Checkbutton(MID_FRAME, text=LN.add_torrent, variable=vTorrent_t, onvalue=1, offvalue=0)
+        c3_add = ttk.Checkbutton(MID_FRAME, text=LN.add_torrent, variable=torrent_toggle_var, onvalue=1, offvalue=0)
         more_options_btn = ttk.Label(MID_FRAME, justify="center", text=LN.more_options, font=FONTS['tiny'], foreground='#3aa9ff')
         more_options_btn.pack(pady=10, padx=10, anchor=DI_VAR['w'])
         more_options_btn.bind("<Button-1>",
                               lambda x: (more_options_btn.destroy(), c3_add.pack(anchor=DI_VAR['w'])))
 
         def validate_back_page(*args):
-            if not vAutoinst_t.get():
+            if not AUTOINST['is_on']:
                 page_1()
-            elif vAutoinst_additional_setup_t.get():
-                page_autoinst_addition_2()
             else:
-                page_autoinst2()
+                page_autoinst_addition_2()
+
+        def next_btn_action(*args):
+            INSTALL_OPTIONS['auto_restart'] = auto_restart_toggle_var.get()
+            INSTALL_OPTIONS['torrent'] = torrent_toggle_var.get()
+            return page_verify()
 
     def page_installing():
         """the page on which the initial installation (creating bootable media) takes place"""
@@ -522,16 +535,26 @@ def main():
             else:
                 fn.remove_folder(DOWNLOAD_PATH)
         # GETTING ARGUMENTS READY
-        tmp_part_size: int = fn.gigabyte(dists[vDist.get()]['size'] + temp_part_failsafe_space)
-        if vAutoinst_Wifi_t.get():
+        tmp_part_size: int = fn.gigabyte(INSTALL_OPTIONS['spin']['size'] + temp_part_failsafe_space)
+        if AUTOINST['export_wifi']:
             wifi_profiles = fn.get_wifi_profiles()
         else:
             wifi_profiles = None
         part_kwargs = {"tmp_part_size": tmp_part_size, "temp_part_label": TMP_PARTITION_LABEL, "queue": GLOBAL_QUEUE}
-        if vAutoinst_t.get():
-            ks_kwargs = {'ostree_args': dists[vDist.get()]['ostree'],
-                         'encrypted': bool(vAutoinst_Encrypt_t.get()),
-                         'passphrase': vAutoinst_Encrypt_Passphrase.get(),
+        if AUTOINST['is_on']:
+            if AUTOINST['keymap_timezone_source'] == 'ip':
+                AUTOINST['keymap'] = langtable.list_keyboards(territoryId=IP_LOCALE[0])[0].replace('(', ' (')
+                AUTOINST['keymap_type'] = 'xlayout'
+                AUTOINST['timezone'] = langtable.list_timezones(territoryId=IP_LOCALE[0])[0]
+            elif AUTOINST['keymap_timezone_source'] == 'select':
+                AUTOINST['keymap'] = langtable.list_keyboards(languageId=AUTOINST['locale'])[0].replace('(', ' (')
+                AUTOINST['keymap_type'] = 'xlayout'
+                AUTOINST['timezone'] = langtable.list_timezones(languageId=AUTOINST['locale'])[0]
+            elif AUTOINST['keymap_timezone_source'] == 'custom':
+                pass
+            ks_kwargs = {'ostree_args': INSTALL_OPTIONS['spin']['ostree_args'],
+                         'is_encrypted': AUTOINST['enable_encryption'],
+                         'passphrase': AUTOINST['encryption_pass'],
                          'wifi_profiles': wifi_profiles,
                          'keymap': AUTOINST['keymap'],
                          'keymap_type': AUTOINST['keymap_type'],
@@ -539,8 +562,8 @@ def main():
                          'timezone': AUTOINST['timezone'],
                          'username': AUTOINST['username'],
                          'fullname': AUTOINST['fullname']}
-            if vAutoinst_option.get() == 0:
-                part_kwargs["shrink_space"] = fn.gigabyte(float(vAutoinst_dualboot_size.get()))
+            if AUTOINST['method'] == 'dualboot':
+                part_kwargs["shrink_space"] = fn.gigabyte(AUTOINST['dualboot_size'])
                 part_kwargs["boot_part_size"] = fn.gigabyte(linux_boot_partition_size)
                 part_kwargs["efi_part_size"] = fn.megabyte(linux_efi_partition_size)
         else:
@@ -555,12 +578,12 @@ def main():
                 fn.create_dir(DOWNLOAD_PATH)
 
                 aria2_location = CURRENT_DIR + '\\resources\\aria2c.exe'
-                if vTorrent_t.get() and dists[vDist.get()]['torrent']:
+                if INSTALL_OPTIONS['torrent'] and INSTALL_OPTIONS['spin']['torrent_link']:
                     # if torrent is selected and a torrent link is available
-                    args = (aria2_location, dists[vDist.get()]['torrent'], DOWNLOAD_PATH, 1, GLOBAL_QUEUE,)
+                    args = (aria2_location, INSTALL_OPTIONS['spin']['torrent_link'], DOWNLOAD_PATH, 1, GLOBAL_QUEUE,)
                 else:
                     # if torrent is not selected or not available (direct download)
-                    args = (aria2_location, dists[vDist.get()]['dl_link'], DOWNLOAD_PATH, 0, GLOBAL_QUEUE,)
+                    args = (aria2_location, INSTALL_OPTIONS['spin']['dl_link'], DOWNLOAD_PATH, 0, GLOBAL_QUEUE,)
                 Process(target=fn.download_with_aria2, args=args).start()
                 INSTALLER_STATUS = 1
             if INSTALLER_STATUS == 1:  # While downloading, track download stats...
@@ -583,7 +606,7 @@ def main():
 
             if INSTALLER_STATUS == 2:  # step 2: create temporary boot partition
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
-                Process(target=fn.check_hash, args=(ISO_PATH, dists[vDist.get()]['hash256'], GLOBAL_QUEUE,)).start()
+                Process(target=fn.check_hash, args=(ISO_PATH, INSTALL_OPTIONS['spin']['hash256'], GLOBAL_QUEUE,)).start()
                 job_var.set(LN.job_checksum)
                 progressbar_install['value'] = 90
                 while not GLOBAL_QUEUE.qsize(): app.after(50, app.update())
@@ -644,26 +667,30 @@ def main():
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 job_var.set(LN.job_adding_tmp_boot_entry)
                 progressbar_install['value'] = 98
-                if vAutoinst_t.get(): grub_cfg_file = GRUB_CONFIG_DIR + 'grub_autoinst.cfg'
+                if AUTOINST['is_on']: grub_cfg_file = GRUB_CONFIG_DIR + 'grub_autoinst.cfg'
                 else: grub_cfg_file = GRUB_CONFIG_DIR + 'grub_default.cfg'
                 grub_cfg_file_path = TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg'
                 fn.copy_one_file(grub_cfg_file, grub_cfg_file_path)
-                grub_cfg_txt = fn.build_grub_cfg_file(TMP_PARTITION_LABEL, vAutoinst_t.get())
+                grub_cfg_txt = fn.build_grub_cfg_file(TMP_PARTITION_LABEL, AUTOINST['is_on'])
                 fn.set_file_readonly(grub_cfg_file_path, False)
                 grub_cfg = open(grub_cfg_file_path, 'w')
                 grub_cfg.write(grub_cfg_txt)
                 grub_cfg.close()
                 fn.set_file_readonly(grub_cfg_file_path, True)
 
-                if vAutoinst_t.get():
+                if AUTOINST['is_on']:
                     kickstart_txt = fn.build_autoinstall_ks_file(**ks_kwargs)
                     if kickstart_txt:
                         kickstart = open(TMP_PARTITION_LETTER + ':\\ks.cfg', 'w')
                         kickstart.write(kickstart_txt)
                         kickstart.close()
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app
+                if AUTOINST['method'] == 'dualboot':
+                    is_new_boot_order_permanent = False
+                else:
+                    is_new_boot_order_permanent = True
                 Process(target=fn.add_boot_entry, args=(default_efi_file_path, TMP_PARTITION_LETTER,
-                                                        vAutoinst_option.get(), GLOBAL_QUEUE,)).start()
+                                                        is_new_boot_order_permanent, GLOBAL_QUEUE,)).start()
                 INSTALLER_STATUS = 7
             if INSTALLER_STATUS == 7:  # while adding boot entry is ongoing...
                 while not GLOBAL_QUEUE.qsize():
@@ -693,7 +720,7 @@ def main():
         tkt.add_text_label(MID_FRAME, text=LN.finished_text, font=FONTS['small'], pady=10)
         tkt.add_text_label(MID_FRAME, var=text_var, font=FONTS['small'], pady=10)
 
-        if vAutorestart_t.get():
+        if INSTALL_OPTIONS['auto_restart']:
             time_left = 10
             while time_left > 0:
                 text_var.set(LN.finished_text_restarting_now % (int(time_left)))
