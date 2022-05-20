@@ -1,5 +1,4 @@
 from multiprocessing import Process, Queue
-from distributions import Distributions
 import functions as fn
 import multilingual
 import tkinter_templates as tkt
@@ -23,7 +22,7 @@ COMPATIBILITY_RESULTS = {}
 COMPATIBILITY_CHECK_STATUS = 0
 INSTALLER_STATUS = 0
 IP_LOCALE = []
-INSTALL_OPTIONS = {'spin': None, 'spin_index': -2, 'auto_restart': False, 'torrent': False}
+INSTALL_OPTIONS = {'spin': {}, 'spin_index': -2, 'auto_restart': False, 'torrent': False}
 AUTOINST = {'is_on': True, 'method': '', 'dualboot_size': dualboot_required_space,
             'export_wifi': True, 'enable_encryption': False, 'encryption_pass': '',
             'locale': '', 'timezone': '', 'keymap_timezone_source': 'select', 'keymap': '', 'keymap_type': '',
@@ -222,18 +221,19 @@ def main():
                                 LN.btn_next, lambda: next_btn_action(),
                                 LN.btn_back, lambda: page_1())
 
-        autoinst_method_var = tk.IntVar(app, -1)
+        autoinst_method_var = tk.StringVar(app, AUTOINST['method'])
         dualboot_size_var = tk.StringVar(app, str(AUTOINST['dualboot_size']))
 
         r1_frame = ttk.Frame(MID_FRAME)
         r1_frame.pack(fill="x")
-        r1_autoinst = tkt.add_radio_btn(r1_frame, LN.windows_options[0], autoinst_method_var, 0, lambda: show_dualboot_options(True)
-                                        , side=DI_VAR['l'])
+        r1_autoinst = tkt.add_radio_btn(r1_frame, LN.windows_options[0], autoinst_method_var, 'dualboot',
+                                        lambda: show_dualboot_options(True), side=DI_VAR['l'])
         r1_space = ttk.Label(r1_frame, wraplength=540, justify="center", text=LN.warn_space, font=FONTS['tiny'],
                              foreground='#ff4a4a')
         entry1_frame = ttk.Frame(MID_FRAME)
         entry1_frame.pack(fill='x', padx=10)
-        tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], autoinst_method_var, 1, lambda: show_dualboot_options(False))
+        tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], autoinst_method_var, 'clean',
+                          lambda: show_dualboot_options(False))
 
         min_size = dualboot_required_space
         max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable']) - INSTALL_OPTIONS['spin']['size'] - additional_failsafe_space
@@ -263,25 +263,22 @@ def main():
                 size_dualboot_entry.grid_forget()
                 size_dualboot_txt_post.grid_forget()
 
-        if autoinst_method_var.get() == 0: show_dualboot_options(True)  # GUI bugfix
+        if autoinst_method_var.get() == 'dualboot': show_dualboot_options(True)  # GUI bugfix
 
         def next_btn_action(*args):
-            if autoinst_method_var.get() == 1:
-                AUTOINST['method'] = 'clean'
-
-            elif autoinst_method_var.get() == 0:
+            if autoinst_method_var.get() == 'dualboot':
                 syntax_valid = fn.validate_with_regex(dualboot_size_var, regex=float_regex,
                                                       mode='read') not in (False, 'empty')
                 if syntax_valid and min_size <= float(dualboot_size_var.get()) <= max_size:
-                    AUTOINST['method'] = 'dualboot'
                     AUTOINST['dualboot_size'] = float(dualboot_size_var.get())
                 else:
                     return -1
+            elif autoinst_method_var.get() == 'clean':
+                pass
             else:
                 return -1
-
-            if AUTOINST['method']:
-                return page_autoinst2()
+            AUTOINST['method'] = autoinst_method_var.get()
+            return page_autoinst2()
 
     def page_autoinst2():
         """the autoinstall page on which you choose whether to install alongside windows or start clean install"""
@@ -512,7 +509,7 @@ def main():
         def next_btn_action(*args):
             INSTALL_OPTIONS['auto_restart'] = auto_restart_toggle_var.get()
             INSTALL_OPTIONS['torrent'] = torrent_toggle_var.get()
-            return page_verify()
+            return page_installing()
 
     def page_installing():
         """the page on which the initial installation (creating bootable media) takes place"""
