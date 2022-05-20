@@ -1,5 +1,6 @@
 from multiprocessing import Process, Queue
 import functions as fn
+import procedure as prc
 import multilingual
 import tkinter_templates as tkt
 from tkinter_templates import tk, ttk, FONTS
@@ -78,7 +79,7 @@ def main():
         # COMPATIBILITY_RESULTS = {'uefi': 0, 'ram': 3434559, 'space': 1332642488, 'resizable': 4320083, 'arch': 'arm'}
         if not COMPATIBILITY_RESULTS:
             if not COMPATIBILITY_CHECK_STATUS:
-                Process(target=fn.compatibility_test, args=(minimal_required_space, GLOBAL_QUEUE,)).start()
+                Process(target=prc.compatibility_test, args=(minimal_required_space, GLOBAL_QUEUE,)).start()
                 # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
                 Process(target=fn.get_json, args=(FEDORA_GEO_IP_URL, GLOBAL_QUEUE,)).start()
                 Process(target=fn.get_json, args=(AVAILABLE_SPINS_LIST, GLOBAL_QUEUE,)).start()
@@ -456,6 +457,7 @@ def main():
                 AUTOINST['keymap'] = custom_keymap_var.get()
                 AUTOINST['keymap_type'] = 'vc'
                 AUTOINST['timezone'] = custom_timezone_var.get()
+            AUTOINST['keymap_timezone_source'] = keymap_timezone_source_var.get()
             page_verify()
 
     def page_verify():
@@ -633,7 +635,7 @@ def main():
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
 
-                Process(target=fn.partition_procedure, kwargs=part_kwargs).start()
+                Process(target=prc.partition_procedure, kwargs=part_kwargs).start()
                 job_var.set(LN.job_creating_tmp_part)
                 progressbar_install['value'] = 92
                 INSTALLER_STATUS = 3
@@ -668,7 +670,7 @@ def main():
                 else: grub_cfg_file = GRUB_CONFIG_DIR + 'grub_default.cfg'
                 grub_cfg_file_path = TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg'
                 fn.copy_one_file(grub_cfg_file, grub_cfg_file_path)
-                grub_cfg_txt = fn.build_grub_cfg_file(TMP_PARTITION_LABEL, AUTOINST['is_on'])
+                grub_cfg_txt = prc.build_grub_cfg_file(TMP_PARTITION_LABEL, AUTOINST['is_on'])
                 fn.set_file_readonly(grub_cfg_file_path, False)
                 grub_cfg = open(grub_cfg_file_path, 'w')
                 grub_cfg.write(grub_cfg_txt)
@@ -676,7 +678,7 @@ def main():
                 fn.set_file_readonly(grub_cfg_file_path, True)
 
                 if AUTOINST['is_on']:
-                    kickstart_txt = fn.build_autoinstall_ks_file(**ks_kwargs)
+                    kickstart_txt = prc.build_autoinstall_ks_file(**ks_kwargs)
                     if kickstart_txt:
                         kickstart = open(TMP_PARTITION_LETTER + ':\\ks.cfg', 'w')
                         kickstart.write(kickstart_txt)
@@ -686,8 +688,8 @@ def main():
                     is_new_boot_order_permanent = False
                 else:
                     is_new_boot_order_permanent = True
-                Process(target=fn.add_boot_entry, args=(default_efi_file_path, TMP_PARTITION_LETTER,
-                                                        is_new_boot_order_permanent, GLOBAL_QUEUE,)).start()
+                Process(target=prc.add_boot_entry, args=(default_efi_file_path, TMP_PARTITION_LETTER,
+                                                         is_new_boot_order_permanent, GLOBAL_QUEUE,)).start()
                 INSTALLER_STATUS = 7
             if INSTALLER_STATUS == 7:  # while adding boot entry is ongoing...
                 while not GLOBAL_QUEUE.qsize():
