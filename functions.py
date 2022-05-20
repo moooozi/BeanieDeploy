@@ -321,7 +321,7 @@ def get_wifi_profiles():
             password: str = profile['Password']
             if not password or not ssid:
                 continue
-            profile_list = [ssid, password]
+            profile_list = (ssid, password)
             list_of_profiles.append(profile_list)
         except (KeyError, ValueError, IndexError, NameError):
             pass

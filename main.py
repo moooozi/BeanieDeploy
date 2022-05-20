@@ -726,8 +726,7 @@ def main():
             fn.restart_windows()
             tkt.app_quite()
 
-    #page_check()
-    print(fn.get_wifi_profiles())
+    page_check()
     app.mainloop()
 
 
