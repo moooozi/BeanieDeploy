@@ -310,22 +310,22 @@ def add_boot_entry(boot_efi_file_path, boot_drive_letter, is_permanent: bool = F
 
 
 def get_wifi_profiles():
-    out = str(subprocess.run(
-        [r'powershell.exe',
-         r'(netsh wlan show profiles) | Select-String “\:(.+)$” | %{$name=$_.Matches.Groups[1].Value.Trim(); $_} | %{'
-         r'(netsh wlan show profile name=”$name” key=clear)} | Select-String “Key Content\W+\:(.+)$” | %{'
-         r'$pass=$_.Matches.Groups[1].Value.Trim(); $_} | %{[PSCustomObject]@{ PROFILE_NAME="$name)name";'
-         r'PASSWORD="passwd($pass" }} | Format-Table -AutoSize'],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout)
-    print(out)
-    out = out.split("\n")
-    newout = []
-    for i in out:
-        i = ' '.join(i.split())
-        if ')name passwd(' in i:
-            i = i.split(')name passwd(')
-            newout.append(i)
-    return newout
+    args = """$WirelessSSIDs = (netsh wlan show profiles | Select-String ': ' ) -replace ".*:\s+" ; $WifiInfo = foreach($SSID in $WirelessSSIDs) {$Password = (netsh wlan show profiles name=$SSID key=clear | Select-String 'Key Content') -replace ".*:\s+" ; New-Object -TypeName psobject -Property @{"SSID"=$SSID;"Password"=$Password}} ; $WifiInfo | ConvertTo-Json"""
+    out = str(subprocess.run([r'powershell.exe', args],
+              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout)
+    profiles = json.loads(out)
+    list_of_profiles = []
+    for profile in profiles:
+        try:
+            ssid: str = profile['SSID']
+            password: str = profile['Password']
+            if not password or not ssid:
+                continue
+            profile_list = [ssid, password]
+            list_of_profiles.append(profile_list)
+        except (KeyError, ValueError, IndexError, NameError):
+            pass
+    return list_of_profiles
 
 
 def check_file_if_exists(path):
