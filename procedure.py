@@ -78,7 +78,7 @@ def add_boot_entry(boot_efi_file_path, boot_drive_letter, is_permanent: bool = F
 
 
 def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone=None, ostree_args=None, username='', fullname='',
-                              wifi_profiles=None, is_encrypted: bool = False, passphrase: str = None):
+                              wifi_profiles=None, is_encrypted: bool = False, passphrase: str = None, live_img_url=''):
 
     kickstart_txt = "# Kickstart file created by Lnixify."
     kickstart_txt += "\ngraphical"
@@ -105,6 +105,8 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
     kickstart_txt += "\nfirewall --use-system-defaults"
     if ostree_args:
         kickstart_txt += "\nostreesetup " + ostree_args
+    if live_img_url:
+        kickstart_txt += "\nliveimg --url='%s' --noverifyssl" % live_img_url
 
     kickstart_txt += "\ntimezone " + timezone + " --utc"
     # kickstart_txt += "\nignoredisk --drives="
@@ -147,3 +149,54 @@ def build_grub_cfg_file(root_partition_label, is_autoinst=False):
     grub_file_text = part_pre + part_const1 + part_scan + entry1 + entry2 + entry3 + entry4 + submenu
     grub_file_text = grub_file_text.replace('%root_label%', root_partition_label)
     return grub_file_text
+
+
+def parse_spins(spins_list):
+    accepted_spins_list = []
+    live_os_base_index = None
+    for index, current_spin in enumerate(spins_list):
+        spin_keys = list(current_spin.keys())
+        if not all(i in spin_keys for i in ("name", "size", "hash256", "dl_link")):
+            continue
+        if (attr := "dl_link") not in spin_keys:
+            current_spin[attr] = ''
+        if (attr := "is_live_img") not in spin_keys:
+            current_spin[attr] = False
+        if (attr := "version") not in spin_keys:
+            current_spin[attr] = ''
+        if (attr := "desktop") not in spin_keys:
+            current_spin[attr] = ''
+        if (attr := "is_auto_installable") not in spin_keys:
+            current_spin[attr] = False
+        if (attr := "is_recommended") not in spin_keys:
+            current_spin[attr] = False
+        if (attr := "is_advanced") not in spin_keys:
+            current_spin[attr] = False
+        if (attr := "is_netinstall") not in spin_keys:
+            current_spin[attr] = False
+        if (attr := "torrent_link") not in spin_keys:
+            current_spin[attr] = ''
+        if (attr := "ostree_args") not in spin_keys:
+            current_spin[attr] = ''
+        if (attr := "is_base_for_live_os") not in spin_keys:
+            current_spin[attr] = False
+        accepted_spins_list.append(current_spin)
+    for index, spin in enumerate(accepted_spins_list):
+        if spin["is_base_for_live_os"]:
+            live_os_base_index = index
+            break
+    if live_os_base_index is None:
+        final_spin_list = []
+        for index, spin in enumerate(accepted_spins_list):
+            if spin["is_live_img"]:
+                continue
+            else:
+                final_spin_list.append(spin)
+    else:
+         final_spin_list = accepted_spins_list
+    return live_os_base_index, final_spin_list
+
+
+def initiate_kickstart_arguments_from_user_input(autoinstall : dict, install_options: dict):
+    pass
+

@@ -13,6 +13,7 @@ btn_restart_now = "Restart now"
 btn_restart_later = "Restart later"
 btn_dl_again = "Download Again"
 
+check_available_downloads = "Checking available downloads"
 check_running = "Checking System compatibility. please wait..."
 check_ram = "Checking available RAM capacity"
 check_uefi = "Checking UEFI compliance"
