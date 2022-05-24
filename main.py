@@ -634,9 +634,7 @@ def main():
         current_job.pack(padx=10, anchor=DI_VAR['w'])
 
         global INSTALLER_STATUS, TMP_PARTITION_LETTER
-        # checking if files from previous runs are present and if so, ask if user wishes to use them.
-        INSTALLER_STATUS = 5
-        TMP_PARTITION_LETTER = 'G'
+
         # INSTALL STARTING
         while INSTALLER_STATUS not in (0, -1, -2):
             if INSTALLER_STATUS is None:  # first step, start the download
@@ -647,6 +645,7 @@ def main():
                 fn.mkdir(DOWNLOAD_PATH)
                 is_torrent_dl = INSTALL_OPTIONS['torrent']
                 download_status_var = tk.StringVar()
+                # checking if files from previous runs are present
                 installer_exist = False
                 live_img_exist = False
                 if fn.check_if_exists(INSTALL_ISO_PATH):
@@ -764,6 +763,7 @@ def main():
             if INSTALLER_STATUS == 8:  # step 5: clean up iso and other downloaded files since install is complete
                 fn.unmount_iso(INSTALL_ISO_PATH)
                 fn.unmount_iso(LIVE_ISO_PATH)
+                fn.remove_drive_letter(TMP_PARTITION_LETTER)
                 # fn.rmdir(DOWNLOAD_PATH)
                 INSTALLER_STATUS = 9
 

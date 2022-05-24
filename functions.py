@@ -192,6 +192,12 @@ def unmount_iso(iso_path):
                               shell=True, universal_newlines=True).stdout.strip())
 
 
+def remove_drive_letter(drive_letter):
+    arg = 'Get-Volume -Drive %s | Get-Partition | Remove-PartitionAccessPath -accesspath %s:\\' % (drive_letter, drive_letter)
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                          shell=True, universal_newlines=True)
+
+
 def copy_files(source, destination, queue=None):
     arg = r'robocopy "' + source + '" "' + destination + '" /e /mt'
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
