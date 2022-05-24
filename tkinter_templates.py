@@ -224,13 +224,13 @@ def generic_page_layout(parent, title, primary_btn_txt=None, primary_btn_command
                         secondary_btn_command=None):
     add_page_title(parent, title)
     if primary_btn_txt or secondary_btn_txt:
-        button_frame = tk.Frame(parent, height=34)
-        button_frame.pack(side='bottom', fill='x')
-        button_frame.pack_propagate(False)
+        bottom_frame = tk.Frame(parent, height=34)
+        bottom_frame.pack(side='bottom', fill='x')
+        bottom_frame.pack_propagate(False)
         if primary_btn_txt:
-            add_primary_btn(button_frame, primary_btn_txt, primary_btn_command)
+            add_primary_btn(bottom_frame, primary_btn_txt, primary_btn_command)
         if secondary_btn_txt:
-            add_secondary_btn(button_frame, secondary_btn_txt, secondary_btn_command)
+            add_secondary_btn(bottom_frame, secondary_btn_txt, secondary_btn_command)
 
 
 def app_quite():

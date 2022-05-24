@@ -5,7 +5,9 @@ import multilingual
 import tkinter_templates as tkt
 from tkinter_templates import tk, ttk, FONTS
 from APP_INFO import *
-from autoinst import langtable, get_locales_and_langs_sorted_with_names, all_timezones, get_available_keymaps
+from autoinst import langtable, get_locales_and_langs_sorted_with_names, all_timezones, get_available_keymaps, \
+    get_keymaps
+
 #   DRIVER CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 CURRENT_DIR = fn.get_current_dir_path()
 app = tkt.init_tkinter(SW_NAME)
@@ -21,9 +23,9 @@ TOP_FRAME, MID_FRAME, LEFT_FRAME = gui_builder()
 GLOBAL_QUEUE = Queue()
 COMPATIBILITY_RESULTS = {}
 COMPATIBILITY_CHECK_STATUS = 0
-INSTALLER_STATUS = 0
+INSTALLER_STATUS = None
 IP_LOCALE = []
-INSTALL_OPTIONS = {'spin': {}, 'spin_index': -2, 'auto_restart': False, 'torrent': False}
+INSTALL_OPTIONS = {'spin': {}, 'spin_index': -2, 'auto_restart': False, 'torrent': False, 'live_img_url': ''}
 AUTOINST = {'is_on': True, 'method': '', 'dualboot_size': dualboot_required_space,
             'export_wifi': True, 'enable_encryption': False, 'encryption_pass': '',
             'locale': '', 'timezone': '', 'keymap_timezone_source': 'select', 'keymap': '', 'keymap_type': '',
@@ -33,7 +35,6 @@ INSTALL_ISO_NAME = 'install_media.iso'
 LIVE_ISO_NAME = 'live_os.iso'
 LIVE_ISO_PATH = ''
 INSTALL_ISO_PATH = ''
-MOUNT_ISO_LETTER = ''
 TMP_PARTITION_LETTER = ''
 ARIA2C_LOCATION = ''
 TMP_PARTITION_LABEL = 'FEDORA-INST'  # Max 12 Chars
@@ -59,6 +60,38 @@ def language_handler(new_language=None, current_page=None):
 language_handler(new_language='English')
 lang_var = tk.StringVar()
 LANG_LIST = tkt.add_lang_list(TOP_FRAME, lang_var, multilingual.available_languages.keys())
+
+
+def download_hash_handler(dl_hash):
+    go_next = False
+    if dl_hash == 1:
+        go_next = True
+    elif dl_hash == -1:
+        question = tkt.open_popup(parent=app, title_txt=LN.job_checksum_failed,
+                                  msg_txt=LN.job_checksum_failed_txt,
+                                  primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
+        if question:
+            go_next = True
+        else:
+            question = tkt.open_popup(parent=app, title_txt=LN.cleanup_question,
+                                      msg_txt=LN.cleanup_question_txt,
+                                      primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
+            if question:
+                fn.rmdir(DOWNLOAD_PATH)
+            tkt.app_quite()
+    else:
+        question = tkt.open_popup(parent=app, title_txt=LN.job_checksum_mismatch,
+                                  msg_txt=LN.job_checksum_mismatch_txt % dl_hash,
+                                  primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
+        if question:
+            pass
+        else:
+            question = tkt.open_popup(parent=app, title_txt=LN.cleanup_question,
+                                      msg_txt=LN.cleanup_question_txt,
+                                      primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
+            if question:
+                fn.rmdir(DOWNLOAD_PATH)
+            tkt.app_quite()
 
 
 def main():
@@ -186,12 +219,12 @@ def main():
             else:
                 total_size = dist['size']
             if dist['is_netinstall']:
-                dl_size_txt = LN.init_download % total_size
+                dl_size_txt = LN.init_download % fn.byte_to_gb(total_size)
             else:
-                dl_size_txt = LN.total_download % total_size
+                dl_size_txt = LN.total_download % fn.byte_to_gb(total_size)
             ttk.Label(temp_frame, wraplength=540, justify="center", text=dl_size_txt,
                       font=FONTS['tiny'], foreground='#3aa9ff').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
-            if COMPATIBILITY_RESULTS['resizable'] < fn.gigabyte(dist['size']):
+            if COMPATIBILITY_RESULTS['resizable'] < dist['size']:
                 radio.configure(state='disabled')
                 ttk.Label(temp_frame, wraplength=540, justify="center", text=LN.warn_space,
                           font=FONTS['tiny'], foreground='#ff4a4a').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
@@ -223,6 +256,8 @@ def main():
                 LANG_LIST.pack_forget()
                 INSTALL_OPTIONS['spin_index'] = spin_var.get()
                 INSTALL_OPTIONS['spin'] = ACCEPTED_SPINS[INSTALL_OPTIONS['spin_index']]
+                if INSTALL_OPTIONS['spin']['is_live_img']:
+                    INSTALL_OPTIONS['live_img_url'] = live_img_url
                 AUTOINST['is_on'] = autoinstall_toggle_var.get()
                 if autoinstall_toggle_var.get():
                     return page_autoinst1()
@@ -254,7 +289,7 @@ def main():
                           lambda: show_dualboot_options(False))
 
         min_size = dualboot_required_space
-        max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable']) - INSTALL_OPTIONS['spin']['size'] - additional_failsafe_space
+        max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable'] - INSTALL_OPTIONS['spin']['size']) - additional_failsafe_space
         max_size = round(max_size, 2)
         float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
         size_dualboot_txt_pre = ttk.Label(entry1_frame, wraplength=540, justify=DI_VAR['l'],
@@ -266,7 +301,7 @@ def main():
                        lambda *args: fn.validate_with_regex(dualboot_size_var, regex=float_regex, mode='fix'))
 
         # LOGIC
-        space_dualboot = fn.gigabyte(INSTALL_OPTIONS['spin']['size'] + dualboot_required_space + additional_failsafe_space)
+        space_dualboot = fn.gigabyte(dualboot_required_space + additional_failsafe_space) + INSTALL_OPTIONS['spin']['size']
         if COMPATIBILITY_RESULTS['resizable'] < space_dualboot:
             r1_space.pack(padx=20, side=DI_VAR['l'])
             r1_autoinst.configure(state='disabled')
@@ -488,6 +523,62 @@ def main():
         auto_restart_toggle_var = tk.BooleanVar(app, INSTALL_OPTIONS['auto_restart'])
         torrent_toggle_var = tk.BooleanVar(app, INSTALL_OPTIONS['torrent'])
 
+        # GETTING ARGUMENTS READY
+        tmp_part_size: int = INSTALL_OPTIONS['spin']['size'] + fn.gigabyte(temp_part_failsafe_space)
+        if INSTALL_OPTIONS['spin']['is_live_img']:
+            tmp_part_size += LIVE_OS_INSTALLER_SPIN['size']
+        if AUTOINST['export_wifi']:
+            wifi_profiles = prc.get_wifi_profiles(DOWNLOAD_PATH)
+        else:
+            wifi_profiles = None
+        part_kwargs = {"tmp_part_size": tmp_part_size, "temp_part_label": TMP_PARTITION_LABEL, "queue": GLOBAL_QUEUE}
+        if AUTOINST['is_on']:
+            if AUTOINST['keymap_timezone_source'] == 'ip':
+                AUTOINST['keymap'] = get_keymaps(territory=IP_LOCALE[0])[0]
+                AUTOINST['keymap_type'] = 'xlayout'
+                AUTOINST['timezone'] = langtable.list_timezones(territoryId=IP_LOCALE[0])[0]
+            elif AUTOINST['keymap_timezone_source'] == 'select':
+                AUTOINST['keymap'] = get_keymaps(lang=AUTOINST['locale'])[0]
+                AUTOINST['keymap_type'] = 'xlayout'
+                AUTOINST['timezone'] = langtable.list_timezones(languageId=AUTOINST['locale'])[0]
+            elif AUTOINST['keymap_timezone_source'] == 'custom':
+                pass
+            ks_kwargs = {'ostree_args': INSTALL_OPTIONS['spin']['ostree_args'],
+                         'is_encrypted': AUTOINST['enable_encryption'],
+                         'passphrase': AUTOINST['encryption_pass'],
+                         'wifi_profiles': wifi_profiles,
+                         'keymap': AUTOINST['keymap'],
+                         'keymap_type': AUTOINST['keymap_type'],
+                         'lang': AUTOINST['locale'],
+                         'timezone': AUTOINST['timezone'],
+                         'username': AUTOINST['username'],
+                         'fullname': AUTOINST['fullname'],
+                         'live_img_url': INSTALL_OPTIONS['live_img_url']}
+            if AUTOINST['method'] == 'dualboot':
+                part_kwargs["shrink_space"] = fn.gigabyte(AUTOINST['dualboot_size'])
+                part_kwargs["boot_part_size"] = fn.gigabyte(linux_boot_partition_size)
+                part_kwargs["efi_part_size"] = fn.megabyte(linux_efi_partition_size)
+        else:
+            ks_kwargs = {}
+        if INSTALL_OPTIONS['spin']['is_live_img']:
+            installer_img = LIVE_OS_INSTALLER_SPIN
+            live_os = INSTALL_OPTIONS['spin']
+            live_os_size = live_os['size']
+            total_download_size = live_os['size'] + installer_img['size']
+        else:
+            installer_img = INSTALL_OPTIONS['spin']
+            live_os = None
+            live_os_size = 0
+            total_download_size = installer_img['size']
+        installer_dl_percent_factor = installer_img['size'] / total_download_size * 0.90
+        live_img_dl_factor = live_os_size / total_download_size * 0.90
+
+        installation = {'ks_kwargs': ks_kwargs, 'part_kwargs': part_kwargs, 'installer_img': installer_img,
+                        'is_live_img': INSTALL_OPTIONS['spin']['is_live_img'],
+                        'live_img': live_os,
+                        'installer_img_dl_percent_factor': installer_dl_percent_factor,
+                        'live_img_dl_factor': live_img_dl_factor}
+        print(installation)
         # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = []
         if AUTOINST['is_on'] == 0:
@@ -527,9 +618,11 @@ def main():
         def next_btn_action(*args):
             INSTALL_OPTIONS['auto_restart'] = auto_restart_toggle_var.get()
             INSTALL_OPTIONS['torrent'] = torrent_toggle_var.get()
-            return page_installing()
+            return page_installing(**installation)
 
-    def page_installing():
+    def page_installing(ks_kwargs: dict, part_kwargs: dict,
+                        installer_img, installer_img_dl_percent_factor: float,
+                        is_live_img: bool, live_img=None, live_img_dl_factor: float = 0):
         """the page on which the initial installation (creating bootable media) takes place"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
@@ -540,168 +633,59 @@ def main():
         current_job = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], textvariable=job_var, font=FONTS['small'])
         current_job.pack(padx=10, anchor=DI_VAR['w'])
 
-        global INSTALLER_STATUS, MOUNT_ISO_LETTER, TMP_PARTITION_LETTER
+        global INSTALLER_STATUS, TMP_PARTITION_LETTER
         # checking if files from previous runs are present and if so, ask if user wishes to use them.
-        if fn.check_file_if_exists(INSTALL_ISO_PATH) == 'True':
-            question = tkt.open_popup(parent=app, title_txt=LN.old_download_detected, msg_txt=LN.old_download_detected_text,
-                                      primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
-            if question:
-                INSTALLER_STATUS = 2
-            else:
-                fn.remove_folder(DOWNLOAD_PATH)
-        # GETTING ARGUMENTS READY
-        tmp_part_size: int = fn.gigabyte(INSTALL_OPTIONS['spin']['size'] + temp_part_failsafe_space)
-        if AUTOINST['export_wifi']:
-            wifi_profiles = fn.get_wifi_profiles()
-        else:
-            wifi_profiles = None
-        part_kwargs = {"tmp_part_size": tmp_part_size, "temp_part_label": TMP_PARTITION_LABEL, "queue": GLOBAL_QUEUE}
-        if AUTOINST['is_on']:
-            if AUTOINST['keymap_timezone_source'] == 'ip':
-                AUTOINST['keymap'] = langtable.list_keyboards(territoryId=IP_LOCALE[0])[0].replace('(', ' (')
-                AUTOINST['keymap_type'] = 'xlayout'
-                AUTOINST['timezone'] = langtable.list_timezones(territoryId=IP_LOCALE[0])[0]
-            elif AUTOINST['keymap_timezone_source'] == 'select':
-                AUTOINST['keymap'] = langtable.list_keyboards(languageId=AUTOINST['locale'])[0].replace('(', ' (')
-                AUTOINST['keymap_type'] = 'xlayout'
-                AUTOINST['timezone'] = langtable.list_timezones(languageId=AUTOINST['locale'])[0]
-            elif AUTOINST['keymap_timezone_source'] == 'custom':
-                pass
-            ks_kwargs = {'ostree_args': INSTALL_OPTIONS['spin']['ostree_args'],
-                         'is_encrypted': AUTOINST['enable_encryption'],
-                         'passphrase': AUTOINST['encryption_pass'],
-                         'wifi_profiles': wifi_profiles,
-                         'keymap': AUTOINST['keymap'],
-                         'keymap_type': AUTOINST['keymap_type'],
-                         'lang': AUTOINST['locale'],
-                         'timezone': AUTOINST['timezone'],
-                         'username': AUTOINST['username'],
-                         'fullname': AUTOINST['fullname']}
-            if AUTOINST['method'] == 'dualboot':
-                part_kwargs["shrink_space"] = fn.gigabyte(AUTOINST['dualboot_size'])
-                part_kwargs["boot_part_size"] = fn.gigabyte(linux_boot_partition_size)
-                part_kwargs["efi_part_size"] = fn.megabyte(linux_efi_partition_size)
-        else:
-            ks_kwargs = {}
-        if INSTALL_OPTIONS['spin']['is_live_img']:
-            is_live_img_required = True
-            installer = LIVE_OS_INSTALLER_SPIN
-            live_img_size = INSTALL_OPTIONS['spin']['size']
-            installer_img_size = LIVE_OS_INSTALLER_SPIN['size']
-            total_download_size = live_img_size + installer_img_size
-        else:
-            is_live_img_required = False
-            installer = INSTALL_OPTIONS['spin']
-            live_img_size = 0
-            installer_img_size = LIVE_OS_INSTALLER_SPIN['size']
-            total_download_size = live_img_size + installer_img_size
-        installer_percent_factor = installer_img_size / total_download_size * 0.90
-
+        INSTALLER_STATUS = 5
+        TMP_PARTITION_LETTER = 'G'
         # INSTALL STARTING
-        while True:
-            if not INSTALLER_STATUS:  # first step, start the download
+        while INSTALLER_STATUS not in (0, -1, -2):
+            if INSTALLER_STATUS is None:  # first step, start the download
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 progressbar_install['value'] = 0
                 job_var.set(LN.job_starting_download)
                 app.update()
+                fn.mkdir(DOWNLOAD_PATH)
+                is_torrent_dl = INSTALL_OPTIONS['torrent']
+                download_status_var = tk.StringVar()
+                installer_exist = False
+                live_img_exist = False
+                if fn.check_if_exists(INSTALL_ISO_PATH):
+                    if fn.check_hash(INSTALL_ISO_PATH, installer_img['hash256']) == 1:
+                        installer_exist = True
+                    else:
+                        fn.rm(INSTALL_ISO_PATH)
+                if is_live_img:
+                    if fn.check_if_exists(LIVE_ISO_PATH):
+                        if fn.check_hash(LIVE_ISO_PATH, live_img['hash256']) == 1:
+                            live_img_exist = True
+                        else:
+                            fn.rm(INSTALL_ISO_PATH)
+                if not installer_exist:
+                    dl_hash = prc.start_download(main_gui=app, aria2location=ARIA2C_LOCATION, dl_path=DOWNLOAD_PATH, spin=installer_img,
+                                                 iso_file_new_name=INSTALL_ISO_NAME, do_spread_files_in_dir=True,
+                                                 progress_bar=progressbar_install,
+                                                 progress_factor=installer_img_dl_percent_factor, status_shared_var=job_var,
+                                                 ln_speed=LN.dl_speed, ln_job=LN.job_dl_install_media, ln_dl_timeleft=LN.dl_timeleft,
+                                                 queue=GLOBAL_QUEUE, do_torrent_dl=is_torrent_dl)
+                    job_var.set(LN.job_checksum)
+                    download_hash_handler(dl_hash)
+                if not is_live_img:
+                    INSTALLER_STATUS = 2
+                else:
+                    if not live_img_exist:
+                        dl_hash = prc.start_download(main_gui=app, aria2location=ARIA2C_LOCATION, dl_path=DOWNLOAD_PATH,
+                                                     spin=live_img,
+                                                     iso_file_new_name=LIVE_ISO_NAME, do_spread_files_in_dir=True,
+                                                     progress_bar=progressbar_install, progress_factor=live_img_dl_factor,
+                                                     status_shared_var=download_status_var,
+                                                     ln_speed=LN.dl_speed, ln_job=LN.job_dl_install_media,
+                                                     ln_dl_timeleft=LN.dl_timeleft,
+                                                     queue=GLOBAL_QUEUE, do_torrent_dl=is_torrent_dl)
+                        job_var.set(LN.job_checksum)
+                        download_hash_handler(dl_hash)
+                    INSTALLER_STATUS = 2
 
-                fn.create_dir(DOWNLOAD_PATH)
-                if INSTALL_OPTIONS['torrent'] and installer['torrent_link']:
-                    # if torrent is selected and a torrent link is available
-                    args = (ARIA2C_LOCATION, installer['torrent_link'], DOWNLOAD_PATH, 1, GLOBAL_QUEUE,)
-                else:
-                    # if torrent is not selected or not available (direct download)
-                    args = (ARIA2C_LOCATION, installer['dl_link'], DOWNLOAD_PATH, 0, GLOBAL_QUEUE,)
-                Process(target=fn.download_with_aria2, args=args).start()
-                INSTALLER_STATUS = 1
-            if INSTALLER_STATUS == 1:  # While downloading, track download stats...
-                while True:
-                    while not GLOBAL_QUEUE.qsize(): app.after(500, app.update())
-                    while GLOBAL_QUEUE.qsize() != 1: GLOBAL_QUEUE.get()
-                    dl_status = GLOBAL_QUEUE.get()
-                    if dl_status == 'OK':
-                        break
-                    # the download is 90% of the GUI visual progress
-                    progressbar_install['value'] = installer_percent_factor * dl_status['%']
-                    txt = LN.job_dl_install_media + '\n%s\n%s: %s/s, %s: %s' % (dl_status['size'], LN.dl_speed,
-                                                                                dl_status['speed'], LN.dl_timeleft,
-                                                                                dl_status['eta'])
-                    job_var.set(txt)
-                    app.after(200, app.update())
-                fn.move_files_to_dir(DOWNLOAD_PATH, DOWNLOAD_PATH)
-                fn.rename_file(DOWNLOAD_PATH, '*.iso', INSTALL_ISO_NAME)
-                INSTALLER_STATUS = 1.5
-            if INSTALLER_STATUS == 1.5:
-                #  if the main iso for the spin is a LiveOS and not a direct install iso.
-                if not is_live_img_required:
-                    INSTALLER_STATUS = 2.5
-                else:
-                    if INSTALL_OPTIONS['torrent'] and LIVE_OS_INSTALLER_SPIN['torrent_link']:
-                        # if torrent is selected and a torrent link is available
-                        args = (ARIA2C_LOCATION, LIVE_OS_INSTALLER_SPIN['torrent_link'], DOWNLOAD_PATH, 1, GLOBAL_QUEUE,)
-                    else:
-                        # if torrent is not selected or not available (direct download)
-                        args = (ARIA2C_LOCATION, LIVE_OS_INSTALLER_SPIN['dl_link'], DOWNLOAD_PATH, 0, GLOBAL_QUEUE,)
-                    Process(target=fn.download_with_aria2, args=args).start()
-                    INSTALLER_STATUS = 1.7
-            if INSTALLER_STATUS == 1.7:  # While downloading, track download stats...
-                while True:
-                    while not GLOBAL_QUEUE.qsize(): app.after(500, app.update())
-                    while GLOBAL_QUEUE.qsize() != 1: GLOBAL_QUEUE.get()
-                    dl_status = GLOBAL_QUEUE.get()
-                    if dl_status == 'OK':
-                        break
-                    live_img_dl_factor = total_download_size * 0.90
-                    progressbar_install['value'] = (installer_percent_factor * 100) + dl_status['%'] * live_img_dl_factor
-                    txt = LN.job_dl_install_media + '\n%s\n%s: %s/s, %s: %s' % (dl_status['size'], LN.dl_speed,
-                                                                                dl_status['speed'], LN.dl_timeleft,
-                                                                                dl_status['eta'])
-                    job_var.set(txt)
-                    app.after(200, app.update())
-                fn.move_files_to_dir(DOWNLOAD_PATH, DOWNLOAD_PATH)
-                fn.rename_file(DOWNLOAD_PATH, '*.iso', LIVE_ISO_NAME)
-                INSTALLER_STATUS = 2
-            if INSTALLER_STATUS == 2:
-                while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
-                Process(target=fn.check_hash, args=(INSTALL_ISO_PATH, INSTALL_OPTIONS['spin']['hash256'],
-                                                    GLOBAL_QUEUE,)).start()
-                job_var.set(LN.job_checksum)
-                while not GLOBAL_QUEUE.qsize(): app.after(100, app.update())
-                out1 = GLOBAL_QUEUE.get()
-                if is_live_img_required:
-                    Process(target=fn.check_hash, args=(LIVE_ISO_PATH, INSTALL_OPTIONS['spin']['hash256'],
-                                                        GLOBAL_QUEUE,)).start()
-                    while not GLOBAL_QUEUE.qsize(): app.after(100, app.update())
-                    out2 = GLOBAL_QUEUE.get()
-                else:
-                    out2 = 1
-                if out1 == 1 and out2 == 1:
-                    INSTALLER_STATUS = 2.5
-                elif out1 == -1 or out2 == -1:
-                    question = tkt.open_popup(parent=app, title_txt=LN.job_checksum_failed, msg_txt=LN.job_checksum_failed_txt,
-                                              primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
-                    if question: INSTALLER_STATUS = 2.5
-                    else:
-                        question = tkt.open_popup(parent=app, title_txt=LN.cleanup_question, msg_txt=LN.cleanup_question_txt,
-                                                  primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
-                        if question: fn.remove_folder(DOWNLOAD_PATH)
-                        tkt.app_quite()
-                else:
-                    if out1 != 1:
-                        out_error = out1
-                    else:
-                        out_error = out2
-                    question = tkt.open_popup(parent=app, title_txt=LN.job_checksum_mismatch,
-                                              msg_txt=LN.job_checksum_mismatch_txt % out_error,
-                                              primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
-                    if question:
-                        pass
-                    else:
-                        question = tkt.open_popup(parent=app, title_txt=LN.cleanup_question, msg_txt=LN.cleanup_question_txt,
-                                                  primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
-                        if question: fn.remove_folder(DOWNLOAD_PATH)
-                        else: tkt.app_quite()
-            if INSTALLER_STATUS == 2.5:  # step 2: create temporary boot partition
+            if INSTALLER_STATUS == 2:  # step 2: create temporary boot partition
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
 
@@ -709,42 +693,47 @@ def main():
                 job_var.set(LN.job_creating_tmp_part)
                 progressbar_install['value'] = 92
                 INSTALLER_STATUS = 3
+
             if INSTALLER_STATUS == 3:  # while creating partition is ongoing...
                 while not GLOBAL_QUEUE.qsize():
                     app.after(200, app.update())
                 tmp_part_result = GLOBAL_QUEUE.get()
-                if tmp_part_result[0] == 1:
+                if tmp_part_result[0] != 1:
+                    return
+                else:
                     TMP_PARTITION_LETTER = tmp_part_result[1]
                     INSTALLER_STATUS = 4
-                else: return
+
             if INSTALLER_STATUS == 4:  # step 3: mount iso and copy files to temporary boot partition
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 app.protocol("WM_DELETE_WINDOW", None)  # re-enable closing the app
-                MOUNT_ISO_LETTER = fn.mount_iso(INSTALL_ISO_PATH)
-                source_files = MOUNT_ISO_LETTER + ':\\'
-                destination_files = TMP_PARTITION_LETTER + ':\\'
-                Process(target=fn.copy_files, args=(source_files, destination_files, GLOBAL_QUEUE,)).start()
-                if is_live_img_required:
-                    MOUNT_ISO_LETTER = fn.mount_iso(LIVE_ISO_PATH)
-                    source_files = MOUNT_ISO_LETTER + ':\\LiveOS\\squashfs.img'
-                    destination_files = TMP_PARTITION_LETTER + ':\\LiveOS\\squashfs.img'
-                    Process(target=fn.copy_one_file, args=(source_files, destination_files,)).start()
                 job_var.set(LN.job_copying_to_tmp_part)
                 progressbar_install['value'] = 94
+                installer_mount_letter = fn.mount_iso(INSTALL_ISO_PATH)
+                source_files = installer_mount_letter + ':\\'
+                destination_files = TMP_PARTITION_LETTER + ':\\'
+                Process(target=fn.copy_files, args=(source_files, destination_files, GLOBAL_QUEUE,)).start()
+                while not GLOBAL_QUEUE.qsize(): app.after(200, app.update())
+                if GLOBAL_QUEUE.get() == 1: pass  # NEED EDIT
+                if is_live_img:
+                    live_img_mount_letter = fn.mount_iso(LIVE_ISO_PATH)
+                    source_file = live_img_mount_letter + ':\\LiveOS\\'
+                    destination = TMP_PARTITION_LETTER + ':\\LiveOS\\'
+                    Process(target=fn.copy_files, args=(source_file, destination, GLOBAL_QUEUE,)).start()
+                    while not GLOBAL_QUEUE.qsize():
+                        app.after(200, app.update())
+                    if GLOBAL_QUEUE.get() == 1: pass
                 INSTALLER_STATUS = 5
-            if INSTALLER_STATUS == 5:  # while copying files is ongoing...
-                while not GLOBAL_QUEUE.qsize():
-                    app.after(200, app.update())
-                if GLOBAL_QUEUE.get() == 1:
-                    INSTALLER_STATUS = 6
-            if INSTALLER_STATUS == 6:  # step 4: adding boot entry
+
+            if INSTALLER_STATUS == 5:  # step 4: adding boot entry
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 job_var.set(LN.job_adding_tmp_boot_entry)
                 progressbar_install['value'] = 98
                 if AUTOINST['is_on']: grub_cfg_file = GRUB_CONFIG_DIR + 'grub_autoinst.cfg'
                 else: grub_cfg_file = GRUB_CONFIG_DIR + 'grub_default.cfg'
                 grub_cfg_file_path = TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg'
-                fn.copy_one_file(grub_cfg_file, grub_cfg_file_path)
+                fn.set_file_readonly(grub_cfg_file_path, False)
+                fn.copy_and_rename_file(grub_cfg_file, grub_cfg_file_path)
                 grub_cfg_txt = prc.build_grub_cfg_file(TMP_PARTITION_LABEL, AUTOINST['is_on'])
                 fn.set_file_readonly(grub_cfg_file_path, False)
                 grub_cfg = open(grub_cfg_file_path, 'w')
@@ -766,6 +755,7 @@ def main():
                 Process(target=prc.add_boot_entry, args=(default_efi_file_path, TMP_PARTITION_LETTER,
                                                          is_new_boot_order_permanent, GLOBAL_QUEUE,)).start()
                 INSTALLER_STATUS = 7
+
             if INSTALLER_STATUS == 7:  # while adding boot entry is ongoing...
                 while not GLOBAL_QUEUE.qsize():
                     app.after(200, app.update())
@@ -773,11 +763,13 @@ def main():
                     INSTALLER_STATUS = 8
             if INSTALLER_STATUS == 8:  # step 5: clean up iso and other downloaded files since install is complete
                 fn.unmount_iso(INSTALL_ISO_PATH)
-                fn.remove_folder(DOWNLOAD_PATH)
+                fn.unmount_iso(LIVE_ISO_PATH)
+                # fn.rmdir(DOWNLOAD_PATH)
                 INSTALLER_STATUS = 9
+
             if INSTALLER_STATUS == 9:  # step 6: redirect to next page
                 app.protocol("WM_DELETE_WINDOW", None)  # re-enable closing the app
-                break
+                INSTALLER_STATUS = 0
 
         return page_restart_required()
 
@@ -798,10 +790,11 @@ def main():
             time_left = 10
             while time_left > 0:
                 text_var.set(LN.finished_text_restarting_now % (int(time_left)))
-                time_left = time_left - 0.4
-                app.after(400, app.update())
+                time_left = time_left - 0.2
+                app.after(200, app.update())
             fn.restart_windows()
             tkt.app_quite()
+
     page_check()
     app.mainloop()
 

@@ -1,3 +1,5 @@
+from multiprocessing import Process
+
 import functions as fn
 # Functions that do multiple things or call multiple other functions are declared here
 
@@ -85,10 +87,13 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
     if wifi_profiles and isinstance(wifi_profiles, list):
         kickstart_txt += "\n%post"
         kickstart_txt += "\nmkdir -p /mnt/sysimage/etc/NetworkManager/system-connections"
-        template = r"""[connection]\nid=%ssid%\ntype=wifi\n\n[wifi]\nhidden=false\nssid=%ssid%\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%password%\n\n[ipv4]\nmethod=auto\n\n[ipv6]\naddr-gen-mode=stable-privacy\nmethod=auto\n\n[proxy]\n"""
+        template = r"""[connection]\nid=%name%\ntype=wifi\n\n[wifi]\nhidden=%hidden%\nssid=%ssid%\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%password%\n\n[ipv4]\nmethod=auto\n\n[ipv6]\naddr-gen-mode=stable-privacy\nmethod=auto\n\n[proxy]\n"""
         for profile in wifi_profiles:
-            kickstart_txt += "\necho $'" + template.replace('%ssid%', profile[0]).replace('%password%', profile[1]) + \
-                             "' > " + "/mnt/sysimage/etc/NetworkManager/system-connections/'%s.nmconnection'" % profile[0]
+            network_file = template.replace('%name%', profile['name']).replace('%ssid%', profile['ssid']).replace('%hidden%', profile['hidden']).replace('%password%', profile['password'])
+            kickstart_txt += "\necho $'" + network_file + \
+                             "' > " + "/mnt/sysimage/etc/NetworkManager/system-connections/'%s.nmconnection'" % profile['name']
+        kickstart_txt += '\nrm /run/install/repo/ks.cfg'
+        kickstart_txt += '\ncp /run/install/repo/EFI/BOOT/BOOT.cfg /run/install/repo/EFI/BOOT/grub.cfg'
         kickstart_txt += '\n%end'
     # if not (keymap and lang and timezone):
     #     if not keymap: keymap = 'us'
@@ -144,7 +149,7 @@ def build_grub_cfg_file(root_partition_label, is_autoinst=False):
     submenu = """\nsubmenu 'Troubleshooting -->' {\n
                 \tmenuentry 'Install Fedora 36 in basic graphics mode' --class fedora --class gnu-linux --class gnu --class os {\n\t\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% nomodeset quiet\n\t\tinitrdefi /images/pxeboot/initrd.img\n\t}
                 \tmenuentry 'Rescue a Fedora system' --class fedora --class gnu-linux --class gnu --class os {\n\t\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% inst.rescue quiet\n\t\tinitrdefi /images/pxeboot/initrd.img\n\t}\n}
-              """
+                """
 
     grub_file_text = part_pre + part_const1 + part_scan + entry1 + entry2 + entry3 + entry4 + submenu
     grub_file_text = grub_file_text.replace('%root_label%', root_partition_label)
@@ -193,10 +198,77 @@ def parse_spins(spins_list):
             else:
                 final_spin_list.append(spin)
     else:
-         final_spin_list = accepted_spins_list
+        final_spin_list = accepted_spins_list
     return live_os_base_index, final_spin_list
 
 
-def initiate_kickstart_arguments_from_user_input(autoinstall : dict, install_options: dict):
+def get_wifi_profiles(work_directory):
+    import os
+
+    work_directory += r'\wifi_profiles'
+    fn.rmdir(work_directory)
+    fn.mkdir(work_directory)
+
+    fn.extract_wifi_profiles(work_directory)
+    wifi_profiles = []
+    for filename in os.listdir(work_directory):
+        try:
+            with open(os.path.join(work_directory, filename), 'r') as f:  # open in readonly mode
+                xml_file = f.read()
+                wifi_profile: dict = fn.parse_xml(xml_file)
+                name = wifi_profile['WLANProfile']['name']
+                ssid = wifi_profile['WLANProfile']['SSIDConfig']['SSID']['name']
+                if (key := 'nonBroadcast') in (attr := wifi_profile['WLANProfile']['SSIDConfig']) and attr[key] == 'true':
+                    hidden = 'true'
+                else:
+                    hidden = 'false'
+                password_type = wifi_profile['WLANProfile']['MSM']['security']['sharedKey']['keyType']
+                password = wifi_profile['WLANProfile']['MSM']['security']['sharedKey']['keyMaterial']
+                profile = {'name': name, 'ssid': ssid, 'hidden': hidden, 'password': password}
+                wifi_profiles.append(profile)
+        except KeyError:
+            print('a wifi profile could not be exported, so it will be skipped')
+            continue
+    return wifi_profiles
+
+
+def start_download(main_gui, status_shared_var, aria2location, dl_path, spin: dict,
+                   queue, iso_file_new_name: str, do_spread_files_in_dir: bool = False,
+                   progress_bar=None, progress_factor=1, check_existing_file_hash_only=False,
+                   do_torrent_dl: bool = False, ln_job='', ln_speed='', ln_dl_timeleft=''):
+    file_path = dl_path + '\\' + iso_file_new_name
+    if not check_existing_file_hash_only:
+        if do_torrent_dl and spin['torrent_link']:
+            # if torrent is selected and a torrent link is available
+            args = (aria2location, spin['torrent_link'], dl_path, 1, queue,)
+        else:
+            # if torrent is not selected or not available (direct download)
+            args = (aria2location, spin['dl_link'], dl_path, 0, queue,)
+        Process(target=fn.download_with_aria2, args=args).start()
+        while True:
+            while not queue.qsize(): main_gui.after(500, main_gui.update())
+            while queue.qsize() != 1: queue.get()
+            dl_status = queue.get()
+            if dl_status == 'OK':
+                break
+            if progress_bar:
+                progress_bar['value'] = dl_status['%'] * progress_factor
+            status_shared_var.set(ln_job + '\n%s\n%s: %s/s, %s: %s' % (dl_status['size'], ln_speed,
+                                                                       dl_status['speed'], ln_dl_timeleft,
+                                                                       dl_status['eta']))
+        if do_spread_files_in_dir:
+            fn.move_files_to_dir(dl_path, dl_path)
+        if iso_file_new_name:
+            fn.rename_file(dl_path, '*.iso', iso_file_new_name)
+    if spin['hash256']:
+        while queue.qsize(): queue.get()  # to empty the queue
+        Process(target=fn.check_hash, args=(file_path, spin['hash256'], queue,)).start()
+        while not queue.qsize(): main_gui.after(100, main_gui.update())
+        return queue.get()
+    else:
+        return 1
+
+
+def initiate_kickstart_arguments_from_user_input(autoinstall: dict, install_options: dict):
     pass
 

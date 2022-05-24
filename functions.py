@@ -1,7 +1,10 @@
 import json
 import re
+import shutil
 import subprocess
 import requests
+import xmltodict
+import os
 
 
 def open_url(url):
@@ -47,11 +50,6 @@ def get_windows_username():
     return str(subprocess.run(
         [r'powershell.exe', r'$env:UserName'],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5].replace(r'\\', '\\')
-
-
-def create_dir(path):
-    arg = "New-Item -Path '" + path + "' -ItemType Directory"
-    subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
 def set_file_readonly(filepath, is_true: bool):
@@ -118,14 +116,20 @@ def move_files_to_dir(source, destination):
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
-def check_hash(file_path, sha256_hash, queue):
+def check_hash(file_path, sha256_hash, queue=None):
     arg = r'(Get-FileHash "' + file_path + '" -Algorithm SHA256).Hash'
     out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                          shell=True, universal_newlines=True)
-    if out.returncode != 0: queue.put(-1)
-    print('filehash: %s ' % out.stdout.strip().upper(), 'expected: %s' % sha256_hash.upper())
-    if out.stdout.strip().upper() == sha256_hash.upper(): queue.put(1)
-    else: queue.put((out.stdout.strip().upper(), sha256_hash.upper()))
+    if out.returncode != 0:
+        result = -1
+    elif out.stdout.strip().upper() == sha256_hash.upper():
+        result = 1
+    else:
+        result = (out.stdout.strip().upper(), sha256_hash.upper())
+    if queue:
+        queue.put(result)
+    else:
+        return result
 
 
 def get_sys_drive_letter():
@@ -188,21 +192,32 @@ def unmount_iso(iso_path):
                               shell=True, universal_newlines=True).stdout.strip())
 
 
-def copy_files(source, destination, queue):
+def copy_files(source, destination, queue=None):
     arg = r'robocopy "' + source + '" "' + destination + '" /e /mt'
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    if True:
+    if queue:
         queue.put(1)
 
 
-def copy_one_file(source, destination):
-    arg = r'Copy-Item "' + source + '" -Destination "' + destination + '"'
-    subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+def copy_and_rename_file(source, destination, queue=None):
+    shutil.copyfile(src=source, dst=destination)
+    if queue:
+        queue.put(1)
 
 
-def remove_folder(location):
-    arg = r'Remove-Item "' + location + '" -Recurse'
-    subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+def rm(location):
+    if os.path.isfile(location):
+        return os.remove(location)
+
+
+def rmdir(location):
+    if os.path.isdir(location):
+        return shutil.rmtree(location)
+
+
+def mkdir(location):
+    if not os.path.isdir(location):
+        return os.mkdir(location)
 
 
 def restart_windows():
@@ -236,6 +251,7 @@ def create_new_wbm(boot_efi_file_path, boot_drive_letter):
     return bootguid
 
 
+'''
 def get_wifi_profiles():
     args = """$WirelessSSIDs = (netsh wlan show profiles | Select-String ': ' ) -replace ".*:\s+" ; $WifiInfo = foreach($SSID in $WirelessSSIDs) {$Password = (netsh wlan show profiles name=$SSID key=clear | Select-String 'Key Content') -replace ".*:\s+" ; New-Object -TypeName psobject -Property @{"SSID"=$SSID;"Password"=$Password}} ; $WifiInfo | ConvertTo-Json"""
     out = str(subprocess.run([r'powershell.exe', args],
@@ -253,12 +269,20 @@ def get_wifi_profiles():
         except (KeyError, ValueError, IndexError, NameError):
             pass
     return list_of_profiles
+'''
 
 
-def check_file_if_exists(path):
-    arg = 'Test-Path -Path "' + path + '" -PathType Leaf'
-    return str(subprocess.run(
-        [r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5]
+def extract_wifi_profiles(folder_path):
+    args = 'netsh wlan export profile key=clear folder="%s"' % folder_path
+    out = subprocess.run([r'powershell.exe', args],
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+    return out.returncode
+
+
+def check_if_exists(path, check_if_is_dir=False):
+    if check_if_is_dir:
+        return os.path.isdir(path)
+    return os.path.isfile(path)
 
 
 def validate_with_regex(var, regex, mode='read'):
@@ -310,6 +334,10 @@ def get_json(url, queue=None):
         queue.put(data)
     else:
         return data
+
+
+def parse_xml(xml):
+    return xmltodict.parse(xml)
 
 
 def gigabyte(gb): return int(gb * 1073741824)

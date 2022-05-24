@@ -139,6 +139,15 @@ def get_language_in_locale(locale):
     return langtable.parse_locale(locale).language
 
 
+def get_keymaps(lang=None, territory=None):
+    keymaps_list = langtable.list_keyboards(territoryId=territory, languageId=lang)
+    new_keymap_list = []
+    for keymap in keymaps_list:
+        new_keymap = keymap.replace('(', ' (')
+        new_keymap_list.append(new_keymap)
+    return new_keymap_list
+
+
 def get_lang_or_locale_native_and_en_name(lang_or_locale):
     lang_or_locale_native_name = langtable.language_name(languageId=lang_or_locale)
     lang_or_locale_english_name = langtable.language_name(languageId=lang_or_locale, languageIdQuery='en')
