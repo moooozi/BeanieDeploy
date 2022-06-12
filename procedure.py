@@ -177,17 +177,15 @@ def parse_spins(spins_list):
             current_spin[attr] = False
         if (attr := "is_advanced") not in spin_keys:
             current_spin[attr] = False
-        if (attr := "is_netinstall") not in spin_keys:
-            current_spin[attr] = False
         if (attr := "torrent_link") not in spin_keys:
             current_spin[attr] = ''
         if (attr := "ostree_args") not in spin_keys:
             current_spin[attr] = ''
-        if (attr := "is_base_for_live_os") not in spin_keys:
+        if (attr := "is_base_netinstall") not in spin_keys:
             current_spin[attr] = False
         accepted_spins_list.append(current_spin)
     for index, spin in enumerate(accepted_spins_list):
-        if spin["is_base_for_live_os"]:
+        if spin["is_base_netinstall"]:
             live_os_base_index = index
             break
     if live_os_base_index is None:

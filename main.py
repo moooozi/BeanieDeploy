@@ -207,7 +207,7 @@ def main():
             if dist['is_advanced']: txt += LN.adv + ': '
             txt += '%s %s' % (dist['name'], dist['version'])
             if dist['desktop']: txt += ' (%s)' % dist['desktop']
-            if dist['is_netinstall']: txt += ' (%s)' % LN.net_install
+            if dist['is_base_netinstall']: txt += ' (%s)' % LN.net_install
             if dist['is_recommended']:
                 if spin_var.get() == -2: spin_var.set(index)  # If unset, set it to the default recommended entry
                 txt += ' (%s)' % LN.recommended
@@ -218,7 +218,7 @@ def main():
                 total_size = LIVE_OS_INSTALLER_SPIN['size'] + dist['size']
             else:
                 total_size = dist['size']
-            if dist['is_netinstall']:
+            if dist['is_base_netinstall']:
                 dl_size_txt = LN.init_download % fn.byte_to_gb(total_size)
             else:
                 dl_size_txt = LN.total_download % fn.byte_to_gb(total_size)
