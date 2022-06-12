@@ -143,6 +143,8 @@ def main():
         fn.log('\nInitial Test completed, results:')
         for key, value in COMPATIBILITY_RESULTS.items():
             fn.log('%s: %s' % (str(key), str(value)))
+        if fn.detect_nvidia():
+            fn.log('\nWarning: NVIDIA Graphics card was detected')
         errors = []
         if COMPATIBILITY_RESULTS['arch'] == -1: errors.append(LN.error_arch_9)
         elif COMPATIBILITY_RESULTS['arch'] != 'amd64': errors.append(LN.error_arch_0)
@@ -260,7 +262,6 @@ def main():
             else:
                 AUTOINST['is_on'] = True
                 return page_autoinst1()
-
 
     # page_autoinst1
     def page_autoinst1():

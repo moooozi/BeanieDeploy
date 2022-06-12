@@ -351,6 +351,14 @@ def megabyte(mb): return int(mb * 1048576)
 def byte_to_gb(byte): return round(byte / 1073741824, 2)
 
 
+def detect_nvidia(queue=None):
+    out = subprocess.run([r'powershell.exe', 'Get-WmiObject Win32_VideoController'], stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+    is_found = 'NVIDIA' in out.stdout
+    if queue: queue.put(is_found)
+    else: return is_found
+
+
 def log(text):
     with open('generated_log.txt', 'a') as file:
         file.write(text + '\n')
