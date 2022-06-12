@@ -67,8 +67,8 @@ password_reminder_txt = "(You will be able to set password for your user account
 list_keymaps = "Keyboard Layout"
 list_timezones = "Timezone"
 
-adv_confirm = "Advanced option selected..."
-adv_confirm_text = "This option isn't recommended for new users."
+immutable_system = "Immutable system"
+custom_installation = "Something else (custom network install)"
 
 windows_question = "Okay! How should %s be installed?"
 windows_options = ('Install alongside Windows',

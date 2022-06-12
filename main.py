@@ -1,7 +1,9 @@
 from multiprocessing import Process, Queue
+from globals import *
 import functions as fn
 import procedure as prc
-import multilingual
+from multilingual import DI_VAR
+import translations.en as LN
 import tkinter_templates as tkt
 from tkinter_templates import tk, ttk, FONTS
 from APP_INFO import *
@@ -47,21 +49,6 @@ LIVE_OS_INSTALLER_SPIN = None
 USERNAME_WINDOWS = ''
 
 
-#   MULTI-LINGUAL /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
-def language_handler(new_language=None, current_page=None):
-    global DI_VAR, LN, TOP_FRAME, MID_FRAME, LEFT_FRAME
-    if new_language is None: new_language = lang_var.get()
-    DI_VAR, LN = multilingual.change_lang(new_lang=new_language)
-    gui_builder(frames=[TOP_FRAME, LEFT_FRAME, MID_FRAME])
-    if current_page is not None:
-        return current_page()
-
-
-language_handler(new_language='English')
-lang_var = tk.StringVar()
-LANG_LIST = tkt.add_lang_list(TOP_FRAME, lang_var, multilingual.available_languages.keys())
-
-
 def download_hash_handler(dl_hash):
     go_next = False
     if dl_hash == 1:
@@ -97,10 +84,6 @@ def download_hash_handler(dl_hash):
 def main():
     def page_check():
         """The page on which is decided whether the app can run on the device or not"""
-        # ************** Multilingual support *************************************************************************
-        def current_page(): page_check()
-        def change_callback(*args): language_handler(current_page=current_page)
-        LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         title = tkt.add_page_title(MID_FRAME, LN.check_running)
@@ -191,78 +174,51 @@ def main():
     # page_1
     def page_1():
         """the page on which you choose which distro/flaver and whether Autoinstall should be on or off"""
-        # ************** Multilingual support *************************************************************************
-        def page_name(): page_1()
-        def change_callback(*args): language_handler(current_page=page_name)
-        LANG_LIST.bind('<<ComboboxSelected>>', change_callback)
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set('Welcome to Lnixify')
         tkt.generic_page_layout(MID_FRAME, LN.distro_question, LN.btn_next, lambda: next_btn_action())
-        spin_var = tk.IntVar(app, INSTALL_OPTIONS['spin_index'])
-        autoinstall_toggle_var = tk.BooleanVar(app, AUTOINST['is_on'])
+        desktop_var = tk.StringVar(app)
+        immutable_toggle_var = tk.BooleanVar(app, False)
+        available_desktop = []
+        for dist in ACCEPTED_SPINS:
+            if dist['desktop'] and dist['desktop'] not in available_desktop:
+                available_desktop.append(dist['desktop'])
+        temp_frame = ttk.Frame(MID_FRAME)
+        temp_frame.pack(fill="x", pady=5)
 
-        for index, dist in enumerate(ACCEPTED_SPINS):
-            txt = ''  # Generating Text for each list member of installable flavors/distros
-            if dist['is_advanced']: txt += LN.adv + ': '
-            txt += '%s %s' % (dist['name'], dist['version'])
-            if dist['desktop']: txt += ' (%s)' % dist['desktop']
-            if dist['is_base_netinstall']: txt += ' (%s)' % LN.net_install
-            if dist['is_recommended']:
-                if spin_var.get() == -2: spin_var.set(index)  # If unset, set it to the default recommended entry
-                txt += ' (%s)' % LN.recommended
+        for desktop in available_desktop:
             temp_frame = ttk.Frame(MID_FRAME)
             temp_frame.pack(fill="x", pady=5)
-            radio = tkt.add_radio_btn(temp_frame, txt, spin_var, index, ipady=0, side=DI_VAR['l'], command=lambda: validate_input())
-            if dist['is_live_img']:
-                total_size = LIVE_OS_INSTALLER_SPIN['size'] + dist['size']
-            else:
-                total_size = dist['size']
-            if dist['is_base_netinstall']:
-                dl_size_txt = LN.init_download % fn.byte_to_gb(total_size)
-            else:
-                dl_size_txt = LN.total_download % fn.byte_to_gb(total_size)
-            ttk.Label(temp_frame, wraplength=540, justify="center", text=dl_size_txt,
-                      font=FONTS['tiny'], foreground='#3aa9ff').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
-            if COMPATIBILITY_RESULTS['resizable'] < dist['size']:
-                radio.configure(state='disabled')
-                ttk.Label(temp_frame, wraplength=540, justify="center", text=LN.warn_space,
-                          font=FONTS['tiny'], foreground='#ff4a4a').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
-                if spin_var.get() == [index]:
-                    spin_var.set(-1)
-
-        check_autoinst = tkt.add_check_btn(MID_FRAME, LN.install_auto, autoinstall_toggle_var, pady=40)
-        # BUGFIX
-        if not ACCEPTED_SPINS[spin_var.get()]['is_auto_installable']:
-            check_autoinst.configure(state='disabled')
-            autoinstall_toggle_var.set(False)
+            tkt.add_radio_btn(temp_frame, desktop, desktop_var, desktop, ipady=0, side=DI_VAR['l'],
+                              command=lambda: validate_input())
+        tkt.add_radio_btn(MID_FRAME, LN.custom_installation, desktop_var, 'else',
+                          command=lambda: validate_input())
+        check_immutable = tkt.add_check_btn(MID_FRAME, LN.immutable_system, immutable_toggle_var, pady=30)
 
         def validate_input(*args):
-            if ACCEPTED_SPINS[spin_var.get()]['is_advanced']:
-                question = tkt.open_popup(parent=app, title_txt=LN.adv_confirm, msg_txt=LN.adv_confirm_text,
-                                          primary_btn_str=LN.btn_continue, secondary_btn_str=LN.btn_cancel)
-                if not question: spin_var.set(-1)
-                else: pass
-            if ACCEPTED_SPINS[spin_var.get()]['is_auto_installable']:
-                check_autoinst.configure(state='enabled')
-                autoinstall_toggle_var.set(True)
+            if desktop_var.get() == 'else':
+                check_immutable.configure(state='disabled')
+                immutable_toggle_var.set(False)
             else:
-                check_autoinst.configure(state='disabled')
-                autoinstall_toggle_var.set(False)
+                check_immutable.configure(state='enabled')
+
 
         def next_btn_action(*args):
-            if spin_var.get() == -1: return -1
+            if desktop_var.get() == 'else':
+                INSTALL_OPTIONS['spin'] = LIVE_OS_INSTALLER_SPIN
+                return page_verify()
             else:
-                LANG_LIST.pack_forget()
-                INSTALL_OPTIONS['spin_index'] = spin_var.get()
-                INSTALL_OPTIONS['spin'] = ACCEPTED_SPINS[INSTALL_OPTIONS['spin_index']]
+                for index, dist in enumerate(ACCEPTED_SPINS):
+                    if dist[DESKTOP] == desktop_var.get():
+                        if bool(immutable_toggle_var.get()) == bool(dist[OSTREE_ARGS]):
+                            spin_index = index
+                INSTALL_OPTIONS['spin'] = ACCEPTED_SPINS[spin_index]
                 if INSTALL_OPTIONS['spin']['is_live_img']:
                     INSTALL_OPTIONS['live_img_url'] = live_img_url
-                AUTOINST['is_on'] = autoinstall_toggle_var.get()
-                if autoinstall_toggle_var.get():
-                    return page_autoinst1()
-                else:
-                    return page_verify()
+            AUTOINST['is_on'] = True
+            return page_autoinst1()
+
 
     # page_autoinst1
     def page_autoinst1():
@@ -778,7 +734,6 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set('')
-        LANG_LIST.pack(anchor=DI_VAR['nw'], padx=10, pady=10)
         tkt.generic_page_layout(MID_FRAME, LN.finished_title,
                                 LN.btn_restart_now, lambda: [fn.restart_windows(), tkt.app_quite()],
                                 LN.btn_restart_later, lambda: tkt.app_quite())
