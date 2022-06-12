@@ -203,16 +203,18 @@ def main():
             else:
                 check_immutable.configure(state='enabled')
 
-
         def next_btn_action(*args):
             if desktop_var.get() == 'else':
                 INSTALL_OPTIONS['spin'] = LIVE_OS_INSTALLER_SPIN
                 return page_verify()
             else:
+                spin_index = None
                 for index, dist in enumerate(ACCEPTED_SPINS):
                     if dist[DESKTOP] == desktop_var.get():
                         if bool(immutable_toggle_var.get()) == bool(dist[OSTREE_ARGS]):
                             spin_index = index
+                if spin_index is None:
+                    return
                 INSTALL_OPTIONS['spin'] = ACCEPTED_SPINS[spin_index]
                 if INSTALL_OPTIONS['spin']['is_live_img']:
                     INSTALL_OPTIONS['live_img_url'] = live_img_url
