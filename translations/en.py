@@ -72,7 +72,7 @@ list_keymaps = "Keyboard Layout"
 list_timezones = "Timezone"
 
 immutable_system = "Immutable system image"
-custom_installation = "Something else (custom network install)"
+custom_installation = "Something else (network install)"
 
 windows_question = "Okay! How should %s be installed?"
 windows_options = ('Install alongside Windows',

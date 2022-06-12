@@ -295,13 +295,13 @@ def validate_with_regex(var, regex, mode='read'):
     regex_compiled = re.compile(regex)
     while var.get() != '':
         if re.match(regex_compiled, var.get()):
-            print('variable has been accepted')
+            print('Note: input has been accepted')
             return True
         elif mode == 'read':
             return False
         elif mode == 'fix':
             var.set(var.get()[:-1])
-            print('variable has been modified')
+            print('Note: input has been modified, reason: forbidden character')
     # indicate the string is empty now
     return 'empty'
 
@@ -350,3 +350,8 @@ def gigabyte(gb): return int(gb * 1073741824)
 def megabyte(mb): return int(mb * 1048576)
 def byte_to_gb(byte): return round(byte / 1073741824, 2)
 
+
+def log(text):
+    with open('generated_log.txt', 'a') as file:
+        file.write(text + '\n')
+    print(text)

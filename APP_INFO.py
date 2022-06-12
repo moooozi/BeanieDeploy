@@ -1,4 +1,5 @@
 SW_NAME = "Lnixify"
+SW_VERSION = '0.1-alpha'
 minimal_required_space = 4  # Gigabyte
 dualboot_required_space = 35  # Gigabyte
 additional_failsafe_space = 2  # Gigabyte

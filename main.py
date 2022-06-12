@@ -1,4 +1,6 @@
 from multiprocessing import Process, Queue
+
+import APP_INFO
 from globals import *
 import functions as fn
 import procedure as prc
@@ -81,6 +83,11 @@ def download_hash_handler(dl_hash):
 
 
 def main():
+    fn.log('%s v%s' % (APP_INFO.SW_NAME, APP_INFO.SW_VERSION))
+    fn.log('################################################################\n'
+           'IMPORTANT: DO NOT CLOSE THIS CONSOLE WINDOW WHILE APP IS RUNNING\n'
+           '################################################################\n\n')
+
     def page_check():
         """The page on which is decided whether the app can run on the device or not"""
         tkt.clear_frame(MID_FRAME)
@@ -133,6 +140,9 @@ def main():
                         progressbar_check['value'] = 95
                     if COMPATIBILITY_RESULTS and ALL_SPINS:
                         break
+        fn.log('\nInitial Test completed, results:')
+        for key, value in COMPATIBILITY_RESULTS.items():
+            fn.log('%s: %s' % (str(key), str(value)))
         errors = []
         if COMPATIBILITY_RESULTS['arch'] == -1: errors.append(LN.error_arch_9)
         elif COMPATIBILITY_RESULTS['arch'] != 'amd64': errors.append(LN.error_arch_0)
@@ -200,8 +210,9 @@ def main():
 
         some_frame = tk.Frame(MID_FRAME)
         some_frame2 = tk.Frame(MID_FRAME)
-        check_immutable = tkt.add_check_btn(some_frame2, LN.immutable_system, immutable_toggle_var, pady=(10, 0),
-                                            command=lambda: validate_input())
+
+        check_immutable = ttk.Checkbutton(some_frame2, text= LN.immutable_system, variable=immutable_toggle_var, onvalue=True, offvalue=False,
+                                          command=lambda: validate_input())
         spin_name_var = tk.StringVar(app)
         spin_size_var = tk.StringVar(app)
         tkt.add_text_label(some_frame, var=spin_name_var, font=FONTS['tiny'], foreground='#529d53', pady=2)
@@ -212,9 +223,10 @@ def main():
         def validate_input(*args):
             if desktop_var.get() == 'else':
                 INSTALL_OPTIONS['spin'] = LIVE_OS_INSTALLER_SPIN
-                check_immutable.configure(state='disabled')
+                check_immutable.pack_forget()
                 immutable_toggle_var.set(False)
             else:
+                check_immutable.pack(anchor=DI_VAR['w'], ipady=5, pady=(10, 0))
                 spin_index = None
                 for index, dist in enumerate(ACCEPTED_SPINS):
                     if dist[DESKTOP] == desktop_var.get():
@@ -239,6 +251,9 @@ def main():
             spin_size_var.set(dl_size_txt)
 
         def next_btn_action(*args):
+            fn.log('\nFedora Spin was selected (based on user\'s preference), spin details:')
+            for key, value in INSTALL_OPTIONS['spin'].items():
+                fn.log('%s: %s' % (str(key), str(value)))
             if desktop_var.get() == 'else':
                 AUTOINST['is_on'] = False
                 return page_verify()
@@ -560,7 +575,16 @@ def main():
                         'live_img': live_os,
                         'installer_img_dl_percent_factor': installer_dl_percent_factor,
                         'live_img_dl_factor': live_img_dl_factor}
-        print(**installation)
+        fn.log('\nPartitioning details:')
+        fn.log(part_kwargs)
+        fn.log('\nKickstart arguments (sensitive data sensored):')
+        for key, value in ks_kwargs.items():
+            if key in ('passphrase', 'fullname', 'username', 'wifi_profiles'):
+                if not value:
+                    continue
+                fn.log('%s: (sensitive data)' % key)
+            else:
+                fn.log('%s: %s' % (key, value))
         # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = []
         if AUTOINST['is_on'] == 0:
