@@ -18,16 +18,15 @@ tkt.stylize(app, theme_dir=CURRENT_DIR + '/theme/azure-dark.tcl', theme_name='az
 CONTAINER = ttk.Frame(app)
 CONTAINER.pack()
 vTitleText = tk.StringVar(app)
-def gui_builder(frames=None):
-    return tkt.build_main_gui_frames(CONTAINER, vTitleText,  left_frame_img_path='resources\\left_frame.png', frames=frames)
-TOP_FRAME, MID_FRAME, LEFT_FRAME = gui_builder()
+TOP_FRAME, MID_FRAME, LEFT_FRAME = tkt.build_main_gui_frames(CONTAINER)
+ttk.Label(LEFT_FRAME, image=tk.PhotoImage(file=CURRENT_DIR + r'\resources\left_frame.gif')).pack()
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 GLOBAL_QUEUE = Queue()
 COMPATIBILITY_RESULTS = {}
 COMPATIBILITY_CHECK_STATUS = 0
 INSTALLER_STATUS = None
 IP_LOCALE = []
-INSTALL_OPTIONS = {'spin': {}, 'spin_index': -2, 'auto_restart': False, 'torrent': False, 'live_img_url': ''}
+INSTALL_OPTIONS = {'spin': {}, 'spin_index': -1, 'auto_restart': False, 'torrent': False, 'live_img_url': ''}
 AUTOINST = {'is_on': True, 'method': '', 'dualboot_size': dualboot_required_space,
             'export_wifi': True, 'enable_encryption': False, 'encryption_pass': '',
             'locale': '', 'timezone': '', 'keymap_timezone_source': 'select', 'keymap': '', 'keymap_type': '',
@@ -177,7 +176,7 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set('Welcome to Lnixify')
-        tkt.generic_page_layout(MID_FRAME, LN.distro_question, LN.btn_next, lambda: next_btn_action())
+        tkt.generic_page_layout(MID_FRAME, LN.desktop_question, LN.btn_next, lambda: next_btn_action())
         desktop_var = tk.StringVar(app)
         immutable_toggle_var = tk.BooleanVar(app, False)
         available_desktop = []
@@ -192,21 +191,29 @@ def main():
             temp_frame.pack(fill="x", pady=5)
             tkt.add_radio_btn(temp_frame, desktop, desktop_var, desktop, ipady=0, side=DI_VAR['l'],
                               command=lambda: validate_input())
+            if desktop in LN.desktop_hints.keys():
+                ttk.Label(temp_frame, wraplength=540, justify="center", text=LN.desktop_hints[desktop],
+                          font=FONTS['tiny'], foreground='#3aa9ff').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
+
         tkt.add_radio_btn(MID_FRAME, LN.custom_installation, desktop_var, 'else',
                           command=lambda: validate_input())
-        check_immutable = tkt.add_check_btn(MID_FRAME, LN.immutable_system, immutable_toggle_var, pady=30)
+
+        some_frame = tk.Frame(MID_FRAME)
+        some_frame2 = tk.Frame(MID_FRAME)
+        check_immutable = tkt.add_check_btn(some_frame2, LN.immutable_system, immutable_toggle_var, pady=(10, 0),
+                                            command=lambda: validate_input())
+        spin_name_var = tk.StringVar(app)
+        spin_size_var = tk.StringVar(app)
+        tkt.add_text_label(some_frame, var=spin_name_var, font=FONTS['tiny'], foreground='#529d53', pady=2)
+        tkt.add_text_label(some_frame, var=spin_size_var, font=FONTS['tiny'], foreground='#529d53', pady=2)
+        some_frame.pack(side=DI_VAR['r'], fill="x", pady=5)
+        some_frame2.pack(side=DI_VAR['l'], fill="x", pady=5)
 
         def validate_input(*args):
             if desktop_var.get() == 'else':
+                INSTALL_OPTIONS['spin'] = LIVE_OS_INSTALLER_SPIN
                 check_immutable.configure(state='disabled')
                 immutable_toggle_var.set(False)
-            else:
-                check_immutable.configure(state='enabled')
-
-        def next_btn_action(*args):
-            if desktop_var.get() == 'else':
-                INSTALL_OPTIONS['spin'] = LIVE_OS_INSTALLER_SPIN
-                return page_verify()
             else:
                 spin_index = None
                 for index, dist in enumerate(ACCEPTED_SPINS):
@@ -218,8 +225,26 @@ def main():
                 INSTALL_OPTIONS['spin'] = ACCEPTED_SPINS[spin_index]
                 if INSTALL_OPTIONS['spin']['is_live_img']:
                     INSTALL_OPTIONS['live_img_url'] = live_img_url
-            AUTOINST['is_on'] = True
-            return page_autoinst1()
+                check_immutable.configure(state='enabled')
+
+            if INSTALL_OPTIONS['spin']['is_live_img']:
+                total_size = LIVE_OS_INSTALLER_SPIN['size'] + INSTALL_OPTIONS['spin']['size']
+            else:
+                total_size = INSTALL_OPTIONS['spin']['size']
+            if INSTALL_OPTIONS['spin'][IS_BASE_NET_INSTALL]:
+                dl_size_txt = LN.init_download % fn.byte_to_gb(total_size)
+            else:
+                dl_size_txt = LN.total_download % fn.byte_to_gb(total_size)
+            spin_name_var.set('%s: %s' % (LN.selected_spin, INSTALL_OPTIONS['spin'][NAME]))
+            spin_size_var.set(dl_size_txt)
+
+        def next_btn_action(*args):
+            if desktop_var.get() == 'else':
+                AUTOINST['is_on'] = False
+                return page_verify()
+            else:
+                AUTOINST['is_on'] = True
+                return page_autoinst1()
 
 
     # page_autoinst1
@@ -243,8 +268,7 @@ def main():
                              foreground='#ff4a4a')
         entry1_frame = ttk.Frame(MID_FRAME)
         entry1_frame.pack(fill='x', padx=10)
-        tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], autoinst_method_var, 'clean',
-                          lambda: show_dualboot_options(False))
+        # tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], autoinst_method_var, 'clean', lambda: show_dualboot_options(False))
 
         min_size = dualboot_required_space
         max_size = fn.byte_to_gb(COMPATIBILITY_RESULTS['resizable'] - INSTALL_OPTIONS['spin']['size']) - additional_failsafe_space
@@ -536,7 +560,7 @@ def main():
                         'live_img': live_os,
                         'installer_img_dl_percent_factor': installer_dl_percent_factor,
                         'live_img_dl_factor': live_img_dl_factor}
-        print(installation)
+        print(**installation)
         # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = []
         if AUTOINST['is_on'] == 0:

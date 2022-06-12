@@ -139,26 +139,18 @@ def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=5):
     return check
 
 
-def build_main_gui_frames(parent, main_title_var, left_frame_img_path=None,
-                          top_frame_height=100, left_frame_width=200, frames: list = None):
+def build_main_gui_frames(parent, left_frame_img_path=None,
+                          top_frame_height=100, left_frame_width=200):
     """
 Used to build or rebuild the main frames after language change to a language with different direction
 (see function right_to_left_lang)
     """
     from multilingual import DI_VAR
-    if not frames:
-        top_frame = tk.Frame(parent, height=top_frame_height, width=MAXWIDTH, background=top_background)
-        left_frame = ttk.Frame(parent, width=left_frame_width, height=MAXHEIGHT)
-        mid_frame = ttk.Frame(parent, height=MAXHEIGHT - top_frame_height)
-        top_title = ttk.Label(top_frame, justify='center', textvariable=main_title_var, font=FONTS['large'],
-                              background=top_background)
-        top_title.pack(anchor='center', side='left', padx=15)
-        if left_frame_img_path:
-            ttk.Label(left_frame, image=tk.PhotoImage(file=left_frame_img_path)).pack(side='bottom')
-    else:
-        top_frame = frames[0]
-        left_frame = frames[1]
-        mid_frame = frames[2]
+
+    top_frame = tk.Frame(parent, height=top_frame_height, width=MAXWIDTH, background=top_background)
+    left_frame = ttk.Frame(parent, width=left_frame_width, height=MAXHEIGHT)
+    mid_frame = ttk.Frame(parent, height=MAXHEIGHT - top_frame_height)
+
     top_frame.pack(fill="x", expand=1)
     top_frame.pack_propagate(False)
     left_frame.pack(fill="y", side=DI_VAR['l'])

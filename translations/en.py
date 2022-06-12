@@ -33,6 +33,9 @@ error_space_9 = "Failed to check available disk space on your system drive."
 error_resizable_0 = "Not enough shrink room on system drive."
 error_resizable_9 = "Failed to check system drive resizability."
 
+desktop_question = "Which Desktop Environment do you prefer?"
+desktop_hints = {'KDE Plasma': "Great on desktops, highly customizable, Windows-like layout by default",
+                 'GNOME': "Default. Minimalist, well optimized for touchpads and touchscreens"}
 lang = "Language"
 locale = "Locale"
 recommended = "Recommended"
@@ -43,7 +46,6 @@ total_download = "Total download: %sGB"
 init_download = "Initial download: %sGB"
 
 install_running = "Installing..."
-distro_question = "Which flavor of Fedora do you want to install?"
 install_auto = "Quick & guided install"
 install_help = "Help me decide"
 title_autoinst2 = "Choose your language and locale"
@@ -52,13 +54,15 @@ title_autoinst4 = "Create your local user account"
 
 additional_setup_now = "Setup your locale, Timezone and keyboard layout now"
 
+selected_spin = "Selected Spin"
+
 encrypted_root = "Encrypt the new operating system"
 entry_encrypt_passphrase_pre = "Enter encryption PIN"
 entry_encrypt_passphrase_post = "(numbers only)"
 entry_encrypt_passphrase_confirm_pre = "Confirm PIN"
 not_matched = "Not matched"
 
-encrypt_reminder_txt = "(This can be changed to include characters after the installation)"
+encrypt_reminder_txt = "Leave empty if you wish to provide passphase later  during install (characters allowed)"
 
 entry_username = "Username"
 entry_fullname = "Full name (optional)"
@@ -67,7 +71,7 @@ password_reminder_txt = "(You will be able to set password for your user account
 list_keymaps = "Keyboard Layout"
 list_timezones = "Timezone"
 
-immutable_system = "Immutable system"
+immutable_system = "Immutable system image"
 custom_installation = "Something else (custom network install)"
 
 windows_question = "Okay! How should %s be installed?"
