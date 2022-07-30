@@ -64,7 +64,8 @@ def set_file_readonly(filepath, is_true: bool):
 def download_with_aria2(app_path, url, destination, is_torrent, queue):
     arg = r' --dir="' + destination + '" ' + url
     if is_torrent:
-        arg = arg + ' --seed-time=0'
+        arg += ' --seed-time=0'
+
     p = subprocess.Popen(app_path + arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                          universal_newlines=True)
     # Parsing output
@@ -100,21 +101,13 @@ def download_with_aria2(app_path, url, destination, is_torrent, queue):
                         queue.put(tracker)
                     except (ValueError, IndexError): pass
 
-
-def rename_file(dir_path, file_name, new_name):
-    arg = 'Get-ChildItem -Path "' + dir_path + '" -Name -include "' + file_name + '"'
-    out = str(subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                             shell=True).stdout)[2:-5]
-    out = out.split('\\r\\n')[0]
-    arg = 'Rename-item -Path "' + dir_path + '\\' + out + '" -Newname "' + new_name + '"'
-    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-
-
+'''
 def move_files_to_dir(source, destination):
     arg = 'Get-ChildItem -Path ' + source + ' -Recurse -File | Move-Item -Destination ' + destination
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     arg = 'Get-ChildItem -Path ' + source + ' -Recurse -Directory | Remove-Item'
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+'''
 
 
 def check_hash(file_path, sha256_hash, queue=None):
@@ -228,6 +221,10 @@ def rmdir(location):
 def mkdir(location):
     if not os.path.isdir(location):
         return os.makedirs(location)
+
+
+def move_and_replace(path, dest):
+    os.replace(path, dest)
 
 
 def restart_windows():
@@ -366,3 +363,15 @@ def log(text, mode='a'):
     with open('generated_log.txt', mode) as file:
         file.write(text + '\n')
     print(text)
+
+
+def get_file_name_from_url(url):
+    from urllib.parse import urlparse
+    a = urlparse(url)
+    return os.path.basename(a.path)
+
+
+def find_file_by_name(name, lookup_dir):
+    for root, dirs, files in os.walk(lookup_dir):
+            if name in files:
+                return os.path.join(root, name)

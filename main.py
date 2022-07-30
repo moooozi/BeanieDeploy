@@ -657,24 +657,14 @@ def main():
                 app.update()
                 fn.mkdir(DOWNLOAD_PATH)
                 is_torrent_dl = INSTALL_OPTIONS['torrent']
-                download_status_var = tk.StringVar()
                 # checking if files from previous runs are present
-                installer_exist = False
-                live_img_exist = False
-                if fn.check_if_exists(INSTALL_ISO_PATH):
-                    if fn.check_hash(INSTALL_ISO_PATH, installer_img['hash256']) == 1:
-                        installer_exist = True
-                    else:
-                        fn.rm(INSTALL_ISO_PATH)
-                if is_live_img:
-                    if fn.check_if_exists(LIVE_ISO_PATH):
-                        if fn.check_hash(LIVE_ISO_PATH, live_img['hash256']) == 1:
-                            live_img_exist = True
-                        else:
-                            fn.rm(INSTALL_ISO_PATH)
+                installer_exist = prc.check_valid_existing_file(INSTALL_ISO_PATH, installer_img['hash256'])
+                live_img_exist = prc.check_valid_existing_file(LIVE_ISO_PATH, live_img['hash256'])
+
                 if not installer_exist:
-                    dl_hash = prc.start_download(main_gui=app, aria2location=ARIA2C_LOCATION, dl_path=DOWNLOAD_PATH, spin=installer_img,
-                                                 iso_file_new_name=INSTALL_ISO_NAME, do_spread_files_in_dir=True,
+                    dl_hash = prc.start_download(main_gui=app, aria2location=ARIA2C_LOCATION, dl_path=DOWNLOAD_PATH,
+                                                 spin=installer_img,
+                                                 iso_file_new_name=INSTALL_ISO_NAME,
                                                  progress_bar=progressbar_install,
                                                  progress_factor=installer_img_dl_percent_factor, status_shared_var=job_var,
                                                  ln_speed=LN.dl_speed, ln_job=LN.job_dl_install_media, ln_dl_timeleft=LN.dl_timeleft,
@@ -687,9 +677,9 @@ def main():
                     if not live_img_exist:
                         dl_hash = prc.start_download(main_gui=app, aria2location=ARIA2C_LOCATION, dl_path=DOWNLOAD_PATH,
                                                      spin=live_img,
-                                                     iso_file_new_name=LIVE_ISO_NAME, do_spread_files_in_dir=True,
-                                                     progress_bar=progressbar_install, progress_factor=live_img_dl_factor,
-                                                     status_shared_var=download_status_var,
+                                                     iso_file_new_name=LIVE_ISO_NAME,
+                                                     progress_bar=progressbar_install,
+                                                     progress_factor=live_img_dl_factor, status_shared_var=job_var,
                                                      ln_speed=LN.dl_speed, ln_job=LN.job_dl_install_media,
                                                      ln_dl_timeleft=LN.dl_timeleft,
                                                      queue=GLOBAL_QUEUE, do_torrent_dl=is_torrent_dl)
@@ -812,6 +802,8 @@ def main():
     page_check()
     #fn.get_admin()
     #print(fn.new_volume(1,200000000, 'ntfs','bla'))
+    import shutil
+    #fn.mkdir(r"C:\Users\trapp\win2linux_tmpdir\wifi_profiles - Copy")
     app.mainloop()
 
 

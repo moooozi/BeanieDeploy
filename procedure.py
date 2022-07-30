@@ -1,3 +1,4 @@
+import os
 from multiprocessing import Process
 
 import functions as fn
@@ -207,7 +208,6 @@ def parse_spins(spins_list):
 
 
 def get_wifi_profiles(work_directory):
-    import os
 
     work_directory += r'\wifi_profiles'
     fn.rmdir(work_directory)
@@ -233,21 +233,23 @@ def get_wifi_profiles(work_directory):
         except KeyError:
             print('a wifi profile could not be exported, so it will be skipped')
             continue
+    fn.rmdir(work_directory)
     return wifi_profiles
 
 
 def start_download(main_gui, status_shared_var, aria2location, dl_path, spin: dict,
-                   queue, iso_file_new_name: str, do_spread_files_in_dir: bool = False,
+                   queue, iso_file_new_name: str,
                    progress_bar=None, progress_factor=1, check_existing_file_hash_only=False,
                    do_torrent_dl: bool = False, ln_job='', ln_speed='', ln_dl_timeleft=''):
     file_path = dl_path + '\\' + iso_file_new_name
     if not check_existing_file_hash_only:
+        filename = fn.get_file_name_from_url(spin['dl_link'])
         if do_torrent_dl and spin['torrent_link']:
             # if torrent is selected and a torrent link is available
-            args = (aria2location, spin['torrent_link'], dl_path, 1, queue,)
+            args = (aria2location, spin['torrent_link'], dl_path, 1, queue)
         else:
             # if torrent is not selected or not available (direct download)
-            args = (aria2location, spin['dl_link'], dl_path, 0, queue,)
+            args = (aria2location, spin['dl_link'], dl_path, 0, queue)
         Process(target=fn.download_with_aria2, args=args).start()
         while True:
             while not queue.qsize(): main_gui.after(500, main_gui.update())
@@ -260,10 +262,11 @@ def start_download(main_gui, status_shared_var, aria2location, dl_path, spin: di
             status_shared_var.set(ln_job + '\n%s\n%s: %s/s, %s: %s' % (dl_status['size'], ln_speed,
                                                                        dl_status['speed'], ln_dl_timeleft,
                                                                        dl_status['eta']))
-        if do_spread_files_in_dir:
-            fn.move_files_to_dir(dl_path, dl_path)
+
+        location = fn.find_file_by_name(filename, dl_path)
         if iso_file_new_name:
-            fn.rename_file(dl_path, '*.iso', iso_file_new_name)
+            new_file_path = dl_path + '\\' + iso_file_new_name
+            fn.move_and_replace(location, new_file_path)
     if spin['hash256']:
         while queue.qsize(): queue.get()  # to empty the queue
         Process(target=fn.check_hash, args=(file_path, spin['hash256'], queue,)).start()
@@ -271,6 +274,15 @@ def start_download(main_gui, status_shared_var, aria2location, dl_path, spin: di
         return queue.get()
     else:
         return 1
+
+
+def check_valid_existing_file(path, file_hash):
+    if fn.check_if_exists(path):
+        if fn.check_hash(path, file_hash) == 1:
+            return True
+        else:
+            fn.rm(path)
+    return False
 
 
 def initiate_kickstart_arguments_from_user_input(autoinstall: dict, install_options: dict):
