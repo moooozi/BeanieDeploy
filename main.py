@@ -770,6 +770,7 @@ def main():
                 fn.unmount_iso(LIVE_ISO_PATH)
                 fn.remove_drive_letter(TMP_PARTITION_LETTER)
                 # fn.rmdir(DOWNLOAD_PATH)
+                fn.set_windows_time_to_utc()
                 INSTALLER_STATUS = 9
 
             if INSTALLER_STATUS == 9:  # step 6: redirect to next page
@@ -801,9 +802,6 @@ def main():
 
     page_check()
     #fn.get_admin()
-    #print(fn.new_volume(1,200000000, 'ntfs','bla'))
-    import shutil
-    #fn.mkdir(r"C:\Users\trapp\win2linux_tmpdir\wifi_profiles - Copy")
     app.mainloop()
 
 

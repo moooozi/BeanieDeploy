@@ -375,3 +375,9 @@ def find_file_by_name(name, lookup_dir):
     for root, dirs, files in os.walk(lookup_dir):
             if name in files:
                 return os.path.join(root, name)
+
+
+def set_windows_time_to_utc():
+    args = r'reg add "HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\TimeZoneInformation" /v RealTimeIsUniversal /d 1 /t REG_DWORD /f'
+    return subprocess.run([r'powershell.exe', args], stdout=subprocess.PIPE,
+                   stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
