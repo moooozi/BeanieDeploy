@@ -89,7 +89,7 @@ verify_text = {
 }
 add_import_wifi = "Export my Wi-Fi networks to the new OS"
 add_auto_restart = "Restart automatically"
-add_torrent = "Download with torrent"
+add_torrent = "Download with torrent whenever possible"
 more_options = "More options"
 
 old_download_detected = "Previously downloaded files found"

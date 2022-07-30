@@ -1,5 +1,4 @@
 from multiprocessing import Process, Queue
-
 import APP_INFO
 from globals import *
 import functions as fn
@@ -41,7 +40,10 @@ INSTALL_ISO_PATH = ''
 TMP_PARTITION_LETTER = ''
 ARIA2C_LOCATION = ''
 TMP_PARTITION_LABEL = 'FEDORA-INST'  # Max 12 Chars
-GRUB_CONFIG_DIR = CURRENT_DIR + '\\resources\\grub_conf\\'
+GRUB_CONFIG_PATH_DEFUALT = CURRENT_DIR + '\\resources\\grub_conf\\grub_default.cfg'
+GRUB_CONFIG_PATH_AUTOINST = CURRENT_DIR + '\\resources\\grub_conf\\grub_autoinst.cfg'
+NVIDIA_SCRIPT_PATH = CURRENT_DIR + '\\resources\\nvidia_inst'
+
 # Tkinter variables, the '_t' suffix means Toggle
 ALL_SPINS = []
 ACCEPTED_SPINS = []
@@ -83,7 +85,7 @@ def download_hash_handler(dl_hash):
 
 
 def main():
-    fn.log('%s v%s' % (APP_INFO.SW_NAME, APP_INFO.SW_VERSION))
+    fn.log('%s v%s' % (APP_INFO.SW_NAME, APP_INFO.SW_VERSION), mode='w')
     fn.log('################################################################\n'
            'IMPORTANT: DO NOT CLOSE THIS CONSOLE WINDOW WHILE APP IS RUNNING\n'
            '################################################################\n\n')
@@ -556,6 +558,19 @@ def main():
                 part_kwargs["shrink_space"] = fn.gigabyte(AUTOINST['dualboot_size'])
                 part_kwargs["boot_part_size"] = fn.gigabyte(linux_boot_partition_size)
                 part_kwargs["efi_part_size"] = fn.megabyte(linux_efi_partition_size)
+            # LOG #################################################################
+            fn.log('\nKickstart arguments (sensitive data sensored):')
+            for key, value in ks_kwargs.items():
+                if key in ('passphrase', 'fullname', 'username', 'wifi_profiles'):
+                    if not value:
+                        continue
+                    fn.log('%s: (sensitive data)' % key)
+                else:
+                    fn.log('%s: %s' % (key, value))
+            fn.log('\nPartitioning details:')
+            for key, value in part_kwargs.items():
+                fn.log('%s: %s' % (key, value))
+            #######################################################################
         else:
             ks_kwargs = {}
         if INSTALL_OPTIONS['spin']['is_live_img']:
@@ -576,16 +591,7 @@ def main():
                         'live_img': live_os,
                         'installer_img_dl_percent_factor': installer_dl_percent_factor,
                         'live_img_dl_factor': live_img_dl_factor}
-        fn.log('\nPartitioning details:')
-        fn.log(part_kwargs)
-        fn.log('\nKickstart arguments (sensitive data sensored):')
-        for key, value in ks_kwargs.items():
-            if key in ('passphrase', 'fullname', 'username', 'wifi_profiles'):
-                if not value:
-                    continue
-                fn.log('%s: (sensitive data)' % key)
-            else:
-                fn.log('%s: %s' % (key, value))
+
         # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = []
         if AUTOINST['is_on'] == 0:
@@ -735,17 +741,19 @@ def main():
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 job_var.set(LN.job_adding_tmp_boot_entry)
                 progressbar_install['value'] = 98
-                if AUTOINST['is_on']: grub_cfg_file = GRUB_CONFIG_DIR + 'grub_autoinst.cfg'
-                else: grub_cfg_file = GRUB_CONFIG_DIR + 'grub_default.cfg'
-                grub_cfg_file_path = TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg'
-                fn.set_file_readonly(grub_cfg_file_path, False)
-                fn.copy_and_rename_file(grub_cfg_file, grub_cfg_file_path)
+                if AUTOINST['is_on']: grub_cfg_file = GRUB_CONFIG_PATH_AUTOINST
+                else: grub_cfg_file = GRUB_CONFIG_PATH_DEFUALT
+                grub_cfg_dest_path = TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg'
+                fn.set_file_readonly(grub_cfg_dest_path, False)
+                fn.copy_and_rename_file(grub_cfg_file, grub_cfg_dest_path)
                 grub_cfg_txt = prc.build_grub_cfg_file(TMP_PARTITION_LABEL, AUTOINST['is_on'])
-                fn.set_file_readonly(grub_cfg_file_path, False)
-                grub_cfg = open(grub_cfg_file_path, 'w')
+                fn.set_file_readonly(grub_cfg_dest_path, False)
+                grub_cfg = open(grub_cfg_dest_path, 'w')
                 grub_cfg.write(grub_cfg_txt)
                 grub_cfg.close()
-                fn.set_file_readonly(grub_cfg_file_path, True)
+                fn.set_file_readonly(grub_cfg_dest_path, True)
+                nvidia_script_dest_path = TMP_PARTITION_LETTER + ':\\lnixify\\nvidia_inst'
+                fn.copy_and_rename_file(NVIDIA_SCRIPT_PATH, nvidia_script_dest_path)
 
                 if AUTOINST['is_on']:
                     kickstart_txt = prc.build_autoinstall_ks_file(**ks_kwargs)
@@ -802,6 +810,8 @@ def main():
             tkt.app_quite()
 
     page_check()
+    #fn.get_admin()
+    #print(fn.new_volume(1,200000000, 'ntfs','bla'))
     app.mainloop()
 
 

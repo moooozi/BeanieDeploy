@@ -5,6 +5,7 @@ import subprocess
 import requests
 import xmltodict
 import os
+from pathlib import Path
 
 
 def open_url(url):
@@ -173,10 +174,12 @@ def relabel_volume(drive_letter: str, new_label: str):
 
 
 def new_volume(disk_number: int, size: int, filesystem: str, label: str, drive_letter: str = None):
-    arg = 'New-Partition -DiskNumber ' + str(disk_number) + r' -Size ' + str(size)
+    arg = '$part = New-Partition -DiskNumber ' + str(disk_number) + r' -Size ' + str(size)
     if drive_letter is not None:
         arg += ' -DriveLetter ' + drive_letter
-    arg += ' | Format-Volume' + ' -FileSystem ' + filesystem + ' -NewFileSystemLabel "' + label + '"'
+    arg += ' | Get-Volume; '
+    arg += '$part | Format-Volume' + ' -FileSystem ' + filesystem + ' -NewFileSystemLabel "' + label + '"; '
+    arg += 'Disable-Bitlocker -MountPoint $part.Path'
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
@@ -206,6 +209,7 @@ def copy_files(source, destination, queue=None):
 
 
 def copy_and_rename_file(source, destination, queue=None):
+    mkdir(Path(destination).parent.absolute())
     shutil.copyfile(src=source, dst=destination)
     if queue:
         queue.put(1)
@@ -223,7 +227,7 @@ def rmdir(location):
 
 def mkdir(location):
     if not os.path.isdir(location):
-        return os.mkdir(location)
+        return os.makedirs(location)
 
 
 def restart_windows():
@@ -307,7 +311,6 @@ def validate_with_regex(var, regex, mode='read'):
 
 
 def get_current_dir_path():
-    from pathlib import Path
     return str(Path(__file__).parent.absolute())
 
 
@@ -359,7 +362,7 @@ def detect_nvidia(queue=None):
     else: return is_found
 
 
-def log(text):
-    with open('generated_log.txt', 'a') as file:
+def log(text, mode='a'):
+    with open('generated_log.txt', mode) as file:
         file.write(text + '\n')
     print(text)

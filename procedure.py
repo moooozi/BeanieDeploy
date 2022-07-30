@@ -80,21 +80,27 @@ def add_boot_entry(boot_efi_file_path, boot_drive_letter, is_permanent: bool = F
 
 
 def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone=None, ostree_args=None, username='', fullname='',
-                              wifi_profiles=None, is_encrypted: bool = False, passphrase: str = None, live_img_url=''):
+                              wifi_profiles=None, is_encrypted: bool = False, passphrase: str = None, live_img_url='',
+                              nvidia_drivers=True):
 
     kickstart_txt = "# Kickstart file created by Lnixify."
     kickstart_txt += "\ngraphical"
+    kickstart_txt += "\n%post --nochroot --logfile=/mnt/sysimage/root/ks-post.log"
+    kickstart_txt += '\nrm /run/install/repo/ks.cfg'
+    kickstart_txt += '\ncp /run/install/repo/EFI/BOOT/BOOT.cfg /run/install/repo/EFI/BOOT/grub.cfg'
     if wifi_profiles and isinstance(wifi_profiles, list):
-        kickstart_txt += "\n%post"
         kickstart_txt += "\nmkdir -p /mnt/sysimage/etc/NetworkManager/system-connections"
         template = r"""[connection]\nid=%name%\ntype=wifi\n\n[wifi]\nhidden=%hidden%\nssid=%ssid%\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%password%\n\n[ipv4]\nmethod=auto\n\n[ipv6]\naddr-gen-mode=stable-privacy\nmethod=auto\n\n[proxy]\n"""
         for profile in wifi_profiles:
             network_file = template.replace('%name%', profile['name']).replace('%ssid%', profile['ssid']).replace('%hidden%', profile['hidden']).replace('%password%', profile['password'])
             kickstart_txt += "\necho $'" + network_file + \
                              "' > " + "/mnt/sysimage/etc/NetworkManager/system-connections/'%s.nmconnection'" % profile['name']
-        kickstart_txt += '\nrm /run/install/repo/ks.cfg'
-        kickstart_txt += '\ncp /run/install/repo/EFI/BOOT/BOOT.cfg /run/install/repo/EFI/BOOT/grub.cfg'
-        kickstart_txt += '\n%end'
+    if nvidia_drivers:
+        kickstart_txt += "\nmkdir -p /mnt/sysimage/etc/profile.d/"
+        kickstart_txt += '\ncp /run/install/repo/lnixify/nvidia_inst /mnt/sysimage/etc/profile.d/nvidia_inst.sh'
+    kickstart_txt += '\n%end'
+
+
     # if not (keymap and lang and timezone):
     #     if not keymap: keymap = 'us'
     #     if not lang: lang = 'en_US.UTF-8'
