@@ -1,6 +1,11 @@
-import wmi
+from types import SimpleNamespace
 
-c = wmi.WMI()
+INSTALL_OPTIONS = {'spin': {}, 'spin_index': -1, 'auto_restart': False, 'torrent': False, 'live_img_url': ''}
+AUTOINST = {'is_on': True, 'method': '', 'dualboot_size': 'bb',
+            'export_wifi': True, 'enable_encryption': False, 'encryption_pass': '',
+            'locale': '', 'timezone': '', 'keymap_timezone_source': 'select', 'keymap': '', 'keymap_type': '',
+            'username': '', 'fullname': ''}
+ss = SimpleNamespace(**AUTOINST)
 
-video =  c.Win32_videocontroller
-print video.properties
+
+print(ss)

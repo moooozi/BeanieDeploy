@@ -42,15 +42,12 @@ def check_resizable():
 
 
 def get_user_home_dir():
-    return str(subprocess.run(
-        [r'powershell.exe', r'$home'],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5].replace(r'\\', '\\')
+    return str(Path.home())
 
 
 def get_windows_username():
     return str(subprocess.run(
-        [r'powershell.exe', r'$env:UserName'],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout)[2:-5].replace(r'\\', '\\')
+        [r'powershell.exe', r'$env:UserName'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout).replace(r'\\', '\\')
 
 
 def set_file_readonly(filepath, is_true: bool):
@@ -145,25 +142,21 @@ def get_drive_size_after_resize(drive_letter: str, minus_space: int):
 
 def resize_partition(drive_letter: str, new_size: int):
     arg = r'Resize-Partition -DriveLetter ' + drive_letter + r' -Size ' + str(new_size)
-    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                          shell=True, universal_newlines=True)
 
 
 def get_unused_drive_letter():
     drive_letters = ['G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
-
-    def test(test_letter):
-        return str(subprocess.run([r'powershell.exe', r'Get-Volume | Where-Object DriveLetter -eq ' + test_letter],
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout.strip())
-
     for letter in drive_letters:
-        if not test(letter):
-            return letter
+        test = subprocess.run([r'powershell.exe', r'Get-Volume | Where-Object DriveLetter -eq ' + letter], stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout.strip()
+        if not test: return letter
 
 
 def relabel_volume(drive_letter: str, new_label: str):
     arg = r'Set-Volume -DriveLetter "' + drive_letter + '" -NewFileSystemLabel "' + new_label + '"'
-    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).returncode
 
 
 def new_volume(disk_number: int, size: int, filesystem: str, label: str, drive_letter: str = None):
