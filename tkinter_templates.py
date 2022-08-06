@@ -121,10 +121,11 @@ def add_page_title(parent, text, pady=35):
     return title
 
 
-def add_radio_btn(parent, text, var, value, command=None, is_disabled=None, ipady=5, side=None):
+def add_radio_btn(parent, text, var, value, command=None, is_disabled=None, ipady=5, side=None, pack=True):
     from multilingual import DI_VAR
     radio = ttk.Radiobutton(parent, text=text, variable=var, value=value)
-    radio.pack(anchor=DI_VAR['w'], ipady=ipady, side=side)
+    if pack:
+        radio.pack(anchor=DI_VAR['w'], ipady=ipady, side=side)
     if command: radio.configure(command=command)
     if is_disabled: radio.configure(state='disabled')
     return radio

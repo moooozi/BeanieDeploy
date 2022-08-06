@@ -11,8 +11,9 @@ COMPATIBILITY_RESULTS = {}
 COMPATIBILITY_CHECK_STATUS = 0
 INSTALLER_STATUS = None
 IP_LOCALE = []
-INSTALL_OPTIONS = SimpleNamespace(spin={}, spin_index=-1, auto_restart=False, torrent=False, live_img_url='')
-AUTOINST = SimpleNamespace(is_on=True, method='', dualboot_size=APP_INFO.dualboot_required_space, export_wifi=True,
+AVAILABLE_INSTALL_METHODS = ('dualboot', 'clean', 'custom')
+INSTALL_OPTIONS = SimpleNamespace(install_method='', spin={}, spin_index=-1, auto_restart=False, torrent=False, live_img_url='')
+AUTOINST = SimpleNamespace(dualboot_size=APP_INFO.dualboot_required_space, export_wifi=True,
                            enable_encryption=False, encryption_pass='', locale='', timezone='',
                            keymap_timezone_source='select', keymap='', keymap_type='', username='', fullname='')
 DOWNLOAD_PATH = ''

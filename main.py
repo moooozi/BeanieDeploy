@@ -163,10 +163,13 @@ def main():
         # *************************************************************************************************************
         vTitleText.set('Welcome to Lnixify')
         tkt.generic_page_layout(MID_FRAME, LN.desktop_question, LN.btn_next, lambda: next_btn_action())
-        desktop_var = tk.StringVar(app)
+        desktop_var = tk.StringVar(app, 'unset')
         immutable_toggle_var = tk.BooleanVar(app, False)
         available_desktop = []
+        dict_spins_with_fullname_keys = []
         for dist in GV.ACCEPTED_SPINS:
+            spin_fullname = dist[NAME] + ' ' + dist['version']
+            dict_spins_with_fullname_keys.append(spin_fullname)
             if dist['desktop'] and dist['desktop'] not in available_desktop:
                 available_desktop.append(dist['desktop'])
         temp_frame = ttk.Frame(MID_FRAME)
@@ -184,11 +187,13 @@ def main():
         tkt.add_radio_btn(MID_FRAME, LN.custom_installation, desktop_var, 'else',
                           command=lambda: validate_input())
 
+        combolist_spin = ttk.Combobox(MID_FRAME, values=dict_spins_with_fullname_keys, state='disabled')
+        combolist_spin.set(LN.choose_fedora_spin)
+        combolist_spin.bind("<<ComboboxSelected>>", lambda *args: validate_input())
+        combolist_spin.pack()
         some_frame = tk.Frame(MID_FRAME)
         some_frame2 = tk.Frame(MID_FRAME)
 
-        check_immutable = ttk.Checkbutton(some_frame2, text= LN.immutable_system, variable=immutable_toggle_var, onvalue=True, offvalue=False,
-                                          command=lambda: validate_input())
         spin_name_var = tk.StringVar(app)
         spin_size_var = tk.StringVar(app)
         tkt.add_text_label(some_frame, var=spin_name_var, font=FONTS['tiny'], foreground='#529d53', pady=2)
@@ -198,72 +203,82 @@ def main():
 
         def validate_input(*args):
             if desktop_var.get() == 'else':
-                GV.INSTALL_OPTIONS.spin = GV.LIVE_OS_INSTALLER_SPIN
-                check_immutable.pack_forget()
-                immutable_toggle_var.set(False)
+                combolist_spin['state'] = 'readonly'
+                if combolist_spin.get() in dict_spins_with_fullname_keys:
+                    spin_index = dict_spins_with_fullname_keys.index(combolist_spin.get())
+                else:
+                    spin_index = None
             else:
-                check_immutable.pack(anchor=DI_VAR['w'], ipady=5, pady=(10, 0))
+                combolist_spin['state'] = 'disabled'
                 spin_index = None
                 for index, dist in enumerate(GV.ACCEPTED_SPINS):
                     if dist[DESKTOP] == desktop_var.get():
                         if bool(immutable_toggle_var.get()) == bool(dist[OSTREE_ARGS]):
                             spin_index = index
-                if spin_index is None:
-                    return
+            if spin_index is not None:
                 GV.INSTALL_OPTIONS.spin = GV.ACCEPTED_SPINS[spin_index]
                 if GV.INSTALL_OPTIONS.spin['is_live_img']:
                     GV.INSTALL_OPTIONS.live_img_url = live_img_url
-                check_immutable.configure(state='enabled')
 
-            if GV.INSTALL_OPTIONS.spin['is_live_img']:
-                total_size = GV.LIVE_OS_INSTALLER_SPIN['size'] + GV.INSTALL_OPTIONS.spin['size']
-            else:
-                total_size = GV.INSTALL_OPTIONS.spin['size']
-            if GV.INSTALL_OPTIONS.spin[IS_BASE_NET_INSTALL]:
-                dl_size_txt = LN.init_download % fn.byte_to_gb(total_size)
-            else:
-                dl_size_txt = LN.total_download % fn.byte_to_gb(total_size)
-            spin_name_var.set('%s: %s' % (LN.selected_spin, GV.INSTALL_OPTIONS.spin[NAME]))
-            spin_size_var.set(dl_size_txt)
+                if GV.INSTALL_OPTIONS.spin['is_live_img']:
+                    total_size = GV.LIVE_OS_INSTALLER_SPIN['size'] + GV.INSTALL_OPTIONS.spin['size']
+                else:
+                    total_size = GV.INSTALL_OPTIONS.spin['size']
+                if GV.INSTALL_OPTIONS.spin[IS_BASE_NET_INSTALL]:
+                    dl_size_txt = LN.init_download % fn.byte_to_gb(total_size)
+                else:
+                    dl_size_txt = LN.total_download % fn.byte_to_gb(total_size)
+                spin_name_var.set('%s: %s' % (LN.selected_spin, GV.INSTALL_OPTIONS.spin[NAME]))
+                spin_size_var.set(dl_size_txt)
+            return spin_index
 
         def next_btn_action(*args):
+            if validate_input() is None:
+                return -1
             fn.log('\nFedora Spin was selected (based on user\'s preference), spin details:')
+            # LOG #############################################
             for key, value in GV.INSTALL_OPTIONS.spin.items():
                 fn.log('%s: %s' % (str(key), str(value)))
-            if desktop_var.get() == 'else':
-                GV.AUTOINST.is_on = False
-                return page_verify()
-            else:
-                GV.AUTOINST.is_on = True
-                return page_autoinst1()
+            # #################################################
+            return page_install_method()
 
     # page_autoinst1
-    def page_autoinst1():
+    def page_install_method():
         """the autoinstall page on which you choose whether to install alongside windows or start clean install"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
-        tkt.generic_page_layout(MID_FRAME, LN.windows_question % GV.INSTALL_OPTIONS.spin['name'],
+        tkt.generic_page_layout(MID_FRAME, LN.windows_question % GV.INSTALL_OPTIONS.spin[NAME],
                                 LN.btn_next, lambda: next_btn_action(),
                                 LN.btn_back, lambda: page_1())
 
-        autoinst_method_var = tk.StringVar(app, GV.AUTOINST.method)
+        install_method_var = tk.StringVar(app, GV.INSTALL_OPTIONS.install_method)
         dualboot_size_var = tk.StringVar(app, str(GV.AUTOINST.dualboot_size))
 
         r1_frame = ttk.Frame(MID_FRAME)
-        r1_frame.pack(fill="x")
-        r1_autoinst = tkt.add_radio_btn(r1_frame, LN.windows_options[0], autoinst_method_var, 'dualboot',
-                                        lambda: show_dualboot_options(True), side=DI_VAR['l'])
-        r1_space = ttk.Label(r1_frame, wraplength=540, justify="center", text=LN.warn_space, font=FONTS['tiny'],
-                             foreground='#ff4a4a')
-        entry1_frame = ttk.Frame(MID_FRAME)
-        entry1_frame.pack(fill='x', padx=10)
-        # tkt.add_radio_btn(MID_FRAME, LN.windows_options[1], autoinst_method_var, 'clean', lambda: show_dualboot_options(False))
+        r1_frame.pack(fill='x')
+        r1_autoinst_dualboot = tkt.add_radio_btn(r1_frame, LN.windows_options['dualboot'],
+                                                 install_method_var, 'dualboot', lambda: show_dualboot_options(True),
+                                                 pack=False)
+        r1_autoinst_dualboot.grid(ipady=5, column=0, row=0, sticky=DI_VAR['w'])
+        r1_warning = ttk.Label(r1_frame, wraplength=540, justify="center", text='', font=FONTS['tiny'],
+                               foreground='#ff4a4a')
+        r1_warning.grid(padx=20, column=1, row=0, sticky=DI_VAR['w'])
+        r2_autoinst_clean = tkt.add_radio_btn(r1_frame, LN.windows_options['clean'], install_method_var, 'clean',
+                                              lambda: show_dualboot_options(False), pack=False)
+        r2_autoinst_clean.grid(ipady=5, column=0, row=2, sticky=DI_VAR['w'])
+        r2_warning = ttk.Label(r1_frame, wraplength=540, justify="center", text='', font=FONTS['tiny'],
+                               foreground='#ff4a4a')
+        r2_warning.grid(padx=20, column=1, row=2, sticky=DI_VAR['w'])
+        r3_custom = tkt.add_radio_btn(r1_frame, LN.windows_options['custom'], install_method_var, 'custom', lambda: show_dualboot_options(False), pack=False)
+        r3_custom.grid(ipady=5, column=0, row=3, sticky=DI_VAR['w'])
 
         min_size = dualboot_required_space
         max_size = fn.byte_to_gb(GV.COMPATIBILITY_RESULTS['resizable'] - GV.INSTALL_OPTIONS.spin['size']) - additional_failsafe_space
         max_size = round(max_size, 2)
         float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
+        entry1_frame = ttk.Frame(r1_frame)
+        entry1_frame.grid(row=1, column=0, columnspan=4, padx=10)
         size_dualboot_txt_pre = ttk.Label(entry1_frame, wraplength=540, justify=DI_VAR['l'],
                                           text=LN.dualboot_size_txt, font=FONTS['tiny'])
         size_dualboot_entry = ttk.Entry(entry1_frame, width=10, textvariable=dualboot_size_var)
@@ -275,8 +290,14 @@ def main():
         # LOGIC
         space_dualboot = fn.gigabyte(dualboot_required_space + additional_failsafe_space) + GV.INSTALL_OPTIONS.spin['size']
         if GV.COMPATIBILITY_RESULTS['resizable'] < space_dualboot:
-            r1_space.pack(padx=20, side=DI_VAR['l'])
-            r1_autoinst.configure(state='disabled')
+            r1_warning.config(text=LN.warn_space)
+            r1_autoinst_dualboot.configure(state='disabled')
+        if not GV.INSTALL_OPTIONS.spin['is_auto_installable']:
+            r1_warning.config(text=LN.warn_not_available)
+            r2_warning.config(text=LN.warn_not_available)
+            r1_autoinst_dualboot.configure(state='disabled')
+            r2_autoinst_clean.configure(state='disabled')
+        app.update_idletasks()
 
         def show_dualboot_options(is_true: bool):
             if is_true:
@@ -288,31 +309,32 @@ def main():
                 size_dualboot_entry.grid_forget()
                 size_dualboot_txt_post.grid_forget()
 
-        if autoinst_method_var.get() == 'dualboot': show_dualboot_options(True)  # GUI bugfix
+        if install_method_var.get() == 'dualboot': show_dualboot_options(True)  # GUI bugfix
 
         def next_btn_action(*args):
-            if autoinst_method_var.get() == 'dualboot':
+            if install_method_var.get() not in GV.AVAILABLE_INSTALL_METHODS:
+                return -1
+            GV.INSTALL_OPTIONS.install_method = install_method_var.get()
+            if install_method_var.get() == 'dualboot':
                 syntax_valid = fn.validate_with_regex(dualboot_size_var, regex=float_regex,
                                                       mode='read') not in (False, 'empty')
                 if syntax_valid and min_size <= float(dualboot_size_var.get()) <= max_size:
                     GV.AUTOINST.dualboot_size = float(dualboot_size_var.get())
                 else:
                     return -1
-            elif autoinst_method_var.get() == 'clean':
-                pass
+            if install_method_var.get() == 'custom':
+                return page_verify()
             else:
-                return -1
-            GV.AUTOINST.method = autoinst_method_var.get()
-            return page_autoinst2()
+                return page_autoinst2()
 
     def page_autoinst2():
         """the autoinstall page on which you choose whether to install alongside windows or start clean install"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
-        tkt.generic_page_layout(MID_FRAME, LN.windows_question % GV.INSTALL_OPTIONS.spin['name'],
+        tkt.generic_page_layout(MID_FRAME, LN.windows_question % GV.INSTALL_OPTIONS.spin[NAME],
                                 LN.btn_next, lambda: next_btn_action(),
-                                LN.btn_back, lambda: page_autoinst1())
+                                LN.btn_back, lambda: page_install_method())
 
         # tkt.add_check_btn(MID_FRAME, LN.additional_setup_now, vAutoinst_additional_setup_t)
         export_wifi_toggle_var = tk.BooleanVar(app, GV.AUTOINST.export_wifi)
@@ -504,7 +526,7 @@ def main():
         else:
             wifi_profiles = None
         part_kwargs = {"tmp_part_size": tmp_part_size, "temp_part_label": GV.TMP_PARTITION_LABEL, "queue": GLOBAL_QUEUE}
-        if GV.AUTOINST.is_on:
+        if GV.INSTALL_OPTIONS.install_method != 'custom':
             if GV.AUTOINST.keymap_timezone_source == 'ip':
                 GV.AUTOINST.keymap = autoinst.get_keymaps(territory=GV.IP_LOCALE[0])[0]
                 GV.AUTOINST.keymap_type = 'xlayout'
@@ -526,7 +548,7 @@ def main():
                          'username': GV.AUTOINST.username,
                          'fullname': GV.AUTOINST.fullname,
                          'live_img_url': GV.INSTALL_OPTIONS.live_img_url}
-            if GV.AUTOINST.method == 'dualboot':
+            if GV.INSTALL_OPTIONS.install_method == 'dualboot':
                 part_kwargs["shrink_space"] = fn.gigabyte(GV.AUTOINST.dualboot_size)
                 part_kwargs["boot_part_size"] = fn.gigabyte(linux_boot_partition_size)
                 part_kwargs["efi_part_size"] = fn.megabyte(linux_efi_partition_size)
@@ -566,17 +588,17 @@ def main():
 
         # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = []
-        if GV.AUTOINST.is_on == 0:
-            review_sel.append(LN.verify_text['no_autoinst'] % GV.INSTALL_OPTIONS.spin['name'])
+        if GV.INSTALL_OPTIONS.install_method == 'custom':
+            review_sel.append(LN.verify_text['no_autoinst'] % GV.INSTALL_OPTIONS.spin[NAME])
         else:
-            if GV.AUTOINST.method == 'dualboot':
-                review_sel.append(LN.verify_text['autoinst_dualboot'] % GV.INSTALL_OPTIONS.spin['name'])
+            if GV.INSTALL_OPTIONS.install_method == 'dualboot':
+                review_sel.append(LN.verify_text['autoinst_dualboot'] % GV.INSTALL_OPTIONS.spin[NAME])
                 review_sel.append(LN.verify_text['autoinst_keep_data'])
-            elif GV.AUTOINST.method == 'clean':
-                review_sel.append(LN.verify_text['autoinst_clean'] % GV.INSTALL_OPTIONS.spin['name'])
+            elif GV.INSTALL_OPTIONS.install_method == 'clean':
+                review_sel.append(LN.verify_text['autoinst_clean'] % GV.INSTALL_OPTIONS.spin[NAME])
                 review_sel.append(LN.verify_text['autoinst_rm_all'])
             if GV.AUTOINST.export_wifi:
-                review_sel.append(LN.verify_text['autoinst_wifi'] % GV.INSTALL_OPTIONS.spin['name'])
+                review_sel.append(LN.verify_text['autoinst_wifi'] % GV.INSTALL_OPTIONS.spin[NAME])
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
         review_tree = ttk.Treeview(MID_FRAME, columns='error', show='', height=3)
@@ -595,8 +617,8 @@ def main():
                               lambda x: (more_options_btn.destroy(), c3_add.pack(anchor=DI_VAR['w'])))
 
         def validate_back_page(*args):
-            if not GV.AUTOINST.is_on:
-                page_1()
+            if GV.INSTALL_OPTIONS.install_method == 'custom':
+                page_install_method()
             else:
                 page_autoinst_addition_2()
 
@@ -704,12 +726,12 @@ def main():
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 job_var.set(LN.job_adding_tmp_boot_entry)
                 progressbar_install['value'] = 98
-                if GV.AUTOINST.is_on: grub_cfg_file = GV.GRUB_CONFIG_PATH_AUTOINST
+                if GV.INSTALL_OPTIONS.install_method != 'custom': grub_cfg_file = GV.GRUB_CONFIG_PATH_AUTOINST
                 else: grub_cfg_file = GV.GRUB_CONFIG_PATH_DEFUALT
                 grub_cfg_dest_path = GV.TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg'
                 fn.set_file_readonly(grub_cfg_dest_path, False)
                 fn.copy_and_rename_file(grub_cfg_file, grub_cfg_dest_path)
-                grub_cfg_txt = prc.build_grub_cfg_file(GV.TMP_PARTITION_LABEL, GV.AUTOINST.is_on)
+                grub_cfg_txt = prc.build_grub_cfg_file(GV.TMP_PARTITION_LABEL, GV.INSTALL_OPTIONS.install_method != 'custom')
                 fn.set_file_readonly(grub_cfg_dest_path, False)
                 grub_cfg = open(grub_cfg_dest_path, 'w')
                 grub_cfg.write(grub_cfg_txt)
@@ -718,14 +740,14 @@ def main():
                 nvidia_script_dest_path = GV.TMP_PARTITION_LETTER + ':\\lnixify\\nvidia_inst'
                 fn.copy_and_rename_file(GV.NVIDIA_SCRIPT_PATH, nvidia_script_dest_path)
 
-                if GV.AUTOINST.is_on:
+                if GV.INSTALL_OPTIONS.install_method != 'custom':
                     kickstart_txt = prc.build_autoinstall_ks_file(**ks_kwargs)
                     if kickstart_txt:
                         kickstart = open(GV.TMP_PARTITION_LETTER + ':\\ks.cfg', 'w')
                         kickstart.write(kickstart_txt)
                         kickstart.close()
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app
-                if GV.AUTOINST.method == 'dualboot':
+                if GV.INSTALL_OPTIONS.install_method == 'dualboot':
                     is_new_boot_order_permanent = False
                 else:
                     is_new_boot_order_permanent = True

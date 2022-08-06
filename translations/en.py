@@ -42,6 +42,7 @@ recommended = "Recommended"
 adv = "Advanced"
 net_install = "Network Install"
 warn_space = "Not enough space"
+warn_not_available = "Not available"
 total_download = "Total download: %sGB"
 init_download = "Initial download: %sGB"
 
@@ -55,7 +56,7 @@ title_autoinst4 = "Create your local user account"
 additional_setup_now = "Setup your locale, Timezone and keyboard layout now"
 
 selected_spin = "Selected Spin"
-
+choose_fedora_spin = "Choose a Fedora Spin"
 encrypted_root = "Encrypt the new operating system"
 entry_encrypt_passphrase_pre = "Enter encryption PIN"
 entry_encrypt_passphrase_post = "(numbers only)"
@@ -75,8 +76,9 @@ immutable_system = "Immutable system image"
 custom_installation = "Something else (network install)"
 
 windows_question = "Okay! How should %s be installed?"
-windows_options = ('Install alongside Windows',
-                   'Erase everything and start fresh')
+windows_options = {'dualboot': 'Install alongside Windows',
+                   'clean': 'Erase everything and start fresh',
+                   'custom': 'Custom installation and partitioning'}
 dualboot_size_txt = "Size:"
 verify_question = "This is what is going to happen. Click %s once ready" % btn_install
 verify_text = {
