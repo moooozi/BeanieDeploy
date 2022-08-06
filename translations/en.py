@@ -73,7 +73,7 @@ list_keymaps = "Keyboard Layout"
 list_timezones = "Timezone"
 
 immutable_system = "Immutable system image"
-custom_installation = "Something else (network install)"
+choose_spin_instead = "Choose Fedora spin instead"
 
 windows_question = "Okay! How should %s be installed?"
 windows_options = {'dualboot': 'Install alongside Windows',

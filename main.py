@@ -184,13 +184,13 @@ def main():
                 ttk.Label(temp_frame, wraplength=540, justify="center", text=LN.desktop_hints[desktop],
                           font=FONTS['tiny'], foreground='#3aa9ff').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
 
-        tkt.add_radio_btn(MID_FRAME, LN.custom_installation, desktop_var, 'else',
+        tkt.add_radio_btn(MID_FRAME, LN.choose_spin_instead, desktop_var, 'else',
                           command=lambda: validate_input())
 
-        combolist_spin = ttk.Combobox(MID_FRAME, values=dict_spins_with_fullname_keys, state='disabled')
+        combolist_spin = ttk.Combobox(MID_FRAME, values=dict_spins_with_fullname_keys, state='readonly')
         combolist_spin.set(LN.choose_fedora_spin)
         combolist_spin.bind("<<ComboboxSelected>>", lambda *args: validate_input())
-        combolist_spin.pack()
+        combolist_spin.pack(padx=40, pady=5, anchor=DI_VAR['w'])
         some_frame = tk.Frame(MID_FRAME)
         some_frame2 = tk.Frame(MID_FRAME)
 
@@ -203,13 +203,13 @@ def main():
 
         def validate_input(*args):
             if desktop_var.get() == 'else':
-                combolist_spin['state'] = 'readonly'
+                combolist_spin.pack(padx=40, pady=5, anchor=DI_VAR['w'])
                 if combolist_spin.get() in dict_spins_with_fullname_keys:
                     spin_index = dict_spins_with_fullname_keys.index(combolist_spin.get())
                 else:
                     spin_index = None
             else:
-                combolist_spin['state'] = 'disabled'
+                combolist_spin.pack_forget()
                 spin_index = None
                 for index, dist in enumerate(GV.ACCEPTED_SPINS):
                     if dist[DESKTOP] == desktop_var.get():
