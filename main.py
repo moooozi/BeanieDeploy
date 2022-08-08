@@ -12,7 +12,7 @@ import autoinst
 
 #   INIT CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 app = tkt.init_tkinter(SW_NAME)  # initialize tkinter
-PATH = fn.init_paths(GV.PATH)
+PATH = prc.init_paths(GV.PATH)
 tkt.stylize(app, theme_dir=PATH.CURRENT_DIR + '/theme/azure-dark.tcl', theme_name='azure')  # use tkinter theme
 GLOBAL_QUEUE = Queue()
 #   MAIN CONTAINER & FRAMES   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /

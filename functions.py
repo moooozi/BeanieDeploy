@@ -397,10 +397,3 @@ def get_user_downloads_folder():
         downloads_dir = winreg.QueryValueEx(key, '{374DE290-123F-4565-9164-39C4925E467B}')[0]
     return downloads_dir
 
-
-def init_paths(paths_namespace):
-    current_dir = get_current_dir_path()
-    downloads_dir = get_user_downloads_folder()
-    for key, value in (path_dict := vars(paths_namespace)).items():
-        path_dict[key] = value.replace('%CURRENT_DIR%', current_dir).replace('%DOWNLOADS_DIR%', downloads_dir)
-    return types.SimpleNamespace(**path_dict)

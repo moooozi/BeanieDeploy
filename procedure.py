@@ -291,3 +291,10 @@ def check_valid_existing_file(path, file_hash):
 def initiate_kickstart_arguments_from_user_input(autoinstall: dict, install_options: dict):
     pass
 
+
+def init_paths(paths_namespace):
+    current_dir = fn.get_current_dir_path()
+    downloads_dir = fn.get_user_downloads_folder()
+    for key, value in (path_dict := vars(paths_namespace)).items():
+        path_dict[key] = value.replace('%CURRENT_DIR%', current_dir).replace('%DOWNLOADS_DIR%', downloads_dir)
+    return types.SimpleNamespace(**path_dict)
