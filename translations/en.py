@@ -35,7 +35,7 @@ error_resizable_9 = "Failed to check system drive resizability."
 
 desktop_question = "Which Desktop Environment do you prefer?"
 desktop_hints = {'KDE Plasma': "Great on desktops, highly customizable, Windows-like layout by default",
-                 'GNOME': "Default. Minimalist, well optimized for touchpads and touchscreens"}
+                 'GNOME': "The Default. Minimal, well optimized for touchpads and touchscreens"}
 lang = "Language"
 locale = "Locale"
 recommended = "Recommended"
@@ -63,7 +63,7 @@ entry_encrypt_passphrase_post = "(numbers only)"
 entry_encrypt_passphrase_confirm_pre = "Confirm PIN"
 not_matched = "Not matched"
 
-encrypt_reminder_txt = "Leave empty if you wish to provide passphase later  during install (characters allowed)"
+encrypt_reminder_txt = "Leave empty if you wish to provide passphase later during install (characters allowed)"
 
 entry_username = "Username"
 entry_fullname = "Full name (optional)"
@@ -73,7 +73,7 @@ list_keymaps = "Keyboard Layout"
 list_timezones = "Timezone"
 
 immutable_system = "Immutable system image"
-choose_spin_instead = "Choose Fedora spin instead"
+choose_spin_instead = "Something else"
 
 windows_question = "Okay! How should %s be installed?"
 windows_options = {'dualboot': 'Install alongside Windows',

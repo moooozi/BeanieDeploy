@@ -2,6 +2,9 @@ import json
 import re
 import shutil
 import subprocess
+import types
+import winreg
+
 import requests
 import xmltodict
 import os
@@ -326,13 +329,22 @@ def get_admin():
         run_log.write(file)'''
 
 
-def get_json(url, queue=None):
+def get_json(url, queue=None, named: str = None):
+    """
+
+    :param url:
+    :param queue:
+    :param named:
+    :return:
+    """
     out = requests.get(url).text
     data = json.loads(out)
+    if named: return_var = (named, data)
+    else: return_var = data
     if queue:
-        queue.put(data)
+        queue.put(return_var)
     else:
-        return data
+        return return_var
 
 
 def parse_xml(xml):
@@ -371,6 +383,24 @@ def find_file_by_name(name, lookup_dir):
 
 
 def set_windows_time_to_utc():
-    args = r'reg add "HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\TimeZoneInformation" /v RealTimeIsUniversal /d 1 /t REG_DWORD /f'
-    return subprocess.run([r'powershell.exe', args], stdout=subprocess.PIPE,
-                   stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+    try:
+        key = winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, r'SYSTEM\CurrentControlSet\Control\TimeZoneInformation')
+        winreg.SetValueEx(key, 'RealTimeIsUniversal', 0, winreg.REG_DWORD, 1)
+        winreg.CloseKey(key)
+    except:
+        log("Error: Couldn't change Windows Time settings to use UTC universal timing")
+
+
+def get_user_downloads_folder():
+
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders') as key:
+        downloads_dir = winreg.QueryValueEx(key, '{374DE290-123F-4565-9164-39C4925E467B}')[0]
+    return downloads_dir
+
+
+def init_paths(paths_namespace):
+    current_dir = get_current_dir_path()
+    downloads_dir = get_user_downloads_folder()
+    for key, value in (path_dict := vars(paths_namespace)).items():
+        path_dict[key] = value.replace('%CURRENT_DIR%', current_dir).replace('%DOWNLOADS_DIR%', downloads_dir)
+    return types.SimpleNamespace(**path_dict)

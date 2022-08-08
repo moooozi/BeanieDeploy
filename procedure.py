@@ -1,4 +1,5 @@
 import os
+import types
 from multiprocessing import Process
 
 import functions as fn
@@ -49,7 +50,8 @@ def compatibility_test(required_space_min, queue):
                      'space': result_space_check,
                      'resizable': result_resizable_check,
                      'arch': result_arch_check}
-    queue.put(check_results)
+    if queue: queue.put(check_results)
+    else: return check_results
 
 
 def partition_procedure(tmp_part_size: int, temp_part_label: str, queue, shrink_space: int = None,
@@ -190,15 +192,16 @@ def parse_spins(spins_list):
             current_spin[attr] = ''
         if (attr := "is_base_netinstall") not in spin_keys:
             current_spin[attr] = False
-        accepted_spins_list.append(current_spin)
+        spin_ns = types.SimpleNamespace(**current_spin)
+        accepted_spins_list.append(spin_ns)
     for index, spin in enumerate(accepted_spins_list):
-        if spin["is_base_netinstall"]:
+        if spin.is_base_netinstall:
             live_os_base_index = index
             break
     if live_os_base_index is None:
         final_spin_list = []
         for index, spin in enumerate(accepted_spins_list):
-            if spin["is_live_img"]:
+            if spin.is_live_img:
                 continue
             else:
                 final_spin_list.append(spin)
@@ -231,17 +234,16 @@ def get_wifi_profiles(work_directory):
                 profile = {'name': name, 'ssid': ssid, 'hidden': hidden, 'password': password}
                 wifi_profiles.append(profile)
         except KeyError:
-            print('a wifi profile could not be exported, so it will be skipped')
+            print('Note: a wifi profile could not be exported, so it will be skipped')
             continue
     fn.rmdir(work_directory)
     return wifi_profiles
 
 
 def start_download(main_gui, status_shared_var, aria2location, dl_path, spin: dict,
-                   queue, iso_file_new_name: str,
+                   queue, new_file_path: str,
                    progress_bar=None, progress_factor=1, check_existing_file_hash_only=False,
                    do_torrent_dl: bool = False, ln_job='', ln_speed='', ln_dl_timeleft=''):
-    file_path = dl_path + '\\' + iso_file_new_name
     if not check_existing_file_hash_only:
         filename = fn.get_file_name_from_url(spin['dl_link'])
         if do_torrent_dl and spin['torrent_link']:
@@ -263,10 +265,11 @@ def start_download(main_gui, status_shared_var, aria2location, dl_path, spin: di
                                                                        dl_status['speed'], ln_dl_timeleft,
                                                                        dl_status['eta']))
 
-        location = fn.find_file_by_name(filename, dl_path)
-        if iso_file_new_name:
-            new_file_path = dl_path + '\\' + iso_file_new_name
-            fn.move_and_replace(location, new_file_path)
+        file_path = fn.find_file_by_name(filename, dl_path)
+        if new_file_path:
+            fn.move_and_replace(file_path, new_file_path)
+            file_path = new_file_path
+
     if spin['hash256']:
         while queue.qsize(): queue.get()  # to empty the queue
         Process(target=fn.check_hash, args=(file_path, spin['hash256'], queue,)).start()

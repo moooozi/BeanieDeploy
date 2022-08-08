@@ -5,8 +5,6 @@ available_languages = {
     'Deutsch': ('de', 0),
 }
 
-DI_VAR = {"w": "w", "e": "e", "ne": "ne", "se": "se", "sw": "sw", "nw": "nw", "l": "left", "r": "right"}
-
 
 def right_to_left_lang(is_true):
     """invert default directions. This enables support for 'right-to-left' written languages, can be reverted by setting
@@ -23,7 +21,6 @@ def change_lang(new_lang):
     from importlib import import_module
     lang_new = available_languages[new_lang]
     ln = import_module('.' + lang_new[0], 'translations')
-    global DI_VAR
     DI_VAR = right_to_left_lang(lang_new[1])
     return DI_VAR, ln
 

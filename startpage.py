@@ -1,11 +1,18 @@
-from types import SimpleNamespace
+import os
+import types
+import winreg
+from argparse import Namespace
+from time import sleep
 
-INSTALL_OPTIONS = {'spin': {}, 'spin_index': -1, 'auto_restart': False, 'torrent': False, 'live_img_url': ''}
-AUTOINST = {'is_on': True, 'method': '', 'dualboot_size': 'bb',
-            'export_wifi': True, 'enable_encryption': False, 'encryption_pass': '',
-            'locale': '', 'timezone': '', 'keymap_timezone_source': 'select', 'keymap': '', 'keymap_type': '',
-            'username': '', 'fullname': ''}
-ss = SimpleNamespace(**AUTOINST)
+d = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
 
 
-print(ss)
+class Data:
+    uefi = 1
+    ram = 34359738368
+    space = 133264248832
+    resizable = 432008358400
+    arch = 'amd64'
+
+
+print(Data.uefi)

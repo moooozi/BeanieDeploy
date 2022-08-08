@@ -1,31 +1,27 @@
+import types
 from multiprocessing import Process, Queue
 import APP_INFO
 import globals as GV
 import functions as fn
 import procedure as prc
-from multilingual import DI_VAR
 import translations.en as LN
 import tkinter_templates as tkt
 from tkinter_templates import tk, ttk, FONTS
 from APP_INFO import *
-from dict_vars import *
-import autoinst 
+import autoinst
 
 #   INIT CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 app = tkt.init_tkinter(SW_NAME)  # initialize tkinter
-CURRENT_DIR = fn.get_current_dir_path()
-tkt.stylize(app, theme_dir=CURRENT_DIR + '/theme/azure-dark.tcl', theme_name='azure')  # use tkinter theme
+PATH = fn.init_paths(GV.PATH)
+tkt.stylize(app, theme_dir=PATH.CURRENT_DIR + '/theme/azure-dark.tcl', theme_name='azure')  # use tkinter theme
 GLOBAL_QUEUE = Queue()
 #   MAIN CONTAINER & FRAMES   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 CONTAINER = ttk.Frame(app)
 CONTAINER.pack()
 vTitleText = tk.StringVar(app)
 TOP_FRAME, MID_FRAME, LEFT_FRAME = tkt.build_main_gui_frames(CONTAINER)
-ttk.Label(LEFT_FRAME, image=tk.PhotoImage(file=CURRENT_DIR + r'\resources\left_frame.gif')).pack()
+ttk.Label(LEFT_FRAME, image=tk.PhotoImage(file=PATH.CURRENT_DIR + r'\resources\left_frame.gif')).pack()
 #   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
-GV.GRUB_CONFIG_PATH_DEFUALT =  GV.GRUB_CONFIG_PATH_DEFUALT.replace('%CURRENT_DIR%', CURRENT_DIR)
-GV.GRUB_CONFIG_PATH_AUTOINST = GV.GRUB_CONFIG_PATH_AUTOINST.replace('%CURRENT_DIR%', CURRENT_DIR)
-GV.NVIDIA_SCRIPT_PATH = GV.NVIDIA_SCRIPT_PATH.replace('%CURRENT_DIR%', CURRENT_DIR)
 
 
 def download_hash_handler(dl_hash):
@@ -43,7 +39,7 @@ def download_hash_handler(dl_hash):
                                       msg_txt=LN.cleanup_question_txt,
                                       primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
             if question:
-                fn.rmdir(GV.DOWNLOAD_PATH)
+                fn.rmdir(PATH.WORK_DIR)
             tkt.app_quite()
     else:
         question = tkt.open_popup(parent=app, title_txt=LN.job_checksum_mismatch,
@@ -54,7 +50,7 @@ def download_hash_handler(dl_hash):
                                       msg_txt=LN.cleanup_question_txt,
                                       primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
             if question:
-                fn.rmdir(GV.DOWNLOAD_PATH)
+                fn.rmdir(PATH.WORK_DIR)
             tkt.app_quite()
     return go_next
 
@@ -65,7 +61,7 @@ def main():
            'IMPORTANT: DO NOT CLOSE THIS CONSOLE WINDOW WHILE APP IS RUNNING\n'
            '################################################################\n\n')
 
-    def page_check():
+    def page_check(compatibility_test=True):
         """The page on which is decided whether the app can run on the device or not"""
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
@@ -75,71 +71,70 @@ def main():
         progressbar_check.pack(pady=25)
         job_var = tk.StringVar()
         tkt.add_text_label(MID_FRAME, var=job_var, pady=0, padx=10)
-        app.update()
-        fn.get_admin()  # Request elevation (admin) if not running as admin
-        # GV.COMPATIBILITY_RESULTS = {'uefi': 1, 'ram': 34359738368, 'space': 133264248832, 'resizable': 432008358400, 'arch': 'amd64'}
-        # GV.COMPATIBILITY_RESULTS = {'uefi': 0, 'ram': 3434559, 'space': 1332642488, 'resizable': 4320083, 'arch': 'arm'}
-        if not GV.COMPATIBILITY_RESULTS:
-            if not GV.COMPATIBILITY_CHECK_STATUS:
-                Process(target=prc.compatibility_test, args=(minimal_required_space, GLOBAL_QUEUE,)).start()
-                # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
-                Process(target=fn.get_json, args=(FEDORA_GEO_IP_URL, GLOBAL_QUEUE,)).start()
-                Process(target=fn.get_json, args=(AVAILABLE_SPINS_LIST, GLOBAL_QUEUE,)).start()
-                GV.COMPATIBILITY_CHECK_STATUS = 1
-            if GV.COMPATIBILITY_CHECK_STATUS == 1:
-                while True:
-                    while not GLOBAL_QUEUE.qsize(): app.after(100, app.update())
-                    queue_out = GLOBAL_QUEUE.get()
-                    if queue_out == 'arch':
-                        progressbar_check['value'] = 10
-                    elif queue_out == 'uefi':
-                        job_var.set(LN.check_uefi)
-                        progressbar_check['value'] = 20
-                    elif queue_out == 'ram':
-                        job_var.set(LN.check_ram)
-                        progressbar_check['value'] = 30
-                    elif queue_out == 'space':
-                        job_var.set(LN.check_space)
-                        progressbar_check['value'] = 50
-                    elif queue_out == 'resizable':
-                        job_var.set(LN.check_resizable)
-                        progressbar_check['value'] = 80
-                    elif isinstance(queue_out, list):
-                        GV.ALL_SPINS = queue_out
-                    elif isinstance(queue_out, dict) and queue_out.keys() >= {"country_code", "time_zone"}:
-                        GV.IP_LOCALE = (queue_out['country_code'], queue_out['time_zone'])
-                    elif isinstance(queue_out, dict) and queue_out.keys() >= {"arch", "uefi"}:
-                        GV.COMPATIBILITY_RESULTS = queue_out
-                        GV.COMPATIBILITY_CHECK_STATUS = 2
-                        job_var.set(LN.check_available_downloads)
-                        progressbar_check['value'] = 95
-                    if GV.COMPATIBILITY_RESULTS and GV.ALL_SPINS:
-                        break
+        app.update()    # update tkinter GUI
+        if not compatibility_test:
+            GV.COMPATIBILITY_RESULTS.uefi = 1
+            GV.COMPATIBILITY_RESULTS.ram = 34359738368
+            GV.COMPATIBILITY_RESULTS.space = 133264248832
+            GV.COMPATIBILITY_RESULTS.resizable = 432008358400
+            GV.COMPATIBILITY_RESULTS.arch = 'amd64'
+        if not vars(GV.COMPATIBILITY_RESULTS):
+            # Request elevation (admin) if not running as admin
+            fn.get_admin()
+            Process(target=prc.compatibility_test, args=(minimal_required_space, GLOBAL_QUEUE,)).start()
+        if not GV.ALL_SPINS:
+            Process(target=fn.get_json, args=(AVAILABLE_SPINS_LIST, GLOBAL_QUEUE, 'spin_list')).start()
+        if not GV.IP_LOCALE:
+            Process(target=fn.get_json, args=(FEDORA_GEO_IP_URL, GLOBAL_QUEUE, 'geo_ip')).start()
+            # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
+        while not (GV.ALL_SPINS and vars(GV.COMPATIBILITY_RESULTS)):
+            while not GLOBAL_QUEUE.qsize(): app.after(100, app.update())
+            queue_out = GLOBAL_QUEUE.get()
+            if queue_out == 'arch':
+                progressbar_check['value'] = 10
+            elif queue_out == 'uefi':
+                job_var.set(LN.check_uefi)
+                progressbar_check['value'] = 20
+            elif queue_out == 'ram':
+                job_var.set(LN.check_ram)
+                progressbar_check['value'] = 30
+            elif queue_out == 'space':
+                job_var.set(LN.check_space)
+                progressbar_check['value'] = 50
+            elif queue_out == 'resizable':
+                job_var.set(LN.check_resizable)
+                progressbar_check['value'] = 80
+            elif isinstance(queue_out, tuple) and queue_out[0] == 'spin_list':
+                GV.ALL_SPINS = queue_out[1]
+            elif isinstance(queue_out, tuple) and queue_out[0] == 'geo_ip':
+                GV.IP_LOCALE = queue_out[1]
+            elif isinstance(queue_out, dict) and queue_out.keys() >= {"arch", "uefi"}:
+                GV.COMPATIBILITY_RESULTS.__init__(**queue_out)
+                job_var.set(LN.check_available_downloads)
+                progressbar_check['value'] = 95
+        # LOG #########################################################
         fn.log('\nInitial Test completed, results:')
-        for key, value in GV.COMPATIBILITY_RESULTS.items():
+        for key, value in vars(GV.COMPATIBILITY_RESULTS).items():
             fn.log('%s: %s' % (str(key), str(value)))
         if fn.detect_nvidia():
-            fn.log('\nWarning: NVIDIA Graphics card was detected')
+            fn.log('\nNote: NVIDIA Graphics card detected')
+        # #############################################################
         errors = []
-        if GV.COMPATIBILITY_RESULTS['arch'] == -1: errors.append(LN.error_arch_9)
-        elif GV.COMPATIBILITY_RESULTS['arch'] != 'amd64': errors.append(LN.error_arch_0)
-        if GV.COMPATIBILITY_RESULTS['uefi'] == -1: errors.append(LN.error_uefi_9)
-        elif GV.COMPATIBILITY_RESULTS['uefi'] != 1: errors.append(LN.error_uefi_0)
-        if GV.COMPATIBILITY_RESULTS['ram'] == -1: errors.append(LN.error_totalram_9)
-        elif GV.COMPATIBILITY_RESULTS['ram'] < fn.gigabyte(minimal_required_ram): errors.append(LN.error_totalram_0)
-        if GV.COMPATIBILITY_RESULTS['space'] == -1: errors.append(LN.error_space_9)
-        elif GV.COMPATIBILITY_RESULTS['space'] < fn.gigabyte(minimal_required_space): errors.append(LN.error_space_0)
-        if GV.COMPATIBILITY_RESULTS['resizable'] == -1: errors.append(LN.error_resizable_9)
-        elif GV.COMPATIBILITY_RESULTS['resizable'] < fn.gigabyte(minimal_required_space): errors.append(LN.error_resizable_0)
+        if GV.COMPATIBILITY_RESULTS.arch == -1: errors.append(LN.error_arch_9)
+        elif GV.COMPATIBILITY_RESULTS.arch != 'amd64': errors.append(LN.error_arch_0)
+        if GV.COMPATIBILITY_RESULTS.uefi == -1: errors.append(LN.error_uefi_9)
+        elif GV.COMPATIBILITY_RESULTS.uefi != 1: errors.append(LN.error_uefi_0)
+        if GV.COMPATIBILITY_RESULTS.ram == -1: errors.append(LN.error_totalram_9)
+        elif GV.COMPATIBILITY_RESULTS.ram < fn.gigabyte(minimal_required_ram): errors.append(LN.error_totalram_0)
+        if GV.COMPATIBILITY_RESULTS.space == -1: errors.append(LN.error_space_9)
+        elif GV.COMPATIBILITY_RESULTS.space < fn.gigabyte(minimal_required_space): errors.append(LN.error_space_0)
+        if GV.COMPATIBILITY_RESULTS.resizable == -1: errors.append(LN.error_resizable_9)
+        elif GV.COMPATIBILITY_RESULTS.resizable < fn.gigabyte(minimal_required_space): errors.append(LN.error_resizable_0)
 
         if not errors:
-            #global DOWNLOAD_PATH, INSTALL_ISO_PATH, LIVE_ISO_PATH, USERNAME_WINDOWS, ACCEPTED_SPINS,LIVE_OS_INSTALLER_SPIN, ARIA2C_LOCATION
             live_os_installer_index, GV.ACCEPTED_SPINS = prc.parse_spins(GV.ALL_SPINS)
-            GV.LIVE_OS_INSTALLER_SPIN = GV.ACCEPTED_SPINS[live_os_installer_index]
-            GV.DOWNLOAD_PATH = fn.get_user_home_dir() + "\\win2linux_tmpdir"
-            GV.INSTALL_ISO_PATH = GV.DOWNLOAD_PATH + "\\" + GV.INSTALL_ISO_NAME
-            GV.LIVE_ISO_PATH = GV.DOWNLOAD_PATH + "\\" + GV.LIVE_ISO_NAME
-            GV.ARIA2C_LOCATION = CURRENT_DIR + '\\resources\\aria2c.exe'
+            if live_os_installer_index is not None:
+                GV.LIVE_OS_INSTALLER_SPIN = GV.ACCEPTED_SPINS[live_os_installer_index]
             GV.USERNAME_WINDOWS = fn.get_windows_username()
             return page_1()
         else:
@@ -149,7 +144,7 @@ def main():
             tkt.add_text_label(MID_FRAME, LN.error_list, pady=10)
 
             errors_tree = ttk.Treeview(MID_FRAME, columns='error', show='', height=6)
-            errors_tree.pack(anchor=DI_VAR['w'], ipady=5, padx=(0, 5), fill='x')
+            errors_tree.pack(anchor=GV.UI.DI_VAR['w'], ipady=5, padx=(0, 5), fill='x')
             errors_tree.configure(selectmode='none')
             for i in range(len(errors)):
                 errors_tree.insert('', index='end', iid=str(i), values=(errors[i],))
@@ -163,82 +158,81 @@ def main():
         # *************************************************************************************************************
         vTitleText.set('Welcome to Lnixify')
         tkt.generic_page_layout(MID_FRAME, LN.desktop_question, LN.btn_next, lambda: next_btn_action())
-        desktop_var = tk.StringVar(app, 'unset')
+        desktop_var = tk.StringVar(app, GV.UI.desktop)
         immutable_toggle_var = tk.BooleanVar(app, False)
         available_desktop = []
         dict_spins_with_fullname_keys = []
         for dist in GV.ACCEPTED_SPINS:
-            spin_fullname = dist[NAME] + ' ' + dist['version']
+            spin_fullname = dist.name + ' ' + dist.version
             dict_spins_with_fullname_keys.append(spin_fullname)
-            if dist['desktop'] and dist['desktop'] not in available_desktop:
-                available_desktop.append(dist['desktop'])
+            if dist.desktop and dist.desktop not in available_desktop:
+                available_desktop.append(dist.desktop)
         temp_frame = ttk.Frame(MID_FRAME)
-        temp_frame.pack(fill="x", pady=5)
-
-        for desktop in available_desktop:
-            temp_frame = ttk.Frame(MID_FRAME)
-            temp_frame.pack(fill="x", pady=5)
-            tkt.add_radio_btn(temp_frame, desktop, desktop_var, desktop, ipady=0, side=DI_VAR['l'],
-                              command=lambda: validate_input())
+        temp_frame.pack(fill="x")
+        for index, desktop in enumerate(available_desktop):
+            tkt.add_radio_btn(temp_frame, desktop, desktop_var, desktop, command=lambda: validate_input(),
+                              pack=False).grid(ipady=5, row=index, column=0, sticky=GV.UI.DI_VAR['w'])
             if desktop in LN.desktop_hints.keys():
                 ttk.Label(temp_frame, wraplength=540, justify="center", text=LN.desktop_hints[desktop],
-                          font=FONTS['tiny'], foreground='#3aa9ff').pack(padx=5, anchor=DI_VAR['e'], side=DI_VAR['r'])
+                          font=FONTS['tiny'], foreground='#3aa9ff').grid(ipadx=5, row=index, column=1, sticky=GV.UI.DI_VAR['w'])
+        tkt.add_radio_btn(temp_frame, LN.choose_spin_instead, desktop_var, 'else', command=lambda: validate_input(),
+                          pack=False).grid(ipady=5, row=len(available_desktop), column=0, sticky=GV.UI.DI_VAR['w'])
 
-        tkt.add_radio_btn(MID_FRAME, LN.choose_spin_instead, desktop_var, 'else',
-                          command=lambda: validate_input())
-
-        combolist_spin = ttk.Combobox(MID_FRAME, values=dict_spins_with_fullname_keys, state='readonly')
-        combolist_spin.set(LN.choose_fedora_spin)
-        combolist_spin.bind("<<ComboboxSelected>>", lambda *args: validate_input())
-        combolist_spin.pack(padx=40, pady=5, anchor=DI_VAR['w'])
+        combo_list_spin = ttk.Combobox(MID_FRAME, values=dict_spins_with_fullname_keys, state='readonly')
+        combo_list_spin.bind("<<ComboboxSelected>>", lambda *args: validate_input())
+        if not GV.UI.combo_list_spin: combo_list_spin.set(LN.choose_fedora_spin)
+        else: combo_list_spin.set(GV.UI.combo_list_spin)
         some_frame = tk.Frame(MID_FRAME)
-        some_frame2 = tk.Frame(MID_FRAME)
 
         spin_name_var = tk.StringVar(app)
         spin_size_var = tk.StringVar(app)
         tkt.add_text_label(some_frame, var=spin_name_var, font=FONTS['tiny'], foreground='#529d53', pady=2)
         tkt.add_text_label(some_frame, var=spin_size_var, font=FONTS['tiny'], foreground='#529d53', pady=2)
-        some_frame.pack(side=DI_VAR['r'], fill="x", pady=5)
-        some_frame2.pack(side=DI_VAR['l'], fill="x", pady=5)
+        some_frame.pack(side=GV.UI.DI_VAR['r'], fill="x", pady=5)
 
         def validate_input(*args):
             if desktop_var.get() == 'else':
-                combolist_spin.pack(padx=40, pady=5, anchor=DI_VAR['w'])
-                if combolist_spin.get() in dict_spins_with_fullname_keys:
-                    spin_index = dict_spins_with_fullname_keys.index(combolist_spin.get())
+                combo_list_spin.pack(padx=40, pady=5, anchor=GV.UI.DI_VAR['w'])
+                if combo_list_spin.get() in dict_spins_with_fullname_keys:
+                    spin_index = dict_spins_with_fullname_keys.index(combo_list_spin.get())
                 else:
                     spin_index = None
             else:
-                combolist_spin.pack_forget()
+                combo_list_spin.pack_forget()
                 spin_index = None
                 for index, dist in enumerate(GV.ACCEPTED_SPINS):
-                    if dist[DESKTOP] == desktop_var.get():
-                        if bool(immutable_toggle_var.get()) == bool(dist[OSTREE_ARGS]):
+                    if dist.desktop == desktop_var.get():
+                        if bool(immutable_toggle_var.get()) == bool(dist.ostree_args):
                             spin_index = index
             if spin_index is not None:
                 GV.INSTALL_OPTIONS.spin = GV.ACCEPTED_SPINS[spin_index]
-                if GV.INSTALL_OPTIONS.spin['is_live_img']:
+                if GV.INSTALL_OPTIONS.spin.is_live_img:
                     GV.INSTALL_OPTIONS.live_img_url = live_img_url
 
-                if GV.INSTALL_OPTIONS.spin['is_live_img']:
-                    total_size = GV.LIVE_OS_INSTALLER_SPIN['size'] + GV.INSTALL_OPTIONS.spin['size']
+                if GV.INSTALL_OPTIONS.spin.is_live_img:
+                    total_size = GV.LIVE_OS_INSTALLER_SPIN.size + GV.INSTALL_OPTIONS.spin.size
                 else:
-                    total_size = GV.INSTALL_OPTIONS.spin['size']
-                if GV.INSTALL_OPTIONS.spin[IS_BASE_NET_INSTALL]:
+                    total_size = GV.INSTALL_OPTIONS.spin.size
+                if GV.INSTALL_OPTIONS.spin.is_base_netinstall:
                     dl_size_txt = LN.init_download % fn.byte_to_gb(total_size)
                 else:
                     dl_size_txt = LN.total_download % fn.byte_to_gb(total_size)
-                spin_name_var.set('%s: %s' % (LN.selected_spin, GV.INSTALL_OPTIONS.spin[NAME]))
+                spin_name_var.set('%s: %s' % (LN.selected_spin, GV.INSTALL_OPTIONS.spin.name))
                 spin_size_var.set(dl_size_txt)
             return spin_index
+
+        validate_input()
 
         def next_btn_action(*args):
             if validate_input() is None:
                 return -1
-            fn.log('\nFedora Spin was selected (based on user\'s preference), spin details:')
+            GV.UI.combo_list_spin = combo_list_spin.get()
+            GV.UI.desktop = desktop_var.get()  # Saving UI settings
             # LOG #############################################
-            for key, value in GV.INSTALL_OPTIONS.spin.items():
-                fn.log('%s: %s' % (str(key), str(value)))
+            fn.log('\nFedora Spin has been selected, spin details:')
+
+            for key, value in vars(GV.INSTALL_OPTIONS.spin).items():
+                fn.log('  -> %s: %s' % (str(key), str(value)))
             # #################################################
             return page_install_method()
 
@@ -248,51 +242,51 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
-        tkt.generic_page_layout(MID_FRAME, LN.windows_question % GV.INSTALL_OPTIONS.spin[NAME],
+        tkt.generic_page_layout(MID_FRAME, LN.windows_question % GV.INSTALL_OPTIONS.spin.name,
                                 LN.btn_next, lambda: next_btn_action(),
                                 LN.btn_back, lambda: page_1())
 
         install_method_var = tk.StringVar(app, GV.INSTALL_OPTIONS.install_method)
         dualboot_size_var = tk.StringVar(app, str(GV.AUTOINST.dualboot_size))
 
-        r1_frame = ttk.Frame(MID_FRAME)
-        r1_frame.pack(fill='x')
-        r1_autoinst_dualboot = tkt.add_radio_btn(r1_frame, LN.windows_options['dualboot'],
+        radio_buttons = ttk.Frame(MID_FRAME)
+        radio_buttons.pack(fill='x')
+        r1_autoinst_dualboot = tkt.add_radio_btn(radio_buttons, LN.windows_options['dualboot'],
                                                  install_method_var, 'dualboot', lambda: show_dualboot_options(True),
                                                  pack=False)
-        r1_autoinst_dualboot.grid(ipady=5, column=0, row=0, sticky=DI_VAR['w'])
-        r1_warning = ttk.Label(r1_frame, wraplength=540, justify="center", text='', font=FONTS['tiny'],
+        r1_autoinst_dualboot.grid(ipady=5, column=0, row=0, sticky=GV.UI.DI_VAR['w'])
+        r1_warning = ttk.Label(radio_buttons, wraplength=540, justify="center", text='', font=FONTS['tiny'],
                                foreground='#ff4a4a')
-        r1_warning.grid(padx=20, column=1, row=0, sticky=DI_VAR['w'])
-        r2_autoinst_clean = tkt.add_radio_btn(r1_frame, LN.windows_options['clean'], install_method_var, 'clean',
+        r1_warning.grid(padx=20, column=1, row=0, sticky=GV.UI.DI_VAR['w'])
+        r2_autoinst_clean = tkt.add_radio_btn(radio_buttons, LN.windows_options['clean'], install_method_var, 'clean',
                                               lambda: show_dualboot_options(False), pack=False)
-        r2_autoinst_clean.grid(ipady=5, column=0, row=2, sticky=DI_VAR['w'])
-        r2_warning = ttk.Label(r1_frame, wraplength=540, justify="center", text='', font=FONTS['tiny'],
+        r2_autoinst_clean.grid(ipady=5, column=0, row=2, sticky=GV.UI.DI_VAR['w'])
+        r2_warning = ttk.Label(radio_buttons, wraplength=540, justify="center", text='', font=FONTS['tiny'],
                                foreground='#ff4a4a')
-        r2_warning.grid(padx=20, column=1, row=2, sticky=DI_VAR['w'])
-        r3_custom = tkt.add_radio_btn(r1_frame, LN.windows_options['custom'], install_method_var, 'custom', lambda: show_dualboot_options(False), pack=False)
-        r3_custom.grid(ipady=5, column=0, row=3, sticky=DI_VAR['w'])
+        r2_warning.grid(padx=20, column=1, row=2, sticky=GV.UI.DI_VAR['w'])
+        r3_custom = tkt.add_radio_btn(radio_buttons, LN.windows_options['custom'], install_method_var, 'custom', lambda: show_dualboot_options(False), pack=False)
+        r3_custom.grid(ipady=5, column=0, row=3, sticky=GV.UI.DI_VAR['w'])
 
         min_size = dualboot_required_space
-        max_size = fn.byte_to_gb(GV.COMPATIBILITY_RESULTS['resizable'] - GV.INSTALL_OPTIONS.spin['size']) - additional_failsafe_space
+        max_size = fn.byte_to_gb(GV.COMPATIBILITY_RESULTS.resizable - GV.INSTALL_OPTIONS.spin.size) - additional_failsafe_space
         max_size = round(max_size, 2)
         float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
-        entry1_frame = ttk.Frame(r1_frame)
+        entry1_frame = ttk.Frame(radio_buttons)
         entry1_frame.grid(row=1, column=0, columnspan=4, padx=10)
-        size_dualboot_txt_pre = ttk.Label(entry1_frame, wraplength=540, justify=DI_VAR['l'],
+        size_dualboot_txt_pre = ttk.Label(entry1_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
                                           text=LN.dualboot_size_txt, font=FONTS['tiny'])
         size_dualboot_entry = ttk.Entry(entry1_frame, width=10, textvariable=dualboot_size_var)
-        size_dualboot_txt_post = ttk.Label(entry1_frame, wraplength=540, justify=DI_VAR['l'],
+        size_dualboot_txt_post = ttk.Label(entry1_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
                                            text='(%sGB - %sGB)' % (min_size, max_size), font=FONTS['tiny'])
         tkt.var_tracer(dualboot_size_var, "write",
                        lambda *args: fn.validate_with_regex(dualboot_size_var, regex=float_regex, mode='fix'))
 
         # LOGIC
-        space_dualboot = fn.gigabyte(dualboot_required_space + additional_failsafe_space) + GV.INSTALL_OPTIONS.spin['size']
-        if GV.COMPATIBILITY_RESULTS['resizable'] < space_dualboot:
+        space_dualboot = fn.gigabyte(dualboot_required_space + additional_failsafe_space) + GV.INSTALL_OPTIONS.spin.size
+        if GV.COMPATIBILITY_RESULTS.resizable < space_dualboot:
             r1_warning.config(text=LN.warn_space)
             r1_autoinst_dualboot.configure(state='disabled')
-        if not GV.INSTALL_OPTIONS.spin['is_auto_installable']:
+        if not GV.INSTALL_OPTIONS.spin.is_auto_installable:
             r1_warning.config(text=LN.warn_not_available)
             r2_warning.config(text=LN.warn_not_available)
             r1_autoinst_dualboot.configure(state='disabled')
@@ -301,9 +295,9 @@ def main():
 
         def show_dualboot_options(is_true: bool):
             if is_true:
-                size_dualboot_txt_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=DI_VAR['w'])
+                size_dualboot_txt_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=GV.UI.DI_VAR['w'])
                 size_dualboot_entry.grid(pady=5, padx=5, column=1, row=0)
-                size_dualboot_txt_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=DI_VAR['w'])
+                size_dualboot_txt_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=GV.UI.DI_VAR['w'])
             else:
                 size_dualboot_txt_pre.grid_forget()
                 size_dualboot_entry.grid_forget()
@@ -332,7 +326,7 @@ def main():
         tkt.clear_frame(MID_FRAME)
         # *************************************************************************************************************
         vTitleText.set(LN.install_auto)
-        tkt.generic_page_layout(MID_FRAME, LN.windows_question % GV.INSTALL_OPTIONS.spin[NAME],
+        tkt.generic_page_layout(MID_FRAME, LN.windows_question % GV.INSTALL_OPTIONS.spin.name,
                                 LN.btn_next, lambda: next_btn_action(),
                                 LN.btn_back, lambda: page_install_method())
 
@@ -348,46 +342,38 @@ def main():
         only_digit_regex = r'^[0-9]+$'  # digits
         entry2_frame = ttk.Frame(MID_FRAME)
 
-        encrypt_pass_pre = ttk.Label(entry2_frame, wraplength=540, justify=DI_VAR['l'],
+        encrypt_pass_pre = ttk.Label(entry2_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
                                      text=LN.entry_encrypt_passphrase_pre, font=FONTS['tiny'])
         encrypt_passphrase_entry = ttk.Entry(entry2_frame, show="\u2022", width=10,
                                              textvariable=encrypt_passphrase_var)
-        encrypt_pass_post = ttk.Label(entry2_frame, wraplength=540, justify=DI_VAR['l'],
+        encrypt_pass_post = ttk.Label(entry2_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
                                       text=LN.entry_encrypt_passphrase_post, font=FONTS['tiny'])
         tkt.var_tracer(encrypt_passphrase_var, "write",
                        lambda *args: fn.validate_with_regex(encrypt_passphrase_var,
                                                             regex=only_digit_regex, mode='fix'))
         pass_confirm_var = tk.StringVar()
-        encrypt_pass_confirm_pre = ttk.Label(entry2_frame, wraplength=540, justify=DI_VAR['l'],
+        encrypt_pass_confirm_pre = ttk.Label(entry2_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
                                              text=LN.entry_encrypt_passphrase_confirm_pre, font=FONTS['tiny'])
         encrypt_pass_confirm_entry = ttk.Entry(entry2_frame, show="\u2022", width=10, textvariable=pass_confirm_var)
-        encrypt_pass_confirm_not_matched = ttk.Label(entry2_frame, wraplength=540, justify=DI_VAR['l'],
+        encrypt_pass_confirm_not_matched = ttk.Label(entry2_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
                                                      text=LN.not_matched, font=FONTS['tiny'], foreground='#ff4a4a')
-        encrypt_pass_note = ttk.Label(entry2_frame, wraplength=540, justify=DI_VAR['l'],
+        encrypt_pass_note = ttk.Label(entry2_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
                                       text=LN.encrypt_reminder_txt, font=FONTS['tiny'])
         tkt.var_tracer(pass_confirm_var, "write",
                        lambda *args:
-                       show_not_matched_warning(not verify_match(pass_confirm_var, encrypt_passphrase_var)))
+                       show_not_matched_warning(pass_confirm_var.get() != encrypt_passphrase_var.get()))
 
-        encrypt_pass_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=DI_VAR['w'])
+        encrypt_pass_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=GV.UI.DI_VAR['w'])
         encrypt_passphrase_entry.grid(pady=5, padx=5, column=1, row=0)
-        encrypt_pass_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=DI_VAR['w'])
-        encrypt_pass_confirm_pre.grid(pady=5, padx=(10, 0), column=0, row=1, sticky=DI_VAR['w'])
+        encrypt_pass_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=GV.UI.DI_VAR['w'])
+        encrypt_pass_confirm_pre.grid(pady=5, padx=(10, 0), column=0, row=1, sticky=GV.UI.DI_VAR['w'])
         encrypt_pass_confirm_entry.grid(pady=5, padx=5, column=1, row=1)
-        encrypt_pass_note.grid(pady=5, padx=(0, 0), column=0, columnspan=4, row=2, sticky=DI_VAR['w'])
+        encrypt_pass_note.grid(pady=5, padx=(0, 0), column=0, columnspan=4, row=2, sticky=GV.UI.DI_VAR['w'])
 
         # LOGIC
         def show_not_matched_warning(is_true: bool):
-            if is_true: encrypt_pass_confirm_not_matched.grid(pady=5, padx=(0, 0), column=2, row=1, sticky=DI_VAR['w'])
+            if is_true: encrypt_pass_confirm_not_matched.grid(pady=5, padx=(0, 0), column=2, row=1, sticky=GV.UI.DI_VAR['w'])
             else: encrypt_pass_confirm_not_matched.grid_forget()
-
-        def verify_match(var1, var2):
-            if var1.get() == '':
-                return ''
-            elif var1.get() == var2.get():
-                return True
-            else:
-                return False
 
         def show_encrypt_options(var):
             if var.get():
@@ -397,7 +383,7 @@ def main():
         show_encrypt_options(enable_encryption_toggle_var)
 
         def next_btn_action(*args):
-            if enable_encryption_toggle_var.get() and not verify_match(encrypt_passphrase_var, pass_confirm_var):
+            if enable_encryption_toggle_var.get() and not (encrypt_passphrase_var.get() == pass_confirm_var.get()):
                 return
             else:
                 GV.AUTOINST.export_wifi = export_wifi_toggle_var.get()
@@ -415,7 +401,7 @@ def main():
                                 LN.btn_next, lambda: next_btn_action(),
                                 LN.btn_back, lambda: page_autoinst2())
         if GV.IP_LOCALE:
-            langs_and_locales = autoinst.get_locales_and_langs_sorted_with_names(territory=GV.IP_LOCALE[0])
+            langs_and_locales = autoinst.get_locales_and_langs_sorted_with_names(territory=GV.IP_LOCALE['country_code'])
         else:
             langs_and_locales = autoinst.get_locales_and_langs_sorted_with_names()
 
@@ -423,10 +409,10 @@ def main():
         temp_frame.pack()
         lang_list_fedora = ttk.Treeview(temp_frame, columns='lang', show='headings', height=8)
         lang_list_fedora.heading('lang', text=LN.lang)
-        lang_list_fedora.pack(anchor=DI_VAR['w'], side=DI_VAR['l'], ipady=5, padx=5)
+        lang_list_fedora.pack(anchor=GV.UI.DI_VAR['w'], side=GV.UI.DI_VAR['l'], ipady=5, padx=5)
         locale_list_fedora = ttk.Treeview(temp_frame, columns='locale', show='headings', height=8)
         locale_list_fedora.heading('locale', text=LN.locale)
-        locale_list_fedora.pack(anchor=DI_VAR['w'], side=DI_VAR['l'], ipady=5, padx=5)
+        locale_list_fedora.pack(anchor=GV.UI.DI_VAR['w'], side=GV.UI.DI_VAR['l'], ipady=5, padx=5)
 
         for i in range(len(langs_and_locales)):
             lang_list_fedora.insert(parent='', index='end', iid=str(i), values=('%s (%s)' % langs_and_locales[i][0][:2],))
@@ -461,7 +447,7 @@ def main():
 
         chosen_locale_name = autoinst.langtable.language_name(languageId=GV.AUTOINST.locale)
         if GV.IP_LOCALE:
-            locale_from_ip = autoinst.langtable.list_locales(territoryId=GV.IP_LOCALE[0])[0]
+            locale_from_ip = autoinst.langtable.list_locales(territoryId=GV.IP_LOCALE['country_code'])[0]
             locale_from_ip_name = autoinst.langtable.language_name(languageId=locale_from_ip)
             if locale_from_ip != GV.AUTOINST.locale:
                 tkt.add_radio_btn(MID_FRAME, LN.keymap_tz_option % locale_from_ip_name, keymap_timezone_source_var,
@@ -472,27 +458,27 @@ def main():
 
         timezone_all = sorted(autoinst.all_timezones())
         lists_frame = ttk.Frame(MID_FRAME)
-        timezone_txt = ttk.Label(lists_frame, wraplength=540, justify=DI_VAR['l'], text=LN.list_timezones, font=FONTS['tiny'])
+        timezone_txt = ttk.Label(lists_frame, wraplength=540, justify=GV.UI.DI_VAR['l'], text=LN.list_timezones, font=FONTS['tiny'])
         timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=custom_timezone_var)
         timezone_list['values'] = tuple(timezone_all)
         timezone_list['state'] = 'readonly'
 
         all_keymaps = autoinst.get_available_keymaps()
 
-        keyboards_txt = ttk.Label(lists_frame, wraplength=540, justify=DI_VAR['l'], text=LN.list_keymaps, font=FONTS['tiny'])
+        keyboards_txt = ttk.Label(lists_frame, wraplength=540, justify=GV.UI.DI_VAR['l'], text=LN.list_keymaps, font=FONTS['tiny'])
         keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=custom_keymap_var)
         keyboard_list['values'] = tuple(all_keymaps)
         keyboard_list['state'] = 'readonly'
 
         if GV.IP_LOCALE:
-            timezone_list.set(GV.IP_LOCALE[1])
+            timezone_list.set(GV.IP_LOCALE['time_zone'])
 
         def spawn_more_widgets(*args):
             if keymap_timezone_source_var.get() == 'custom':
                 lists_frame.pack(fill='x', padx=20)
-                keyboards_txt.grid(pady=5, padx=5, column=0, row=1, sticky=DI_VAR['w'])
+                keyboards_txt.grid(pady=5, padx=5, column=0, row=1, sticky=GV.UI.DI_VAR['w'])
                 keyboard_list.grid(pady=5, padx=5, column=1, row=1)
-                timezone_txt.grid(pady=5, padx=5, column=0, row=0, sticky=DI_VAR['w'])
+                timezone_txt.grid(pady=5, padx=5, column=0, row=0, sticky=GV.UI.DI_VAR['w'])
                 timezone_list.grid(pady=5, padx=5, column=1, row=0)
             else:
                 lists_frame.pack_forget()
@@ -518,43 +504,49 @@ def main():
         torrent_toggle_var = tk.BooleanVar(app, GV.INSTALL_OPTIONS.torrent)
 
         # GETTING ARGUMENTS READY
-        tmp_part_size: int = GV.INSTALL_OPTIONS.spin['size'] + fn.gigabyte(temp_part_failsafe_space)
-        if GV.INSTALL_OPTIONS.spin['is_live_img']:
-            tmp_part_size += GV.LIVE_OS_INSTALLER_SPIN['size']
+        tmp_part_size: int = GV.INSTALL_OPTIONS.spin.size + fn.gigabyte(temp_part_failsafe_space)
+        if GV.INSTALL_OPTIONS.spin.is_live_img:
+            tmp_part_size += GV.LIVE_OS_INSTALLER_SPIN.size
         if GV.AUTOINST.export_wifi:
-            wifi_profiles = prc.get_wifi_profiles(GV.DOWNLOAD_PATH)
+            wifi_profiles = prc.get_wifi_profiles(PATH.WORK_DIR)
         else:
             wifi_profiles = None
-        part_kwargs = {"tmp_part_size": tmp_part_size, "temp_part_label": GV.TMP_PARTITION_LABEL, "queue": GLOBAL_QUEUE}
+        kickstart = types.SimpleNamespace()
+        partition = types.SimpleNamespace()
+
+        partition.tmp_part_size = tmp_part_size
+        partition.temp_part_label = GV.TMP_PARTITION_LABEL
+        partition.queue = GLOBAL_QUEUE
+
         if GV.INSTALL_OPTIONS.install_method != 'custom':
             if GV.AUTOINST.keymap_timezone_source == 'ip':
-                GV.AUTOINST.keymap = autoinst.get_keymaps(territory=GV.IP_LOCALE[0])[0]
+                GV.AUTOINST.keymap = autoinst.get_keymaps(territory=GV.IP_LOCALE['country_code'])[0]
                 GV.AUTOINST.keymap_type = 'xlayout'
-                GV.AUTOINST.timezone = autoinst.langtable.list_timezones(territoryId=GV.IP_LOCALE[0])[0]
+                GV.AUTOINST.timezone = autoinst.langtable.list_timezones(territoryId=GV.IP_LOCALE['country_code'])[0]
             elif GV.AUTOINST.keymap_timezone_source == 'select':
                 GV.AUTOINST.keymap = autoinst.get_keymaps(lang=GV.AUTOINST.locale)[0]
                 GV.AUTOINST.keymap_type = 'xlayout'
                 GV.AUTOINST.timezone = autoinst.langtable.list_timezones(languageId=GV.AUTOINST.locale)[0]
             elif GV.AUTOINST.keymap_timezone_source == 'custom':
                 pass
-            ks_kwargs = {'ostree_args': GV.INSTALL_OPTIONS.spin['ostree_args'],
-                         'is_encrypted': GV.AUTOINST.enable_encryption,
-                         'passphrase': GV.AUTOINST.encryption_pass,
-                         'wifi_profiles': wifi_profiles,
-                         'keymap': GV.AUTOINST.keymap,
-                         'keymap_type': GV.AUTOINST.keymap_type,
-                         'lang': GV.AUTOINST.locale,
-                         'timezone': GV.AUTOINST.timezone,
-                         'username': GV.AUTOINST.username,
-                         'fullname': GV.AUTOINST.fullname,
-                         'live_img_url': GV.INSTALL_OPTIONS.live_img_url}
+            kickstart.ostree_args = GV.INSTALL_OPTIONS.spin.ostree_args
+            kickstart.is_encrypted = GV.AUTOINST.enable_encryption
+            kickstart.passphrase = GV.AUTOINST.encryption_pass
+            kickstart.wifi_profiles = wifi_profiles
+            kickstart.keymap = GV.AUTOINST.keymap
+            kickstart.keymap_type = GV.AUTOINST.keymap_type
+            kickstart.lang = GV.AUTOINST.locale
+            kickstart.timezone = GV.AUTOINST.timezone
+            kickstart.username = GV.AUTOINST.username
+            kickstart.fullname = GV.AUTOINST.fullname
+            kickstart.live_img_url = GV.INSTALL_OPTIONS.live_img_url
             if GV.INSTALL_OPTIONS.install_method == 'dualboot':
-                part_kwargs["shrink_space"] = fn.gigabyte(GV.AUTOINST.dualboot_size)
-                part_kwargs["boot_part_size"] = fn.gigabyte(linux_boot_partition_size)
-                part_kwargs["efi_part_size"] = fn.megabyte(linux_efi_partition_size)
+                partition.shrink_space = fn.gigabyte(GV.AUTOINST.dualboot_size)
+                partition.boot_part_size = fn.gigabyte(linux_boot_partition_size)
+                partition.efi_part_size = fn.megabyte(linux_efi_partition_size)
             # LOG #################################################################
             fn.log('\nKickstart arguments (sensitive data sensored):')
-            for key, value in ks_kwargs.items():
+            for key, value in vars(kickstart).items():
                 if key in ('passphrase', 'fullname', 'username', 'wifi_profiles'):
                     if not value:
                         continue
@@ -562,59 +554,54 @@ def main():
                 else:
                     fn.log('%s: %s' % (key, value))
             fn.log('\nPartitioning details:')
-            for key, value in part_kwargs.items():
+            for key, value in vars(partition).items():
+                if key == 'queue': continue
                 fn.log('%s: %s' % (key, value))
             #######################################################################
         else:
-            ks_kwargs = {}
-        if GV.INSTALL_OPTIONS.spin['is_live_img']:
+            kickstart = {}
+        if GV.INSTALL_OPTIONS.spin.is_live_img:
             installer_img = GV.LIVE_OS_INSTALLER_SPIN
             live_os = GV.INSTALL_OPTIONS.spin
-            live_os_size = live_os['size']
-            total_download_size = live_os['size'] + installer_img['size']
+            live_os_size = live_os.size
+            total_download_size = live_os.size + installer_img.size
         else:
             installer_img = GV.INSTALL_OPTIONS.spin
             live_os = None
             live_os_size = 0
-            total_download_size = installer_img['size']
-        installer_dl_percent_factor = installer_img['size'] / total_download_size * 0.90
+            total_download_size = installer_img.size
+        installer_dl_percent_factor = installer_img.size / total_download_size * 0.90
         live_img_dl_factor = live_os_size / total_download_size * 0.90
-
-        installation = {'ks_kwargs': ks_kwargs, 'part_kwargs': part_kwargs, 'installer_img': installer_img,
-                        'is_live_img': GV.INSTALL_OPTIONS.spin['is_live_img'],
-                        'live_img': live_os,
-                        'installer_img_dl_percent_factor': installer_dl_percent_factor,
-                        'live_img_dl_factor': live_img_dl_factor}
 
         # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = []
         if GV.INSTALL_OPTIONS.install_method == 'custom':
-            review_sel.append(LN.verify_text['no_autoinst'] % GV.INSTALL_OPTIONS.spin[NAME])
+            review_sel.append(LN.verify_text['no_autoinst'] % GV.INSTALL_OPTIONS.spin.name)
         else:
             if GV.INSTALL_OPTIONS.install_method == 'dualboot':
-                review_sel.append(LN.verify_text['autoinst_dualboot'] % GV.INSTALL_OPTIONS.spin[NAME])
+                review_sel.append(LN.verify_text['autoinst_dualboot'] % GV.INSTALL_OPTIONS.spin.name)
                 review_sel.append(LN.verify_text['autoinst_keep_data'])
             elif GV.INSTALL_OPTIONS.install_method == 'clean':
-                review_sel.append(LN.verify_text['autoinst_clean'] % GV.INSTALL_OPTIONS.spin[NAME])
+                review_sel.append(LN.verify_text['autoinst_clean'] % GV.INSTALL_OPTIONS.spin.name)
                 review_sel.append(LN.verify_text['autoinst_rm_all'])
             if GV.AUTOINST.export_wifi:
-                review_sel.append(LN.verify_text['autoinst_wifi'] % GV.INSTALL_OPTIONS.spin[NAME])
+                review_sel.append(LN.verify_text['autoinst_wifi'] % GV.INSTALL_OPTIONS.spin.name)
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
         review_tree = ttk.Treeview(MID_FRAME, columns='error', show='', height=3)
-        review_tree.pack(anchor=DI_VAR['w'], ipady=5, pady=10, padx=(0, 5), fill='x')
+        review_tree.pack(anchor=GV.UI.DI_VAR['w'], ipady=5, pady=10, padx=(0, 5), fill='x')
         review_tree.configure(selectmode='none')
 
         for i in range(len(review_sel)):
             review_tree.insert('', index='end', iid=str(i), values=(review_sel[i],))
         # additions options (checkboxes)
         c2_add = ttk.Checkbutton(MID_FRAME, text=LN.add_auto_restart, variable=auto_restart_toggle_var, onvalue=1, offvalue=0)
-        c2_add.pack(anchor=DI_VAR['w'])
+        c2_add.pack(anchor=GV.UI.DI_VAR['w'])
         c3_add = ttk.Checkbutton(MID_FRAME, text=LN.add_torrent, variable=torrent_toggle_var, onvalue=1, offvalue=0)
         more_options_btn = ttk.Label(MID_FRAME, justify="center", text=LN.more_options, font=FONTS['tiny'], foreground='#3aa9ff')
-        more_options_btn.pack(pady=10, padx=10, anchor=DI_VAR['w'])
+        more_options_btn.pack(pady=10, padx=10, anchor=GV.UI.DI_VAR['w'])
         more_options_btn.bind("<Button-1>",
-                              lambda x: (more_options_btn.destroy(), c3_add.pack(anchor=DI_VAR['w'])))
+                              lambda x: (more_options_btn.destroy(), c3_add.pack(anchor=GV.UI.DI_VAR['w'])))
 
         def validate_back_page(*args):
             if GV.INSTALL_OPTIONS.install_method == 'custom':
@@ -625,7 +612,10 @@ def main():
         def next_btn_action(*args):
             GV.INSTALL_OPTIONS.auto_restart = auto_restart_toggle_var.get()
             GV.INSTALL_OPTIONS.torrent = torrent_toggle_var.get()
-            return page_installing(**installation)
+            return page_installing(ks_kwargs=vars(kickstart), part_kwargs=vars(partition), installer_img=installer_img,
+                                   installer_img_dl_percent_factor=installer_dl_percent_factor,
+                                   live_img=live_os, live_img_dl_factor=live_img_dl_factor,
+                                   is_live_img=GV.INSTALL_OPTIONS.spin.is_live_img)
 
     def page_installing(ks_kwargs: dict, part_kwargs: dict,
                         installer_img, installer_img_dl_percent_factor: float,
@@ -637,9 +627,8 @@ def main():
         progressbar_install = ttk.Progressbar(MID_FRAME, orient='horizontal', length=550, mode='determinate')
         progressbar_install.pack(pady=25)
         job_var = tk.StringVar()
-        current_job = ttk.Label(MID_FRAME, wraplength=540, justify=DI_VAR['l'], textvariable=job_var, font=FONTS['small'])
-        current_job.pack(padx=10, anchor=DI_VAR['w'])
-
+        current_job = ttk.Label(MID_FRAME, wraplength=540, justify=GV.UI.DI_VAR['l'], textvariable=job_var, font=FONTS['small'])
+        current_job.pack(padx=10, anchor=GV.UI.DI_VAR['w'])
 
         # INSTALL STARTING
         while GV.INSTALLER_STATUS not in (0, -1, -2):
@@ -648,17 +637,17 @@ def main():
                 progressbar_install['value'] = 0
                 job_var.set(LN.job_starting_download)
                 app.update()
-                fn.mkdir(GV.DOWNLOAD_PATH)
+                fn.mkdir(PATH.WORK_DIR)
                 is_torrent_dl = GV.INSTALL_OPTIONS.torrent
                 # checking if files from previous runs are present
-                installer_exist = prc.check_valid_existing_file(GV.INSTALL_ISO_PATH, installer_img['hash256'])
-                live_img_exist = prc.check_valid_existing_file(GV.LIVE_ISO_PATH, live_img['hash256'])
+                installer_exist = prc.check_valid_existing_file(PATH.INSTALL_ISO, installer_img.hash256)
+                live_img_exist = prc.check_valid_existing_file(PATH.LIVE_ISO, live_img.hash256)
 
                 if not installer_exist:
                     while True:
-                        dl_hash = prc.start_download(main_gui=app, aria2location=GV.ARIA2C_LOCATION, dl_path=GV.DOWNLOAD_PATH,
+                        dl_hash = prc.start_download(main_gui=app, aria2location=PATH.ARIA2C, dl_path=PATH.WORK_DIR,
                                                      spin=installer_img,
-                                                     iso_file_new_name=GV.INSTALL_ISO_NAME,
+                                                     new_file_path=PATH.INSTALL_ISO,
                                                      progress_bar=progressbar_install,
                                                      progress_factor=installer_img_dl_percent_factor, status_shared_var=job_var,
                                                      ln_speed=LN.dl_speed, ln_job=LN.job_dl_install_media, ln_dl_timeleft=LN.dl_timeleft,
@@ -670,9 +659,9 @@ def main():
                 else:
                     if not live_img_exist:
                         while True:
-                            dl_hash = prc.start_download(main_gui=app, aria2location=GV.ARIA2C_LOCATION, dl_path=GV.DOWNLOAD_PATH,
+                            dl_hash = prc.start_download(main_gui=app, aria2location=PATH.ARIA2C, dl_path=PATH.WORK_DIR,
                                                          spin=live_img,
-                                                         iso_file_new_name=GV.LIVE_ISO_NAME,
+                                                         new_file_path=PATH.LIVE_ISO,
                                                          progress_bar=progressbar_install,
                                                          progress_factor=live_img_dl_factor, status_shared_var=job_var,
                                                          ln_speed=LN.dl_speed, ln_job=LN.job_dl_install_media,
@@ -706,14 +695,14 @@ def main():
                 app.protocol("WM_DELETE_WINDOW", None)  # re-enable closing the app
                 job_var.set(LN.job_copying_to_tmp_part)
                 progressbar_install['value'] = 94
-                installer_mount_letter = fn.mount_iso(GV.INSTALL_ISO_PATH)
+                installer_mount_letter = fn.mount_iso(PATH.INSTALL_ISO)
                 source_files = installer_mount_letter + ':\\'
                 destination_files = GV.TMP_PARTITION_LETTER + ':\\'
                 Process(target=fn.copy_files, args=(source_files, destination_files, GLOBAL_QUEUE,)).start()
                 while not GLOBAL_QUEUE.qsize(): app.after(200, app.update())
                 if GLOBAL_QUEUE.get() == 1: pass  # NEED EDIT
                 if is_live_img:
-                    live_img_mount_letter = fn.mount_iso(GV.LIVE_ISO_PATH)
+                    live_img_mount_letter = fn.mount_iso(PATH.LIVE_ISO)
                     source_file = live_img_mount_letter + ':\\LiveOS\\'
                     destination = GV.TMP_PARTITION_LETTER + ':\\LiveOS\\'
                     Process(target=fn.copy_files, args=(source_file, destination, GLOBAL_QUEUE,)).start()
@@ -726,8 +715,8 @@ def main():
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 job_var.set(LN.job_adding_tmp_boot_entry)
                 progressbar_install['value'] = 98
-                if GV.INSTALL_OPTIONS.install_method != 'custom': grub_cfg_file = GV.GRUB_CONFIG_PATH_AUTOINST
-                else: grub_cfg_file = GV.GRUB_CONFIG_PATH_DEFUALT
+                if GV.INSTALL_OPTIONS.install_method != 'custom': grub_cfg_file = PATH.GRUB_CONFIG_AUTOINST
+                else: grub_cfg_file = PATH.GRUB_CONFIG_DEFUALT
                 grub_cfg_dest_path = GV.TMP_PARTITION_LETTER + ':\\EFI\\BOOT\\grub.cfg'
                 fn.set_file_readonly(grub_cfg_dest_path, False)
                 fn.copy_and_rename_file(grub_cfg_file, grub_cfg_dest_path)
@@ -738,7 +727,7 @@ def main():
                 grub_cfg.close()
                 fn.set_file_readonly(grub_cfg_dest_path, True)
                 nvidia_script_dest_path = GV.TMP_PARTITION_LETTER + ':\\lnixify\\nvidia_inst'
-                fn.copy_and_rename_file(GV.NVIDIA_SCRIPT_PATH, nvidia_script_dest_path)
+                fn.copy_and_rename_file(PATH.NVIDIA_SCRIPT, nvidia_script_dest_path)
 
                 if GV.INSTALL_OPTIONS.install_method != 'custom':
                     kickstart_txt = prc.build_autoinstall_ks_file(**ks_kwargs)
@@ -761,8 +750,8 @@ def main():
                 if GLOBAL_QUEUE.get() == 1:
                     GV.INSTALLER_STATUS = 8
             if GV.INSTALLER_STATUS == 8:  # step 5: clean up iso and other downloaded files since install is complete
-                fn.unmount_iso(GV.INSTALL_ISO_PATH)
-                fn.unmount_iso(GV.LIVE_ISO_PATH)
+                fn.unmount_iso(PATH.INSTALL_ISO)
+                fn.unmount_iso(PATH.LIVE_ISO)
                 fn.remove_drive_letter(GV.TMP_PARTITION_LETTER)
                 # fn.rmdir(DOWNLOAD_PATH)
                 fn.set_windows_time_to_utc()
@@ -795,9 +784,8 @@ def main():
             fn.restart_windows()
             tkt.app_quite()
 
-    page_check()
+    page_check(False)
     #fn.get_admin()
-    #print('"%s"' % fn.get_user_home_dir())
     app.mainloop()
 
 
