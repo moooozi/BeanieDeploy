@@ -766,23 +766,24 @@ def main():
         # *************************************************************************************************************
         vTitleText.set('')
         tkt.generic_page_layout(MID_FRAME, LN.finished_title,
-                                LN.btn_restart_now, lambda: [fn.restart_windows(), tkt.app_quite()],
-                                LN.btn_restart_later, lambda: tkt.app_quite())
+                                LN.btn_restart_now, lambda: fn.quit_and_restart_windows(),
+                                LN.btn_restart_later, lambda: fn.app_quit())
         text_var = tk.StringVar()
         tkt.add_text_label(MID_FRAME, text=LN.finished_text, font=tkt.FONTS.small, pady=10)
         tkt.add_text_label(MID_FRAME, var=text_var, font=tkt.FONTS.small, pady=10)
 
+        def countdown_to_restart(time):
+            time -= 1
+            if time > 0:
+                text_var.set(LN.finished_text_restarting_now % (int(time)))
+                app.after(1000, countdown_to_restart, time)
+            else:
+                fn.quit_and_restart_windows()
+
         if GV.INSTALL_OPTIONS.auto_restart:
-            time_left = 10
-            while time_left > 0:
-                text_var.set(LN.finished_text_restarting_now % (int(time_left)))
-                time_left = time_left - 0.2
-                app.after(200, app.update())
-            fn.restart_windows()
-            tkt.app_quite()
+            countdown_to_restart(10)
 
     page_check(False)
-    #fn.get_admin()
     app.mainloop()
 
 

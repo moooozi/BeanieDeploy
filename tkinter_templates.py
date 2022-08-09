@@ -225,7 +225,3 @@ def var_tracer(var, mode, cb):
         var.trace_add(mode=mode, callback=cb)
 
 
-
-def app_quite():
-    raise SystemExit
-

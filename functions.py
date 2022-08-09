@@ -221,8 +221,13 @@ def move_and_replace(path, dest):
     os.replace(path, dest)
 
 
-def restart_windows():
+def app_quit():
+    raise SystemExit
+
+
+def quit_and_restart_windows():
     subprocess.run([r'powershell.exe', r'Restart-Computer'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    app_quit()
 
 
 def make_boot_entry_first(bootguid, is_permanent: bool = False):
