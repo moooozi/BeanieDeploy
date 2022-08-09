@@ -2,9 +2,7 @@ import json
 import re
 import shutil
 import subprocess
-import types
 import winreg
-
 import requests
 import xmltodict
 import os

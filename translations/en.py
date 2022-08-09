@@ -8,7 +8,7 @@ btn_cancel = "Cancel"
 btn_continue = "Continue"
 btn_abort = "Abort"
 btn_confirm = "Confirm"
-btn_install = "Install now"
+btn_install = "Install"
 btn_restart_now = "Restart now"
 btn_restart_later = "Restart later"
 btn_dl_again = "Download Again"
@@ -35,7 +35,7 @@ error_resizable_9 = "Failed to check system drive resizability."
 
 desktop_question = "Which Desktop Environment do you prefer?"
 desktop_hints = {'KDE Plasma': "Great on desktops, highly customizable, Windows-like layout by default",
-                 'GNOME': "The Default. Minimal, well optimized for touchpads and touchscreens"}
+                 'GNOME': "The default Fedora. Minimal, well optimized for touchpads and touchscreens"}
 lang = "Language"
 locale = "Locale"
 recommended = "Recommended"
@@ -80,7 +80,7 @@ windows_options = {'dualboot': 'Install alongside Windows',
                    'clean': 'Erase everything and start fresh',
                    'custom': 'Custom installation and partitioning'}
 dualboot_size_txt = "Size:"
-verify_question = "This is what is going to happen. Click %s once ready" % btn_install
+verify_question = "This is what is going to happen. Click %s to start installing" % btn_install
 verify_text = {
     'no_autoinst': "%s will be downloaded and will boot on the next restart to begin custom installation.",
     'autoinst_dualboot': "%s will be downloaded and installed alongside Windows on next restart.",

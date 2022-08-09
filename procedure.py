@@ -85,61 +85,68 @@ def add_boot_entry(boot_efi_file_path, boot_drive_letter, is_permanent: bool = F
 def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone=None, ostree_args=None, username='', fullname='',
                               wifi_profiles=None, is_encrypted: bool = False, passphrase: str = None, live_img_url='',
                               nvidia_drivers=True):
-
-    kickstart_txt = "# Kickstart file created by Lnixify."
-    kickstart_txt += "\ngraphical"
-    kickstart_txt += "\n%post --nochroot --logfile=/mnt/sysimage/root/ks-post.log"
-    kickstart_txt += '\nrm /run/install/repo/ks.cfg'
-    kickstart_txt += '\ncp /run/install/repo/EFI/BOOT/BOOT.cfg /run/install/repo/EFI/BOOT/grub.cfg'
+    kickstart_lines = []
+    kickstart_lines.append("# Kickstart file created by Lnixify.")
+    kickstart_lines.append("graphical")
+    kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post.log")
+    kickstart_lines.append("rm /run/install/repo/ks.cfg")
+    kickstart_lines.append("cp /run/install/repo/EFI/BOOT/BOOT.cfg /run/install/repo/EFI/BOOT/grub.cfg")
+    # Importing Wi-Fi profiles
     if wifi_profiles and isinstance(wifi_profiles, list):
-        kickstart_txt += "\nmkdir -p /mnt/sysimage/etc/NetworkManager/system-connections"
+        kickstart_lines.append("mkdir -p /mnt/sysimage/etc/NetworkManager/system-connections")
         template = r"""[connection]\nid=%name%\ntype=wifi\n\n[wifi]\nhidden=%hidden%\nssid=%ssid%\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%password%\n\n[ipv4]\nmethod=auto\n\n[ipv6]\naddr-gen-mode=stable-privacy\nmethod=auto\n\n[proxy]\n"""
         for profile in wifi_profiles:
             network_file = template.replace('%name%', profile['name']).replace('%ssid%', profile['ssid']).replace('%hidden%', profile['hidden']).replace('%password%', profile['password'])
-            kickstart_txt += "\necho $'" + network_file + \
-                             "' > " + "/mnt/sysimage/etc/NetworkManager/system-connections/'%s.nmconnection'" % profile['name']
-    if nvidia_drivers:
-        kickstart_txt += "\nmkdir -p /mnt/sysimage/etc/profile.d/"
-        kickstart_txt += '\ncp /run/install/repo/lnixify/nvidia_inst /mnt/sysimage/etc/profile.d/nvidia_inst.sh'
-    kickstart_txt += '\n%end'
+            kickstart_lines.append("echo $'" + network_file + \
+                             "' > " + "/mnt/sysimage/etc/NetworkManager/system-connections/'%s.nmconnection'" % profile['name'])
+    # if nvidia_drivers:
+    #    kickstart_lines.append("mkdir -p /mnt/sysimage/etc/profile.d/")
+    #    kickstart_lines.append("cp /run/install/repo/lnixify/nvidia_inst /mnt/sysimage/etc/profile.d/nvidia_inst.sh")
+    kickstart_lines.append("%end")
 
-
-    # if not (keymap and lang and timezone):
-    #     if not keymap: keymap = 'us'
-    #     if not lang: lang = 'en_US.UTF-8'
-    #     if not timezone: timezone = 'America/New_York'
-    #     kickstart_txt += "\nfirstboot --reconfig"
-    # else:
-    kickstart_txt += "\nfirstboot --enable"
-    if keymap_type == 'vc':
-        kickstart_txt += "\nkeyboard --vckeymap=%s" % keymap
+    if not (keymap and lang and timezone):
+        if not keymap: keymap = 'us'
+        if not lang: lang = 'en_US.UTF-8'
+        if not timezone: timezone = 'America/New_York'
+        kickstart_lines.append("firstboot --reconfig")
     else:
-        kickstart_txt += "\nkeyboard --xlayouts='%s'" % keymap
-    kickstart_txt += "\nlang " + lang
-    kickstart_txt += "\nfirewall --use-system-defaults"
-    if ostree_args:
-        kickstart_txt += "\nostreesetup " + ostree_args
-    if live_img_url:
-        kickstart_txt += "\nliveimg --url='%s' --noverifyssl" % live_img_url
+        kickstart_lines.append("firstboot --enable")
 
-    kickstart_txt += "\ntimezone " + timezone + " --utc"
-    # kickstart_txt += "\nignoredisk --drives="
-    kickstart_txt += "\npart btrfs.01 --onpart=/dev/disk/by-label/ALLOC-ROOT"
+    if keymap_type == 'vc':
+        kickstart_lines.append("keyboard --vckeymap=%s" % keymap)
+    else:
+        kickstart_lines.append("keyboard --xlayouts='%s'" % keymap)
+    kickstart_lines.append("lang " + lang)
+    kickstart_lines.append("firewall --use-system-defaults")
+    if ostree_args:
+        kickstart_lines.append("ostreesetup " + ostree_args)
+    if live_img_url:
+        kickstart_lines.append("liveimg --url='%s' --noverifyssl" % live_img_url)
+
+    kickstart_lines.append("timezone " + timezone + " --utc")
+
+    root_partition = "part btrfs.01 --onpart=/dev/disk/by-label/ALLOC-ROOT"
     if is_encrypted:
-        kickstart_txt += ' --encrypted'
+        root_partition += ' --encrypted'
         if passphrase:
-            kickstart_txt += ' --passphrase=' + passphrase
-    kickstart_txt += "\nbtrfs none --label=fedora btrfs.01" \
-                     "\nbtrfs / --subvol --name=root fedora" \
-                     "\nbtrfs /home --subvol --name=home fedora" \
-                     "\nbtrfs /var --subvol --name=var fedora" \
-                     "\npart /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-label/ALLOC-BOOT " \
-                     "\npart /boot/efi --fstype=efi --label=fedora_efi --onpart=/dev/disk/by-label/ALLOC-EFI"
+            root_partition += ' --passphrase=' + passphrase
+
+    kickstart_lines.append(root_partition)
+    kickstart_lines.append("btrfs none --label=fedora btrfs.01")
+    kickstart_lines.append("btrfs / --subvol --name=root fedora")
+    kickstart_lines.append("btrfs /home --subvol --name=home fedora")
+    kickstart_lines.append("btrfs /var --subvol --name=var fedora")
+    kickstart_lines.append("part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-label/ALLOC-BOOT ")
+    kickstart_lines.append("part /boot/efi --fstype=efi --label=fedora_efi --onpart=/dev/disk/by-label/ALLOC-EFI")
 
     if username:
-        kickstart_txt += "\nuser --name=" + username + " --gecos='" + fullname + "' --groups=wheel"
-    kickstart_txt += "\nrootpw --lock"
-    kickstart_txt += "\nreboot"
+        kickstart_lines.append("user --name=" + username + " --gecos='" + fullname + "' --groups=wheel")
+    kickstart_lines.append("rootpw --lock")
+    kickstart_lines.append("reboot")
+
+    kickstart_txt = ""
+    for line in kickstart_lines:
+        kickstart_txt += line + '\n'
 
     return kickstart_txt
 

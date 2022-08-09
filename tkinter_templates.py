@@ -1,15 +1,19 @@
 import tkinter as tk
 import tkinter.ttk as ttk
+import types
+
 import globals as GV
 MAXWIDTH = 800
 MAXHEIGHT = 500
+TOP_FRAME_HEIGHT = 100
+LEFT_FRAME_WIDTH = 150
+
 top_background = '#474747'
-FONTS = {
-    'large': ("Ariel", 24),
-    'medium': ("Ariel Bold", 15),
-    'small': ("Ariel", 12),
-    'tiny': ("Ariel", 10)
-}
+FONTS = types.SimpleNamespace()
+FONTS.large = ("Ariel", 24)
+FONTS.medium = ("Ariel Bold", 16)
+FONTS.small = ("Ariel", 13)
+FONTS.tiny = ("Ariel", 10)
 
 
 def init_tkinter(title, icon=None):
@@ -22,10 +26,42 @@ def init_tkinter(title, icon=None):
     return tkinter
 
 
+def build_main_gui_frames(parent, left_frame_img_path=None, top_frame_height=TOP_FRAME_HEIGHT,
+                          left_frame_width=LEFT_FRAME_WIDTH):
+    """
+    Used to build or rebuild the main frames after language change to a language with different direction
+    (see function right_to_left_lang)
+    """
+    top_frame = tk.Frame(parent, height=top_frame_height, width=MAXWIDTH, background=top_background)
+    left_frame = ttk.Frame(parent, width=left_frame_width, height=MAXHEIGHT)
+    mid_frame = ttk.Frame(parent, height=MAXHEIGHT - top_frame_height)
+
+    top_frame.pack(fill="x", expand=1)
+    top_frame.pack_propagate(False)
+    left_frame.pack(fill="y", side=GV.UI.DI_VAR['l'])
+    left_frame.pack_propagate(False)
+    mid_frame.pack(fill="both", expand=1, padx=20, pady=20)
+    mid_frame.pack_propagate(False)
+    return top_frame, mid_frame, left_frame
+
+
+def generic_page_layout(parent, title, primary_btn_txt=None, primary_btn_command=None, secondary_btn_txt=None,
+                        secondary_btn_command=None):
+    add_page_title(parent, title)
+    if primary_btn_txt or secondary_btn_txt:
+        bottom_frame = tk.Frame(parent, height=34)
+        bottom_frame.pack(side='bottom', fill='x')
+        bottom_frame.pack_propagate(False)
+        if primary_btn_txt:
+            add_primary_btn(bottom_frame, primary_btn_txt, primary_btn_command)
+        if secondary_btn_txt:
+            add_secondary_btn(bottom_frame, secondary_btn_txt, secondary_btn_command)
+
+
 def open_popup(parent, title_txt, msg_txt, primary_btn_str=None, secondary_btn_str=None, is_entry=None, regex=None,
                x_size: int = None, y_size: int = None):
     """
-Pops up window to get input from user and freezes the main GUI while waiting for response
+    Pops up window to get input from user and freezes the main GUI while waiting for response
     :param y_size: window height in pixels
     :param x_size: window width in pixels
     :param is_entry: typing input? or just a yes-no-like question
@@ -46,18 +82,18 @@ Pops up window to get input from user and freezes the main GUI while waiting for
     #  position the pop up window at the center of its parent
     if x_size and y_size:
         geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position + MAXWIDTH - x_size / 2, y_position + y_size/2 + 25)
-        msg_font = FONTS['tiny']
+        msg_font = FONTS.tiny
     else:
         if len(msg_txt) > 120:
             x_size = 600
             y_size = 300
             geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position+MAXWIDTH-x_size/2, y_position+y_size/2 + 25)
-            msg_font = FONTS['tiny']
+            msg_font = FONTS.tiny
         else:
             x_size = 600
             y_size = 250
             geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position+MAXWIDTH/2-x_size/2, y_position+MAXHEIGHT/2-y_size/2 + 25)
-            msg_font = FONTS['small']
+            msg_font = FONTS.small
 
     pop.geometry(geometry)
     pop.overrideredirect(True)
@@ -93,26 +129,26 @@ Pops up window to get input from user and freezes the main GUI while waiting for
 
 def add_primary_btn(parent, text, command):
     """
-a preset for adding a tkinter button. Used for the likes of "Next" and "Install" buttons
+    a preset for adding a tkinter button. Used for the likes of "Next" and "Install" buttons
     :return: tkinter button object
     """
     btn_next = ttk.Button(parent, text=text, style="Accentbutton", command=command)
-    btn_next.pack(anchor=GV.UI.DI_VAR['se'], side=GV.UI.DI_VAR['r'], ipadx=15, padx=10)
+    btn_next.pack(anchor=GV.UI.DI_VAR['se'], side=GV.UI.DI_VAR['r'], ipadx=22, padx=0)
     return btn_next
 
 
 def add_secondary_btn(parent, text, command):
     """
-a preset for adding a tkinter button. Used for the likes of "Back", "Cancel" and "Abort" buttons
+    a preset for adding a tkinter button. Used for the likes of "Back", "Cancel" and "Abort" buttons
     :return: tkinter button object
     """
     btn_back = ttk.Button(parent, text=text, command=command)
-    btn_back.pack(anchor=GV.UI.DI_VAR['se'], side=GV.UI.DI_VAR['r'], padx=5)
+    btn_back.pack(anchor=GV.UI.DI_VAR['se'], side=GV.UI.DI_VAR['r'], padx=12, ipadx=8)
     return btn_back
 
 
-def add_page_title(parent, text, pady=35):
-    title = ttk.Label(parent, wraplength=540, justify=GV.UI.DI_VAR['l'], text=text, font=FONTS['medium'])
+def add_page_title(parent, text, pady=(25, 40)):
+    title = ttk.Label(parent, wraplength=540, justify=GV.UI.DI_VAR['l'], text=text, font=FONTS.medium)
     title.pack(pady=pady, anchor=GV.UI.DI_VAR['w'])
     return title
 
@@ -134,29 +170,9 @@ def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=5):
     return check
 
 
-def build_main_gui_frames(parent, left_frame_img_path=None,
-                          top_frame_height=100, left_frame_width=200):
+def add_text_label(parent, text=None, font=FONTS.small, var=None, pady=20, padx=0, foreground=None):
     """
-Used to build or rebuild the main frames after language change to a language with different direction
-(see function right_to_left_lang)
-    """
-
-    top_frame = tk.Frame(parent, height=top_frame_height, width=MAXWIDTH, background=top_background)
-    left_frame = ttk.Frame(parent, width=left_frame_width, height=MAXHEIGHT)
-    mid_frame = ttk.Frame(parent, height=MAXHEIGHT - top_frame_height)
-
-    top_frame.pack(fill="x", expand=1)
-    top_frame.pack_propagate(False)
-    left_frame.pack(fill="y", side=GV.UI.DI_VAR['l'])
-    left_frame.pack_propagate(False)
-    mid_frame.pack(fill="both", expand=1, padx=15, pady=20)
-    mid_frame.pack_propagate(False)
-    return top_frame, mid_frame, left_frame
-
-
-def add_text_label(parent, text=None, font=FONTS['small'], var=None, pady=20, padx=0, foreground=None):
-    """
-a preset for tkinter text label that packs by default
+    a preset for tkinter text label that packs by default
     :return: the tkinter label "ttk.Label" object
     """
     if (not var and text) or (var and not text):
@@ -176,6 +192,11 @@ def add_lang_list(parent, var, languages):
     return lang_list
 
 
+def add_progress_bar(parent, lenth=MAXWIDTH-LEFT_FRAME_WIDTH):
+    progressbar = ttk.Progressbar(parent, orient='horizontal', length=lenth, mode='determinate')
+    progressbar.pack(pady=25)
+
+
 def stylize(parent, theme_dir, theme_name):
     style = ttk.Style(parent)
     parent.tk.call('source', theme_dir)
@@ -192,7 +213,7 @@ def clear_frame(frame):
 
 def var_tracer(var, mode, cb):
     """
-add tkinter variable tracer if no tracer exists
+    add tkinter variable tracer if no tracer exists
     :param var: tkinter variable
     :param mode: tkinter tracer mode (see trace_add docs)
     :param cb: the callback function
@@ -203,18 +224,6 @@ add tkinter variable tracer if no tracer exists
     else:
         var.trace_add(mode=mode, callback=cb)
 
-
-def generic_page_layout(parent, title, primary_btn_txt=None, primary_btn_command=None, secondary_btn_txt=None,
-                        secondary_btn_command=None):
-    add_page_title(parent, title)
-    if primary_btn_txt or secondary_btn_txt:
-        bottom_frame = tk.Frame(parent, height=34)
-        bottom_frame.pack(side='bottom', fill='x')
-        bottom_frame.pack_propagate(False)
-        if primary_btn_txt:
-            add_primary_btn(bottom_frame, primary_btn_txt, primary_btn_command)
-        if secondary_btn_txt:
-            add_secondary_btn(bottom_frame, secondary_btn_txt, secondary_btn_command)
 
 
 def app_quite():
