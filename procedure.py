@@ -1,9 +1,10 @@
+# Functions that do multiple things or call multiple other functions are declared here
+
 import os
 import types
 from multiprocessing import Process
 
 import functions as fn
-# Functions that do multiple things or call multiple other functions are declared here
 
 
 def compatibility_test(required_space_min, queue):
