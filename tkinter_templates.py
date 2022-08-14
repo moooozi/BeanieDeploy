@@ -162,9 +162,9 @@ def add_radio_btn(parent, text, var, value, command=None, is_disabled=None, ipad
     return radio
 
 
-def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=5):
+def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=5, pack=True):
     check = ttk.Checkbutton(parent, text=text, variable=var, onvalue=True, offvalue=False)
-    check.pack(anchor=GV.UI.DI_VAR['w'], ipady=5, pady=pady)
+    if pack: check.pack(anchor=GV.UI.DI_VAR['w'], ipady=5, pady=pady)
     if command: check.configure(command=command)
     if is_disabled: check.configure(state='disabled')
     return check

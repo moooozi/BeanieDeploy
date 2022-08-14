@@ -1,5 +1,5 @@
 import types
-from multiprocessing import Process, Queue
+import multiprocessing
 import APP_INFO
 import globals as GV
 import functions as fn
@@ -15,7 +15,7 @@ import autoinst
 app = tkt.init_tkinter(SW_NAME)  # initialize tkinter
 PATH = prc.init_paths(GV.PATH)
 tkt.stylize(app, theme_dir=PATH.CURRENT_DIR + '/theme/azure-dark.tcl', theme_name='azure')  # use tkinter theme
-GLOBAL_QUEUE = Queue()
+GLOBAL_QUEUE = multiprocessing.Queue()
 #   MAIN CONTAINER & FRAMES   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 CONTAINER = ttk.Frame(app)
 CONTAINER.pack()
@@ -41,7 +41,7 @@ def download_hash_handler(dl_hash):
                                       primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
             if question:
                 fn.rmdir(PATH.WORK_DIR)
-            tkt.app_quite()
+            fn.app_quit()
     else:
         question = tkt.open_popup(parent=app, title_txt=LN.job_checksum_mismatch,
                                   msg_txt=LN.job_checksum_mismatch_txt % dl_hash,
@@ -52,7 +52,7 @@ def download_hash_handler(dl_hash):
                                       primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
             if question:
                 fn.rmdir(PATH.WORK_DIR)
-            tkt.app_quite()
+            fn.app_quit()
     return go_next
 
 
@@ -80,11 +80,11 @@ def main():
             GV.COMPATIBILITY_RESULTS.arch = 'amd64'
         if not vars(GV.COMPATIBILITY_RESULTS):
             fn.get_admin()  # Request elevation (admin) if not running as admin
-            Process(target=prc.compatibility_test, args=(minimal_required_space, GLOBAL_QUEUE,)).start()
+            multiprocessing.Process(target=prc.compatibility_test, args=(minimal_required_space, GLOBAL_QUEUE,)).start()
         if not GV.ALL_SPINS:
-            Process(target=fn.get_json, args=(AVAILABLE_SPINS_LIST, GLOBAL_QUEUE, 'spin_list')).start()
+            multiprocessing.Process(target=fn.get_json, args=(AVAILABLE_SPINS_LIST, GLOBAL_QUEUE, 'spin_list')).start()
         if not GV.IP_LOCALE:
-            Process(target=fn.get_json, args=(FEDORA_GEO_IP_URL, GLOBAL_QUEUE, 'geo_ip')).start()
+            multiprocessing.Process(target=fn.get_json, args=(FEDORA_GEO_IP_URL, GLOBAL_QUEUE, 'geo_ip')).start()
             # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
         while not (GV.ALL_SPINS and vars(GV.COMPATIBILITY_RESULTS)):
             while not GLOBAL_QUEUE.qsize(): app.after(100, app.update())
@@ -148,7 +148,7 @@ def main():
             for i in range(len(errors)):
                 errors_tree.insert('', index='end', iid=str(i), values=(errors[i],))
 
-            tkt.add_secondary_btn(MID_FRAME, LN.btn_quit, lambda: tkt.app_quite())
+            tkt.add_secondary_btn(MID_FRAME, LN.btn_quit, lambda: fn.app_quit())
 
     # page_1
     def page_1():
@@ -333,6 +333,7 @@ def main():
         export_wifi_toggle_var = tk.BooleanVar(app, GV.AUTOINST.export_wifi)
         enable_encryption_toggle_var = tk.BooleanVar(app, GV.AUTOINST.enable_encryption)
         encrypt_passphrase_var = tk.StringVar(app, GV.AUTOINST.encryption_pass)
+        encryption_tpm_unlock_toggle_var = tk.BooleanVar(app, GV.AUTOINST.encryption_tpm_unlock)
 
         tkt.add_check_btn(MID_FRAME, LN.add_import_wifi, export_wifi_toggle_var, pady=(5, 0))
         tkt.add_check_btn(MID_FRAME, LN.encrypted_root, enable_encryption_toggle_var,
@@ -343,10 +344,7 @@ def main():
 
         encrypt_pass_pre = ttk.Label(entry2_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
                                      text=LN.entry_encrypt_passphrase_pre, font=tkt.FONTS.tiny)
-        encrypt_passphrase_entry = ttk.Entry(entry2_frame, show="\u2022", width=10,
-                                             textvariable=encrypt_passphrase_var)
-        encrypt_pass_post = ttk.Label(entry2_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
-                                      text=LN.entry_encrypt_passphrase_post, font=tkt.FONTS.tiny)
+        encrypt_passphrase_entry = ttk.Entry(entry2_frame, show="\u2022", width=10, textvariable=encrypt_passphrase_var)
         tkt.var_tracer(encrypt_passphrase_var, "write",
                        lambda *args: fn.validate_with_regex(encrypt_passphrase_var,
                                                             regex=only_digit_regex, mode='fix'))
@@ -356,18 +354,17 @@ def main():
         encrypt_pass_confirm_entry = ttk.Entry(entry2_frame, show="\u2022", width=10, textvariable=pass_confirm_var)
         encrypt_pass_confirm_not_matched = ttk.Label(entry2_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
                                                      text=LN.not_matched, font=tkt.FONTS.tiny, foreground='#ff4a4a')
-        encrypt_pass_note = ttk.Label(entry2_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
-                                      text=LN.encrypt_reminder_txt, font=tkt.FONTS.tiny)
+        tpm_unlock = tkt.add_check_btn(entry2_frame, LN.encryption_tpm_unlock, encryption_tpm_unlock_toggle_var, pack=False)
+
         tkt.var_tracer(pass_confirm_var, "write",
                        lambda *args:
                        show_not_matched_warning(pass_confirm_var.get() != encrypt_passphrase_var.get()))
 
-        encrypt_pass_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=GV.UI.DI_VAR['w'])
-        encrypt_passphrase_entry.grid(pady=5, padx=5, column=1, row=0)
-        encrypt_pass_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=GV.UI.DI_VAR['w'])
-        encrypt_pass_confirm_pre.grid(pady=5, padx=(10, 0), column=0, row=1, sticky=GV.UI.DI_VAR['w'])
-        encrypt_pass_confirm_entry.grid(pady=5, padx=5, column=1, row=1)
-        encrypt_pass_note.grid(pady=5, padx=(0, 0), column=0, columnspan=4, row=2, sticky=GV.UI.DI_VAR['w'])
+        encrypt_pass_pre.grid(column=0, row=0, sticky=GV.UI.DI_VAR['w'])
+        encrypt_passphrase_entry.grid(pady=2, padx=5, column=1, row=0)
+        encrypt_pass_confirm_pre.grid(column=0, row=1, sticky=GV.UI.DI_VAR['w'])
+        encrypt_pass_confirm_entry.grid(pady=2, padx=5, column=1, row=1)
+        tpm_unlock.grid(column=0, row=2, sticky=GV.UI.DI_VAR['w'])
 
         # LOGIC
         def show_not_matched_warning(is_true: bool):
@@ -376,19 +373,19 @@ def main():
 
         def show_encrypt_options(var):
             if var.get():
-                entry2_frame.pack(fill='x')
+                entry2_frame.pack(fill='x', padx=(40, 0))
             else:
                 entry2_frame.pack_forget()
         show_encrypt_options(enable_encryption_toggle_var)
 
         def next_btn_action(*args):
-            if enable_encryption_toggle_var.get() and not (encrypt_passphrase_var.get() == pass_confirm_var.get()):
+            if enable_encryption_toggle_var.get() and not (encrypt_passphrase_var.get() == pass_confirm_var.get() != ''):
                 return
             else:
                 GV.AUTOINST.export_wifi = export_wifi_toggle_var.get()
                 GV.AUTOINST.enable_encryption = enable_encryption_toggle_var.get()
-                if GV.AUTOINST.enable_encryption:
-                    GV.AUTOINST.encryption_pass = encrypt_passphrase_var.get()
+                GV.AUTOINST.encryption_pass = encrypt_passphrase_var.get()
+                GV.AUTOINST.encryption_tpm_unlock = encryption_tpm_unlock_toggle_var.get()
                 page_autoinst_addition_1()
 
     # page_autoinst2
@@ -539,11 +536,12 @@ def main():
             kickstart.username = GV.AUTOINST.username
             kickstart.fullname = GV.AUTOINST.fullname
             kickstart.live_img_url = GV.INSTALL_OPTIONS.live_img_url
+            kickstart.partition_method = GV.INSTALL_OPTIONS.install_method
             if GV.INSTALL_OPTIONS.install_method == 'dualboot':
                 partition.shrink_space = fn.gigabyte(GV.AUTOINST.dualboot_size)
                 partition.boot_part_size = fn.gigabyte(linux_boot_partition_size)
                 partition.efi_part_size = fn.megabyte(linux_efi_partition_size)
-            # LOG #################################################################
+            # LOG ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             fn.log('\nKickstart arguments (sensitive data sensored):')
             for key, value in vars(kickstart).items():
                 if key in ('passphrase', 'fullname', 'username', 'wifi_profiles'):
@@ -556,7 +554,7 @@ def main():
             for key, value in vars(partition).items():
                 if key == 'queue': continue
                 fn.log('%s: %s' % (key, value))
-            #######################################################################
+            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         else:
             kickstart = {}
         if GV.SELECTED_SPIN.is_live_img:
@@ -672,7 +670,7 @@ def main():
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
 
-                Process(target=prc.partition_procedure, kwargs=part_kwargs).start()
+                multiprocessing.Process(target=prc.partition_procedure, kwargs=part_kwargs).start()
                 job_var.set(LN.job_creating_tmp_part)
                 progressbar_install['value'] = 92
                 GV.INSTALLER_STATUS = 3
@@ -695,14 +693,14 @@ def main():
                 installer_mount_letter = fn.mount_iso(PATH.INSTALL_ISO)
                 source_files = installer_mount_letter + ':\\'
                 destination_files = GV.TMP_PARTITION_LETTER + ':\\'
-                Process(target=fn.copy_files, args=(source_files, destination_files, GLOBAL_QUEUE,)).start()
+                multiprocessing.Process(target=fn.copy_files, args=(source_files, destination_files, GLOBAL_QUEUE,)).start()
                 while not GLOBAL_QUEUE.qsize(): app.after(200, app.update())
                 if GLOBAL_QUEUE.get() == 1: pass  # NEED EDIT
                 if is_live_img:
                     live_img_mount_letter = fn.mount_iso(PATH.LIVE_ISO)
                     source_file = live_img_mount_letter + ':\\LiveOS\\'
                     destination = GV.TMP_PARTITION_LETTER + ':\\LiveOS\\'
-                    Process(target=fn.copy_files, args=(source_file, destination, GLOBAL_QUEUE,)).start()
+                    multiprocessing.Process(target=fn.copy_files, args=(source_file, destination, GLOBAL_QUEUE,)).start()
                     while not GLOBAL_QUEUE.qsize():
                         app.after(200, app.update())
                     if GLOBAL_QUEUE.get() == 1: pass
@@ -737,7 +735,7 @@ def main():
                     is_new_boot_order_permanent = False
                 else:
                     is_new_boot_order_permanent = True
-                Process(target=prc.add_boot_entry, args=(default_efi_file_path, GV.TMP_PARTITION_LETTER,
+                multiprocessing.Process(target=prc.add_boot_entry, args=(default_efi_file_path, GV.TMP_PARTITION_LETTER,
                                                          is_new_boot_order_permanent, GLOBAL_QUEUE,)).start()
                 GV.INSTALLER_STATUS = 7
 

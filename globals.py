@@ -22,11 +22,9 @@ AVAILABLE_INSTALL_METHODS = ('dualboot', 'clean', 'custom')
 INSTALLER_STATUS = None
 INSTALL_OPTIONS = types.SimpleNamespace(install_method='', spin_index=-1, auto_restart=False, torrent=False, live_img_url='')
 AUTOINST = types.SimpleNamespace(dualboot_size=APP_INFO.dualboot_required_space, export_wifi=True,
-                                 enable_encryption=False, encryption_pass='', locale='', timezone='',
-                                 keymap_timezone_source='select', keymap='', keymap_type='', username='', fullname='')
-
-
-
+                                 enable_encryption=False, encryption_pass='', encryption_tpm_unlock=True,
+                                 locale='', timezone='', keymap_timezone_source='select', keymap='', keymap_type='',
+                                 username='', fullname='')
 TMP_PARTITION_LETTER = ''
 TMP_PARTITION_LABEL = 'FEDORA-INST'  # Max 12 Chars
 ALL_SPINS = []

@@ -6,7 +6,7 @@ import winreg
 import requests
 import xmltodict
 import os
-from pathlib import Path
+import pathlib
 
 
 def open_url(url):
@@ -43,7 +43,7 @@ def check_resizable():
 
 
 def get_user_home_dir():
-    return str(Path.home())
+    return str(pathlib.Path.home())
 
 
 def get_windows_username():
@@ -98,14 +98,6 @@ def download_with_aria2(app_path, url, destination, is_torrent, queue):
                             tracker['%'] = int(txt[index2 + 1:index1])
                         queue.put(tracker)
                     except (ValueError, IndexError): pass
-
-'''
-def move_files_to_dir(source, destination):
-    arg = 'Get-ChildItem -Path ' + source + ' -Recurse -File | Move-Item -Destination ' + destination
-    subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    arg = 'Get-ChildItem -Path ' + source + ' -Recurse -Directory | Remove-Item'
-    subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-'''
 
 
 def check_hash(file_path, sha256_hash, queue=None):
@@ -196,7 +188,7 @@ def copy_files(source, destination, queue=None):
 
 
 def copy_and_rename_file(source, destination, queue=None):
-    mkdir(Path(destination).parent.absolute())
+    mkdir(pathlib.Path(destination).parent.absolute())
     shutil.copyfile(src=source, dst=destination)
     if queue:
         queue.put(1)
@@ -257,27 +249,6 @@ def create_new_wbm(boot_efi_file_path, boot_drive_letter):
     return bootguid
 
 
-'''
-def get_wifi_profiles():
-    args = """$WirelessSSIDs = (netsh wlan show profiles | Select-String ': ' ) -replace ".*:\s+" ; $WifiInfo = foreach($SSID in $WirelessSSIDs) {$Password = (netsh wlan show profiles name=$SSID key=clear | Select-String 'Key Content') -replace ".*:\s+" ; New-Object -TypeName psobject -Property @{"SSID"=$SSID;"Password"=$Password}} ; $WifiInfo | ConvertTo-Json"""
-    out = str(subprocess.run([r'powershell.exe', args],
-              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout)
-    profiles = json.loads(out)
-    list_of_profiles = []
-    for profile in profiles:
-        try:
-            ssid: str = profile['SSID']
-            password: str = profile['Password']
-            if not password or not ssid:
-                continue
-            profile_list = (ssid, password)
-            list_of_profiles.append(profile_list)
-        except (KeyError, ValueError, IndexError, NameError):
-            pass
-    return list_of_profiles
-'''
-
-
 def extract_wifi_profiles(folder_path):
     args = 'netsh wlan export profile key=clear folder="%s"' % folder_path
     out = subprocess.run([r'powershell.exe', args],
@@ -307,7 +278,7 @@ def validate_with_regex(var, regex, mode='read'):
 
 
 def get_current_dir_path():
-    return str(Path(__file__).parent.absolute())
+    return str(pathlib.Path(__file__).parent.absolute())
 
 
 def get_admin():
@@ -316,20 +287,6 @@ def get_admin():
     if not windll.shell32.IsUserAnAdmin():
         windll.shell32.ShellExecuteW(None, "runas", executable, " ".join(argv), None, 1)
         raise SystemExit
-
-
-'''def logger():
-    with open(DOWNLOAD_PATH + '\\last_run.txt', 'x') as run_log:
-        file = '\nvDist.get() = %s' % vDist.get() + \
-               '\nvAutorestart_t.get() = %s' % vAutorestart_t.get() + \
-               '\nvAutoinst_t.get() = %s' % vAutoinst_t.get() + \
-               '\nvAutoinst_option.get() = %s' % vAutoinst_option.get() + \
-               '\nSELECTED_LOCALE = %s' % Autoinst_SELECTED_LOCALE + \
-               '\nvAutoinst_Username.get() = %s' % vAutoinst_Username.get() + \
-               '\nvAutoinst_Fullname.get() = %s' % vAutoinst_Fullname.get() + \
-               '\nvAutoinst_Timezone.get() = %s' % vAutoinst_Timezone.get() + \
-               '\nvAutoinst_Keyboard.get() = %s' % vAutoinst_Keyboard.get()
-        run_log.write(file)'''
 
 
 def get_json(url, queue=None, named: str = None):

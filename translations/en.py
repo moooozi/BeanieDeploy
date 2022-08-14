@@ -59,11 +59,11 @@ selected_spin = "Selected Spin"
 choose_fedora_spin = "Choose a Fedora Spin"
 encrypted_root = "Encrypt the new operating system"
 entry_encrypt_passphrase_pre = "Enter encryption PIN"
-entry_encrypt_passphrase_post = "(numbers only)"
 entry_encrypt_passphrase_confirm_pre = "Confirm PIN"
 not_matched = "Not matched"
 
-encrypt_reminder_txt = "Leave empty if you wish to provide passphase later during install (characters allowed)"
+# encrypt_reminder_txt = "Leave empty if you wish to provide passphase later during install (characters allowed)"
+encryption_tpm_unlock = "Auto-unlock with TPM2"
 
 entry_username = "Username"
 entry_fullname = "Full name (optional)"
