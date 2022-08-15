@@ -78,9 +78,6 @@ def add_boot_entry(boot_efi_file_path, boot_drive_letter, is_permanent: bool = F
 
     bootguid = fn.create_new_wbm(boot_efi_file_path, boot_drive_letter)
     fn.make_boot_entry_first(bootguid, is_permanent)
-    if queue: queue.put(1)
-    else:
-        return 1
 
 
 def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone=None, ostree_args=None, username='', fullname='',
@@ -128,14 +125,13 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
         kickstart_lines.append("sed -ie '/^luks-/s/$/,tpm2-device=auto/' /etc/crypttab")
         kickstart_lines.append("dracut -f")
         kickstart_lines.append("%end")
-    '''
+
     if additional_repos:
         kickstart_lines.append("# Activating unrestricted Flatpak")
         kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post_additional_repos.log")
         kickstart_lines.append("chroot /mnt/sysimage/")
         kickstart_lines.append("flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo")
         kickstart_lines.append("%end")
-    '''
 
     if not (keymap and lang and timezone):
         if not keymap: keymap = 'us'

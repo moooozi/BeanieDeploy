@@ -24,34 +24,60 @@ TOP_FRAME, MID_FRAME, LEFT_FRAME = tkt.build_main_gui_frames(CONTAINER)
 ttk.Label(LEFT_FRAME, image=tk.PhotoImage(file=PATH.CURRENT_DIR + r'\resources\left_frame.gif')).pack()
 
 
+def run_async_function(function, callback=None, queue=GLOBAL_QUEUE, args=(), kwargs=None, wait_for_result=None):
+    """
+run a function without blocking the GUI
+    :param function: the function
+    :param callback: callback function to handle Queue communication
+    :param queue: the Queue object
+    :param args: arguments to be passed to th function
+    :param kwargs: keyworded-arguments to be passed to th function
+    :param wait_for_result: wait for certain queue output
+    :return: returns the first output from queue if no callback is specified, or the return of the callback if specified
+    """
+    if kwargs is None: kwargs = {}
+    if queue: kwargs['queue'] = queue
+    while queue.qsize(): queue.get()
+    multiprocessing.Process(target=function, args=args, kwargs=kwargs).start()
+    while True:
+        while not queue.qsize(): app.after(100, app.update())
+        if callback:
+            call = callback(queue.get())
+            if call: return call
+        elif wait_for_result:
+            if queue.get() == wait_for_result:
+                break
+        else:
+            return queue.get()
+
+
 def download_and_track_spin(tracker_var, spin, progress_bar=None, progress_factor: float = 1,
                             do_torrent_dl: bool = False, new_file_path=None, queue=GLOBAL_QUEUE):
     filename = fn.get_file_name_from_url(spin.dl_link)
+    aria2_kwargs = {'aria2_path': PATH.ARIA2C, 'destination': PATH.WORK_DIR}
     if do_torrent_dl and spin.torrent_link:  # if torrent is selected and a torrent link is available
-        args = (PATH.ARIA2C, spin.torrent_link, PATH.WORK_DIR, True, queue)
+        aria2_kwargs['url'] = spin.torrent_link
+        aria2_kwargs['is_torrent'] = True
     else:  # if torrent is not selected or not available (direct download)
-        args = (PATH.ARIA2C, spin.dl_link, PATH.WORK_DIR, False, queue)
-    multiprocessing.Process(target=fn.download_with_aria2, args=args).start()
-    while True:
-        while not queue.qsize(): app.after(500, app.update())
-        while queue.qsize() != 1: queue.get()
-        dl_status = queue.get()
-        if dl_status == 'OK':
-            break
+        aria2_kwargs['url'] = spin.dl_link
+        aria2_kwargs['is_torrent'] = False
+
+    def callback(result):
+        if result == 'OK':
+            return 1
         if progress_bar:
-            progress_bar['value'] = dl_status['%'] * progress_factor
-        tracker_var.set(LN.job_dl_install_media + '\n%s\n%s: %s/s, %s: %s' % (dl_status['size'], LN.dl_speed,
-                                                                              dl_status['speed'], LN.dl_timeleft,
-                                                                              dl_status['eta']))
+            progress_bar['value'] = result['%'] * progress_factor
+        tracker_var.set(LN.job_dl_install_media + '\n%s\n%s: %s/s, %s: %s' % (result['size'], LN.dl_speed,
+                                                                              result['speed'], LN.dl_timeleft,
+                                                                              result['eta']))
+    run_async_function(fn.download_with_aria2, kwargs=aria2_kwargs, callback=callback)
     file_path = fn.find_file_by_name(filename, PATH.WORK_DIR)
     if new_file_path:
         fn.move_and_replace(file_path, new_file_path)
         file_path = new_file_path
 
-    while queue.qsize(): queue.get()  # to empty the queue
-    multiprocessing.Process(target=fn.check_hash, args=(file_path, spin.hash256, queue,)).start()
-    while not queue.qsize(): app.after(100, app.update())
-    return file_path, queue.get()
+    hash_result = run_async_function(fn.check_hash, kwargs={'file_path': file_path, 'sha256_hash': spin.hash256})
+    return file_path, hash_result
 
 
 def download_hash_handler(dl_hash):
@@ -107,39 +133,46 @@ def main():
             GV.COMPATIBILITY_RESULTS.space = 133264248832
             GV.COMPATIBILITY_RESULTS.resizable = 432008358400
             GV.COMPATIBILITY_RESULTS.arch = 'amd64'
-        if not vars(GV.COMPATIBILITY_RESULTS):
-            fn.get_admin()  # Request elevation (admin) if not running as admin
-            multiprocessing.Process(target=prc.compatibility_test, args=(minimal_required_space, GLOBAL_QUEUE,)).start()
-        if not GV.ALL_SPINS:
-            multiprocessing.Process(target=fn.get_json, args=(AVAILABLE_SPINS_LIST, GLOBAL_QUEUE, 'spin_list')).start()
-        if not GV.IP_LOCALE:
-            multiprocessing.Process(target=fn.get_json, args=(FEDORA_GEO_IP_URL, GLOBAL_QUEUE, 'geo_ip')).start()
-            # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
-        while not (GV.ALL_SPINS and vars(GV.COMPATIBILITY_RESULTS)):
-            while not GLOBAL_QUEUE.qsize(): app.after(100, app.update())
-            queue_out = GLOBAL_QUEUE.get()
-            if queue_out == 'arch':
+
+        def callback_compatibility(result):
+            if result == 'arch':
                 progressbar_check['value'] = 10
-            elif queue_out == 'uefi':
+            elif result == 'uefi':
                 job_var.set(LN.check_uefi)
                 progressbar_check['value'] = 20
-            elif queue_out == 'ram':
+            elif result == 'ram':
                 job_var.set(LN.check_ram)
                 progressbar_check['value'] = 30
-            elif queue_out == 'space':
+            elif result == 'space':
                 job_var.set(LN.check_space)
                 progressbar_check['value'] = 50
-            elif queue_out == 'resizable':
+            elif result == 'resizable':
                 job_var.set(LN.check_resizable)
                 progressbar_check['value'] = 80
-            elif isinstance(queue_out, tuple) and queue_out[0] == 'spin_list':
-                GV.ALL_SPINS = queue_out[1]
-            elif isinstance(queue_out, tuple) and queue_out[0] == 'geo_ip':
-                GV.IP_LOCALE = queue_out[1]
-            elif isinstance(queue_out, dict) and queue_out.keys() >= {"arch", "uefi"}:
-                GV.COMPATIBILITY_RESULTS.__init__(**queue_out)
+            elif isinstance(result, dict) and result.keys() >= {"arch", "uefi"}:
+                GV.COMPATIBILITY_RESULTS.__init__(**result)
                 job_var.set(LN.check_available_downloads)
                 progressbar_check['value'] = 95
+                return 1
+
+        def callback_spinlist(result):
+            if isinstance(result, tuple) and result[0] == 'spin_list':
+                GV.ALL_SPINS = result[1]
+                return 1
+
+        def callback_geo_up(result):
+            if isinstance(result, tuple) and result[0] == 'geo_ip':
+                GV.IP_LOCALE = result[1]
+                return 1
+
+        if not vars(GV.COMPATIBILITY_RESULTS):
+            fn.get_admin()  # Request elevation (admin) if not running as admin
+            run_async_function(prc.compatibility_test, callback=callback_compatibility, args=(minimal_required_space,))
+        if not GV.ALL_SPINS:
+            run_async_function(fn.get_json, callback=callback_spinlist, kwargs={'url': AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
+        if not GV.IP_LOCALE:
+            run_async_function(fn.get_json, callback=callback_geo_up, kwargs={'url': FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
+            # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
         # LOG #########################################################
         fn.log('\nInitial Test completed, results:')
         for key, value in vars(GV.COMPATIBILITY_RESULTS).items():
@@ -541,7 +574,6 @@ def main():
 
         partition.tmp_part_size = tmp_part_size
         partition.temp_part_label = GV.TMP_PARTITION_LABEL
-        partition.queue = GLOBAL_QUEUE
 
         if GV.INSTALL_OPTIONS.install_method != 'custom':
             if GV.AUTOINST.keymap_timezone_source == 'ip':
@@ -656,7 +688,6 @@ def main():
         # INSTALL STARTING
         while GV.INSTALLER_STATUS not in (0, -1, -2):
             if GV.INSTALLER_STATUS is None:  # first step, start the download
-                while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 progressbar_install['value'] = 0
                 job_var.set(LN.job_starting_download)
                 app.update()
@@ -687,27 +718,16 @@ def main():
                         if download_hash_handler(checksum):
                             break  # re-download if file checksum didn't match expected, continue otherwise
                 if GV.AUTOINST.encryption_tpm_unlock:
-                    args = (PATH.ARIA2C, TPM2_TOOLS_RPM_DL_LINK, PATH.WORK_DIR, False, GLOBAL_QUEUE)
-                    multiprocessing.Process(target=fn.download_with_aria2, args=args).start()
-                    while True:
-                        while not GLOBAL_QUEUE.qsize(): app.after(200, app.update())
-                        while GLOBAL_QUEUE.qsize() != 1: GLOBAL_QUEUE.get()
-                        if GLOBAL_QUEUE.get() == 'OK': break
+                    aria2_kwargs = {'aria2_path': PATH.ARIA2C, 'url': TPM2_TOOLS_RPM_DL_LINK, 'destination': PATH.RPM_SOURCE_DIR}
+                    run_async_function(fn.download_with_aria2, kwargs=aria2_kwargs, wait_for_result='OK')
+
                 GV.INSTALLER_STATUS = 2
 
             if GV.INSTALLER_STATUS == 2:  # step 2: create temporary boot partition
-                while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
-
-                multiprocessing.Process(target=prc.partition_procedure, kwargs=part_kwargs).start()
                 job_var.set(LN.job_creating_tmp_part)
                 progressbar_install['value'] = 92
-                GV.INSTALLER_STATUS = 3
-
-            if GV.INSTALLER_STATUS == 3:  # while creating partition is ongoing...
-                while not GLOBAL_QUEUE.qsize():
-                    app.after(200, app.update())
-                tmp_part_result = GLOBAL_QUEUE.get()
+                tmp_part_result = run_async_function(prc.partition_procedure, kwargs=part_kwargs)
                 if tmp_part_result[0] != 1:
                     return
                 else:
@@ -715,28 +735,22 @@ def main():
                     GV.INSTALLER_STATUS = 4
 
             if GV.INSTALLER_STATUS == 4:  # step 3: mount iso and copy files to temporary boot partition
-                while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
                 app.protocol("WM_DELETE_WINDOW", None)  # re-enable closing the app
                 job_var.set(LN.job_copying_to_tmp_part)
                 progressbar_install['value'] = 94
                 installer_mount_letter = fn.mount_iso(PATH.INSTALL_ISO)
                 source_files = installer_mount_letter + ':\\'
-                destination_files = GV.TMP_PARTITION_LETTER + ':\\'
-                multiprocessing.Process(target=fn.copy_files, args=(source_files, destination_files, GLOBAL_QUEUE,)).start()
-                while not GLOBAL_QUEUE.qsize(): app.after(200, app.update())
-                if GLOBAL_QUEUE.get() == 1: pass  # NEED EDIT
+                destination = GV.TMP_PARTITION_LETTER + ':\\'
+                run_async_function(fn.copy_files, kwargs={'source': source_files, 'destination': destination})
                 if is_live_img:
                     live_img_mount_letter = fn.mount_iso(PATH.LIVE_ISO)
-                    source_file = live_img_mount_letter + ':\\LiveOS\\'
+                    source_files = live_img_mount_letter + ':\\LiveOS\\'
                     destination = GV.TMP_PARTITION_LETTER + ':\\LiveOS\\'
-                    multiprocessing.Process(target=fn.copy_files, args=(source_file, destination, GLOBAL_QUEUE,)).start()
-                    while not GLOBAL_QUEUE.qsize():
-                        app.after(200, app.update())
-                    if GLOBAL_QUEUE.get() == 1: pass
-                GV.INSTALLER_STATUS = 5
+                    run_async_function(fn.copy_files, kwargs={'source': source_files, 'destination': destination})
 
-            if GV.INSTALLER_STATUS == 5:  # step 4: adding boot entry
-                while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
+                rpm_dest_path = GV.TMP_PARTITION_LETTER + ':\\%s\\%s' % PATH.RELATIVE_RPM_DEST_DIR
+                run_async_function(fn.copy_files, kwargs={'source': PATH.RPM_SOURCE_DIR, 'destination': rpm_dest_path})
+
                 job_var.set(LN.job_adding_tmp_boot_entry)
                 progressbar_install['value'] = 98
                 if GV.INSTALL_OPTIONS.install_method != 'custom': grub_cfg_file = PATH.GRUB_CONFIG_AUTOINST
@@ -752,10 +766,6 @@ def main():
                 fn.set_file_readonly(grub_cfg_dest_path, True)
                 nvidia_script_dest_path = GV.TMP_PARTITION_LETTER + ':\\%s' % PATH.RELATIVE_NVIDIA_SCRIPT
                 fn.copy_and_rename_file(PATH.NVIDIA_SCRIPT, nvidia_script_dest_path)
-                tpm2_rpm_name = fn.get_file_name_from_url(TPM2_TOOLS_RPM_DL_LINK)
-                tpm2_rpm_path = PATH.WORK_DIR + '\\' + tpm2_rpm_name
-                tpm2_rpm_dest_path = GV.TMP_PARTITION_LETTER + ':\\%s\\%s' % PATH.RELATIVE_RPM_DIR, tpm2_rpm_name
-                fn.copy_and_rename_file(tpm2_rpm_path, tpm2_rpm_dest_path)
 
                 if GV.INSTALL_OPTIONS.install_method != 'custom':
                     kickstart_txt = prc.build_autoinstall_ks_file(**ks_kwargs)
@@ -764,20 +774,14 @@ def main():
                         kickstart.write(kickstart_txt)
                         kickstart.close()
                 app.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app
-                if GV.INSTALL_OPTIONS.install_method == 'dualboot':
-                    is_new_boot_order_permanent = False
-                else:
+                if GV.INSTALL_OPTIONS.install_method == 'clean':
                     is_new_boot_order_permanent = True
-                multiprocessing.Process(target=prc.add_boot_entry,
-                                        args=(default_efi_file_path, GV.TMP_PARTITION_LETTER,
-                                              is_new_boot_order_permanent, GLOBAL_QUEUE,)).start()
-                GV.INSTALLER_STATUS = 7
-            if GV.INSTALLER_STATUS == 7:  # while adding boot entry is ongoing...
-                while not GLOBAL_QUEUE.qsize():
-                    app.after(200, app.update())
-                if GLOBAL_QUEUE.get() == 1:
-                    GV.INSTALLER_STATUS = 8
-            if GV.INSTALLER_STATUS == 8:  # step 5: clean up iso and other downloaded files since install is complete
+                else:
+                    is_new_boot_order_permanent = False
+                boot_kwargs = {'boot_efi_file_path': default_efi_file_path, 'boot_drive_letter': GV.TMP_PARTITION_LETTER,
+                          'is_permanent': is_new_boot_order_permanent}
+                run_async_function(prc.add_boot_entry, kwargs=boot_kwargs)
+                # step 5: clean up iso and other downloaded files since install is complete
                 fn.unmount_iso(PATH.INSTALL_ISO)
                 fn.unmount_iso(PATH.LIVE_ISO)
                 fn.remove_drive_letter(GV.TMP_PARTITION_LETTER)

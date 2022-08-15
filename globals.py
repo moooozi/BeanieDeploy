@@ -5,6 +5,7 @@ PATH = types.SimpleNamespace()
 PATH.CURRENT_DIR = '%CURRENT_DIR%'
 PATH.DOWNLOADS_DIR = '%DOWNLOADS_DIR%'
 PATH.WORK_DIR = '%DOWNLOADS_DIR%\\win2linux_tmpdir'
+PATH.RPM_SOURCE_DIR = PATH.WORK_DIR + '\\'
 PATH.GRUB_CONFIG_DEFUALT = '%CURRENT_DIR%\\resources\\grub_conf\\grub_default.cfg'
 PATH.GRUB_CONFIG_AUTOINST = '%CURRENT_DIR%\\resources\\grub_conf\\grub_autoinst.cfg'
 PATH.NVIDIA_SCRIPT = '%CURRENT_DIR%\\resources\\nvidia_inst'
@@ -13,10 +14,13 @@ PATH.LIVE_ISO = PATH.WORK_DIR + '\\live_os.iso'
 PATH.INSTALL_ISO = PATH.WORK_DIR + '\\install_media.iso'
 PATH.RELATIVE_GRUB_CFG = r'EFI\BOOT\grub.cfg'
 PATH.RELATIVE_NVIDIA_SCRIPT = r'lnixify\nvidia_inst'
-PATH.RELATIVE_RPM_DIR = 'ADDITIONAL_RPMs'
+PATH.RELATIVE_RPM_DEST_DIR = 'ADDITIONAL_RPMs'
 PATH.RELATIVE_KICKSTART = 'ks.cfg'
+
 COMPATIBILITY_RESULTS = types.SimpleNamespace()
 IP_LOCALE = {}
+ALL_SPINS = []
+ACCEPTED_SPINS = []
 
 ACCEPTED_ARCHITECTURES = ('amd64',)
 AVAILABLE_INSTALL_METHODS = ('dualboot', 'clean', 'custom')
@@ -28,11 +32,9 @@ AUTOINST = types.SimpleNamespace(dualboot_size=APP_INFO.dualboot_required_space,
                                  username='', fullname='')
 TMP_PARTITION_LETTER = ''
 TMP_PARTITION_LABEL = 'FEDORA-INST'  # Max 12 Chars
-ALL_SPINS = []
-ACCEPTED_SPINS = []
+
 LIVE_OS_INSTALLER_SPIN = None
 USERNAME_WINDOWS = ''
-
 SELECTED_SPIN = None
 
 UI = types.SimpleNamespace()

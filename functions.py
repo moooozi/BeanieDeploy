@@ -59,12 +59,12 @@ def set_file_readonly(filepath, is_true: bool):
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
 
 
-def download_with_aria2(app_path, url, destination, is_torrent, queue=None):
+def download_with_aria2(aria2_path, url, destination, is_torrent=False, queue=None):
     arg = r' --dir="' + destination + '" ' + url
     if is_torrent:
         arg += ' --seed-time=0'
 
-    p = subprocess.Popen(app_path + arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+    p = subprocess.Popen(aria2_path + arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                          universal_newlines=True)
     tracker = {
         'speed': '0',
@@ -184,8 +184,6 @@ def remove_drive_letter(drive_letter):
 def copy_files(source, destination, queue=None):
     arg = r'robocopy "' + source + '" "' + destination + '" /e /mt'
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    if queue:
-        queue.put(1)
 
 
 def copy_and_rename_file(source, destination, queue=None):
@@ -235,13 +233,14 @@ def make_boot_entry_first(bootguid, is_permanent: bool = False):
         arg = r'bcdedit /set "{fwbootmgr}" bootsequence "' + bootguid + '" /addfirst'
 
     out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    print(out)
+    log(out.stdout)
 
 
 def create_new_wbm(boot_efi_file_path, boot_drive_letter):
     arg = r'bcdedit /copy "{bootmgr}" /d "Linux Install Media"'
     bootguid = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout.strip()
+    log(bootguid)
     bootguid = bootguid[bootguid.index('{'):bootguid.index('}') + 1]
     arg = r'bcdedit /set  "' + bootguid + '" path ' + boot_efi_file_path + ''
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
