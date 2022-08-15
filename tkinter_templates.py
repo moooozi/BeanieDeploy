@@ -195,6 +195,7 @@ def add_lang_list(parent, var, languages):
 def add_progress_bar(parent, lenth=MAXWIDTH-LEFT_FRAME_WIDTH):
     progressbar = ttk.Progressbar(parent, orient='horizontal', length=lenth, mode='determinate')
     progressbar.pack(pady=25)
+    return progressbar
 
 
 def stylize(parent, theme_dir, theme_name):

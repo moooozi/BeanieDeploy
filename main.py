@@ -14,7 +14,7 @@ import autoinst
 #   INIT CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 app = tkt.init_tkinter(SW_NAME)  # initialize tkinter
 PATH = prc.init_paths(GV.PATH)
-tkt.stylize(app, theme_dir=PATH.CURRENT_DIR + '/theme/azure-dark.tcl', theme_name='azure')  # use tkinter theme
+tkt.stylize(app, theme_dir=PATH.CURRENT_DIR + '/resources/style/theme/azure-dark.tcl', theme_name='azure')  # use tkinter theme
 GLOBAL_QUEUE = multiprocessing.Queue()
 #   MAIN CONTAINER & FRAMES   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 CONTAINER = ttk.Frame(app)
@@ -22,7 +22,36 @@ CONTAINER.pack()
 vTitleText = tk.StringVar(app)
 TOP_FRAME, MID_FRAME, LEFT_FRAME = tkt.build_main_gui_frames(CONTAINER)
 ttk.Label(LEFT_FRAME, image=tk.PhotoImage(file=PATH.CURRENT_DIR + r'\resources\left_frame.gif')).pack()
-#   INITIALIZING GLOBAL VARIABLES /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
+
+
+def download_and_track_spin(tracker_var, spin, progress_bar=None, progress_factor: float = 1,
+                            do_torrent_dl: bool = False, new_file_path=None, queue=GLOBAL_QUEUE):
+    filename = fn.get_file_name_from_url(spin.dl_link)
+    if do_torrent_dl and spin.torrent_link:  # if torrent is selected and a torrent link is available
+        args = (PATH.ARIA2C, spin.torrent_link, PATH.WORK_DIR, True, queue)
+    else:  # if torrent is not selected or not available (direct download)
+        args = (PATH.ARIA2C, spin.dl_link, PATH.WORK_DIR, False, queue)
+    multiprocessing.Process(target=fn.download_with_aria2, args=args).start()
+    while True:
+        while not queue.qsize(): app.after(500, app.update())
+        while queue.qsize() != 1: queue.get()
+        dl_status = queue.get()
+        if dl_status == 'OK':
+            break
+        if progress_bar:
+            progress_bar['value'] = dl_status['%'] * progress_factor
+        tracker_var.set(LN.job_dl_install_media + '\n%s\n%s: %s/s, %s: %s' % (dl_status['size'], LN.dl_speed,
+                                                                              dl_status['speed'], LN.dl_timeleft,
+                                                                              dl_status['eta']))
+    file_path = fn.find_file_by_name(filename, PATH.WORK_DIR)
+    if new_file_path:
+        fn.move_and_replace(file_path, new_file_path)
+        file_path = new_file_path
+
+    while queue.qsize(): queue.get()  # to empty the queue
+    multiprocessing.Process(target=fn.check_hash, args=(file_path, spin.hash256, queue,)).start()
+    while not queue.qsize(): app.after(100, app.update())
+    return file_path, queue.get()
 
 
 def download_hash_handler(dl_hash):
@@ -624,7 +653,6 @@ def main():
         progressbar_install = tkt.add_progress_bar(MID_FRAME)
         job_var = tk.StringVar(app)
         tkt.add_text_label(MID_FRAME, var=job_var, pady=0, padx=10)
-
         # INSTALL STARTING
         while GV.INSTALLER_STATUS not in (0, -1, -2):
             if GV.INSTALLER_STATUS is None:  # first step, start the download
@@ -634,37 +662,38 @@ def main():
                 app.update()
                 fn.mkdir(PATH.WORK_DIR)
                 is_torrent_dl = GV.INSTALL_OPTIONS.torrent
-                # checking if files from previous runs are present
                 installer_exist = prc.check_valid_existing_file(PATH.INSTALL_ISO, installer_img.hash256)
                 live_img_exist = prc.check_valid_existing_file(PATH.LIVE_ISO, live_img.hash256)
-
                 if not installer_exist:
                     while True:
-                        dl_hash = prc.start_download(main_gui=app, aria2location=PATH.ARIA2C, dl_path=PATH.WORK_DIR,
-                                                     spin=installer_img,
-                                                     new_file_path=PATH.INSTALL_ISO,
-                                                     progress_bar=progressbar_install,
-                                                     progress_factor=installer_img_dl_percent_factor, status_shared_var=job_var,
-                                                     ln_speed=LN.dl_speed, ln_job=LN.job_dl_install_media, ln_dl_timeleft=LN.dl_timeleft,
-                                                     queue=GLOBAL_QUEUE, do_torrent_dl=is_torrent_dl)
+                        file_path, checksum = download_and_track_spin(spin=installer_img,
+                                                                      progress_bar=progressbar_install,
+                                                                      progress_factor=installer_img_dl_percent_factor,
+                                                                      tracker_var=job_var,
+                                                                      new_file_path=PATH.INSTALL_ISO,
+                                                                      do_torrent_dl=is_torrent_dl)
                         job_var.set(LN.job_checksum)
-                        if download_hash_handler(dl_hash): break  # re-download if file checksum didn't match expected
-                if not is_live_img:
-                    GV.INSTALLER_STATUS = 2
-                else:
-                    if not live_img_exist:
-                        while True:
-                            dl_hash = prc.start_download(main_gui=app, aria2location=PATH.ARIA2C, dl_path=PATH.WORK_DIR,
-                                                         spin=live_img,
-                                                         new_file_path=PATH.LIVE_ISO,
-                                                         progress_bar=progressbar_install,
-                                                         progress_factor=live_img_dl_factor, status_shared_var=job_var,
-                                                         ln_speed=LN.dl_speed, ln_job=LN.job_dl_install_media,
-                                                         ln_dl_timeleft=LN.dl_timeleft,
-                                                         queue=GLOBAL_QUEUE, do_torrent_dl=is_torrent_dl)
-                            job_var.set(LN.job_checksum)
-                            if download_hash_handler(dl_hash): break  # re-download if file checksum didn't match expected
-                    GV.INSTALLER_STATUS = 2
+                        if download_hash_handler(checksum):
+                            break  # re-download if file checksum didn't match expected, continue otherwise
+                if is_live_img and not live_img_exist:
+                    while True:
+                        file_path, checksum = download_and_track_spin(spin=live_img,
+                                                                      progress_bar=progressbar_install,
+                                                                      progress_factor=live_img_dl_factor,
+                                                                      tracker_var=job_var,
+                                                                      new_file_path=PATH.LIVE_ISO,
+                                                                      do_torrent_dl=is_torrent_dl)
+                        job_var.set(LN.job_checksum)
+                        if download_hash_handler(checksum):
+                            break  # re-download if file checksum didn't match expected, continue otherwise
+                if GV.AUTOINST.encryption_tpm_unlock:
+                    args = (PATH.ARIA2C, TPM2_TOOLS_RPM_DL_LINK, PATH.WORK_DIR, False, GLOBAL_QUEUE)
+                    multiprocessing.Process(target=fn.download_with_aria2, args=args).start()
+                    while True:
+                        while not GLOBAL_QUEUE.qsize(): app.after(200, app.update())
+                        while GLOBAL_QUEUE.qsize() != 1: GLOBAL_QUEUE.get()
+                        if GLOBAL_QUEUE.get() == 'OK': break
+                GV.INSTALLER_STATUS = 2
 
             if GV.INSTALLER_STATUS == 2:  # step 2: create temporary boot partition
                 while GLOBAL_QUEUE.qsize(): GLOBAL_QUEUE.get()  # to empty the queue
@@ -723,6 +752,10 @@ def main():
                 fn.set_file_readonly(grub_cfg_dest_path, True)
                 nvidia_script_dest_path = GV.TMP_PARTITION_LETTER + ':\\%s' % PATH.RELATIVE_NVIDIA_SCRIPT
                 fn.copy_and_rename_file(PATH.NVIDIA_SCRIPT, nvidia_script_dest_path)
+                tpm2_rpm_name = fn.get_file_name_from_url(TPM2_TOOLS_RPM_DL_LINK)
+                tpm2_rpm_path = PATH.WORK_DIR + '\\' + tpm2_rpm_name
+                tpm2_rpm_dest_path = GV.TMP_PARTITION_LETTER + ':\\%s\\%s' % PATH.RELATIVE_RPM_DIR, tpm2_rpm_name
+                fn.copy_and_rename_file(tpm2_rpm_path, tpm2_rpm_dest_path)
 
                 if GV.INSTALL_OPTIONS.install_method != 'custom':
                     kickstart_txt = prc.build_autoinstall_ks_file(**ks_kwargs)
@@ -735,10 +768,10 @@ def main():
                     is_new_boot_order_permanent = False
                 else:
                     is_new_boot_order_permanent = True
-                multiprocessing.Process(target=prc.add_boot_entry, args=(default_efi_file_path, GV.TMP_PARTITION_LETTER,
-                                                         is_new_boot_order_permanent, GLOBAL_QUEUE,)).start()
+                multiprocessing.Process(target=prc.add_boot_entry,
+                                        args=(default_efi_file_path, GV.TMP_PARTITION_LETTER,
+                                              is_new_boot_order_permanent, GLOBAL_QUEUE,)).start()
                 GV.INSTALLER_STATUS = 7
-
             if GV.INSTALLER_STATUS == 7:  # while adding boot entry is ongoing...
                 while not GLOBAL_QUEUE.qsize():
                     app.after(200, app.update())
@@ -781,7 +814,7 @@ def main():
         if GV.INSTALL_OPTIONS.auto_restart:
             countdown_to_restart(10)
 
-    page_check(False)
+    page_check()
     app.mainloop()
 
 

@@ -2,7 +2,7 @@
 
 import os
 import types
-from multiprocessing import Process
+import multiprocessing
 
 import functions as fn
 
@@ -85,33 +85,57 @@ def add_boot_entry(boot_efi_file_path, boot_drive_letter, is_permanent: bool = F
 
 def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone=None, ostree_args=None, username='', fullname='',
                               wifi_profiles=None, is_encrypted: bool = False, passphrase: str = None,
-                              tpm_auto_unlock: bool = True, live_img_url='',
-                              nvidia_drivers=True, partition_method=None,):
+                              tpm_auto_unlock: bool = True, live_img_url='', nvidia_drivers=True, additional_repos=True,
+                              partition_method=None, additional_rpm_dir=None):
     kickstart_lines = []
     kickstart_lines.append("# Kickstart file created by Lnixify.")
     kickstart_lines.append("graphical")
+    kickstart_lines.append("# removing kickstart files containing sensitive data and")
+    kickstart_lines.append("# reverting install media boot options")
     kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post.log")
     kickstart_lines.append("rm /run/install/repo/ks.cfg")
     kickstart_lines.append("cp /run/install/repo/EFI/BOOT/BOOT.cfg /run/install/repo/EFI/BOOT/grub.cfg")
+    kickstart_lines.append("%end")
+
     # Importing Wi-Fi profiles
     if wifi_profiles and isinstance(wifi_profiles, list):
+        kickstart_lines.append("# Importing Wi-Fi profiles")
+        kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post_wifi.log")
         kickstart_lines.append("mkdir -p /mnt/sysimage/etc/NetworkManager/system-connections")
         template = r"""[connection]\nid=%name%\ntype=wifi\n\n[wifi]\nhidden=%hidden%\nssid=%ssid%\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%password%\n\n[ipv4]\nmethod=auto\n\n[ipv6]\naddr-gen-mode=stable-privacy\nmethod=auto\n\n[proxy]\n"""
         for index, profile in enumerate(wifi_profiles):
             network_file = template.replace('%name%', profile['name']).replace('%ssid%', profile['ssid']).replace('%hidden%', profile['hidden']).replace('%password%', profile['password'])
             kickstart_lines.append("echo $'" + network_file + \
                              "' > " + "/mnt/sysimage/etc/NetworkManager/system-connections/imported_wifi%s.nmconnection" % str(index))
+        kickstart_lines.append("%end")
     # if nvidia_drivers:
     #    kickstart_lines.append("mkdir -p /mnt/sysimage/etc/profile.d/")
     #    kickstart_lines.append("cp /run/install/repo/lnixify/nvidia_inst /mnt/sysimage/etc/profile.d/nvidia_inst.sh")
-    if is_encrypted and passphrase and tpm_auto_unlock:
+    if additional_rpm_dir:
+        kickstart_lines.append("# Installing additional packages")
+        kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post_additional_rpm.log")
+        kickstart_lines.append("mkdir -p /mnt/sysimage/home/tmp_rpm")
+        kickstart_lines.append("cp /run/install/repo/" + additional_rpm_dir + '/* /mnt/sysimage/home/tmp_rpm')
         kickstart_lines.append("chroot /mnt/sysimage/")
-        kickstart_lines.append("dnf install tpm2-tools")
-        kickstart_lines.append("systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+8 $device")
+        kickstart_lines.append("dnf install /home/tmp_rpm/*.rpm -y")
+        kickstart_lines.append("rm -rf /home/tmp_rpm")
+        kickstart_lines.append("%end")
+    if is_encrypted and passphrase and tpm_auto_unlock:
+        kickstart_lines.append("# Activating encryption auto-unlock using TPM2 chip")
+        kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post_tpm2_unlock.log")
+        kickstart_lines.append("chroot /mnt/sysimage/")
+        kickstart_lines.append("PASSWORD=%s systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+8 $device" % passphrase)
         kickstart_lines.append("sed -ie '/^luks-/s/$/,tpm2-device=auto/' /etc/crypttab")
         kickstart_lines.append("dracut -f")
-
-    kickstart_lines.append("%end")
+        kickstart_lines.append("%end")
+    '''
+    if additional_repos:
+        kickstart_lines.append("# Activating unrestricted Flatpak")
+        kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post_additional_repos.log")
+        kickstart_lines.append("chroot /mnt/sysimage/")
+        kickstart_lines.append("flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo")
+        kickstart_lines.append("%end")
+    '''
 
     if not (keymap and lang and timezone):
         if not keymap: keymap = 'us'
@@ -285,43 +309,20 @@ def get_wifi_profiles(work_directory):
     return wifi_profiles
 
 
-def start_download(main_gui, status_shared_var, aria2location, dl_path, spin: dict,
-                   queue, new_file_path: str,
-                   progress_bar=None, progress_factor=1, check_existing_file_hash_only=False,
-                   do_torrent_dl: bool = False, ln_job='', ln_speed='', ln_dl_timeleft=''):
-    if not check_existing_file_hash_only:
-        filename = fn.get_file_name_from_url(spin['dl_link'])
-        if do_torrent_dl and spin['torrent_link']:
-            # if torrent is selected and a torrent link is available
-            args = (aria2location, spin['torrent_link'], dl_path, 1, queue)
-        else:
-            # if torrent is not selected or not available (direct download)
-            args = (aria2location, spin['dl_link'], dl_path, 0, queue)
-        Process(target=fn.download_with_aria2, args=args).start()
-        while True:
-            while not queue.qsize(): main_gui.after(500, main_gui.update())
-            while queue.qsize() != 1: queue.get()
-            dl_status = queue.get()
-            if dl_status == 'OK':
-                break
-            if progress_bar:
-                progress_bar['value'] = dl_status['%'] * progress_factor
-            status_shared_var.set(ln_job + '\n%s\n%s: %s/s, %s: %s' % (dl_status['size'], ln_speed,
-                                                                       dl_status['speed'], ln_dl_timeleft,
-                                                                       dl_status['eta']))
+def start_async_download(app_path, url, destination, is_torrent=False, queue=None):
+    args = (app_path, url, destination, is_torrent, queue)
+    multiprocessing.Process(target=fn.download_with_aria2, args=args).start()
 
-        file_path = fn.find_file_by_name(filename, dl_path)
-        if new_file_path:
-            fn.move_and_replace(file_path, new_file_path)
-            file_path = new_file_path
 
-    if spin['hash256']:
-        while queue.qsize(): queue.get()  # to empty the queue
-        Process(target=fn.check_hash, args=(file_path, spin['hash256'], queue,)).start()
-        while not queue.qsize(): main_gui.after(100, main_gui.update())
-        return queue.get()
+def decide_torrent_or_direct_download(torrent_preferred, direct_link, torrent_link):
+    torrent_exist = bool(torrent_link)
+    if torrent_exist and torrent_preferred:
+        is_torrent = True
+        link = torrent_link
     else:
-        return 1
+        is_torrent = False
+        link = direct_link
+    return link, is_torrent
 
 
 def check_valid_existing_file(path, file_hash):
@@ -343,3 +344,4 @@ def init_paths(paths_namespace):
     for key, value in (path_dict := vars(paths_namespace)).items():
         path_dict[key] = value.replace('%CURRENT_DIR%', current_dir).replace('%DOWNLOADS_DIR%', downloads_dir)
     return types.SimpleNamespace(**path_dict)
+

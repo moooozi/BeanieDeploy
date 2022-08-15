@@ -59,28 +59,29 @@ def set_file_readonly(filepath, is_true: bool):
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
 
 
-def download_with_aria2(app_path, url, destination, is_torrent, queue):
+def download_with_aria2(app_path, url, destination, is_torrent, queue=None):
     arg = r' --dir="' + destination + '" ' + url
     if is_torrent:
         arg += ' --seed-time=0'
 
     p = subprocess.Popen(app_path + arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                          universal_newlines=True)
-    # Parsing output
     tracker = {
         'speed': '0',
         'eta': 'N/A',
         'size': '',
         '%': '0'
     }
+    # Parsing output
     while True:
         output = p.stdout.readline()
         if output == '' and p.poll() is not None:
             return 0
         if output:
             if '(OK):download completed' in output:
-                queue.put('OK')
-            else:
+                if queue: queue.put('OK')
+                return 1
+            elif queue:
                 if (txt := output.strip())[0:2] == '[#':
                     txt = txt[1:-1]
                     try:
