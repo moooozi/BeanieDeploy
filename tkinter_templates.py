@@ -80,21 +80,12 @@ def open_popup(parent, title_txt, msg_txt, primary_btn_str=None, secondary_btn_s
     x_position = parent.winfo_x()
     y_position = parent.winfo_y()
     #  position the pop up window at the center of its parent
-    if x_size and y_size:
-        geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position + MAXWIDTH - x_size / 2, y_position + y_size/2 + 25)
-        msg_font = FONTS.tiny
-    else:
-        if len(msg_txt) > 120:
-            x_size = 600
-            y_size = 300
-            geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position+MAXWIDTH-x_size/2, y_position+y_size/2 + 25)
-            msg_font = FONTS.tiny
-        else:
-            x_size = 600
-            y_size = 250
-            geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position+MAXWIDTH/2-x_size/2, y_position+MAXHEIGHT/2-y_size/2 + 25)
-            msg_font = FONTS.small
+    msg_font = FONTS.small
+    if not (x_size and y_size):
+        x_size = 600
+        y_size = int(len(msg_txt)/2.8 + 180 + 13*msg_txt.count('\n'))
 
+    geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position + (MAXWIDTH - x_size) / 2 + 20, y_position + (MAXHEIGHT - y_size) / 2 + 20)
     pop.geometry(geometry)
     pop.overrideredirect(True)
     pop.focus_set()

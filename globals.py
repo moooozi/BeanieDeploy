@@ -32,7 +32,7 @@ AUTOINST = types.SimpleNamespace(dualboot_size=APP_INFO.dualboot_required_space,
                                  username='', fullname='')
 TMP_PARTITION_LETTER = ''
 TMP_PARTITION_LABEL = 'FEDORA-INST'  # Max 12 Chars
-
+Literal: types
 LIVE_OS_INSTALLER_SPIN = None
 USERNAME_WINDOWS = ''
 SELECTED_SPIN = None

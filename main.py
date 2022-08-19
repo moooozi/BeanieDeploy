@@ -26,7 +26,7 @@ ttk.Label(LEFT_FRAME, image=tk.PhotoImage(file=PATH.CURRENT_DIR + r'\resources\l
 
 def run_async_function(function, callback=None, queue=GLOBAL_QUEUE, args=(), kwargs=None, wait_for_result=None):
     """
-run a function without blocking the GUI
+    run a function without blocking the GUI
     :param function: the function
     :param callback: callback function to handle Queue communication
     :param queue: the Queue object
@@ -100,7 +100,7 @@ def download_hash_handler(dl_hash):
     else:
         question = tkt.open_popup(parent=app, title_txt=LN.job_checksum_mismatch,
                                   msg_txt=LN.job_checksum_mismatch_txt % dl_hash,
-                                  primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
+                                  primary_btn_str=LN.btn_retry, secondary_btn_str=LN.btn_abort)
         if not question:
             question = tkt.open_popup(parent=app, title_txt=LN.cleanup_question,
                                       msg_txt=LN.cleanup_question_txt,
@@ -819,6 +819,7 @@ def main():
             countdown_to_restart(10)
 
     page_check()
+    #page_1()
     app.mainloop()
 
 

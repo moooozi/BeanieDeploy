@@ -11,7 +11,7 @@ btn_confirm = "Confirm"
 btn_install = "Install"
 btn_restart_now = "Restart now"
 btn_restart_later = "Restart later"
-btn_dl_again = "Download Again"
+btn_retry = "Retry"
 
 check_available_downloads = "Checking available downloads"
 check_running = "Checking System compatibility. please wait..."
@@ -111,9 +111,10 @@ job_checksum = "Checking downloaded file's integrity"
 job_checksum_failed = "Integrity check failed"
 job_checksum_failed_txt = "Failed to check downloaded file integrity, continue anyways?"
 job_checksum_mismatch = "Checksum Mismatch"
-job_checksum_mismatch_txt = "The downloaded file has bad fingerprint (Hash) and cannot be trusted.\n\nFile Hash:\n%s\n" \
-                               "Expected Hash:\n%s\n\n" \
-                               "This could also mean the downloaded file is corrupted"
+job_checksum_mismatch_txt = "The downloaded file has an unknown fingerprint (SHA256 Hash) and cannot be trusted.\n" \
+                            "\nFile Hash:\n%s\n" \
+                            "Expected Hash:\n%s\n\n" \
+                            "This usually means that the downloaded file is either unsafe or corrupted. Try to download again?"
 
 job_creating_tmp_part = "Creating temporary boot partition for installer media..."
 job_copying_to_tmp_part = "Copying required installer media files to temporary boot partition..."
