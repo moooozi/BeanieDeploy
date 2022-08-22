@@ -1,3 +1,5 @@
+import translations.en as LN
+
 available_languages = {
     # 'display name': ('codename(filename)', 'is right-to-left?'
     'العربية': ('ar', 1),

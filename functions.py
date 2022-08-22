@@ -3,8 +3,8 @@ import re
 import shutil
 import subprocess
 import winreg
-import requests
-import xmltodict
+from urllib.request import urlopen
+import libs.xmltodict as xmltodict
 import os
 import pathlib
 
@@ -59,10 +59,13 @@ def set_file_readonly(filepath, is_true: bool):
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
 
 
-def download_with_aria2(aria2_path, url, destination, is_torrent=False, queue=None):
-    arg = r' --dir="' + destination + '" ' + url
+def download_with_aria2(aria2_path, url, destination, output_name=None,  is_torrent=False, queue=None):
+    arg = r' --dir="%s" ' % destination
+    if output_name and not is_torrent:
+        arg += r'--out=%s ' % output_name
     if is_torrent:
-        arg += ' --seed-time=0'
+        arg += ' --seed-time=0 '
+    arg += url
 
     p = subprocess.Popen(aria2_path + arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                          universal_newlines=True)
@@ -79,7 +82,7 @@ def download_with_aria2(aria2_path, url, destination, is_torrent=False, queue=No
             return 0
         if output:
             if '(OK):download completed' in output:
-                if queue: queue.put('OK')
+                if queue: queue.put('ARIA2C: Done')
                 return 1
             elif queue:
                 if (txt := output.strip())[0:2] == '[#':
@@ -97,7 +100,7 @@ def download_with_aria2(aria2_path, url, destination, is_torrent=False, queue=No
                             index2 = txt.index('(')
                             tracker['size'] = txt.split()[1]
                             tracker['%'] = int(txt[index2 + 1:index1])
-                        queue.put(tracker)
+                        queue.put(('ARIA2C: Tracking %s' % output_name, tracker))
                     except (ValueError, IndexError): pass
 
 
@@ -105,7 +108,7 @@ def check_hash(file_path, sha256_hash, queue=None):
     arg = r'(Get-FileHash "' + file_path + '" -Algorithm SHA256).Hash'
     out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                          shell=True, universal_newlines=True)
-    if out.returncode != 0:
+    if out.returncode != 0 or len(out.stdout.strip()) != 64:
         result = -1
     elif out.stdout.strip().upper() == sha256_hash.upper():
         result = 1
@@ -181,7 +184,7 @@ def remove_drive_letter(drive_letter):
                           shell=True, universal_newlines=True)
 
 
-def copy_files(source, destination, queue=None):
+def copy_files(source, destination):
     arg = r'robocopy "' + source + '" "' + destination + '" /e /mt'
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
@@ -297,7 +300,7 @@ def get_json(url, queue=None, named: str = None):
     :param named:
     :return:
     """
-    out = requests.get(url).text
+    out = urlopen(url).read()
     data = json.loads(out)
     if named: return_var = (named, data)
     else: return_var = data
@@ -334,6 +337,10 @@ def get_file_name_from_url(url):
     from urllib.parse import urlparse
     a = urlparse(url)
     return os.path.basename(a.path)
+
+
+def get_file_name_from_path(path):
+    return os.path.basename(path)
 
 
 def find_file_by_name(name, lookup_dir):

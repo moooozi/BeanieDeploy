@@ -55,7 +55,7 @@ def compatibility_test(required_space_min, queue):
     else: return check_results
 
 
-def partition_procedure(tmp_part_size: int, temp_part_label: str, queue, shrink_space: int = None,
+def partition_procedure(tmp_part_size: int, temp_part_label: str, queue=None, shrink_space: int = None,
                         boot_part_size: int = None, efi_part_size: int = None):
     sys_drive_letter = fn.get_sys_drive_letter()
     print(fn.relabel_volume(sys_drive_letter, 'WindowsOS'))
@@ -71,11 +71,11 @@ def partition_procedure(tmp_part_size: int, temp_part_label: str, queue, shrink_
         fn.new_volume(sys_disk_number, efi_part_size, 'EXFAT', 'ALLOC-EFI')
     tmp_part_letter = fn.get_unused_drive_letter()
     fn.new_volume(sys_disk_number, tmp_part_size, 'FAT32', temp_part_label, tmp_part_letter)
-    queue.put((1, tmp_part_letter))
+    if queue: queue.put(tmp_part_letter)
+    return tmp_part_letter
 
 
-def add_boot_entry(boot_efi_file_path, boot_drive_letter, is_permanent: bool = False, queue=None):
-
+def add_boot_entry(boot_efi_file_path, boot_drive_letter, is_permanent: bool = False):
     bootguid = fn.create_new_wbm(boot_efi_file_path, boot_drive_letter)
     fn.make_boot_entry_first(bootguid, is_permanent)
 
@@ -339,5 +339,5 @@ def init_paths(paths_namespace):
     downloads_dir = fn.get_user_downloads_folder()
     for key, value in (path_dict := vars(paths_namespace)).items():
         path_dict[key] = value.replace('%CURRENT_DIR%', current_dir).replace('%DOWNLOADS_DIR%', downloads_dir)
-    return types.SimpleNamespace(**path_dict)
+    paths_namespace.__init__(**path_dict)
 
