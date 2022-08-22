@@ -34,7 +34,6 @@ def queue_safe_put(queue, data):
 
 def download_and_track_spin(aria2_path, url, destination, expected_sha256_hash=None,
                             new_file_name=None, queue=None):
-    print(aria2_path, url,destination, expected_sha256_hash, new_file_name)
     fn.download_with_aria2(aria2_path, url=url, destination=destination, output_name=new_file_name, queue=queue)
     if new_file_name:
         file_path = destination + '\\' + new_file_name
@@ -49,14 +48,16 @@ def download_and_track_spin(aria2_path, url, destination, expected_sha256_hash=N
     return file_path, hash_result
 
 
-def install(work_dir, aria2_path, installer_iso_name, installer_iso_path, installer_iso_url, live_img_iso_url,
-            live_img_iso_name, live_img_iso_path, installer_img_hash256,
-            live_img_hash256, ks_kwargs: dict, part_kwargs: dict, rpm_source_dir=None, rpm_dest_dir_name=None,
+def install(work_dir, aria2_path, ks_kwargs: dict, part_kwargs: dict,
+            installer_iso_name, installer_iso_path, installer_iso_url, installer_img_hash256=None,
+            live_img_iso_name=None, live_img_iso_path=None, live_img_iso_url=None, live_img_hash256=None,
+            rpm_source_dir=None, rpm_dest_dir_name=None,
             queue=None):
     # INSTALL STARTING
     fn.mkdir(work_dir)
+    live_img_required = bool(live_img_iso_url)
     installer_exist = prc.check_valid_existing_file(installer_iso_path, installer_img_hash256)
-    live_img_exist = prc.check_valid_existing_file(live_img_iso_path, live_img_hash256)
+    live_img_exist = live_img_required and prc.check_valid_existing_file(live_img_iso_path, live_img_hash256)
     if not installer_exist:
         while True:
             queue_safe_put(queue, 'STAGE: downloading')
@@ -66,7 +67,7 @@ def install(work_dir, aria2_path, installer_iso_name, installer_iso_path, instal
                                                           queue=queue)
             if download_hash_handler(checksum, work_dir):
                 break  # re-download if file checksum didn't match expected, continue otherwise
-    if live_img_iso_url and not live_img_exist:
+    if live_img_required and not live_img_exist:
         while True:
             queue_safe_put(queue, 'STAGE: downloading')
             file_path, checksum = download_and_track_spin(aria2_path, url=live_img_iso_url, destination=work_dir,
