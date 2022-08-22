@@ -314,9 +314,9 @@ def parse_xml(xml):
     return xmltodict.parse(xml)
 
 
-def gigabyte(gb): return int(gb * 1073741824)
-def megabyte(mb): return int(mb * 1048576)
-def byte_to_gb(byte): return round(byte / 1073741824, 2)
+def gigabyte(gb): return int(float(gb) * 1073741824)
+def megabyte(mb): return int(float(mb) * 1048576)
+def byte_to_gb(byte): return round(int(byte) / 1073741824, 2)
 
 
 def detect_nvidia(queue=None):

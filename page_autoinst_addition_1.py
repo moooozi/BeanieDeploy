@@ -43,5 +43,5 @@ def run():
     def next_btn_action(*args):
         selected_locale = locale_list_fedora.focus()
         if autoinst.langtable.parse_locale(selected_locale).language:
-            GV.AUTOINST.locale = selected_locale
+            GV.KICKSTART.lang = selected_locale
             return page_autoinst_addition_2.run()

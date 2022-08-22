@@ -101,7 +101,7 @@ def install(work_dir, aria2_path, ks_kwargs: dict, part_kwargs: dict,
 
     queue_safe_put(queue, 'STAGE: adding_tmp_boot_entry')
 
-    if GV.INSTALL_OPTIONS.install_method != 'custom':
+    if GV.KICKSTART.partition_method != 'custom':
         grub_cfg_file = GV.PATH.GRUB_CONFIG_AUTOINST
     else:
         grub_cfg_file = GV.PATH.GRUB_CONFIG_DEFUALT
@@ -109,7 +109,7 @@ def install(work_dir, aria2_path, ks_kwargs: dict, part_kwargs: dict,
     fn.set_file_readonly(grub_cfg_dest_path, False)
     fn.copy_and_rename_file(grub_cfg_file, grub_cfg_dest_path)
     grub_cfg_txt = prc.build_grub_cfg_file(GV.TMP_PARTITION_LABEL,
-                                           GV.INSTALL_OPTIONS.install_method != 'custom')
+                                           GV.KICKSTART.partition_method != 'custom')
     fn.set_file_readonly(grub_cfg_dest_path, False)
     grub_cfg = open(grub_cfg_dest_path, 'w')
     grub_cfg.write(grub_cfg_txt)
@@ -118,7 +118,7 @@ def install(work_dir, aria2_path, ks_kwargs: dict, part_kwargs: dict,
     nvidia_script_dest_path = tmp_part_letter + ':\\%s' % GV.PATH.RELATIVE_NVIDIA_SCRIPT
     fn.copy_and_rename_file(GV.PATH.NVIDIA_SCRIPT, nvidia_script_dest_path)
 
-    if GV.INSTALL_OPTIONS.install_method != 'custom':
+    if GV.KICKSTART.partition_method != 'custom':
         kickstart_txt = prc.build_autoinstall_ks_file(**ks_kwargs)
         if kickstart_txt:
             kickstart = open(tmp_part_letter + ':\\%s' % GV.PATH.RELATIVE_KICKSTART, 'w')
@@ -127,7 +127,7 @@ def install(work_dir, aria2_path, ks_kwargs: dict, part_kwargs: dict,
 
     queue_safe_put(queue, 'APP: critical_process_running')  # prevent closing the app
 
-    if GV.INSTALL_OPTIONS.install_method == 'clean':
+    if GV.KICKSTART.partition_method == 'clean':
         is_new_boot_order_permanent = True
     else:
         is_new_boot_order_permanent = False

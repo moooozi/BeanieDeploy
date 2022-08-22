@@ -25,50 +25,37 @@ def run():
     torrent_toggle_var = tk.BooleanVar(app, GV.INSTALL_OPTIONS.torrent)
 
     # GETTING ARGUMENTS READY
-    tmp_part_size: int = GV.SELECTED_SPIN.size + fn.gigabyte(GV.APP.temp_part_failsafe_space)
+    tmp_part_size: int = GV.SELECTED_SPIN.size + GV.APP.temp_part_failsafe_space
     if GV.SELECTED_SPIN.is_live_img:
         tmp_part_size += GV.LIVE_OS_INSTALLER_SPIN.size
-    if GV.AUTOINST.export_wifi:
+    if GV.INSTALL_OPTIONS.export_wifi:
         wifi_profiles = prc.get_wifi_profiles(GV.PATH.WORK_DIR)
     else:
         wifi_profiles = None
-    kickstart = types.SimpleNamespace()
-    kickstart.live_img_url = GV.INSTALL_OPTIONS.live_img_url
 
-    partition = types.SimpleNamespace()
-    partition.tmp_part_size = tmp_part_size
-    partition.temp_part_label = GV.TMP_PARTITION_LABEL
+    GV.PARTITION.tmp_part_size = tmp_part_size
+    GV.PARTITION.temp_part_label = GV.TMP_PARTITION_LABEL
 
-    if GV.INSTALL_OPTIONS.install_method != 'custom':
-        if GV.AUTOINST.keymap_timezone_source == 'ip':
-            GV.AUTOINST.keymap = autoinst.get_keymaps(territory=GV.IP_LOCALE['country_code'])[0]
-            GV.AUTOINST.keymap_type = 'xlayout'
-            GV.AUTOINST.timezone = autoinst.langtable.list_timezones(territoryId=GV.IP_LOCALE['country_code'])[0]
-        elif GV.AUTOINST.keymap_timezone_source == 'select':
-            GV.AUTOINST.keymap = autoinst.get_keymaps(lang=GV.AUTOINST.locale)[0]
-            GV.AUTOINST.keymap_type = 'xlayout'
-            GV.AUTOINST.timezone = autoinst.langtable.list_timezones(languageId=GV.AUTOINST.locale)[0]
-        elif GV.AUTOINST.keymap_timezone_source == 'custom':
+    if GV.KICKSTART.partition_method != 'custom':
+        if GV.INSTALL_OPTIONS.keymap_timezone_source == 'ip':
+            GV.KICKSTART.keymap = autoinst.get_keymaps(territory=GV.IP_LOCALE['country_code'])[0]
+            GV.KICKSTART.keymap_type = 'xlayout'
+            GV.KICKSTART.timezone = autoinst.langtable.list_timezones(territoryId=GV.IP_LOCALE['country_code'])[0]
+        elif GV.INSTALL_OPTIONS.keymap_timezone_source == 'select':
+            GV.KICKSTART.keymap = autoinst.get_keymaps(lang=GV.KICKSTART.lang)[0]
+            GV.KICKSTART.keymap_type = 'xlayout'
+            GV.KICKSTART.timezone = autoinst.langtable.list_timezones(languageId=GV.KICKSTART.lang)[0]
+        elif GV.INSTALL_OPTIONS.keymap_timezone_source == 'custom':
             pass
-        kickstart.ostree_args = GV.SELECTED_SPIN.ostree_args
-        kickstart.is_encrypted = GV.AUTOINST.enable_encryption
-        kickstart.passphrase = GV.AUTOINST.encryption_pass
-        kickstart.wifi_profiles = wifi_profiles
-        kickstart.keymap = GV.AUTOINST.keymap
-        kickstart.keymap_type = GV.AUTOINST.keymap_type
-        kickstart.lang = GV.AUTOINST.locale
-        kickstart.timezone = GV.AUTOINST.timezone
-        kickstart.username = GV.AUTOINST.username
-        kickstart.fullname = GV.AUTOINST.fullname
-        kickstart.partition_method = GV.INSTALL_OPTIONS.install_method
+        GV.KICKSTART.ostree_args = GV.SELECTED_SPIN.ostree_args
+        GV.KICKSTART.wifi_profiles = wifi_profiles
 
-        if GV.INSTALL_OPTIONS.install_method == 'dualboot':
-            partition.shrink_space = fn.gigabyte(GV.AUTOINST.dualboot_size)
-            partition.boot_part_size = fn.gigabyte(GV.APP.linux_boot_partition_size)
-            partition.efi_part_size = fn.megabyte(GV.APP.linux_efi_partition_size)
+        if GV.KICKSTART.partition_method == 'dualboot':
+            GV.PARTITION.boot_part_size = GV.APP.linux_boot_partition_size
+            GV.PARTITION.efi_part_size = GV.APP.linux_efi_partition_size
         # LOG ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         fn.log('\nKickstart arguments (sensitive data sensored):')
-        for key, value in vars(kickstart).items():
+        for key, value in vars(GV.KICKSTART).items():
             if key in ('passphrase', 'fullname', 'username', 'wifi_profiles'):
                 if not value:
                     continue
@@ -76,12 +63,10 @@ def run():
             else:
                 fn.log('%s: %s' % (key, value))
         fn.log('\nPartitioning details:')
-        for key, value in vars(partition).items():
+        for key, value in vars(GV.PARTITION).items():
             if key == 'queue': continue
             fn.log('%s: %s' % (key, value))
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    else:
-        kickstart = {}
     if GV.SELECTED_SPIN.is_live_img:
         installer_img = GV.LIVE_OS_INSTALLER_SPIN
         live_img = GV.SELECTED_SPIN
@@ -102,8 +87,8 @@ def run():
     installing.installer_iso_path = GV.PATH.INSTALL_ISO
     installing.installer_iso_url = installer_img.dl_link
     installing.installer_img_hash256 = installer_img.hash256
-    installing.ks_kwargs = vars(kickstart)
-    installing.part_kwargs = vars(partition)
+    installing.ks_kwargs = vars(GV.KICKSTART)
+    installing.part_kwargs = vars(GV.PARTITION)
     installing.rpm_source_dir = GV.PATH.RPM_SOURCE_DIR
     installing.rpm_dest_dir_name = GV.PATH.RPM_DEST_DIR_NAME
     if GV.SELECTED_SPIN.is_live_img:
@@ -114,16 +99,16 @@ def run():
 
     # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
     review_sel = []
-    if GV.INSTALL_OPTIONS.install_method == 'custom':
+    if GV.KICKSTART.partition_method == 'custom':
         review_sel.append(LN.verify_text['no_autoinst'] % GV.SELECTED_SPIN.name)
     else:
-        if GV.INSTALL_OPTIONS.install_method == 'dualboot':
+        if GV.KICKSTART.partition_method == 'dualboot':
             review_sel.append(LN.verify_text['autoinst_dualboot'] % GV.SELECTED_SPIN.name)
             review_sel.append(LN.verify_text['autoinst_keep_data'])
-        elif GV.INSTALL_OPTIONS.install_method == 'clean':
+        elif GV.KICKSTART.partition_method == 'clean':
             review_sel.append(LN.verify_text['autoinst_clean'] % GV.SELECTED_SPIN.name)
             review_sel.append(LN.verify_text['autoinst_rm_all'])
-        if GV.AUTOINST.export_wifi:
+        if GV.INSTALL_OPTIONS.export_wifi:
             review_sel.append(LN.verify_text['autoinst_wifi'] % GV.SELECTED_SPIN.name)
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -147,7 +132,7 @@ def run():
     '''
 
     def validate_back_page(*args):
-        if GV.INSTALL_OPTIONS.install_method == 'custom':
+        if GV.KICKSTART.partition_method == 'custom':
             page_install_method.run()
         else:
             page_autoinst_addition_2.run()

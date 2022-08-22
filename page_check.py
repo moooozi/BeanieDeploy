@@ -87,15 +87,15 @@ def run(compatibility_test=True):
         errors.append(LN.error_uefi_0)
     if GV.COMPATIBILITY_RESULTS.ram == -1:
         errors.append(LN.error_totalram_9)
-    elif GV.COMPATIBILITY_RESULTS.ram < fn.gigabyte(GV.APP.minimal_required_ram):
+    elif GV.COMPATIBILITY_RESULTS.ram < GV.APP.minimal_required_ram:
         errors.append(LN.error_totalram_0)
     if GV.COMPATIBILITY_RESULTS.space == -1:
         errors.append(LN.error_space_9)
-    elif GV.COMPATIBILITY_RESULTS.space < fn.gigabyte(GV.APP.minimal_required_space):
+    elif GV.COMPATIBILITY_RESULTS.space < GV.APP.minimal_required_space:
         errors.append(LN.error_space_0)
     if GV.COMPATIBILITY_RESULTS.resizable == -1:
         errors.append(LN.error_resizable_9)
-    elif GV.COMPATIBILITY_RESULTS.resizable < fn.gigabyte(GV.APP.minimal_required_space):
+    elif GV.COMPATIBILITY_RESULTS.resizable < GV.APP.minimal_required_space:
         errors.append(LN.error_resizable_0)
 
     if not errors:

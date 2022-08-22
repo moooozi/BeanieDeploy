@@ -17,18 +17,18 @@ def run():
                             LN.btn_next, lambda: next_btn_action(),
                             LN.btn_back, lambda: page_autoinst_addition_1.run())
 
-    custom_timezone_var = tk.StringVar(app, GV.AUTOINST.timezone)
+    custom_timezone_var = tk.StringVar(app, GV.KICKSTART.timezone)
     custom_keymap_var = tk.StringVar(app)
-    if GV.AUTOINST.keymap_type == 'vc':
-        custom_keymap_var.set(GV.AUTOINST.keymap)
+    if GV.KICKSTART.keymap_type == 'vc':
+        custom_keymap_var.set(GV.KICKSTART.keymap)
 
-    keymap_timezone_source_var = tk.StringVar(app, GV.AUTOINST.keymap_timezone_source)
+    keymap_timezone_source_var = tk.StringVar(app, GV.INSTALL_OPTIONS.keymap_timezone_source)
 
-    chosen_locale_name = autoinst.langtable.language_name(languageId=GV.AUTOINST.locale)
+    chosen_locale_name = autoinst.langtable.language_name(languageId=GV.KICKSTART.lang)
     if GV.IP_LOCALE:
         locale_from_ip = autoinst.langtable.list_locales(territoryId=GV.IP_LOCALE['country_code'])[0]
         locale_from_ip_name = autoinst.langtable.language_name(languageId=locale_from_ip)
-        if locale_from_ip != GV.AUTOINST.locale:
+        if locale_from_ip != GV.KICKSTART.lang:
             tkt.add_radio_btn(MID_FRAME, LN.keymap_tz_option % locale_from_ip_name, keymap_timezone_source_var,
                               'ip', command=lambda: spawn_more_widgets())
 
@@ -68,8 +68,8 @@ def run():
 
     def next_btn_action(*args):
         if keymap_timezone_source_var.get() == 'custom':
-            GV.AUTOINST.keymap = custom_keymap_var.get()
-            GV.AUTOINST.keymap_type = 'vc'
-            GV.AUTOINST.timezone = custom_timezone_var.get()
-        GV.AUTOINST.keymap_timezone_source = keymap_timezone_source_var.get()
+            GV.KICKSTART.keymap = custom_keymap_var.get()
+            GV.KICKSTART.keymap_type = 'vc'
+            GV.KICKSTART.timezone = custom_timezone_var.get()
+        GV.INSTALL_OPTIONS.keymap_timezone_source = keymap_timezone_source_var.get()
         page_verify.run()

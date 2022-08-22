@@ -19,10 +19,10 @@ def run():
                             LN.btn_back, lambda: page_install_method.run())
 
     # tkt.add_check_btn(MID_FRAME, LN.additional_setup_now, vAutoinst_additional_setup_t)
-    export_wifi_toggle_var = tk.BooleanVar(app, GV.AUTOINST.export_wifi)
-    enable_encryption_toggle_var = tk.BooleanVar(app, GV.AUTOINST.enable_encryption)
-    encrypt_passphrase_var = tk.StringVar(app, GV.AUTOINST.encryption_pass)
-    encryption_tpm_unlock_toggle_var = tk.BooleanVar(app, GV.AUTOINST.encryption_tpm_unlock)
+    export_wifi_toggle_var = tk.BooleanVar(app, GV.INSTALL_OPTIONS.export_wifi)
+    enable_encryption_toggle_var = tk.BooleanVar(app, GV.KICKSTART.is_encrypted)
+    encrypt_passphrase_var = tk.StringVar(app, GV.KICKSTART.passphrase)
+    encryption_tpm_unlock_toggle_var = tk.BooleanVar(app, GV.KICKSTART.tpm_auto_unlock)
 
     tkt.add_check_btn(MID_FRAME, LN.add_import_wifi, export_wifi_toggle_var, pady=(5, 0))
     tkt.add_check_btn(MID_FRAME, LN.encrypted_root, enable_encryption_toggle_var,
@@ -74,8 +74,8 @@ def run():
         if enable_encryption_toggle_var.get() and not (encrypt_passphrase_var.get() == pass_confirm_var.get() != ''):
             return
         else:
-            GV.AUTOINST.export_wifi = export_wifi_toggle_var.get()
-            GV.AUTOINST.enable_encryption = enable_encryption_toggle_var.get()
-            GV.AUTOINST.encryption_pass = encrypt_passphrase_var.get()
-            GV.AUTOINST.encryption_tpm_unlock = encryption_tpm_unlock_toggle_var.get()
+            GV.INSTALL_OPTIONS.export_wifi = export_wifi_toggle_var.get()
+            GV.KICKSTART.is_encrypted = enable_encryption_toggle_var.get()
+            GV.KICKSTART.passphrase = encrypt_passphrase_var.get()
+            GV.KICKSTART.tpm_auto_unlock = encryption_tpm_unlock_toggle_var.get()
             page_autoinst_addition_1.run()
