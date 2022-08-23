@@ -29,7 +29,7 @@ def run():
                           pack=False).grid(ipady=5, row=index, column=0, sticky=GV.UI.DI_VAR['w'])
         if desktop in LN.desktop_hints.keys():
             ttk.Label(frame_desktop, wraplength=540, justify="center", text=LN.desktop_hints[desktop],
-                      font=tkt.FONTS.tiny, foreground='#3aa9ff').grid(ipadx=5, row=index, column=1,
+                      font=tkt.FONTS.smaller, foreground='#3aa9ff').grid(ipadx=5, row=index, column=1,
                                                                       sticky=GV.UI.DI_VAR['w'])
     tkt.add_radio_btn(frame_desktop, LN.choose_spin_instead, desktop_var, 'else', command=lambda: validate_input(),
                       pack=False).grid(ipady=5, row=len(available_desktop), column=0, sticky=GV.UI.DI_VAR['w'])

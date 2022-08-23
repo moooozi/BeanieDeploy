@@ -32,17 +32,19 @@ def run():
     entry2_frame = ttk.Frame(MID_FRAME)
 
     encrypt_pass_pre = ttk.Label(entry2_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
-                                 text=LN.entry_encrypt_passphrase_pre, font=tkt.FONTS.tiny)
+                                 text=LN.entry_encrypt_passphrase_pre, font=tkt.FONTS.smaller)
     encrypt_passphrase_entry = ttk.Entry(entry2_frame, show="\u2022", width=10, textvariable=encrypt_passphrase_var)
     tkt.var_tracer(encrypt_passphrase_var, "write",
                    lambda *args: fn.validate_with_regex(encrypt_passphrase_var,
                                                         regex=only_digit_regex, mode='fix'))
     pass_confirm_var = tk.StringVar()
     encrypt_pass_confirm_pre = ttk.Label(entry2_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
-                                         text=LN.entry_encrypt_passphrase_confirm_pre, font=tkt.FONTS.tiny)
+                                         text=LN.entry_encrypt_passphrase_confirm_pre, font=tkt.FONTS.smaller)
     encrypt_pass_confirm_entry = ttk.Entry(entry2_frame, show="\u2022", width=10, textvariable=pass_confirm_var)
     encrypt_pass_confirm_not_matched = ttk.Label(entry2_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
-                                                 text=LN.not_matched, font=tkt.FONTS.tiny, foreground='#ff4a4a')
+                                                 text=LN.not_matched, font=tkt.FONTS.smaller, foreground='#ff4a4a')
+    encrypt_pass_note = ttk.Label(entry2_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
+                                  text=LN.encrypt_reminder_txt, font=tkt.FONTS.smaller, foreground='#3aa9ff')
     tpm_unlock = tkt.add_check_btn(entry2_frame, LN.encryption_tpm_unlock, encryption_tpm_unlock_toggle_var, pack=False)
 
     tkt.var_tracer(pass_confirm_var, "write",
@@ -50,15 +52,16 @@ def run():
                    show_not_matched_warning(pass_confirm_var.get() != encrypt_passphrase_var.get()))
 
     encrypt_pass_pre.grid(column=0, row=0, sticky=GV.UI.DI_VAR['w'])
-    encrypt_passphrase_entry.grid(pady=2, padx=5, column=1, row=0)
-    encrypt_pass_confirm_pre.grid(column=0, row=1, sticky=GV.UI.DI_VAR['w'])
-    encrypt_pass_confirm_entry.grid(pady=2, padx=5, column=1, row=1)
-    tpm_unlock.grid(column=0, row=2, sticky=GV.UI.DI_VAR['w'])
+    encrypt_passphrase_entry.grid(pady=3, padx=5, column=1, row=0, sticky=GV.UI.DI_VAR['w'])
+    encrypt_pass_confirm_pre.grid(column=2, row=0, sticky=GV.UI.DI_VAR['w'])
+    encrypt_pass_confirm_entry.grid(pady=3, padx=5, column=3, row=0, sticky=GV.UI.DI_VAR['w'])
+    encrypt_pass_note.grid(pady=5, padx=(0, 0), column=0, columnspan=5, row=1, sticky=GV.UI.DI_VAR['w'])
+    tpm_unlock.grid(pady=3, column=0, row=2, sticky=GV.UI.DI_VAR['w'])
 
     # LOGIC
     def show_not_matched_warning(is_true: bool):
         if is_true:
-            encrypt_pass_confirm_not_matched.grid(pady=5, padx=(0, 0), column=2, row=1, sticky=GV.UI.DI_VAR['w'])
+            encrypt_pass_confirm_not_matched.grid(pady=5, padx=(0, 0), column=4, columnspan=2, row=0, sticky=GV.UI.DI_VAR['w'])
         else:
             encrypt_pass_confirm_not_matched.grid_forget()
 
@@ -71,7 +74,7 @@ def run():
     show_encrypt_options(enable_encryption_toggle_var)
 
     def next_btn_action(*args):
-        if enable_encryption_toggle_var.get() and not (encrypt_passphrase_var.get() == pass_confirm_var.get() != ''):
+        if enable_encryption_toggle_var.get() and not (encrypt_passphrase_var.get() == pass_confirm_var.get()):
             return
         else:
             GV.INSTALL_OPTIONS.export_wifi = export_wifi_toggle_var.get()

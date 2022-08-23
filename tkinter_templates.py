@@ -13,7 +13,8 @@ FONTS = types.SimpleNamespace()
 FONTS.large = ("Ariel", 24)
 FONTS.medium = ("Ariel Bold", 16)
 FONTS.small = ("Ariel", 13)
-FONTS.tiny = ("Ariel", 10)
+FONTS.smaller = ("Ariel", 10)
+FONTS.tiny = ("Ariel", 9)
 
 
 def init_tkinter(title, icon=None):

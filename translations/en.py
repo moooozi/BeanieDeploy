@@ -60,10 +60,10 @@ selected_spin = "Selected Spin"
 choose_fedora_spin = "Choose a Fedora Spin"
 encrypted_root = "Encrypt the new operating system"
 entry_encrypt_passphrase_pre = "Enter encryption passphrase"
-entry_encrypt_passphrase_confirm_pre = "Confirm passphrase"
+entry_encrypt_passphrase_confirm_pre = "Confirm"
 not_matched = "Not matched"
 
-# encrypt_reminder_txt = "Leave empty if you wish to provide passphase later during install (characters allowed)"
+encrypt_reminder_txt = "Or leave empty to provide passphase later during install (more secure)"
 encryption_tpm_unlock = "Auto-unlock with TPM2"
 
 entry_username = "Username"
@@ -92,12 +92,8 @@ verify_text = {
 }
 add_import_wifi = "Export my Wi-Fi networks to the new OS"
 add_auto_restart = "Restart automatically"
-add_torrent = "Download with torrent whenever possible"
+add_torrent = "Use torrent whenever possible"
 more_options = "More options"
-
-old_download_detected = "Previously downloaded files found"
-old_download_detected_text = "Do you wish to use these previously downloaded files? " \
-                             "(if not, these files will be deleted and a new download will start)"
 
 job_starting_download = "Starting download..."
 
