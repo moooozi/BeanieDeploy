@@ -80,7 +80,7 @@ def open_popup(parent, title_txt, msg_txt, primary_btn_str=None, secondary_btn_s
     pop_var = tk.IntVar(pop)
     x_position = parent.winfo_x()
     y_position = parent.winfo_y()
-    #  position the pop up window at the center of its parent
+    #  position the pop-up window at the center of its parent
     msg_font = FONTS.small
     if not (x_size and y_size):
         x_size = 600
