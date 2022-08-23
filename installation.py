@@ -1,35 +1,44 @@
+import multiprocessing
+
 import functions as fn
 import procedure as prc
 import globals as GV
 
 
-def download_hash_handler(dl_hash, work_dir):
-    go_next = False
-    yes_responses = ('y', 'yes')
-    if dl_hash == 1:
-        go_next = True
-    elif dl_hash == -1:
-        question = input('checksum verification failed, continue anyways? y/n')
-        if question.lower() in yes_responses:
-            go_next = True
+def download_hash_handler(dl_hash, work_dir, queue=None):
+    if dl_hash == 1: return True
+    response = {'go_next': False, 'cleanup': False, 'app_quit': False}
+    if queue:
+        response_queue = multiprocessing.Queue()
+        queue.put(('STAGE: checksum_failed', dl_hash, response_queue))
+        while response_queue.qsize() == 0: pass
+        response = response_queue.get()
+    else:  # for CLI mode
+        yes_responses = ('y', 'yes')
+        if dl_hash == -1:
+            question = input('checksum verification failed, continue anyways? y/n  ')
+            if question.lower() in yes_responses:
+                response['go_next'] = True
+            else:
+                question = input('cleanup? y/n  ')
+                if question.lower() in yes_responses:
+                    response['cleanup'] = True
+                response['app_quit'] = True
         else:
-            question = input('cleanup? y/n')
-            if question.lower() in yes_responses:
-                fn.rmdir(work_dir)
-            fn.app_quit()
-    else:
-        question = input('checksum mismatch, retry? y/n')
-        if question != 'y':
-            question = input('cleanup? y/n')
-            if question.lower() in yes_responses:
-                fn.rmdir(work_dir)
-            fn.app_quit()
-    return go_next
+            question = input('checksum mismatch, retry? y/n  ')
+            if question.lower() not in yes_responses:
+                question = input('cleanup? y/n  ')
+                if question.lower() in yes_responses:
+                    response['cleanup'] = True
+                response['app_quit'] = True
+
+    if response['go_next']: return True
+    if response['cleanup']: fn.rmdir(work_dir)
+    if response['app_quit']: fn.app_quit()
 
 
 def queue_safe_put(queue, data):
-    if queue:
-        queue.put(data)
+    if queue: queue.put(data)
 
 
 def download_and_track_spin(aria2_path, url, destination, expected_sha256_hash=None,

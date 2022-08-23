@@ -312,7 +312,7 @@ def start_async_download(app_path, url, destination, is_torrent=False, queue=Non
 
 def decide_torrent_or_direct_download(torrent_preferred, direct_link, torrent_link):
     torrent_exist = bool(torrent_link)
-    if torrent_exist and torrent_preferred:
+    if torrent_preferred and torrent_exist:
         is_torrent = True
         link = torrent_link
     else:

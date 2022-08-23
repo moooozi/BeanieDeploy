@@ -46,29 +46,23 @@ def run(compatibility_test=True):
             GV.COMPATIBILITY_RESULTS.__init__(**result)
             job_var.set(LN.check_available_downloads)
             progressbar_check['value'] = 95
-            return 1
-
-    def callback_spinlist(result):
-        if isinstance(result, tuple) and result[0] == 'spin_list':
+        elif isinstance(result, tuple) and result[0] == 'spin_list':
             GV.ALL_SPINS = result[1]
-            return 1
-
-    def callback_geo_up(result):
-        if isinstance(result, tuple) and result[0] == 'geo_ip':
+        elif isinstance(result, tuple) and result[0] == 'geo_ip':
             GV.IP_LOCALE = result[1]
+        if GV.ALL_SPINS and vars(GV.COMPATIBILITY_RESULTS):
             return 1
 
     if not vars(GV.COMPATIBILITY_RESULTS):
         fn.get_admin()  # Request elevation (admin) if not running as admin
-        gui.run_async_function(tkinter, prc.compatibility_test, callback=callback_compatibility,
-                               args=(GV.APP.minimal_required_space,))
+        gui.run_async_function(prc.compatibility_test, args=(GV.APP.minimal_required_space,))
     if not GV.ALL_SPINS:
-        gui.run_async_function(tkinter, fn.get_json, callback=callback_spinlist,
-                               kwargs={'url': GV.APP.AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
+        gui.run_async_function(fn.get_json, kwargs={'url': GV.APP.AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
     if not GV.IP_LOCALE:
-        gui.run_async_function(tkinter, fn.get_json, callback=callback_geo_up,
-                               kwargs={'url': GV.APP.FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
-        # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
+        gui.run_async_function(fn.get_json, kwargs={'url': GV.APP.FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
+
+    gui.handle_queue_result(tkinter=tkinter, callback=callback_compatibility)
+    # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
     # LOG #########################################################
     fn.log('\nInitial Test completed, results:')
     for key, value in vars(GV.COMPATIBILITY_RESULTS).items():
