@@ -56,7 +56,7 @@ def run():
     encrypt_pass_confirm_pre.grid(column=2, row=0, sticky=GV.UI.DI_VAR['w'])
     encrypt_pass_confirm_entry.grid(pady=3, padx=5, column=3, row=0, sticky=GV.UI.DI_VAR['w'])
     encrypt_pass_note.grid(pady=5, padx=(0, 0), column=0, columnspan=5, row=1, sticky=GV.UI.DI_VAR['w'])
-    tpm_unlock.grid(pady=3, column=0, row=2, sticky=GV.UI.DI_VAR['w'])
+    # tpm_unlock.grid(pady=3, column=0, row=2, sticky=GV.UI.DI_VAR['w'])
 
     # LOGIC
     def show_not_matched_warning(is_true: bool):
