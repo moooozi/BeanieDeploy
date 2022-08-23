@@ -40,7 +40,7 @@ def run():
     timezone_all = sorted(autoinst.all_timezones())
     lists_frame = ttk.Frame(MID_FRAME)
     timezone_txt = ttk.Label(lists_frame, wraplength=540, justify=GV.UI.DI_VAR['l'], text=LN.list_timezones,
-                             font=tkt.FONTS.smaller)
+                             font=tkt.FONTS_smaller)
     timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=custom_timezone_var)
     timezone_list['values'] = tuple(timezone_all)
     timezone_list['state'] = 'readonly'
@@ -48,7 +48,7 @@ def run():
     all_keymaps = autoinst.get_available_keymaps()
 
     keyboards_txt = ttk.Label(lists_frame, wraplength=540, justify=GV.UI.DI_VAR['l'], text=LN.list_keymaps,
-                              font=tkt.FONTS.smaller)
+                              font=tkt.FONTS_smaller)
     keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=custom_keymap_var)
     keyboard_list['values'] = tuple(all_keymaps)
     keyboard_list['state'] = 'readonly'

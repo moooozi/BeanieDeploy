@@ -32,19 +32,19 @@ def run():
     frame_encryption_options = ttk.Frame(MID_FRAME)
 
     encrypt_pass_pre = ttk.Label(frame_encryption_options, wraplength=540, justify=GV.UI.DI_VAR['l'],
-                                 text=LN.entry_encrypt_passphrase_pre, font=tkt.FONTS.smaller)
+                                 text=LN.entry_encrypt_passphrase_pre, font=tkt.FONTS_smaller)
     encrypt_passphrase_entry = ttk.Entry(frame_encryption_options, show="\u2022", width=10, textvariable=encrypt_passphrase_var)
     tkt.var_tracer(encrypt_passphrase_var, "write",
                    lambda *args: fn.validate_with_regex(encrypt_passphrase_var,
                                                         regex=only_digit_regex, mode='fix'))
     pass_confirm_var = tk.StringVar()
     encrypt_pass_confirm_pre = ttk.Label(frame_encryption_options, wraplength=540, justify=GV.UI.DI_VAR['l'],
-                                         text=LN.entry_encrypt_passphrase_confirm_pre, font=tkt.FONTS.smaller)
+                                         text=LN.entry_encrypt_passphrase_confirm_pre, font=tkt.FONTS_smaller)
     encrypt_pass_confirm_entry = ttk.Entry(frame_encryption_options, show="\u2022", width=10, textvariable=pass_confirm_var)
     encrypt_pass_confirm_not_matched = ttk.Label(frame_encryption_options, wraplength=540, justify=GV.UI.DI_VAR['l'],
-                                                 text=LN.not_matched, font=tkt.FONTS.smaller, foreground='#ff4a4a')
+                                                 text=LN.not_matched, font=tkt.FONTS_smaller, foreground=tkt.light_red)
     encrypt_pass_note = ttk.Label(frame_encryption_options, wraplength=540, justify=GV.UI.DI_VAR['l'],
-                                  text=LN.encrypt_reminder_txt, font=tkt.FONTS.smaller, foreground='#3aa9ff')
+                                  text=LN.encrypt_reminder_txt, font=tkt.FONTS_smaller, foreground=tkt.light_blue)
     tpm_unlock = tkt.add_check_btn(frame_encryption_options, LN.encryption_tpm_unlock, encryption_tpm_unlock_toggle_var, pack=False)
 
     tkt.var_tracer(pass_confirm_var, "write",

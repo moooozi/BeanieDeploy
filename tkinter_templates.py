@@ -1,20 +1,19 @@
 import tkinter as tk
 import tkinter.ttk as ttk
-import types
 
 import globals as GV
 MAXWIDTH = 800
 MAXHEIGHT = 500
 TOP_FRAME_HEIGHT = 100
 LEFT_FRAME_WIDTH = 150
-
+light_red = '#ff4a4a'
+light_blue = '#3aa9ff'
 top_background = '#474747'
-FONTS = types.SimpleNamespace()
-FONTS.large = ("Ariel", 24)
-FONTS.medium = ("Ariel Bold", 16)
-FONTS.small = ("Ariel", 13)
-FONTS.smaller = ("Ariel", 10)
-FONTS.tiny = ("Ariel", 9)
+FONTS_large = ("Ariel", 24)
+FONTS_medium = ("Ariel Bold", 16)
+FONTS_small = ("Ariel", 13)
+FONTS_smaller = ("Ariel", 10)
+FONTS_tiny = ("Ariel", 9)
 
 
 def init_tkinter(title, icon=None):
@@ -81,7 +80,7 @@ def open_popup(parent, title_txt, msg_txt, primary_btn_str=None, secondary_btn_s
     x_position = parent.winfo_x()
     y_position = parent.winfo_y()
     #  position the pop-up window at the center of its parent
-    msg_font = FONTS.small
+    msg_font = FONTS_small
     if not (x_size and y_size):
         x_size = 600
         y_size = int(len(msg_txt)/2.8 + 180 + 13*msg_txt.count('\n'))
@@ -140,7 +139,7 @@ def add_secondary_btn(parent, text, command):
 
 
 def add_page_title(parent, text, pady=(25, 40)):
-    title = ttk.Label(parent, wraplength=540, justify=GV.UI.DI_VAR['l'], text=text, font=FONTS.medium)
+    title = ttk.Label(parent, wraplength=540, justify=GV.UI.DI_VAR['l'], text=text, font=FONTS_medium)
     title.pack(pady=pady, anchor=GV.UI.DI_VAR['w'])
     return title
 
@@ -162,7 +161,7 @@ def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=5, pac
     return check
 
 
-def add_text_label(parent, text=None, font=FONTS.small, var=None, pady=20, padx=0, foreground=None):
+def add_text_label(parent, text=None, font=FONTS_small, var=None, pady=20, padx=0, foreground=None):
     """
     a preset for tkinter text label that packs by default
     :return: the tkinter label "ttk.Label" object
@@ -184,8 +183,8 @@ def add_lang_list(parent, var, languages):
     return lang_list
 
 
-def add_progress_bar(parent, lenth=MAXWIDTH-LEFT_FRAME_WIDTH):
-    progressbar = ttk.Progressbar(parent, orient='horizontal', length=lenth, mode='determinate')
+def add_progress_bar(parent, length=MAXWIDTH - LEFT_FRAME_WIDTH):
+    progressbar = ttk.Progressbar(parent, orient='horizontal', length=length, mode='determinate')
     progressbar.pack(pady=25)
     return progressbar
 

@@ -14,8 +14,8 @@ def run():
                             LN.btn_restart_now, lambda: fn.quit_and_restart_windows(),
                             LN.btn_restart_later, lambda: fn.app_quit())
     text_var = tk.StringVar()
-    tkt.add_text_label(MID_FRAME, text=LN.finished_text, font=tkt.FONTS.small, pady=10)
-    tkt.add_text_label(MID_FRAME, var=text_var, font=tkt.FONTS.small, pady=10)
+    tkt.add_text_label(MID_FRAME, text=LN.finished_text, font=tkt.FONTS_small, pady=10)
+    tkt.add_text_label(MID_FRAME, var=text_var, font=tkt.FONTS_small, pady=10)
 
     def countdown_to_restart(time):
         time -= 1

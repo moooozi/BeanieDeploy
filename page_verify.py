@@ -124,8 +124,8 @@ def run():
     c2_add.pack(anchor=GV.UI.DI_VAR['w'])
     '''
     c3_add = ttk.Checkbutton(MID_FRAME, text=LN.add_torrent, variable=torrent_toggle_var, onvalue=1, offvalue=0)
-    more_options_btn = ttk.Label(MID_FRAME, justify="center", text=LN.more_options, font=tkt.FONTS.smaller,
-                                 foreground='#3aa9ff')
+    more_options_btn = ttk.Label(MID_FRAME, justify="center", text=LN.more_options, font=tkt.FONTS_smaller,
+                                 foreground=tkt.light_blue)
     more_options_btn.pack(pady=10, padx=10, anchor=GV.UI.DI_VAR['w'])
     more_options_btn.bind("<Button-1>",
                           lambda x: (more_options_btn.destroy(), c3_add.pack(anchor=GV.UI.DI_VAR['w'])))
