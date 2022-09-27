@@ -1,12 +1,12 @@
 import globals as GV
 import functions as fn
-from init import app, logger
+from init import app, logging
 import page_check
 
 #   INIT CODE   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 if __name__ == '__main__':
 
-    logger('%s v%s' % (GV.APP.SW_NAME, GV.APP.SW_VERSION))
+    logging.info('%s v%s' % (GV.APP.SW_NAME, GV.APP.SW_VERSION))
     print('################################################################\n'
            'IMPORTANT: DO NOT CLOSE THIS CONSOLE WINDOW WHILE APP IS RUNNING\n'
            '################################################################\n\n')

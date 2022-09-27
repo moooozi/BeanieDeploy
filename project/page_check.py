@@ -7,7 +7,7 @@ import functions as fn
 import procedure as prc
 import page_1, page_error
 import gui_functions as gui
-from init import app as tkinter, MID_FRAME, logger
+from init import app as tkinter, MID_FRAME, logging
 
 
 def run(compatibility_test=True):
@@ -63,11 +63,12 @@ def run(compatibility_test=True):
     gui.handle_queue_result(tkinter=tkinter, callback=callback_compatibility)
     # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
     # LOG #########################################################
-    logger('\nInitial Test completed, results:')
+    log = '\nInitial Test completed, results:'
     for key, value in vars(GV.COMPATIBILITY_RESULTS).items():
-        logger('%s: %s' % (str(key), str(value)))
+        log += '\n --> %s: %s' % (str(key), str(value))
+    logging.info(log)
     if fn.detect_nvidia():
-        logger('\nNote: NVIDIA Graphics card detected')
+        logging.info('\nNote: NVIDIA Graphics card detected')
     # #############################################################
     errors = []
     if GV.COMPATIBILITY_RESULTS.arch == -1:

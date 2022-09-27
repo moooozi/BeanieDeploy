@@ -22,7 +22,4 @@ logging.basicConfig(
         level=logging.INFO)
 
 
-def logger(text):
-    logging.info('MSG: ' + text)
-    print(text)
 
