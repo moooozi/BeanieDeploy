@@ -1,0 +1,15 @@
+Lnixify v0.1-alpha
+################################################################
+IMPORTANT: DO NOT CLOSE THIS CONSOLE WINDOW WHILE APP IS RUNNING
+################################################################
+
+
+
+Initial Test completed, results:
+uefi: 0
+ram: 34359738368
+space: 133264248832
+resizable: 432008358400
+arch: amd64
+
+Note: NVIDIA Graphics card detected
