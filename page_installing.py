@@ -1,5 +1,4 @@
 import multiprocessing
-import time
 import tkinter as tk
 import installation
 import page_restart_required

@@ -28,15 +28,11 @@ def run():
     tkt.add_check_btn(MID_FRAME, LN.encrypted_root, enable_encryption_toggle_var,
                       lambda: show_encrypt_options(enable_encryption_toggle_var))
 
-    only_digit_regex = r'^[0-9]+$'  # digits
     frame_encryption_options = ttk.Frame(MID_FRAME)
 
     encrypt_pass_pre = ttk.Label(frame_encryption_options, wraplength=540, justify=GV.UI.DI_VAR['l'],
                                  text=LN.entry_encrypt_passphrase_pre, font=tkt.FONTS_smaller)
     encrypt_passphrase_entry = ttk.Entry(frame_encryption_options, show="\u2022", width=10, textvariable=encrypt_passphrase_var)
-    tkt.var_tracer(encrypt_passphrase_var, "write",
-                   lambda *args: fn.validate_with_regex(encrypt_passphrase_var,
-                                                        regex=only_digit_regex, mode='fix'))
     pass_confirm_var = tk.StringVar()
     encrypt_pass_confirm_pre = ttk.Label(frame_encryption_options, wraplength=540, justify=GV.UI.DI_VAR['l'],
                                          text=LN.entry_encrypt_passphrase_confirm_pre, font=tkt.FONTS_smaller)

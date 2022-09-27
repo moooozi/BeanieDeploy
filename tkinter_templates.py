@@ -2,13 +2,16 @@ import tkinter as tk
 import tkinter.ttk as ttk
 
 import globals as GV
-MAXWIDTH = 800
-MAXHEIGHT = 500
+MINWIDTH = 850
+MINHEIGHT = 550
+WIDTH_OFFSET = 400
+HEIGHT_OFFSET = 400
 TOP_FRAME_HEIGHT = 100
 LEFT_FRAME_WIDTH = 150
 light_red = '#ff4a4a'
 light_blue = '#3aa9ff'
 top_background = '#474747'
+left_background = '#303030'
 FONTS_large = ("Ariel", 24)
 FONTS_medium = ("Ariel Bold", 16)
 FONTS_small = ("Ariel", 13)
@@ -19,10 +22,24 @@ FONTS_tiny = ("Ariel", 9)
 def init_tkinter(title, icon=None):
     tkinter = tk.Tk()
     tkinter.title(title)
-    tkinter.geometry(str("%sx%s" % (MAXWIDTH, MAXHEIGHT)))
+    tkinter.geometry(str("%sx%s+%s+%s" % (MINWIDTH, MINHEIGHT, WIDTH_OFFSET, HEIGHT_OFFSET)))
+    tkinter.minsize(MINWIDTH, MINHEIGHT)
     tkinter.iconbitmap(icon)
-    tkinter.resizable(False, False)
+    #tkinter.resizable(False, False)
     tkinter.option_add('*Font', 'Ariel 11')
+    ''' # force Windows black borders for Windows 11
+    import ctypes
+    tkinter.update()
+    dwmwa_use_immersive_dark_mode = 20
+    set_window_attribute = ctypes.windll.dwmapi.DwmSetWindowAttribute
+    get_parent = ctypes.windll.user32.GetParent
+    hwnd = get_parent(tkinter.winfo_id())
+    rendering_policy = dwmwa_use_immersive_dark_mode
+    value = 2
+    value = ctypes.c_int(value)
+    set_window_attribute(hwnd, rendering_policy, ctypes.byref(value),
+                         ctypes.sizeof(value))
+    '''
     return tkinter
 
 
@@ -32,15 +49,15 @@ def build_main_gui_frames(parent, left_frame_img_path=None, top_frame_height=TOP
     Used to build or rebuild the main frames after language change to a language with different direction
     (see function right_to_left_lang)
     """
-    top_frame = tk.Frame(parent, height=top_frame_height, width=MAXWIDTH, background=top_background)
-    left_frame = ttk.Frame(parent, width=left_frame_width, height=MAXHEIGHT)
-    mid_frame = ttk.Frame(parent, height=MAXHEIGHT - top_frame_height)
+    top_frame = tk.Frame(parent, height=top_frame_height, width=MINWIDTH, background=top_background)
+    left_frame = tk.Frame(parent, width=left_frame_width, height=MINHEIGHT, background=left_background)
+    mid_frame = ttk.Frame(parent, height=MINHEIGHT - top_frame_height)
 
-    top_frame.pack(fill="x", expand=1)
+    top_frame.pack(fill="x", side='top')
     top_frame.pack_propagate(False)
     left_frame.pack(fill="y", side=GV.UI.DI_VAR['l'])
     left_frame.pack_propagate(False)
-    mid_frame.pack(fill="both", expand=1, padx=20, pady=20)
+    mid_frame.pack(fill="both", expand=True, padx=20, pady=20)
     mid_frame.pack_propagate(False)
     return top_frame, mid_frame, left_frame
 
@@ -85,7 +102,7 @@ def open_popup(parent, title_txt, msg_txt, primary_btn_str=None, secondary_btn_s
         x_size = 600
         y_size = int(len(msg_txt)/2.8 + 180 + 13*msg_txt.count('\n'))
 
-    geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position + (MAXWIDTH - x_size) / 2 + 20, y_position + (MAXHEIGHT - y_size) / 2 + 20)
+    geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position + (MINWIDTH - x_size) / 2 + 20, y_position + (MINHEIGHT - y_size) / 2 + 20)
     pop.geometry(geometry)
     pop.overrideredirect(True)
     pop.focus_set()
@@ -106,6 +123,9 @@ def open_popup(parent, title_txt, msg_txt, primary_btn_str=None, secondary_btn_s
             entry_var.trace_add('write', lambda *args: validate_with_regex(var=entry_var, regex=regex, mode='fix'))
         entry_suffix = ttk.Label(temp_frame, text='GB', font=msg_font)
         entry_suffix.pack(anchor=GV.UI.DI_VAR['w'], side=GV.UI.DI_VAR['l'])
+    else:
+        entry_var = None
+
     add_primary_btn(pop_frame, primary_btn_str, lambda *args: validate_pop_input(1))
     add_secondary_btn(pop_frame, secondary_btn_str, lambda *args: validate_pop_input(0))
 
@@ -123,7 +143,7 @@ def add_primary_btn(parent, text, command):
     a preset for adding a tkinter button. Used for the likes of "Next" and "Install" buttons
     :return: tkinter button object
     """
-    btn_next = ttk.Button(parent, text=text, style="Accentbutton", command=command)
+    btn_next = ttk.Button(parent, text=text, style="Accent.TButton", command=command)
     btn_next.pack(anchor=GV.UI.DI_VAR['se'], side=GV.UI.DI_VAR['r'], ipadx=22, padx=0)
     return btn_next
 
@@ -153,8 +173,9 @@ def add_radio_btn(parent, text, var, value, command=None, is_disabled=None, ipad
     return radio
 
 
-def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=5, pack=True):
+def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=5, pack=True, switch=False):
     check = ttk.Checkbutton(parent, text=text, variable=var, onvalue=True, offvalue=False)
+    if switch: check.configure(style='Switch.TCheckbutton')
     if pack: check.pack(anchor=GV.UI.DI_VAR['w'], ipady=5, pady=pady)
     if command: check.configure(command=command)
     if is_disabled: check.configure(state='disabled')
@@ -183,7 +204,7 @@ def add_lang_list(parent, var, languages):
     return lang_list
 
 
-def add_progress_bar(parent, length=MAXWIDTH - LEFT_FRAME_WIDTH):
+def add_progress_bar(parent, length=MINWIDTH - LEFT_FRAME_WIDTH):
     progressbar = ttk.Progressbar(parent, orient='horizontal', length=length, mode='determinate')
     progressbar.pack(pady=25)
     return progressbar
@@ -193,7 +214,7 @@ def stylize(parent, theme_dir, theme_name):
     style = ttk.Style(parent)
     parent.tk.call('source', theme_dir)
     style.theme_use(theme_name)
-    style.configure("Accentbutton", foreground='white')
+    style.configure("Accent.TButton", foreground='white')
     style.configure("Togglebutton", foreground='white')
 
 
