@@ -5,7 +5,7 @@ import globals as GV
 import translations.en as LN
 import functions as fn
 import page_install_method
-from init import app as tkinter, MID_FRAME as parent
+from init import app as tkinter, MID_FRAME as parent, logger
 
 
 def run():
@@ -86,9 +86,9 @@ def run():
         GV.UI.combo_list_spin = combo_list_spin.get()
         GV.UI.desktop = desktop_var.get()  # Saving UI settings
         # LOG #############################################
-        fn.log('\nFedora Spin has been selected, spin details:')
+        logger('\nFedora Spin has been selected, spin details:')
 
         for key, value in vars(GV.SELECTED_SPIN).items():
-            fn.log('  -> %s: %s' % (str(key), str(value)))
+            logger('  -> %s: %s' % (str(key), str(value)))
         # #################################################
         return page_install_method.run()

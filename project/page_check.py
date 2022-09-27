@@ -7,7 +7,7 @@ import functions as fn
 import procedure as prc
 import page_1, page_error
 import gui_functions as gui
-from init import app as tkinter, MID_FRAME
+from init import app as tkinter, MID_FRAME, logger
 
 
 def run(compatibility_test=True):
@@ -20,7 +20,7 @@ def run(compatibility_test=True):
     tkt.add_text_label(page_frame, var=job_var, pady=0, padx=10)
     tkinter.update()  # update tkinter GUI
     if not compatibility_test:
-        GV.COMPATIBILITY_RESULTS.uefi = 0
+        GV.COMPATIBILITY_RESULTS.uefi = 1
         GV.COMPATIBILITY_RESULTS.ram = 34359738368
         GV.COMPATIBILITY_RESULTS.space = 133264248832
         GV.COMPATIBILITY_RESULTS.resizable = 432008358400
@@ -63,11 +63,11 @@ def run(compatibility_test=True):
     gui.handle_queue_result(tkinter=tkinter, callback=callback_compatibility)
     # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
     # LOG #########################################################
-    fn.log('\nInitial Test completed, results:')
+    logger('\nInitial Test completed, results:')
     for key, value in vars(GV.COMPATIBILITY_RESULTS).items():
-        fn.log('%s: %s' % (str(key), str(value)))
+        logger('%s: %s' % (str(key), str(value)))
     if fn.detect_nvidia():
-        fn.log('\nNote: NVIDIA Graphics card detected')
+        logger('\nNote: NVIDIA Graphics card detected')
     # #############################################################
     errors = []
     if GV.COMPATIBILITY_RESULTS.arch == -1:

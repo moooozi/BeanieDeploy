@@ -236,14 +236,14 @@ def make_boot_entry_first(bootguid, is_permanent: bool = False):
         arg = r'bcdedit /set "{fwbootmgr}" bootsequence "' + bootguid + '" /addfirst'
 
     out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    log(out.stdout)
+    #log(out.stdout)
 
 
 def create_new_wbm(boot_efi_file_path, boot_drive_letter):
     arg = r'bcdedit /copy "{bootmgr}" /d "Linux Install Media"'
     bootguid = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout.strip()
-    log(bootguid)
+    #log(bootguid)
     bootguid = bootguid[bootguid.index('{'):bootguid.index('}') + 1]
     arg = r'bcdedit /set  "' + bootguid + '" path ' + boot_efi_file_path + ''
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
@@ -327,12 +327,6 @@ def detect_nvidia(queue=None):
     else: return is_found
 
 
-def log(text, mode='a'):
-    with open('generated_log.txt', mode) as file:
-        file.write(text + '\n')
-    print(text)
-
-
 def get_file_name_from_url(url):
     from urllib.parse import urlparse
     a = urlparse(url)
@@ -354,8 +348,8 @@ def set_windows_time_to_utc():
         key = winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, r'SYSTEM\CurrentControlSet\Control\TimeZoneInformation')
         winreg.SetValueEx(key, 'RealTimeIsUniversal', 0, winreg.REG_DWORD, 1)
         winreg.CloseKey(key)
-    except:
-        log("Error: Couldn't change Windows Time settings to use UTC universal timing")
+    except: pass
+        #log("Error: Couldn't change Windows Time settings to use UTC universal timing")
 
 
 def get_user_downloads_folder():

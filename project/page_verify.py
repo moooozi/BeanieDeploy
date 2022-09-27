@@ -10,7 +10,7 @@ import globals as GV
 import translations.en as LN
 import functions as fn
 import procedure as prc
-from init import MID_FRAME, app
+from init import MID_FRAME, app, logger
 
 
 def run():
@@ -54,18 +54,18 @@ def run():
             GV.PARTITION.boot_part_size = GV.APP.linux_boot_partition_size
             GV.PARTITION.efi_part_size = GV.APP.linux_efi_partition_size
         # LOG ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        fn.log('\nKickstart arguments (sensitive data sensored):')
+        logger('\nKickstart arguments (sensitive data sensored):')
         for key, value in vars(GV.KICKSTART).items():
             if key in ('passphrase', 'fullname', 'username', 'wifi_profiles'):
                 if not value:
                     continue
-                fn.log('%s: (sensitive data)' % key)
+                logger('%s: (sensitive data)' % key)
             else:
-                fn.log('%s: %s' % (key, value))
-        fn.log('\nPartitioning details:')
+                logger('%s: %s' % (key, value))
+        logger('\nPartitioning details:')
         for key, value in vars(GV.PARTITION).items():
             if key == 'queue': continue
-            fn.log('%s: %s' % (key, value))
+            logger('%s: %s' % (key, value))
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     if GV.SELECTED_SPIN.is_live_img:
         installer_img = GV.LIVE_OS_INSTALLER_SPIN
