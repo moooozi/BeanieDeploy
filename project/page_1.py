@@ -10,7 +10,7 @@ from init import app as tkinter, MID_FRAME as parent, logging
 
 def run():
     """the page on which you choose which distro/flaver and whether Autoinstall should be on or off"""
-    tkt.clear_frame(parent)
+    tkt.init_frame(parent)
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(parent, LN.desktop_question, LN.btn_next, lambda: next_btn_action())
     desktop_var = tk.StringVar(tkinter, GV.UI.desktop)
@@ -27,7 +27,7 @@ def run():
         tkt.add_radio_btn(frame_desktop, desktop, desktop_var, desktop, command=lambda: validate_input(),
                           pack=False).grid(ipady=5, row=index, column=0, sticky=GV.UI.DI_VAR['w'])
         if desktop in LN.desktop_hints.keys():
-            ttk.Label(frame_desktop, wraplength=540, justify="center", text=LN.desktop_hints[desktop],
+            ttk.Label(frame_desktop, wraplength=GV.UI.width, justify="center", text=LN.desktop_hints[desktop],
                       font=tkt.FONTS_smaller, foreground=tkt.light_blue).grid(ipadx=5, row=index, column=1,
                                                                       sticky=GV.UI.DI_VAR['w'])
     tkt.add_radio_btn(frame_desktop, LN.choose_spin_instead, desktop_var, 'else', command=lambda: validate_input(),

@@ -15,7 +15,7 @@ from init import MID_FRAME, app, logging
 
 def run():
     """the page on which you get to review your selection before starting to install"""
-    tkt.clear_frame(MID_FRAME)
+    tkt.init_frame(MID_FRAME)
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(MID_FRAME, LN.verify_question,
                             LN.btn_install, lambda: next_btn_action(),

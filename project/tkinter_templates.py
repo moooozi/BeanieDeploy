@@ -2,6 +2,8 @@ import tkinter as tk
 import tkinter.ttk as ttk
 
 import globals as GV
+WIDTH = 850
+HEIGHT = 550
 MINWIDTH = 850
 MINHEIGHT = 550
 WIDTH_OFFSET = 400
@@ -22,7 +24,7 @@ FONTS_tiny = ("Ariel", 9)
 def init_tkinter(title, icon=None):
     tkinter = tk.Tk()
     tkinter.title(title)
-    tkinter.geometry(str("%sx%s+%s+%s" % (MINWIDTH, MINHEIGHT, WIDTH_OFFSET, HEIGHT_OFFSET)))
+    tkinter.geometry(str("%sx%s+%s+%s" % (WIDTH, HEIGHT, WIDTH_OFFSET, HEIGHT_OFFSET)))
     tkinter.minsize(MINWIDTH, MINHEIGHT)
     tkinter.iconbitmap(icon)
     #tkinter.resizable(False, False)
@@ -161,7 +163,7 @@ def add_secondary_btn(parent, text, command):
 
 
 def add_page_title(parent, text, pady=(20, 15)):
-    title = ttk.Label(parent, wraplength=540, justify=GV.UI.DI_VAR['l'], text=text, font=FONTS_medium)
+    title = ttk.Label(parent, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=text, font=FONTS_medium)
     title.pack(pady=pady, anchor=GV.UI.DI_VAR['w'])
     return title
 
@@ -190,7 +192,7 @@ def add_text_label(parent, text=None, font=FONTS_small, var=None, pady=20, padx=
     :return: the tkinter label "ttk.Label" object
     """
     if (not var and text) or (var and not text):
-        label = ttk.Label(parent, wraplength=540, justify=GV.UI.DI_VAR['l'],
+        label = ttk.Label(parent, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'],
                           text=text, textvariable=var, foreground=foreground, font=font)
     else: return -1
     label.pack(pady=pady, padx=padx, anchor=GV.UI.DI_VAR['w'])
@@ -229,8 +231,10 @@ def stylize(parent, theme_dir, theme_name):
     style.configure("Togglebutton", foreground='white')
 
 
-def clear_frame(frame):
+def init_frame(frame):
     """removes all elements inside the middle frame, which contains all page-specific content"""
+    GV.UI.width = frame.winfo_width()
+    print(frame.winfo_width())
     for widget in frame.winfo_children():
         widget.destroy()
 

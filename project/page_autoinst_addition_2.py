@@ -11,7 +11,7 @@ from init import MID_FRAME, app
 
 def run():
     """the autoinstall page on which you choose your timezone and keyboard layout"""
-    tkt.clear_frame(MID_FRAME)
+    tkt.init_frame(MID_FRAME)
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(MID_FRAME, LN.title_autoinst3,
                             LN.btn_next, lambda: next_btn_action(),
@@ -39,7 +39,7 @@ def run():
 
     timezone_all = sorted(autoinst.all_timezones())
     lists_frame = ttk.Frame(page_frame)
-    timezone_txt = ttk.Label(lists_frame, wraplength=540, justify=GV.UI.DI_VAR['l'], text=LN.list_timezones,
+    timezone_txt = ttk.Label(lists_frame, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=LN.list_timezones,
                              font=tkt.FONTS_smaller)
     timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=custom_timezone_var)
     timezone_list['values'] = tuple(timezone_all)
@@ -47,7 +47,7 @@ def run():
 
     all_keymaps = autoinst.get_available_keymaps()
 
-    keyboards_txt = ttk.Label(lists_frame, wraplength=540, justify=GV.UI.DI_VAR['l'], text=LN.list_keymaps,
+    keyboards_txt = ttk.Label(lists_frame, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=LN.list_keymaps,
                               font=tkt.FONTS_smaller)
     keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=custom_keymap_var)
     keyboard_list['values'] = tuple(all_keymaps)

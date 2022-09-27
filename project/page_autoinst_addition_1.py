@@ -10,7 +10,7 @@ import page_autoinst2
 
 def run():
     """the autoinstall page on which you choose your language and locale"""
-    tkt.clear_frame(MID_FRAME)
+    tkt.init_frame(MID_FRAME)
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(MID_FRAME, LN.title_autoinst2,
                             LN.btn_next, lambda: next_btn_action(),

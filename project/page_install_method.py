@@ -12,7 +12,7 @@ from init import app as tkinter, MID_FRAME
 
 def run():
     """the autoinstall page on which you choose whether to install alongside windows or start clean install"""
-    tkt.clear_frame(MID_FRAME)
+    tkt.init_frame(MID_FRAME)
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(MID_FRAME, LN.windows_question % GV.SELECTED_SPIN.name,
                             LN.btn_next, lambda: next_btn_action(),
@@ -27,13 +27,13 @@ def run():
                                              install_method_var, 'dualboot', lambda: show_dualboot_options(True),
                                              pack=False)
     r1_autoinst_dualboot.grid(ipady=5, column=0, row=0, sticky=GV.UI.DI_VAR['w'])
-    r1_warning = ttk.Label(radio_buttons, wraplength=540, justify="center", text='', font=tkt.FONTS_smaller,
+    r1_warning = ttk.Label(radio_buttons, wraplength=GV.UI.width, justify="center", text='', font=tkt.FONTS_smaller,
                            foreground=tkt.light_red)
     r1_warning.grid(padx=20, column=1, row=0, sticky=GV.UI.DI_VAR['w'])
     r2_autoinst_clean = tkt.add_radio_btn(radio_buttons, LN.windows_options['clean'], install_method_var, 'clean',
                                           lambda: show_dualboot_options(False), pack=False)
     r2_autoinst_clean.grid(ipady=5, column=0, row=2, sticky=GV.UI.DI_VAR['w'])
-    r2_warning = ttk.Label(radio_buttons, wraplength=540, justify="center", text='', font=tkt.FONTS_smaller,
+    r2_warning = ttk.Label(radio_buttons, wraplength=GV.UI.width, justify="center", text='', font=tkt.FONTS_smaller,
                            foreground=tkt.light_red)
     r2_warning.grid(padx=20, column=1, row=2, sticky=GV.UI.DI_VAR['w'])
     r3_custom = tkt.add_radio_btn(radio_buttons, LN.windows_options['custom'], install_method_var, 'custom',
@@ -47,10 +47,10 @@ def run():
     float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
     entry1_frame = ttk.Frame(radio_buttons)
     entry1_frame.grid(row=1, column=0, columnspan=4, padx=10)
-    size_dualboot_txt_pre = ttk.Label(entry1_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
+    size_dualboot_txt_pre = ttk.Label(entry1_frame, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'],
                                       text=LN.dualboot_size_txt, font=tkt.FONTS_smaller)
     size_dualboot_entry = ttk.Entry(entry1_frame, width=10, textvariable=dualboot_size_var)
-    size_dualboot_txt_post = ttk.Label(entry1_frame, wraplength=540, justify=GV.UI.DI_VAR['l'],
+    size_dualboot_txt_post = ttk.Label(entry1_frame, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'],
                                        text='(%sGB - %sGB)' % (min_size, max_size), font=tkt.FONTS_smaller)
     tkt.var_tracer(dualboot_size_var, "write",
                    lambda *args: fn.validate_with_regex(dualboot_size_var, regex=float_regex, mode='fix'))

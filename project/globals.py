@@ -85,3 +85,4 @@ UI = types.SimpleNamespace()
 UI.DI_VAR = {'w': 'w', 'e': 'e', 'ne': 'ne', 'se': 'se', 'sw': 'sw', 'nw': 'nw', 'l': 'left', 'r': 'right'}
 UI.desktop = 'unset'
 UI.combo_list_spin = ''
+UI.width = 1000

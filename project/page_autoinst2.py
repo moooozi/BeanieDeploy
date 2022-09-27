@@ -12,7 +12,7 @@ import page_install_method
 
 def run():
     """the autoinstall page on which you choose whether to install alongside windows or start clean install"""
-    tkt.clear_frame(MID_FRAME)
+    tkt.init_frame(MID_FRAME)
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(MID_FRAME, LN.windows_question % GV.SELECTED_SPIN.name,
                             LN.btn_next, lambda: next_btn_action(),
@@ -30,16 +30,16 @@ def run():
 
     frame_encryption_options = ttk.Frame(page_frame)
 
-    encrypt_pass_pre = ttk.Label(frame_encryption_options, wraplength=540, justify=GV.UI.DI_VAR['l'],
+    encrypt_pass_pre = ttk.Label(frame_encryption_options, justify=GV.UI.DI_VAR['l'],
                                  text=LN.entry_encrypt_passphrase_pre, font=tkt.FONTS_smaller)
     encrypt_passphrase_entry = ttk.Entry(frame_encryption_options, show="\u2022", width=10, textvariable=encrypt_passphrase_var)
     pass_confirm_var = tk.StringVar()
-    encrypt_pass_confirm_pre = ttk.Label(frame_encryption_options, wraplength=540, justify=GV.UI.DI_VAR['l'],
+    encrypt_pass_confirm_pre = ttk.Label(frame_encryption_options, justify=GV.UI.DI_VAR['l'],
                                          text=LN.entry_encrypt_passphrase_confirm_pre, font=tkt.FONTS_smaller)
     encrypt_pass_confirm_entry = ttk.Entry(frame_encryption_options, show="\u2022", width=10, textvariable=pass_confirm_var)
-    encrypt_pass_confirm_not_matched = ttk.Label(frame_encryption_options, wraplength=540, justify=GV.UI.DI_VAR['l'],
+    encrypt_pass_confirm_not_matched = ttk.Label(frame_encryption_options, justify=GV.UI.DI_VAR['l'],
                                                  text=LN.not_matched, font=tkt.FONTS_smaller, foreground=tkt.light_red)
-    encrypt_pass_note = ttk.Label(frame_encryption_options, wraplength=540, justify=GV.UI.DI_VAR['l'],
+    encrypt_pass_note = ttk.Label(frame_encryption_options, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'],
                                   text=LN.encrypt_reminder_txt, font=tkt.FONTS_smaller, foreground=tkt.light_blue)
     tpm_unlock = tkt.add_check_btn(frame_encryption_options, LN.encryption_tpm_unlock, encryption_tpm_unlock_toggle_var, pack=False)
 

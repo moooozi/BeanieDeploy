@@ -8,7 +8,7 @@ from init import app, MID_FRAME
 
 def run():
     """the page on which user is prompted to restart the device to continue installation (boot into install media)"""
-    tkt.clear_frame(MID_FRAME)
+    tkt.init_frame(MID_FRAME)
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(MID_FRAME, LN.finished_title,
                             LN.btn_restart_now, lambda: fn.quit_and_restart_windows(),

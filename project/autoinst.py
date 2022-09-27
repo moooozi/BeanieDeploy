@@ -47,9 +47,6 @@ def get_all_regions_and_timezones():
 '''
 
 
-
-
-
 def get_available_keymaps():
     return ALL_KEYMAPS
 

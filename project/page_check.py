@@ -12,13 +12,12 @@ from init import app as tkinter, MID_FRAME, logging
 
 def run(compatibility_test=True):
     """The page on which is decided whether the app can run on the device or not"""
-    tkt.clear_frame(MID_FRAME)
     # *************************************************************************************************************
+    tkinter.update()  # update tkinter GUI
     page_frame = tkt.generic_page_layout(MID_FRAME, LN.check_running)
     progressbar_check = tkt.add_progress_bar(page_frame)
     job_var = tk.StringVar()
     tkt.add_text_label(page_frame, var=job_var, pady=0, padx=10)
-    tkinter.update()  # update tkinter GUI
     if not compatibility_test:
         GV.COMPATIBILITY_RESULTS.uefi = 1
         GV.COMPATIBILITY_RESULTS.ram = 34359738368

@@ -11,7 +11,7 @@ import gui_functions as gui
 
 def run(installer_kwargs, installer_img_dl_percent_factor: float, live_img_dl_factor: float = 0, queue=multiprocessing.Queue()):
     """the page on which the initial installation (creating bootable media) takes place"""
-    tkt.clear_frame(MID_FRAME)
+    tkt.init_frame(MID_FRAME)
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(MID_FRAME, LN.install_running)
     progressbar_install = tkt.add_progress_bar(page_frame)
