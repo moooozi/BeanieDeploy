@@ -1,5 +1,4 @@
 import globals as GV
-import functions as fn
 from init import app, logging
 import page_check
 
