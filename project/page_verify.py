@@ -134,8 +134,6 @@ def run():
     more_options_btn.bind("<Button-1>",
                           lambda x: (more_options_btn.destroy(), c3_add.pack(anchor=GV.UI.DI_VAR['w'])))
     '''
-    print(GV.KICKSTART)
-    print(GV.PARTITION)
 
     def validate_back_page(*args):
         if GV.KICKSTART.partition_method == 'custom':
