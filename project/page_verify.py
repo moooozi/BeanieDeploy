@@ -8,7 +8,6 @@ import page_installing
 import tkinter_templates as tkt
 import globals as GV
 import translations.en as LN
-import functions as fn
 import procedure as prc
 from init import MID_FRAME, app, logging
 
@@ -92,6 +91,10 @@ def run():
     installing.part_kwargs = GV.PARTITION
     installing.rpm_source_dir = GV.PATH.RPM_SOURCE_DIR
     installing.rpm_dest_dir_name = GV.PATH.RPM_DEST_DIR_NAME
+    installing.grub_cfg_relative_path = GV.PATH.RELATIVE_GRUB_CFG
+    installing.tmp_partition_label = GV.TMP_PARTITION_LABEL
+    installing.kickstart_cfg_relative_path = GV.PATH.RELATIVE_KICKSTART
+    installing.efi_file_relative_path = GV.APP_default_efi_file_path
     if GV.SELECTED_SPIN.is_live_img:
         installing.live_img_iso_name = GV.LIVE_ISO_NAME
         installing.live_img_iso_path = GV.PATH.LIVE_ISO

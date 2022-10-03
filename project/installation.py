@@ -3,7 +3,7 @@ import time
 
 import functions as fn
 import procedure as prc
-import globals as GV
+#import globals as GV
 
 
 def download_hash_handler(file_hash, expected_hash, work_dir, queue=None):
@@ -67,7 +67,8 @@ def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
             installer_iso_name, installer_iso_path, installer_iso_url, installer_img_hash256=None,
             live_img_iso_name=None, live_img_iso_path=None, live_img_iso_url=None, live_img_hash256=None,
             rpm_source_dir=None, rpm_dest_dir_name=None,
-            queue=None):
+            queue=None, grub_cfg_relative_path=None,
+            tmp_partition_label=None, kickstart_cfg_relative_path=None, efi_file_relative_path=None):
     # INSTALL STARTING
     fn.mkdir(work_dir)
     live_img_required = bool(live_img_iso_url)
@@ -111,25 +112,18 @@ def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
 
     queue_safe_put(queue, 'STAGE: adding_tmp_boot_entry')
 
-    if ks_kwargs.partition_method != 'custom':
-        grub_cfg_file = GV.PATH.GRUB_CONFIG_AUTOINST
-    else:
-        grub_cfg_file = GV.PATH.GRUB_CONFIG_DEFUALT
-    grub_cfg_dest_path = tmp_part_letter + ':\\' + GV.PATH.RELATIVE_GRUB_CFG
+    grub_cfg_dest_path = tmp_part_letter + ':\\' + grub_cfg_relative_path
     fn.set_file_readonly(grub_cfg_dest_path, False)
-    fn.copy_and_rename_file(grub_cfg_file, grub_cfg_dest_path)
-    grub_cfg_txt = prc.build_grub_cfg_file(GV.TMP_PARTITION_LABEL,
+    grub_cfg_txt = prc.build_grub_cfg_file(tmp_partition_label,
                                            ks_kwargs.partition_method != 'custom')
     fn.set_file_readonly(grub_cfg_dest_path, False)
     grub_cfg = open(grub_cfg_dest_path, 'w')
     grub_cfg.write(grub_cfg_txt)
     grub_cfg.close()
     fn.set_file_readonly(grub_cfg_dest_path, True)
-    nvidia_script_dest_path = tmp_part_letter + ':\\%s' % GV.PATH.RELATIVE_NVIDIA_SCRIPT
-    fn.copy_and_rename_file(GV.PATH.NVIDIA_SCRIPT, nvidia_script_dest_path)
     if not ks_kwargs.partition_method == 'custom':
         kickstart_txt = prc.build_autoinstall_ks_file(**vars(ks_kwargs))
-        kickstart = open(tmp_part_letter + ':\\%s' % GV.PATH.RELATIVE_KICKSTART, 'w')
+        kickstart = open(tmp_part_letter + ':\\%s' % kickstart_cfg_relative_path, 'w')
         kickstart.write(kickstart_txt)
         kickstart.close()
 
@@ -139,7 +133,7 @@ def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
         is_new_boot_order_permanent = True
     else:
         is_new_boot_order_permanent = False
-    boot_kwargs = {'boot_efi_file_path': GV.APP_default_efi_file_path,
+    boot_kwargs = {'boot_efi_file_path': efi_file_relative_path,
                    'boot_drive_letter': tmp_part_letter,
                    'is_permanent': is_new_boot_order_permanent}
     prc.add_boot_entry(**boot_kwargs)

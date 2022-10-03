@@ -3,7 +3,6 @@ import tkinter as tk
 import installation
 import page_restart_required
 import tkinter_templates as tkt
-import globals as GV
 import translations.en as LN
 from init import MID_FRAME, app
 import gui_functions as gui

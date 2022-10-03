@@ -82,7 +82,7 @@ def add_boot_entry(boot_efi_file_path, boot_drive_letter, is_permanent: bool = F
 
 def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone=None, ostree_args=None, username='', fullname='',
                               wifi_profiles=None, is_encrypted: bool = False, passphrase: str = None,
-                              tpm_auto_unlock: bool = True, live_img_url='', nvidia_drivers=True, additional_repos=True,
+                              tpm_auto_unlock: bool = True, live_img_url='', additional_repos=True,
                               partition_method=None, additional_rpm_dir=None):
     kickstart_lines = []
     kickstart_lines.append("# Kickstart file created by Lnixify.")
@@ -105,9 +105,6 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
             kickstart_lines.append("echo $'" + network_file + \
                              "' > " + "/mnt/sysimage/etc/NetworkManager/system-connections/imported_wifi%s.nmconnection" % str(index))
         kickstart_lines.append("%end")
-    # if nvidia_drivers:
-    #    kickstart_lines.append("mkdir -p /mnt/sysimage/etc/profile.d/")
-    #    kickstart_lines.append("cp /run/install/repo/lnixify/nvidia_inst /mnt/sysimage/etc/profile.d/nvidia_inst.sh")
     if additional_rpm_dir:
         kickstart_lines.append("# Installing additional packages")
         kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post_additional_rpm.log")
@@ -200,21 +197,18 @@ def build_grub_cfg_file(root_partition_label, is_autoinst=False):
     grub_lines.append("""set timeout=5""")
     grub_lines.append("""search --no-floppy --set=root -l '%root_label%'\n""")
     if is_autoinst:
-        grub_lines.append("""menuentry 'Auto Install Fedora 36' --class fedora --class gnu-linux --class gnu --class os {
+        grub_lines.append("""menuentry 'Auto Install Fedora' --class fedora --class gnu-linux --class gnu --class os {
                             \n\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% rd.live.check inst.ks=hd:LABEL=%root_label% quiet
                             \n\tinitrdefi /images/pxeboot/initrd.img \n}""")
 
-    grub_lines.append("""menuentry 'Install Fedora 36' --class fedora --class gnu-linux --class gnu --class os {
+    grub_lines.append("""menuentry 'Install Fedora' --class fedora --class gnu-linux --class gnu --class os {
                             \n\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% rd.live.check quiet
                             \n\tinitrdefi /images/pxeboot/initrd.img\n}""")
 
-    grub_lines.append("""menuentry 'Install Fedora 36 with RAM-Boot' --class fedora --class gnu-linux --class gnu --class os {
-                            \n\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% rd.live.check rd.live.ram=1 quiet
+    grub_lines.append("""menuentry 'Install Fedora (RAM-Boot)' --class fedora --class gnu-linux --class gnu --class os {
+                            \n\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% rd.live.check rd.live.ram quiet
                             \n\tinitrdefi /images/pxeboot/initrd.img\n}""")
 
-    grub_lines.append("""menuentry 'Install Fedora 36 without testing the media' --class fedora --class gnu-linux --class gnu --class os {
-                            \n\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% quiet
-                            \n\tinitrdefi /images/pxeboot/initrd.img\n}""")
     grub_lines.append("""submenu 'Troubleshooting -->' {\n
                     \tmenuentry 'Install Fedora 36 in basic graphics mode' --class fedora --class gnu-linux --class gnu --class os {
                             \n\t\tlinuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=%root_label% nomodeset quiet
