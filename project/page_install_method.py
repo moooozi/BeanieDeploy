@@ -40,9 +40,9 @@ def run():
                                   lambda: show_dualboot_options(False), pack=False)
     r3_custom.grid(ipady=5, column=0, row=3, sticky=GV.UI.DI_VAR['w'])
 
-    min_size = fn.byte_to_gb(GV.APP.dualboot_required_space)
+    min_size = fn.byte_to_gb(GV.APP_dualboot_required_space)
     max_size = fn.byte_to_gb(
-        GV.COMPATIBILITY_RESULTS.resizable - GV.SELECTED_SPIN.size - GV.APP.additional_failsafe_space)
+        GV.COMPATIBILITY_RESULTS.resizable - GV.SELECTED_SPIN.size - GV.APP_additional_failsafe_space)
     max_size = round(max_size, 2)
     float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
     entry1_frame = ttk.Frame(radio_buttons)
@@ -56,7 +56,7 @@ def run():
                    lambda *args: fn.validate_with_regex(dualboot_size_var, regex=float_regex, mode='fix'))
 
     # LOGIC
-    space_dualboot = GV.APP.dualboot_required_space + GV.APP.additional_failsafe_space + GV.SELECTED_SPIN.size
+    space_dualboot = GV.APP_dualboot_required_space + GV.APP_additional_failsafe_space + GV.SELECTED_SPIN.size
     if GV.COMPATIBILITY_RESULTS.resizable < space_dualboot:
         r1_warning.config(text=LN.warn_space)
         r1_autoinst_dualboot.configure(state='disabled')
@@ -65,6 +65,7 @@ def run():
         r2_warning.config(text=LN.warn_not_available)
         r1_autoinst_dualboot.configure(state='disabled')
         r2_autoinst_clean.configure(state='disabled')
+        install_method_var.set('custom')
     tkinter.update_idletasks()
 
     def show_dualboot_options(is_true: bool):
@@ -83,14 +84,13 @@ def run():
         if install_method_var.get() not in GV.AVAILABLE_INSTALL_METHODS:
             return -1
         GV.KICKSTART.partition_method = install_method_var.get()
-        if install_method_var.get() == 'dualboot':
+        if GV.KICKSTART.partition_method == 'dualboot':
             syntax_valid = fn.validate_with_regex(dualboot_size_var, regex=float_regex,
                                                   mode='read') not in (False, 'empty')
             if syntax_valid and min_size <= float(dualboot_size_var.get()) <= max_size:
                 GV.PARTITION.shrink_space = fn.gigabyte(dualboot_size_var.get())
             else:
                 return -1
-        if install_method_var.get() == 'custom':
+        if GV.KICKSTART.partition_method == 'custom':
             return page_verify.run()
-        else:
-            return page_autoinst2.run()
+        return page_autoinst2.run()

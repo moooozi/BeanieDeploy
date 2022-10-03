@@ -53,11 +53,11 @@ def run(compatibility_test=True):
 
     if not vars(GV.COMPATIBILITY_RESULTS):
         fn.get_admin()  # Request elevation (admin) if not running as admin
-        gui.run_async_function(prc.compatibility_test, args=(GV.APP.minimal_required_space,))
+        gui.run_async_function(prc.compatibility_test, args=(GV.APP_minimal_required_space,))
     if not GV.ALL_SPINS:
-        gui.run_async_function(fn.get_json, kwargs={'url': GV.APP.AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
+        gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
     if not GV.IP_LOCALE:
-        gui.run_async_function(fn.get_json, kwargs={'url': GV.APP.FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
+        gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
 
     gui.handle_queue_result(tkinter=tkinter, callback=callback_compatibility)
     # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
@@ -80,15 +80,15 @@ def run(compatibility_test=True):
         errors.append(LN.error_uefi_0)
     if GV.COMPATIBILITY_RESULTS.ram == -1:
         errors.append(LN.error_totalram_9)
-    elif GV.COMPATIBILITY_RESULTS.ram < GV.APP.minimal_required_ram:
+    elif GV.COMPATIBILITY_RESULTS.ram < GV.APP_minimal_required_ram:
         errors.append(LN.error_totalram_0)
     if GV.COMPATIBILITY_RESULTS.space == -1:
         errors.append(LN.error_space_9)
-    elif GV.COMPATIBILITY_RESULTS.space < GV.APP.minimal_required_space:
+    elif GV.COMPATIBILITY_RESULTS.space < GV.APP_minimal_required_space:
         errors.append(LN.error_space_0)
     if GV.COMPATIBILITY_RESULTS.resizable == -1:
         errors.append(LN.error_resizable_9)
-    elif GV.COMPATIBILITY_RESULTS.resizable < GV.APP.minimal_required_space:
+    elif GV.COMPATIBILITY_RESULTS.resizable < GV.APP_minimal_required_space:
         errors.append(LN.error_resizable_0)
 
     if not errors:

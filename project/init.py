@@ -5,7 +5,7 @@ import globals as GV
 import procedure as prc
 import functions as fn
 import logging
-app = tkt.init_tkinter(GV.APP.SW_NAME)  # initialize tkinter
+app = tkt.init_tkinter(GV.APP_SW_NAME)  # initialize tkinter
 prc.init_paths(GV.PATH)
 app.tk.call("source", GV.PATH.CURRENT_DIR + '/resources/style/theme/azure.tcl')
 app.tk.call("set_theme", "dark")

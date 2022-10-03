@@ -234,7 +234,6 @@ def stylize(parent, theme_dir, theme_name):
 def init_frame(frame):
     """removes all elements inside the middle frame, which contains all page-specific content"""
     GV.UI.width = frame.winfo_width()
-    print(frame.winfo_width())
     for widget in frame.winfo_children():
         widget.destroy()
 

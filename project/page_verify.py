@@ -25,7 +25,7 @@ def run():
     torrent_toggle_var = tk.BooleanVar(app, GV.INSTALL_OPTIONS.torrent)
 
     # GETTING ARGUMENTS READY
-    tmp_part_size: int = GV.SELECTED_SPIN.size + GV.APP.temp_part_failsafe_space
+    tmp_part_size: int = GV.SELECTED_SPIN.size + GV.APP_temp_part_failsafe_space
     if GV.SELECTED_SPIN.is_live_img:
         tmp_part_size += GV.LIVE_OS_INSTALLER_SPIN.size
     if GV.INSTALL_OPTIONS.export_wifi:
@@ -51,8 +51,8 @@ def run():
         GV.KICKSTART.wifi_profiles = wifi_profiles
 
         if GV.KICKSTART.partition_method == 'dualboot':
-            GV.PARTITION.boot_part_size = GV.APP.linux_boot_partition_size
-            GV.PARTITION.efi_part_size = GV.APP.linux_efi_partition_size
+            GV.PARTITION.boot_part_size = GV.APP_linux_boot_partition_size
+            GV.PARTITION.efi_part_size = GV.APP_linux_efi_partition_size
         # LOG ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         log_kickstart = '\nKickstart arguments (sensitive data sensored):'
         for key, value in vars(GV.KICKSTART).items():
@@ -88,8 +88,8 @@ def run():
     installing.installer_iso_path = GV.PATH.INSTALL_ISO
     installing.installer_iso_url = installer_img.dl_link
     installing.installer_img_hash256 = installer_img.hash256
-    installing.ks_kwargs = vars(GV.KICKSTART)
-    installing.part_kwargs = vars(GV.PARTITION)
+    installing.ks_kwargs = GV.KICKSTART
+    installing.part_kwargs = GV.PARTITION
     installing.rpm_source_dir = GV.PATH.RPM_SOURCE_DIR
     installing.rpm_dest_dir_name = GV.PATH.RPM_DEST_DIR_NAME
     if GV.SELECTED_SPIN.is_live_img:
@@ -131,6 +131,8 @@ def run():
     more_options_btn.bind("<Button-1>",
                           lambda x: (more_options_btn.destroy(), c3_add.pack(anchor=GV.UI.DI_VAR['w'])))
     '''
+    print(GV.KICKSTART)
+    print(GV.PARTITION)
 
     def validate_back_page(*args):
         if GV.KICKSTART.partition_method == 'custom':

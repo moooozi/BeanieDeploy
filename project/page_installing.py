@@ -56,10 +56,10 @@ def run(installer_kwargs, installer_img_dl_percent_factor: float, live_img_dl_fa
                                                                               result['speed'],
                                                                               LN.dl_timeleft,
                                                                               result['eta']))
-        elif isinstance(queue_result, tuple) and queue_result[0] in ('STAGE: checksum_failed', 'STAGE: checksum_mismatch'):
-            hash_result = queue_result[1]
+        elif isinstance(queue_result, tuple) and queue_result[0] == 'ERR: checksum':
+            error_dict = queue_result[1]
             response_queue = queue_result[2]
-            response = download_hash_handler(hash_result)
+            response = gui_download_hash_handler(**error_dict)
             response_queue.put(response)
 
     job_var.set(LN.check_existing_download_files)
@@ -68,11 +68,11 @@ def run(installer_kwargs, installer_img_dl_percent_factor: float, live_img_dl_fa
     return page_restart_required.run()
 
 
-def download_hash_handler(dl_hash):
+def gui_download_hash_handler(error, file_hash='', expected_hash=''):
     go_next = False
     cleanup = False
     app_quit = False
-    if dl_hash == -1:
+    if error == 'failed':
         question = tkt.open_popup(parent=app, title_txt=LN.job_checksum_failed,
                                   msg_txt=LN.job_checksum_failed_txt,
                                   primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
@@ -85,9 +85,9 @@ def download_hash_handler(dl_hash):
             if question:
                 cleanup = True
             app_quit = True
-    else:
+    if error == 'mismatch':
         question = tkt.open_popup(parent=app, title_txt=LN.job_checksum_mismatch,
-                                  msg_txt=LN.job_checksum_mismatch_txt % dl_hash,
+                                  msg_txt=LN.job_checksum_mismatch_txt % (file_hash, expected_hash),
                                   primary_btn_str=LN.btn_retry, secondary_btn_str=LN.btn_abort)
         if not question:
             question = tkt.open_popup(parent=app, title_txt=LN.cleanup_question,

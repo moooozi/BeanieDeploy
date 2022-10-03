@@ -10,7 +10,7 @@ def run(errors):
     """The page on which is decided whether the app can run on the device or not"""
     tkt.init_frame(MID_FRAME)
     # *************************************************************************************************************
-    page_frame = tkt.generic_page_layout(MID_FRAME, LN.error_title % GV.APP.SW_NAME,
+    page_frame = tkt.generic_page_layout(MID_FRAME, LN.error_title % GV.APP_SW_NAME,
                                          secondary_btn_txt=LN.btn_quit, secondary_btn_command=lambda: fn.app_quit())
 
     tkt.add_text_label(page_frame, LN.error_list, pady=10)

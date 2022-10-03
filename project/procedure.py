@@ -60,7 +60,7 @@ def partition_procedure(tmp_part_size: int, temp_part_label: str, queue=None, sh
     sys_drive_letter = fn.get_sys_drive_letter()
     print(fn.relabel_volume(sys_drive_letter, 'WindowsOS'))
     sys_disk_number = fn.get_disk_number(sys_drive_letter)
-    if shrink_space is None:
+    if not (efi_part_size and boot_part_size):
         shrink_space = tmp_part_size
     sys_drive_new_size = fn.get_drive_size_after_resize(sys_drive_letter, shrink_space + 1100000)
     fn.resize_partition(sys_drive_letter, sys_drive_new_size)
@@ -322,12 +322,12 @@ def decide_torrent_or_direct_download(torrent_preferred, direct_link, torrent_li
 
 
 def check_valid_existing_file(path, file_hash):
-    if fn.check_if_exists(path):
-        if fn.check_hash(path, file_hash) == 1:
-            return True
-        else:
-            fn.rm(path)
-    return False
+    if not os.path.isfile(path):
+        return False
+    if fn.get_sha256_hash(path).lower() == file_hash.lower():
+        return True
+    else:
+        os.remove(path)
 
 
 def initiate_kickstart_arguments_from_user_input(autoinstall: dict, install_options: dict):

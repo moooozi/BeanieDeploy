@@ -61,7 +61,7 @@ def run():
         if spin_index is not None:
             GV.SELECTED_SPIN = GV.ACCEPTED_SPINS[spin_index]
             if GV.SELECTED_SPIN.is_live_img:
-                GV.KICKSTART.live_img_url = GV.APP.live_img_url
+                GV.KICKSTART.live_img_url = GV.APP_live_img_url
 
             if GV.SELECTED_SPIN.is_live_img:
                 total_size = GV.LIVE_OS_INSTALLER_SPIN.size + GV.SELECTED_SPIN.size

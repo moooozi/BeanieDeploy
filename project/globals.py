@@ -2,22 +2,22 @@ import types
 
 Megabyte = 1024 * 1024
 Gigabyte = 1024 * 1024 * 1024
-APP = types.SimpleNamespace()
-APP.SW_NAME = "Lnixify"
-APP.SW_VERSION = '0.1-alpha'
-APP.minimal_required_space = 4 * Gigabyte
-APP.dualboot_required_space = 35 * Gigabyte
-APP.additional_failsafe_space = 2 * Gigabyte
-APP.temp_part_failsafe_space = 0.15 * Gigabyte
-APP.minimal_required_ram = 2 * Gigabyte
-APP.linux_boot_partition_size = 1 * Gigabyte  # (minimum recommended 0.5)
-APP.linux_efi_partition_size = 100 * Megabyte  # (recommended=200, minimum=50)
-APP.default_efi_file_path = r"\EFI\BOOT\BOOTX64.EFI"
-APP.FEDORA_GEO_IP_URL = 'https://geoip.fedoraproject.org/city'
-APP.AVAILABLE_SPINS_LIST = 'https://gitlab.com/win2linux/lnitest/-/raw/main/fedora_spins.json'
-APP.TPM2_TOOLS_RPM_DL_LINK = 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Everything/x86_64/os/Packages/t/tpm2-tools-5.2-2.fc36.x86_64.rpm'
-APP.live_img_path = '/LiveOS/squashfs.img'
-APP.live_img_url = 'file:///run/install/repo' + APP.live_img_path
+
+APP_SW_NAME = "Lnixify"
+APP_SW_VERSION = '0.1-alpha'
+APP_minimal_required_space = 4 * Gigabyte
+APP_dualboot_required_space = 35 * Gigabyte
+APP_additional_failsafe_space = 2 * Gigabyte
+APP_temp_part_failsafe_space = 0.15 * Gigabyte
+APP_minimal_required_ram = 2 * Gigabyte
+APP_linux_boot_partition_size = 1 * Gigabyte  # (minimum recommended 0.5)
+APP_linux_efi_partition_size = 100 * Megabyte  # (recommended=200, minimum=50)
+APP_default_efi_file_path = r"\EFI\BOOT\BOOTX64.EFI"
+APP_FEDORA_GEO_IP_URL = 'https://geoip.fedoraproject.org/city'
+APP_AVAILABLE_SPINS_LIST = 'https://gitlab.com/win2linux/lnitest/-/raw/main/fedora_spins.json'
+APP_TPM2_TOOLS_RPM_DL_LINK = 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Everything/x86_64/os/Packages/t/tpm2-tools-5.2-2.fc36.x86_64.rpm'
+APP_live_img_path = '/LiveOS/squashfs.img'
+APP_live_img_url = 'file:///run/install/repo' + APP_live_img_path
 
 LIVE_ISO_NAME = 'live_os.iso'
 INSTALL_ISO_NAME = 'install_media.iso'
@@ -68,7 +68,7 @@ KICKSTART.ostree_args = ''
 KICKSTART.wifi_profiles = []
 
 PARTITION = types.SimpleNamespace()
-PARTITION.shrink_space = APP.dualboot_required_space
+PARTITION.shrink_space = APP_dualboot_required_space
 PARTITION.tmp_part_size = None
 PARTITION.temp_part_label = None
 PARTITION.boot_part_size = None
