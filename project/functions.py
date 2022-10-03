@@ -42,10 +42,6 @@ def check_resizable():
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
 
 
-def get_user_home_dir():
-    return str(pathlib.Path.home())
-
-
 def get_windows_username():
     return str(subprocess.run(
         [r'powershell.exe', r'$env:UserName'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout).replace(r'\\', '\\')
@@ -104,20 +100,13 @@ def download_with_aria2(aria2_path, url, destination, output_name=None,  is_torr
                     except (ValueError, IndexError): pass
 
 
-def check_hash(file_path, sha256_hash, queue=None):
+def get_sha256_hash(file_path):
     arg = r'(Get-FileHash "' + file_path + '" -Algorithm SHA256).Hash'
     out = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                          shell=True, universal_newlines=True)
     if out.returncode != 0 or len(out.stdout.strip()) != 64:
-        result = -1
-    elif out.stdout.strip().upper() == sha256_hash.upper():
-        result = 1
-    else:
-        result = (out.stdout.strip().upper(), sha256_hash.upper())
-    if queue:
-        queue.put(result)
-    else:
-        return result
+        return ''
+    return out.stdout.strip().lower()
 
 
 def get_sys_drive_letter():
@@ -133,8 +122,8 @@ def get_disk_number(drive_letter: str):
 
 def get_drive_size_after_resize(drive_letter: str, minus_space: int):
     arg = r'(Get-Volume | Where DriveLetter -eq ' + drive_letter + ').Size -' + str(minus_space)
-    return int(subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                              shell=True, universal_newlines=True).stdout.strip())
+    return int(float(subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                    shell=True, universal_newlines=True).stdout.strip()))
 
 
 def resize_partition(drive_letter: str, new_size: int):
@@ -173,6 +162,8 @@ def mount_iso(iso_path):
 
 
 def unmount_iso(iso_path):
+    if not iso_path:
+        return False
     arg = 'Dismount-DiskImage -ImagePath "' + iso_path + '"'
     return str(subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               shell=True, universal_newlines=True).stdout.strip())
@@ -196,11 +187,6 @@ def copy_and_rename_file(source, destination, queue=None):
         queue.put(1)
 
 
-def rm(location):
-    if os.path.isfile(location):
-        return os.remove(location)
-
-
 def rmdir(location):
     if os.path.isdir(location):
         return shutil.rmtree(location)
@@ -209,10 +195,6 @@ def rmdir(location):
 def mkdir(location):
     if not os.path.isdir(location):
         return os.makedirs(location)
-
-
-def move_and_replace(path, dest):
-    os.replace(path, dest)
 
 
 def app_quit():
@@ -257,12 +239,6 @@ def extract_wifi_profiles(folder_path):
     out = subprocess.run([r'powershell.exe', args],
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
     return out.returncode
-
-
-def check_if_exists(path, check_if_is_dir=False):
-    if check_if_is_dir:
-        return os.path.isdir(path)
-    return os.path.isfile(path)
 
 
 def validate_with_regex(var, regex, mode='read'):
@@ -333,10 +309,6 @@ def get_file_name_from_url(url):
     return os.path.basename(a.path)
 
 
-def get_file_name_from_path(path):
-    return os.path.basename(path)
-
-
 def find_file_by_name(name, lookup_dir):
     for root, dirs, files in os.walk(lookup_dir):
             if name in files:
@@ -348,7 +320,9 @@ def set_windows_time_to_utc():
         key = winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, r'SYSTEM\CurrentControlSet\Control\TimeZoneInformation')
         winreg.SetValueEx(key, 'RealTimeIsUniversal', 0, winreg.REG_DWORD, 1)
         winreg.CloseKey(key)
-    except: pass
+        return True
+    except:
+        return False
         #log("Error: Couldn't change Windows Time settings to use UTC universal timing")
 
 
