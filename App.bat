@@ -1,0 +1,1 @@
+@start "" "interpreter\python\pythonw.exe" "src\main.py"
