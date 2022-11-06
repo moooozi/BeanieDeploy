@@ -10,5 +10,5 @@ if __name__ == '__main__':
            'IMPORTANT: DO NOT CLOSE THIS CONSOLE WINDOW WHILE APP IS RUNNING\n'
            '################################################################\n\n')
 
-    page_check.run(True)
+    page_check.run()
     app.mainloop()

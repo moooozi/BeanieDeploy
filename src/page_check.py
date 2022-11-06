@@ -1,5 +1,3 @@
-import tkinter as tk
-import tkinter.ttk as ttk
 import tkinter_templates as tkt
 import globals as GV
 import translations.en as LN
@@ -8,6 +6,7 @@ import procedure as prc
 import page_1, page_error
 import gui_functions as gui
 from init import app as tkinter, MID_FRAME, logging
+import global_tk_vars as tk_var
 
 
 def run(compatibility_test=True):
@@ -16,8 +15,7 @@ def run(compatibility_test=True):
     tkinter.update()  # update tkinter GUI
     page_frame = tkt.generic_page_layout(MID_FRAME, LN.check_running)
     progressbar_check = tkt.add_progress_bar(page_frame)
-    job_var = tk.StringVar()
-    tkt.add_text_label(page_frame, var=job_var, pady=0, padx=10)
+    tkt.add_text_label(page_frame, var=tk_var.job_var, pady=0, padx=10)
     if not compatibility_test:
         GV.COMPATIBILITY_RESULTS.uefi = 1
         GV.COMPATIBILITY_RESULTS.ram = 34359738368
@@ -29,20 +27,20 @@ def run(compatibility_test=True):
         if result == 'arch':
             progressbar_check['value'] = 10
         elif result == 'uefi':
-            job_var.set(LN.check_uefi)
+            tk_var.job_var.set(LN.check_uefi)
             progressbar_check['value'] = 20
         elif result == 'ram':
-            job_var.set(LN.check_ram)
+            tk_var.job_var.set(LN.check_ram)
             progressbar_check['value'] = 30
         elif result == 'space':
-            job_var.set(LN.check_space)
+            tk_var.job_var.set(LN.check_space)
             progressbar_check['value'] = 50
         elif result == 'resizable':
-            job_var.set(LN.check_resizable)
+            tk_var.job_var.set(LN.check_resizable)
             progressbar_check['value'] = 80
         elif isinstance(result, dict) and result.keys() >= {"arch", "uefi"}:
             GV.COMPATIBILITY_RESULTS.__init__(**result)
-            job_var.set(LN.check_available_downloads)
+            tk_var.job_var.set(LN.check_available_downloads)
             progressbar_check['value'] = 95
         elif isinstance(result, tuple) and result[0] == 'spin_list':
             GV.ALL_SPINS = result[1]

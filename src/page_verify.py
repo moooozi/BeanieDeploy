@@ -1,15 +1,16 @@
-import tkinter as tk
+import popup_advanced_options
 import tkinter.ttk as ttk
+import tkinter_templates as tkt
 import types
 import autoinst
 import page_autoinst_addition_2
 import page_install_method
 import page_installing
-import tkinter_templates as tkt
 import globals as GV
 import translations.en as LN
 import procedure as prc
 from init import MID_FRAME, app, logging
+import global_tk_vars as tk_var
 
 
 def run():
@@ -17,11 +18,8 @@ def run():
     tkt.init_frame(MID_FRAME)
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(MID_FRAME, LN.verify_question,
-                            LN.btn_install, lambda: next_btn_action(),
-                            LN.btn_back, lambda: validate_back_page())
-
-    auto_restart_toggle_var = tk.BooleanVar(app, GV.INSTALL_OPTIONS.auto_restart)
-    torrent_toggle_var = tk.BooleanVar(app, GV.INSTALL_OPTIONS.torrent)
+                                         LN.btn_install, lambda: next_btn_action(),
+                                         LN.btn_back, lambda: validate_back_page())
 
     # GETTING ARGUMENTS READY
     tmp_part_size: int = GV.SELECTED_SPIN.size + GV.APP_temp_part_failsafe_space
@@ -31,6 +29,17 @@ def run():
         wifi_profiles = prc.get_wifi_profiles(GV.PATH.WORK_DIR)
     else:
         wifi_profiles = None
+
+    GV.INSTALL_OPTIONS.export_wifi = tk_var.export_wifi_toggle_var.get()
+    GV.KICKSTART.is_encrypted = tk_var.enable_encryption_toggle_var.get()
+    GV.KICKSTART.passphrase = tk_var.encrypt_passphrase_var.get()
+    GV.KICKSTART.tpm_auto_unlock = tk_var.encryption_tpm_unlock_toggle_var.get()
+    if tk_var.keymap_timezone_source_var.get() == 'custom':
+        GV.KICKSTART.keymap = tk_var.custom_keymap_var.get()
+        GV.KICKSTART.keymap_type = 'vc'
+        GV.KICKSTART.timezone = tk_var.custom_timezone_var.get()
+    GV.INSTALL_OPTIONS.keymap_timezone_source = tk_var.keymap_timezone_source_var.get()
+    GV.KICKSTART.lang = tk_var.selected_locale.get()
 
     GV.PARTITION.tmp_part_size = tmp_part_size
     GV.PARTITION.temp_part_label = GV.TMP_PARTITION_LABEL
@@ -123,17 +132,17 @@ def run():
     for i in range(len(review_sel)):
         review_tree.insert('', index='end', iid=str(i), values=(review_sel[i],))
     # additions options (checkboxes)
-    c2_add = ttk.Checkbutton(page_frame, text=LN.add_auto_restart, variable=auto_restart_toggle_var, onvalue=1,
+    c2_add = ttk.Checkbutton(page_frame, text=LN.add_auto_restart, variable=tk_var.auto_restart_toggle_var, onvalue=1,
                              offvalue=0)
     c2_add.pack(anchor=GV.UI.DI_VAR['w'])
     '''
     c3_add = ttk.Checkbutton(page_frame, text=LN.add_torrent, variable=torrent_toggle_var, onvalue=1, offvalue=0)
+    '''
     more_options_btn = ttk.Label(page_frame, justify="center", text=LN.more_options, font=tkt.FONTS_smaller,
                                  foreground=tkt.light_blue)
     more_options_btn.pack(pady=10, padx=10, anchor=GV.UI.DI_VAR['w'])
     more_options_btn.bind("<Button-1>",
-                          lambda x: (more_options_btn.destroy(), c3_add.pack(anchor=GV.UI.DI_VAR['w'])))
-    '''
+                          lambda x: popup_advanced_options.run(app))
 
     def validate_back_page(*args):
         if GV.KICKSTART.partition_method == 'custom':
@@ -142,8 +151,8 @@ def run():
             page_autoinst_addition_2.run()
 
     def next_btn_action(*args):
-        GV.INSTALL_OPTIONS.auto_restart = auto_restart_toggle_var.get()
-        GV.INSTALL_OPTIONS.torrent = torrent_toggle_var.get()
+        GV.INSTALL_OPTIONS.auto_restart = tk_var.auto_restart_toggle_var.get()
+        GV.INSTALL_OPTIONS.torrent = tk_var.torrent_toggle_var.get()
         return page_installing.run(installer_kwargs=installing,
                                    installer_img_dl_percent_factor=installer_dl_percent_factor,
-                                   live_img_dl_factor=live_img_dl_factor,)
+                                   live_img_dl_factor=live_img_dl_factor, )

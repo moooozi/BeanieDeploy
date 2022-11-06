@@ -26,27 +26,6 @@ def all_timezones():
     return ALL_TIMEZONES
 
 
-'''
-def get_all_regions_and_timezones():
-    """
-    Get a dictionary mapping the regions to the list of their timezones.
-    :rtype: dict
-    """
-
-    result = OrderedDict()
-
-    for tz in sorted(all_timezones()):
-        parts = tz.split("/", 1)
-
-        if len(parts) > 1:
-            if parts[0] not in result:
-                result[parts[0]] = set()
-            result[parts[0]].add(parts[1])
-
-    return result
-'''
-
-
 def get_available_keymaps():
     return ALL_KEYMAPS
 

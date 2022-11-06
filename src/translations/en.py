@@ -59,11 +59,9 @@ additional_setup_now = "Setup your locale, Timezone and keyboard layout now"
 selected_spin = "Selected Spin"
 choose_fedora_spin = "Choose a Fedora Spin"
 encrypted_root = "Encrypt the new operating system"
-entry_encrypt_passphrase_pre = "Enter encryption passphrase"
-entry_encrypt_passphrase_confirm_pre = "Confirm"
-not_matched = "Not matched"
+entry_encrypt_passphrase = "Set encryption passphrase"
 
-encrypt_reminder_txt = "Or leave empty to provide passphase later during install (more secure)"
+encrypt_reminder_txt = "You will be asked to enter encryption passphase before the installation begins"
 encryption_tpm_unlock = "Auto-unlock with TPM2"
 
 entry_username = "Username"

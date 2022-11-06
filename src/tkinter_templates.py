@@ -59,14 +59,15 @@ def build_main_gui_frames(parent, left_frame_img_path=None, top_frame_height=TOP
     top_frame.pack_propagate(False)
     left_frame.pack(fill="y", side=GV.UI.DI_VAR['l'])
     left_frame.pack_propagate(False)
-    mid_frame.pack(fill="both", expand=True, padx=20, pady=20)
+    mid_frame.pack(fill="both", expand=True, padx=20, pady=(40, 20))
     mid_frame.pack_propagate(False)
     return top_frame, mid_frame, left_frame
 
 
-def generic_page_layout(parent, title, primary_btn_txt=None, primary_btn_command=None, secondary_btn_txt=None,
+def generic_page_layout(parent, title=None, primary_btn_txt=None, primary_btn_command=None, secondary_btn_txt=None,
                         secondary_btn_command=None):
-    add_page_title(parent, title)
+    if title:
+        add_page_title(parent, title)
     if primary_btn_txt or secondary_btn_txt:
         bottom_frame = tk.Frame(parent, height=34)
         bottom_frame.pack(side='bottom', fill='x')
@@ -79,8 +80,7 @@ def generic_page_layout(parent, title, primary_btn_txt=None, primary_btn_command
     return frame
 
 
-def open_popup(parent, title_txt, msg_txt, primary_btn_str=None, secondary_btn_str=None, is_entry=None, regex=None,
-               x_size: int = None, y_size: int = None):
+def open_popup(parent, x_size: int = None, y_size: int = None,):
     """
     Pops up window to get input from user and freezes the main GUI while waiting for response
     :param y_size: window height in pixels
@@ -96,49 +96,41 @@ def open_popup(parent, title_txt, msg_txt, primary_btn_str=None, secondary_btn_s
     """
     pop = tk.Toplevel(parent)
     border_frame = tk.Frame(pop, highlightbackground="gray", highlightthickness=1)
-    pop_frame = tk.Frame(border_frame)
-    pop_var = tk.IntVar(pop)
     x_position = parent.winfo_x()
     y_position = parent.winfo_y()
-    #  position the pop-up window at the center of its parent
-    msg_font = FONTS_small
-    if not (x_size and y_size):
-        x_size = 600
-        y_size = int(len(msg_txt)/2.8 + 180 + 13*msg_txt.count('\n'))
+    x_app_size = parent.winfo_width()
+    y_app_size = parent.winfo_height()
 
-    geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position + (MINWIDTH - x_size) / 2 + 20, y_position + (MINHEIGHT - y_size) / 2 + 20)
+    #  position the pop-up window at the center of its parent
+    geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position + (x_app_size - x_size) / 2 + 20, y_position + (y_app_size - y_size) / 2 + 20)
     pop.geometry(geometry)
-    pop.overrideredirect(True)
+    pop.protocol("WM_DELETE_WINDOW", False)
     pop.focus_set()
     pop.grab_set()
     border_frame.pack(expand=1, fill='both', pady=5, padx=5)
-    pop_frame.pack(expand=1, fill='both', pady=5, padx=10)
-    add_page_title(pop_frame, title_txt, 20)
-    add_text_label(pop_frame, msg_txt, msg_font, pady=10)
+    pop_frame = tk.Frame(border_frame)
+    pop_frame.pack(expand=1, fill='both', padx=10, pady=(20, 10))
 
-    if is_entry:
-        temp_frame = ttk.Frame(pop_frame)
-        temp_frame.pack(fill='x', pady=(20, 0))
-        entry_var = tk.StringVar(pop)
-        entry = ttk.Entry(temp_frame, width=20, textvariable=entry_var)
-        entry.pack(padx=(20, 10), anchor=GV.UI.DI_VAR['w'], side=GV.UI.DI_VAR['l'])
-        if regex:
-            from functions import validate_with_regex
-            entry_var.trace_add('write', lambda *args: validate_with_regex(var=entry_var, regex=regex, mode='fix'))
-        entry_suffix = ttk.Label(temp_frame, text='GB', font=msg_font)
-        entry_suffix.pack(anchor=GV.UI.DI_VAR['w'], side=GV.UI.DI_VAR['l'])
-    else:
-        entry_var = None
+    return pop, pop_frame
 
-    add_primary_btn(pop_frame, primary_btn_str, lambda *args: validate_pop_input(1))
-    add_secondary_btn(pop_frame, secondary_btn_str, lambda *args: validate_pop_input(0))
+
+def input_pop_up(parent, title_txt=None, msg_txt=None, primary_btn_str=None, secondary_btn_str=None,):
+    x_size = 600
+    y_size = int(len(msg_txt) / 2.8 + 180 + 13 * msg_txt.count('\n'))
+    pop, pop_frame = open_popup(parent, x_size, y_size)
+    pop_var = tk.IntVar(pop)
+    msg_font = FONTS_small
+    if msg_txt:
+        add_text_label(pop_frame, msg_txt, msg_font, pady=10)
+
+    generic_page_layout(pop_frame, title_txt, primary_btn_str, lambda *args: validate_pop_input(1),
+                        secondary_btn_str, lambda *args: validate_pop_input(0))
 
     def validate_pop_input(inputted):
         pop_var.set(inputted)
         pop.destroy()
+
     pop.wait_window()
-    if is_entry and pop_var.get() == 1:
-        return entry_var.get()
     return pop_var.get()
 
 
@@ -162,7 +154,7 @@ def add_secondary_btn(parent, text, command):
     return btn_back
 
 
-def add_page_title(parent, text, pady=(20, 15)):
+def add_page_title(parent, text, pady=(0, 15)):
     title = ttk.Label(parent, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=text, font=FONTS_medium)
     title.pack(pady=pady, anchor=GV.UI.DI_VAR['w'])
     return title
