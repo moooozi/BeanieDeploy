@@ -25,7 +25,7 @@ def run():
     if GV.IP_LOCALE:
         locale_from_ip = autoinst.langtable.list_locales(territoryId=GV.IP_LOCALE['country_code'])[0]
         locale_from_ip_name = autoinst.langtable.language_name(languageId=locale_from_ip)
-        if locale_from_ip != GV.KICKSTART.lang:
+        if locale_from_ip != tk_var.selected_locale.get():
             tkt.add_radio_btn(page_frame, LN.keymap_tz_option % locale_from_ip_name, tk_var.keymap_timezone_source_var,
                               'ip', command=lambda: spawn_more_widgets())
 

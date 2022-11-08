@@ -3,22 +3,45 @@ import tkinter.ttk as ttk
 
 import globals as GV
 WIDTH = 850
-HEIGHT = 550
+HEIGHT = 500
 MINWIDTH = 850
-MINHEIGHT = 550
+MINHEIGHT = 450
+MAXWIDTH = WIDTH + 100
+MAXHEIGHT = HEIGHT + 100
 WIDTH_OFFSET = 400
 HEIGHT_OFFSET = 400
-TOP_FRAME_HEIGHT = 100
-LEFT_FRAME_WIDTH = 150
-light_red = '#ff4a4a'
-light_blue = '#3aa9ff'
-top_background = '#474747'
-left_background = '#303030'
+TOP_FRAME_HEIGHT = 50
+LEFT_FRAME_WIDTH = 50
+COLOR_MODE = 'light'
+
 FONTS_large = ("Ariel", 24)
 FONTS_medium = ("Ariel Bold", 16)
 FONTS_small = ("Ariel", 13)
 FONTS_smaller = ("Ariel", 10)
 FONTS_tiny = ("Ariel", 9)
+
+tkinter_background_color = '#856ff8'
+color_red = '#e81123'
+color_blue = '#0067b8'
+top_background_color = '#f3f3f3'
+left_background_color = '#303030'
+
+
+def apply_theme(theme, tkinter):
+    global tkinter_background_color, color_red, color_blue, top_background_color, left_background_color
+    if theme == 'light':
+        tkinter.tk.call("set_theme", theme)
+        tkinter_background_color = '#856ff8'
+        color_red = '#e81123'
+        color_blue = '#0067b8'
+        top_background_color = '#f3f3f3'
+        left_background_color = '#303030'
+    elif theme == 'dark':
+        tkinter.tk.call("set_theme", theme)
+        tkinter_background_color = '#856ff8'
+        color_red = '#ff4a4a'
+        color_blue = '#3aa9ff'
+        top_background_color = '#474747'
 
 
 def init_tkinter(title, icon=None):
@@ -26,8 +49,12 @@ def init_tkinter(title, icon=None):
     tkinter.title(title)
     tkinter.geometry(str("%sx%s+%s+%s" % (WIDTH, HEIGHT, WIDTH_OFFSET, HEIGHT_OFFSET)))
     tkinter.minsize(MINWIDTH, MINHEIGHT)
+    tkinter.maxsize(MAXWIDTH, MAXHEIGHT)
     tkinter.iconbitmap(icon)
-    #tkinter.resizable(False, False)
+    tkinter.tk.call('tk', 'scaling', 1.5)
+    tkinter.tk.call("source", './resources/style/theme/azure.tcl')
+    apply_theme(COLOR_MODE, tkinter)
+    tkinter.resizable(False, False)
     tkinter.option_add('*Font', 'Ariel 11')
     ''' # force Windows black borders for Windows 11
     import ctypes
@@ -51,9 +78,9 @@ def build_main_gui_frames(parent, left_frame_img_path=None, top_frame_height=TOP
     Used to build or rebuild the main frames after language change to a language with different direction
     (see function right_to_left_lang)
     """
-    top_frame = tk.Frame(parent, height=top_frame_height, width=MINWIDTH, background=top_background)
-    left_frame = tk.Frame(parent, width=left_frame_width, height=MINHEIGHT, background=left_background)
-    mid_frame = ttk.Frame(parent, height=MINHEIGHT - top_frame_height)
+    top_frame = tk.Frame(parent, height=top_frame_height, width=MINWIDTH, background=top_background_color)
+    left_frame = tk.Frame(parent, width=left_frame_width, height=MINHEIGHT)
+    mid_frame = tk.Frame(parent, height=MINHEIGHT - top_frame_height,)
 
     top_frame.pack(fill="x", side='top')
     top_frame.pack_propagate(False)
@@ -104,7 +131,8 @@ def open_popup(parent, x_size: int = None, y_size: int = None,):
     #  position the pop-up window at the center of its parent
     geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position + (x_app_size - x_size) / 2 + 20, y_position + (y_app_size - y_size) / 2 + 20)
     pop.geometry(geometry)
-    pop.protocol("WM_DELETE_WINDOW", False)
+    #pop.protocol("WM_DELETE_WINDOW", False)
+    pop.overrideredirect(True)
     pop.focus_set()
     pop.grab_set()
     border_frame.pack(expand=1, fill='both', pady=5, padx=5)
@@ -192,7 +220,7 @@ def add_text_label(parent, text=None, font=FONTS_small, var=None, pady=20, padx=
 
 
 def add_lang_list(parent, var, languages):
-    lang_list = ttk.Combobox(parent, name="language", textvariable=var, background=top_background)
+    lang_list = ttk.Combobox(parent, name="language", textvariable=var, background=top_background_color)
     lang_list['values'] = tuple(languages)
     lang_list['state'] = 'readonly'
     lang_list.set('English')

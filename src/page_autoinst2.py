@@ -25,7 +25,7 @@ def run():
 
     frame_encryption_options = ttk.Frame(page_frame)
 
-    encrypt_pass_note = ttk.Label(frame_encryption_options, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=LN.encrypt_reminder_txt, font=tkt.FONTS_smaller, foreground=tkt.light_blue)
+    encrypt_pass_note = ttk.Label(frame_encryption_options, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=LN.encrypt_reminder_txt, font=tkt.FONTS_smaller, foreground=tkt.color_blue)
     encrypt_pass_note.grid(pady=5, padx=(0, 0), column=0, columnspan=5, row=1, sticky=GV.UI.DI_VAR['w'])
 
     # LOGIC

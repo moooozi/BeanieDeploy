@@ -50,10 +50,10 @@ proc set_theme {mode} {
 
         array set colors {
             -fg             "#000000"
-            -bg             "#ffffff"
+            -bg             "#f3f3f3"
             -disabledfg     "#737373"
-            -disabledbg     "#ffffff"
-            -selectfg       "#ffffff"
+            -disabledbg     "#f3f3f3"
+            -selectfg       "#f3f3f3"
             -selectbg       "#007fff"
         }
 

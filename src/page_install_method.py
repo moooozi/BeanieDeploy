@@ -25,13 +25,13 @@ def run():
                                              pack=False)
     r1_autoinst_dualboot.grid(ipady=5, column=0, row=0, sticky=GV.UI.DI_VAR['w'])
     r1_warning = ttk.Label(radio_buttons, wraplength=GV.UI.width, justify="center", text='', font=tkt.FONTS_smaller,
-                           foreground=tkt.light_red)
+                           foreground=tkt.color_red)
     r1_warning.grid(padx=20, column=1, row=0, sticky=GV.UI.DI_VAR['w'])
     r2_autoinst_clean = tkt.add_radio_btn(radio_buttons, LN.windows_options['clean'], tk_var.install_method_var, 'clean',
                                           lambda: show_dualboot_options(False), pack=False)
     r2_autoinst_clean.grid(ipady=5, column=0, row=2, sticky=GV.UI.DI_VAR['w'])
     r2_warning = ttk.Label(radio_buttons, wraplength=GV.UI.width, justify="center", text='', font=tkt.FONTS_smaller,
-                           foreground=tkt.light_red)
+                           foreground=tkt.color_red)
     r2_warning.grid(padx=20, column=1, row=2, sticky=GV.UI.DI_VAR['w'])
     r3_custom = tkt.add_radio_btn(radio_buttons, LN.windows_options['custom'], tk_var.install_method_var, 'custom',
                                   lambda: show_dualboot_options(False), pack=False)

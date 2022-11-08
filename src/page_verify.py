@@ -139,7 +139,7 @@ def run():
     c3_add = ttk.Checkbutton(page_frame, text=LN.add_torrent, variable=torrent_toggle_var, onvalue=1, offvalue=0)
     '''
     more_options_btn = ttk.Label(page_frame, justify="center", text=LN.more_options, font=tkt.FONTS_smaller,
-                                 foreground=tkt.light_blue)
+                                 foreground=tkt.color_blue)
     more_options_btn.pack(pady=10, padx=10, anchor=GV.UI.DI_VAR['w'])
     more_options_btn.bind("<Button-1>",
                           lambda x: popup_advanced_options.run(app))
