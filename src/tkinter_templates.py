@@ -1,7 +1,7 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from ctypes import windll
-
+from gui_functions import detect_darkmode_in_windows
 import globals as GV
 WIDTH = 850
 HEIGHT = 500
@@ -13,7 +13,7 @@ WIDTH_OFFSET = 400
 HEIGHT_OFFSET = 400
 TOP_FRAME_HEIGHT = 80
 LEFT_FRAME_WIDTH = 50
-COLOR_MODE = 'light'
+COLOR_MODE = 'dark' if detect_darkmode_in_windows() else 'light'
 
 FONTS_large = ("Ariel", 24)
 FONTS_medium = ("Ariel Bold", 16)
@@ -57,7 +57,7 @@ def init_tkinter(title, icon=None):
     tkinter.maxsize(int(MAXWIDTH * dpi_factor), int(MAXHEIGHT * dpi_factor))
     tkinter.iconbitmap(icon)
 
-    tkinter.tk.call('tk', 'scaling', 1.5)
+    tkinter.tk.call('tk', 'scaling', 1.4)
     tkinter.tk.call("source", './resources/style/theme/azure.tcl')
     apply_theme(COLOR_MODE, tkinter)
     #tkinter.resizable(False, False)
