@@ -9,19 +9,13 @@ from init import app as tkinter, MID_FRAME, logging
 import global_tk_vars as tk_var
 
 
-def run(compatibility_test=True):
+def run(run_test=True):
     """The page on which is decided whether the app can run on the device or not"""
     # *************************************************************************************************************
     tkinter.update()  # update tkinter GUI
     page_frame = tkt.generic_page_layout(MID_FRAME, LN.check_running)
     progressbar_check = tkt.add_progress_bar(page_frame)
     tkt.add_text_label(page_frame, var=tk_var.job_var, pady=0, padx=10)
-    if not compatibility_test:
-        GV.COMPATIBILITY_RESULTS.uefi = 1
-        GV.COMPATIBILITY_RESULTS.ram = 34359738368
-        GV.COMPATIBILITY_RESULTS.space = 133264248832
-        GV.COMPATIBILITY_RESULTS.resizable = 432008358400
-        GV.COMPATIBILITY_RESULTS.arch = 'amd64'
 
     def callback_compatibility(result):
         if result == 'arch':
@@ -48,16 +42,21 @@ def run(compatibility_test=True):
             GV.IP_LOCALE = result[1]
         if GV.ALL_SPINS and vars(GV.COMPATIBILITY_RESULTS):
             return 1
+    fn.get_admin()  # Request elevation (admin) if not running as admin
 
-    if not vars(GV.COMPATIBILITY_RESULTS):
-        fn.get_admin()  # Request elevation (admin) if not running as admin
+    if run_test:
         gui.run_async_function(prc.compatibility_test, args=(GV.APP_minimal_required_space,))
-    if not GV.ALL_SPINS:
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
-    if not GV.IP_LOCALE:
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
-
-    gui.handle_queue_result(tkinter=tkinter, callback=callback_compatibility)
+        gui.handle_queue_result(tkinter=tkinter, callback=callback_compatibility)
+    else:  # DUMMY TEST DATA
+        GV.COMPATIBILITY_RESULTS.uefi = 1
+        GV.COMPATIBILITY_RESULTS.ram = 34359738368
+        GV.COMPATIBILITY_RESULTS.space = 133264248832
+        GV.COMPATIBILITY_RESULTS.resizable = 432008358400
+        GV.COMPATIBILITY_RESULTS.arch = 'amd64'
+        GV.ALL_SPINS = GV.DUMMY_ALL_SPING
+        GV.IP_LOCALE = GV.DUMMY_IP_LOCALE
     # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
     # LOG #########################################################
     log = '\nInitial Test completed, results:'
@@ -88,7 +87,6 @@ def run(compatibility_test=True):
         errors.append(LN.error_resizable_9)
     elif GV.COMPATIBILITY_RESULTS.resizable < GV.APP_minimal_required_space:
         errors.append(LN.error_resizable_0)
-
     if not errors:
         live_os_installer_index, GV.ACCEPTED_SPINS = prc.parse_spins(GV.ALL_SPINS)
         if live_os_installer_index is not None:

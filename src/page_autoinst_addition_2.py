@@ -17,7 +17,6 @@ def run():
                                          LN.btn_next, lambda: next_btn_action(),
                                          LN.btn_back, lambda: page_autoinst_addition_1.run())
 
-
     if GV.KICKSTART.keymap_type == 'vc':
         tk_var.custom_keymap_var.set(GV.KICKSTART.keymap)
 

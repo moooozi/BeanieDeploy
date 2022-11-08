@@ -39,7 +39,7 @@ def run():
         combo_list_spin.set(GV.UI.combo_list_spin)
     frame_spin_info = tk.Frame(page_frame)
     frame_spin_info.pack(side=GV.UI.DI_VAR['r'], fill="x", pady=5)
-    selected_spin_info_tree = ttk.Treeview(frame_spin_info, columns='info', show='', height=2)
+    selected_spin_info_tree = ttk.Treeview(frame_spin_info, columns='info', show='', height=2,)
     selected_spin_info_tree.configure(selectmode='none')
 
     def validate_input(*args):
@@ -70,7 +70,7 @@ def run():
             else:
                 dl_size_txt = LN.total_download % fn.byte_to_gb(total_size)
             dl_spin_name_text = '%s: %s %s' % (LN.selected_spin, GV.SELECTED_SPIN.name, GV.SELECTED_SPIN.version)
-            selected_spin_info_tree.pack(anchor=GV.UI.DI_VAR['w'], ipady=5, padx=(0, 0), fill='x')
+            selected_spin_info_tree.pack(anchor=GV.UI.DI_VAR['w'], ipadx=10, ipady=5, padx=(0, 0), fill='x')
             selected_spin_info_tree.delete(*selected_spin_info_tree.get_children())
             selected_spin_info_tree.insert('', index='end', iid='name', values=(dl_spin_name_text,))
             selected_spin_info_tree.insert('', index='end', iid='size', values=(dl_size_txt,))

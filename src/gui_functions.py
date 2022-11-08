@@ -1,7 +1,6 @@
 import multiprocessing
 import functions as fn
 
-multiprocessing.freeze_support()
 GLOBAL_QUEUE = multiprocessing.Queue()
 
 

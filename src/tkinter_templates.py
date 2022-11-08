@@ -1,5 +1,6 @@
 import tkinter as tk
 import tkinter.ttk as ttk
+from ctypes import windll
 
 import globals as GV
 WIDTH = 850
@@ -10,7 +11,7 @@ MAXWIDTH = WIDTH + 100
 MAXHEIGHT = HEIGHT + 100
 WIDTH_OFFSET = 400
 HEIGHT_OFFSET = 400
-TOP_FRAME_HEIGHT = 50
+TOP_FRAME_HEIGHT = 80
 LEFT_FRAME_WIDTH = 50
 COLOR_MODE = 'light'
 
@@ -23,7 +24,7 @@ FONTS_tiny = ("Ariel", 9)
 tkinter_background_color = '#856ff8'
 color_red = '#e81123'
 color_blue = '#0067b8'
-top_background_color = '#f3f3f3'
+top_background_color = '#eaeaea'
 left_background_color = '#303030'
 
 
@@ -34,7 +35,7 @@ def apply_theme(theme, tkinter):
         tkinter_background_color = '#856ff8'
         color_red = '#e81123'
         color_blue = '#0067b8'
-        top_background_color = '#f3f3f3'
+        top_background_color = '#eaeaea'
         left_background_color = '#303030'
     elif theme == 'dark':
         tkinter.tk.call("set_theme", theme)
@@ -47,15 +48,19 @@ def apply_theme(theme, tkinter):
 def init_tkinter(title, icon=None):
     tkinter = tk.Tk()
     tkinter.title(title)
+
+    #windll.shcore.SetProcessDpiAwareness(1)
+    dpi_factor = windll.user32.GetDpiForSystem()/96
+
     tkinter.geometry(str("%sx%s+%s+%s" % (WIDTH, HEIGHT, WIDTH_OFFSET, HEIGHT_OFFSET)))
     tkinter.minsize(MINWIDTH, MINHEIGHT)
-    tkinter.maxsize(MAXWIDTH, MAXHEIGHT)
+    tkinter.maxsize(int(MAXWIDTH * dpi_factor), int(MAXHEIGHT * dpi_factor))
     tkinter.iconbitmap(icon)
+
     tkinter.tk.call('tk', 'scaling', 1.5)
     tkinter.tk.call("source", './resources/style/theme/azure.tcl')
     apply_theme(COLOR_MODE, tkinter)
-    tkinter.resizable(False, False)
-    tkinter.option_add('*Font', 'Ariel 11')
+    #tkinter.resizable(False, False)
     ''' # force Windows black borders for Windows 11
     import ctypes
     tkinter.update()
@@ -86,7 +91,7 @@ def build_main_gui_frames(parent, left_frame_img_path=None, top_frame_height=TOP
     top_frame.pack_propagate(False)
     left_frame.pack(fill="y", side=GV.UI.DI_VAR['l'])
     left_frame.pack_propagate(False)
-    mid_frame.pack(fill="both", expand=True, padx=20, pady=(40, 20))
+    mid_frame.pack(fill="both", expand=True, padx=20, pady=(20, 20))
     mid_frame.pack_propagate(False)
     return top_frame, mid_frame, left_frame
 
