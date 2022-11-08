@@ -42,9 +42,9 @@ def run(run_test=True):
             GV.IP_LOCALE = result[1]
         if GV.ALL_SPINS and vars(GV.COMPATIBILITY_RESULTS):
             return 1
-    fn.get_admin()  # Request elevation (admin) if not running as admin
 
     if run_test:
+        fn.get_admin()  # Request elevation (admin) if not running as admin
         gui.run_async_function(prc.compatibility_test, args=(GV.APP_minimal_required_space,))
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
