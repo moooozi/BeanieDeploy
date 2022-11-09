@@ -58,7 +58,7 @@ def init_tkinter(title, icon=None):
     tkinter.iconbitmap(icon)
 
     tkinter.tk.call('tk', 'scaling', 1.4)
-    tkinter.tk.call("source", './resources/style/theme/azure.tcl')
+    tkinter.tk.call("source", GV.PATH.CURRENT_DIR + '/resources/style/theme/azure.tcl')
     apply_theme(COLOR_MODE, tkinter)
     #tkinter.resizable(False, False)
     ''' # force Windows black borders for Windows 11
@@ -117,13 +117,7 @@ def open_popup(parent, x_size: int = None, y_size: int = None,):
     Pops up window to get input from user and freezes the main GUI while waiting for response
     :param y_size: window height in pixels
     :param x_size: window width in pixels
-    :param is_entry: typing input? or just a yes-no-like question
     :param parent: the parent for the Tkinter Toplevel
-    :param secondary_btn_str: the string text for the secondary button
-    :param primary_btn_str: the string text for the primary button
-    :type regex: Pattern[str]
-    :param title_txt: the title for the popup in big font
-    :param msg_txt: the smaller text beneath the title
     :return:
     """
     pop = tk.Toplevel(parent)

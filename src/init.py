@@ -5,8 +5,8 @@ import globals as GV
 import procedure as prc
 import functions as fn
 import logging
-app = tkt.init_tkinter(GV.APP_SW_NAME)  # initialize tkinter
 prc.init_paths(GV.PATH)
+app = tkt.init_tkinter(GV.APP_SW_NAME)  # initialize tkinter
 fn.mkdir(GV.PATH.WORK_DIR)
 #   MAIN CONTAINER & FRAMES   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /   /
 CONTAINER = ttk.Frame(app)
