@@ -22,19 +22,19 @@ def run():
     r1_autoinst_dualboot = tkt.add_radio_btn(radio_buttons, LN.windows_options['dualboot'],
                                              tk_var.install_method_var, 'dualboot', lambda: show_dualboot_options(True),
                                              pack=False)
-    r1_autoinst_dualboot.grid(ipady=5, column=0, row=0, sticky=GV.UI.DI_VAR['w'])
+    r1_autoinst_dualboot.grid(ipady=5, column=0, row=0, sticky=GV.UI.DI_VAR['nw'])
     r1_warning = ttk.Label(radio_buttons, wraplength=GV.UI.width, justify="center", text='', font=tkt.FONTS_smaller,
                            foreground=tkt.color_red)
     r1_warning.grid(padx=20, column=1, row=0, sticky=GV.UI.DI_VAR['w'])
     r2_autoinst_clean = tkt.add_radio_btn(radio_buttons, LN.windows_options['clean'], tk_var.install_method_var, 'clean',
                                           lambda: show_dualboot_options(False), pack=False)
-    r2_autoinst_clean.grid(ipady=5, column=0, row=2, sticky=GV.UI.DI_VAR['w'])
+    r2_autoinst_clean.grid(ipady=5, column=0, row=2, sticky=GV.UI.DI_VAR['nw'])
     r2_warning = ttk.Label(radio_buttons, wraplength=GV.UI.width, justify="center", text='', font=tkt.FONTS_smaller,
                            foreground=tkt.color_red)
     r2_warning.grid(padx=20, column=1, row=2, sticky=GV.UI.DI_VAR['w'])
     r3_custom = tkt.add_radio_btn(radio_buttons, LN.windows_options['custom'], tk_var.install_method_var, 'custom',
                                   lambda: show_dualboot_options(False), pack=False)
-    r3_custom.grid(ipady=5, column=0, row=3, sticky=GV.UI.DI_VAR['w'])
+    r3_custom.grid(ipady=5, column=0, row=3, sticky=GV.UI.DI_VAR['nw'])
 
     min_size = fn.byte_to_gb(GV.APP_dualboot_required_space)
     max_size = fn.byte_to_gb(
@@ -66,9 +66,9 @@ def run():
 
     def show_dualboot_options(is_true: bool):
         if is_true:
-            size_dualboot_txt_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=GV.UI.DI_VAR['w'])
+            size_dualboot_txt_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=GV.UI.DI_VAR['nw'])
             size_dualboot_entry.grid(pady=5, padx=5, column=1, row=0)
-            size_dualboot_txt_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=GV.UI.DI_VAR['w'])
+            size_dualboot_txt_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=GV.UI.DI_VAR['nw'])
         else:
             size_dualboot_txt_pre.grid_forget()
             size_dualboot_entry.grid_forget()

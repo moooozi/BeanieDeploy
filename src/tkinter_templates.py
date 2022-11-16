@@ -25,7 +25,6 @@ tkinter_background_color = '#856ff8'
 color_red = '#e81123'
 color_blue = '#0067b8'
 top_background_color = '#eaeaea'
-left_background_color = '#303030'
 
 
 def apply_theme(theme, tkinter):
@@ -35,12 +34,11 @@ def apply_theme(theme, tkinter):
         color_red = '#e81123'
         color_blue = '#0067b8'
         top_background_color = '#eaeaea'
-        left_background_color = '#303030'
     elif theme == 'dark':
         tkinter_background_color = '#856ff8'
         color_red = '#ff4a4a'
         color_blue = '#3aa9ff'
-        top_background_color = '#474747'
+        top_background_color = '#2b2b2b'
         # force Windows black borders for Windows 11
         tkinter.update()
         set_window_attribute = ctypes.windll.dwmapi.DwmSetWindowAttribute
@@ -107,7 +105,7 @@ def generic_page_layout(parent, title=None, primary_btn_txt=None, primary_btn_co
         if secondary_btn_txt:
             add_secondary_btn(bottom_frame, secondary_btn_txt, secondary_btn_command)
     frame = ttk.Frame(parent)
-    frame.pack(fill='x', pady=15)
+    frame.pack(fill='both', expand=1, pady=(10, 10), padx=(10, 0))
     return frame
 
 
@@ -226,9 +224,9 @@ def add_lang_list(parent, var, languages):
     return lang_list
 
 
-def add_frame_container(parent):
+def add_frame_container(parent, fill='both'):
     frame = ttk.Frame(parent, width=MINWIDTH)
-    frame.pack(expand=1, fill='x', padx=0, pady=0)
+    frame.pack(expand=1, fill=fill, padx=0, pady=0)
 
     return frame
 

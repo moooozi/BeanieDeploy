@@ -135,14 +135,14 @@ def run():
     frame_options = tkt.add_frame_container(page_frame)
 
     check_restart = tkt.add_check_btn(frame_options, text=LN.add_auto_restart, var=tk_var.auto_restart_toggle_var, pack=False)
-    check_restart.grid(ipady=5, row=0, column=0, sticky=GV.UI.DI_VAR['w'])
+    check_restart.grid(ipady=5, row=0, column=0, sticky=GV.UI.DI_VAR['nw'])
 
     '''
     c3_add = ttk.Checkbutton(page_frame, text=LN.add_torrent, variable=torrent_toggle_var, onvalue=1, offvalue=0)
     '''
     more_options_btn = ttk.Label(frame_options, justify="center", text=LN.more_options, font=tkt.FONTS_smaller,
                                  foreground=tkt.color_blue)
-    more_options_btn.grid(ipady=5, row=2, column=0, sticky=GV.UI.DI_VAR['w'])
+    more_options_btn.grid(ipady=5, row=2, column=0, sticky=GV.UI.DI_VAR['nw'])
     more_options_btn.bind("<Button-1>",
                           lambda x: popup_advanced_options.run(app))
 

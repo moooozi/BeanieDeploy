@@ -29,15 +29,15 @@ def run():
         if locale_from_ip != tk_var.selected_locale.get():
             ip_local_radio = tkt.add_radio_btn(frame_radios, LN.keymap_tz_option % locale_from_ip_name, tk_var.keymap_timezone_source_var,
                               'ip', command=lambda: spawn_more_widgets(), pack=False)
-            ip_local_radio.grid(ipady=5, row=0, column=0, sticky=GV.UI.DI_VAR['w'])
+            ip_local_radio.grid(ipady=5, row=0, column=0, sticky=GV.UI.DI_VAR['nw'])
 
     selection_local_radio = tkt.add_radio_btn(frame_radios, LN.keymap_tz_option % chosen_locale_name,
                                               tk_var.keymap_timezone_source_var, 'select',lambda: spawn_more_widgets(),
                                               pack=False)
-    selection_local_radio.grid(ipady=5, row=1, column=0, sticky=GV.UI.DI_VAR['w'])
+    selection_local_radio.grid(ipady=5, row=1, column=0, sticky=GV.UI.DI_VAR['nw'])
     custom_local_radio = tkt.add_radio_btn(frame_radios, LN.keymap_tz_custom, tk_var.keymap_timezone_source_var, 'custom',
                                            lambda: spawn_more_widgets(), pack=False)
-    custom_local_radio.grid(ipady=5, row=2, column=0, sticky=GV.UI.DI_VAR['w'])
+    custom_local_radio.grid(ipady=5, row=2, column=0, sticky=GV.UI.DI_VAR['nw'])
 
     timezone_all = sorted(autoinst.all_timezones())
     lists_frame = ttk.Frame(frame_radios)
@@ -60,10 +60,10 @@ def run():
 
     def spawn_more_widgets(*args):
         if tk_var.keymap_timezone_source_var.get() == 'custom':
-            lists_frame.grid(ipady=5, padx=30, row=3, column=0, sticky=GV.UI.DI_VAR['w'])
-            keyboards_txt.grid(pady=5, padx=5, column=0, row=1, sticky=GV.UI.DI_VAR['w'])
+            lists_frame.grid(ipady=5, padx=30, row=3, column=0, sticky=GV.UI.DI_VAR['nw'])
+            keyboards_txt.grid(pady=5, padx=5, column=0, row=1, sticky=GV.UI.DI_VAR['nw'])
             keyboard_list.grid(pady=5, padx=5, column=1, row=1)
-            timezone_txt.grid(pady=5, padx=5, column=0, row=0, sticky=GV.UI.DI_VAR['w'])
+            timezone_txt.grid(pady=5, padx=5, column=0, row=0, sticky=GV.UI.DI_VAR['nw'])
             timezone_list.grid(pady=5, padx=5, column=1, row=0)
         else:
             lists_frame.pack_forget()
