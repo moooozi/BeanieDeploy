@@ -16,7 +16,7 @@ def run(errors):
     tkt.add_text_label(page_frame, LN.error_list, pady=10)
 
     errors_tree = ttk.Treeview(page_frame, columns='error', show='', height=6)
-    errors_tree.pack(anchor=GV.UI.DI_VAR['w'], ipady=5, padx=(0, 5), fill='x')
+    errors_tree.pack(ipady=5, padx=(0, 5), fill='x')
     errors_tree.configure(selectmode='none')
     for i in range(len(errors)):
         errors_tree.insert('', index='end', iid=str(i), values=(errors[i],))

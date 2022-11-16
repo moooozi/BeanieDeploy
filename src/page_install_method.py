@@ -18,8 +18,7 @@ def run():
                                          LN.btn_next, lambda: next_btn_action(),
                                          LN.btn_back, lambda: page_1.run())
 
-    radio_buttons = ttk.Frame(page_frame)
-    radio_buttons.pack(fill='x')
+    radio_buttons = tkt.add_frame_container(page_frame)
     r1_autoinst_dualboot = tkt.add_radio_btn(radio_buttons, LN.windows_options['dualboot'],
                                              tk_var.install_method_var, 'dualboot', lambda: show_dualboot_options(True),
                                              pack=False)

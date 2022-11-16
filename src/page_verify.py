@@ -124,23 +124,25 @@ def run():
         if GV.INSTALL_OPTIONS.export_wifi:
             review_sel.append(LN.verify_text['autoinst_wifi'] % GV.SELECTED_SPIN.name)
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
     review_tree = ttk.Treeview(page_frame, columns='error', show='', height=3)
-    review_tree.pack(anchor=GV.UI.DI_VAR['w'], ipady=5, pady=10, padx=(0, 5), fill='x')
     review_tree.configure(selectmode='none')
 
     for i in range(len(review_sel)):
         review_tree.insert('', index='end', iid=str(i), values=(review_sel[i],))
+    review_tree.pack(ipady=5, pady=10, padx=(0, 5), fill='x', expand=1)
+
     # additions options (checkboxes)
-    c2_add = ttk.Checkbutton(page_frame, text=LN.add_auto_restart, variable=tk_var.auto_restart_toggle_var, onvalue=1,
-                             offvalue=0)
-    c2_add.pack(anchor=GV.UI.DI_VAR['w'])
+    frame_options = tkt.add_frame_container(page_frame)
+
+    check_restart = tkt.add_check_btn(frame_options, text=LN.add_auto_restart, var=tk_var.auto_restart_toggle_var, pack=False)
+    check_restart.grid(ipady=5, row=0, column=0, sticky=GV.UI.DI_VAR['w'])
+
     '''
     c3_add = ttk.Checkbutton(page_frame, text=LN.add_torrent, variable=torrent_toggle_var, onvalue=1, offvalue=0)
     '''
-    more_options_btn = ttk.Label(page_frame, justify="center", text=LN.more_options, font=tkt.FONTS_smaller,
+    more_options_btn = ttk.Label(frame_options, justify="center", text=LN.more_options, font=tkt.FONTS_smaller,
                                  foreground=tkt.color_blue)
-    more_options_btn.pack(pady=10, padx=10, anchor=GV.UI.DI_VAR['w'])
+    more_options_btn.grid(ipady=5, row=2, column=0, sticky=GV.UI.DI_VAR['w'])
     more_options_btn.bind("<Button-1>",
                           lambda x: popup_advanced_options.run(app))
 

@@ -1,18 +1,18 @@
 import tkinter as tk
 import tkinter.ttk as ttk
-from ctypes import windll
+import ctypes
 from gui_functions import detect_darkmode_in_windows
 import globals as GV
-WIDTH = 850
+WIDTH = 750
 HEIGHT = 500
-MINWIDTH = 850
+MINWIDTH = 650
 MINHEIGHT = 450
-MAXWIDTH = WIDTH + 100
+MAXWIDTH = WIDTH + 300
 MAXHEIGHT = HEIGHT + 100
 WIDTH_OFFSET = 400
 HEIGHT_OFFSET = 400
 TOP_FRAME_HEIGHT = 80
-LEFT_FRAME_WIDTH = 50
+LEFT_FRAME_WIDTH = 0
 COLOR_MODE = 'dark' if detect_darkmode_in_windows() else 'light'
 
 FONTS_large = ("Ariel", 24)
@@ -31,18 +31,28 @@ left_background_color = '#303030'
 def apply_theme(theme, tkinter):
     global tkinter_background_color, color_red, color_blue, top_background_color, left_background_color
     if theme == 'light':
-        tkinter.tk.call("set_theme", theme)
         tkinter_background_color = '#856ff8'
         color_red = '#e81123'
         color_blue = '#0067b8'
         top_background_color = '#eaeaea'
         left_background_color = '#303030'
     elif theme == 'dark':
-        tkinter.tk.call("set_theme", theme)
         tkinter_background_color = '#856ff8'
         color_red = '#ff4a4a'
         color_blue = '#3aa9ff'
         top_background_color = '#474747'
+        # force Windows black borders for Windows 11
+        tkinter.update()
+        set_window_attribute = ctypes.windll.dwmapi.DwmSetWindowAttribute
+        get_parent = ctypes.windll.user32.GetParent
+        hwnd = get_parent(tkinter.winfo_id())
+        rendering_policy = 20
+        value = 2
+        value = ctypes.c_int(value)
+        set_window_attribute(hwnd, rendering_policy, ctypes.byref(value),
+                             ctypes.sizeof(value))
+    tkinter.tk.call("set_theme", theme)
+    tkinter.update()
 
 
 def init_tkinter(title, icon=None):
@@ -50,29 +60,17 @@ def init_tkinter(title, icon=None):
     tkinter.title(title)
 
     #windll.shcore.SetProcessDpiAwareness(1)
-    dpi_factor = windll.user32.GetDpiForSystem()/96
+    dpi_factor = ctypes.windll.user32.GetDpiForSystem()/96
 
     tkinter.geometry(str("%sx%s+%s+%s" % (WIDTH, HEIGHT, WIDTH_OFFSET, HEIGHT_OFFSET)))
     tkinter.minsize(MINWIDTH, MINHEIGHT)
     tkinter.maxsize(int(MAXWIDTH * dpi_factor), int(MAXHEIGHT * dpi_factor))
     tkinter.iconbitmap(icon)
-
-    tkinter.tk.call('tk', 'scaling', 1.4)
     tkinter.tk.call("source", GV.PATH.CURRENT_DIR + '/resources/style/theme/azure.tcl')
+    tkinter.tk.call('tk', 'scaling', 1.4)
     apply_theme(COLOR_MODE, tkinter)
     #tkinter.resizable(False, False)
-    ''' # force Windows black borders for Windows 11
-    import ctypes
-    tkinter.update()
-    dwmwa_use_immersive_dark_mode = 20
-    set_window_attribute = ctypes.windll.dwmapi.DwmSetWindowAttribute
-    get_parent = ctypes.windll.user32.GetParent
-    hwnd = get_parent(tkinter.winfo_id())
-    rendering_policy = dwmwa_use_immersive_dark_mode
-    value = 2
-    value = ctypes.c_int(value)
-    set_window_attribute(hwnd, rendering_policy, ctypes.byref(value),
-                         ctypes.sizeof(value))
+    ''' 
     '''
     return tkinter
 
@@ -89,8 +87,8 @@ def build_main_gui_frames(parent, left_frame_img_path=None, top_frame_height=TOP
 
     top_frame.pack(fill="x", side='top')
     top_frame.pack_propagate(False)
-    left_frame.pack(fill="y", side=GV.UI.DI_VAR['l'])
-    left_frame.pack_propagate(False)
+    #left_frame.pack(fill="y", side=GV.UI.DI_VAR['l'])
+    #left_frame.pack_propagate(False)
     mid_frame.pack(fill="both", expand=True, padx=20, pady=(20, 20))
     mid_frame.pack_propagate(False)
     return top_frame, mid_frame, left_frame
@@ -108,7 +106,8 @@ def generic_page_layout(parent, title=None, primary_btn_txt=None, primary_btn_co
             add_primary_btn(bottom_frame, primary_btn_txt, primary_btn_command)
         if secondary_btn_txt:
             add_secondary_btn(bottom_frame, secondary_btn_txt, secondary_btn_command)
-    frame = add_frame_container(parent)
+    frame = ttk.Frame(parent)
+    frame.pack(fill='x', pady=15)
     return frame
 
 
@@ -183,14 +182,14 @@ def add_secondary_btn(parent, text, command):
 
 def add_page_title(parent, text, pady=(0, 15)):
     title = ttk.Label(parent, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=text, font=FONTS_medium)
-    title.pack(pady=pady, anchor=GV.UI.DI_VAR['w'])
+    title.pack(pady=pady,)
     return title
 
 
 def add_radio_btn(parent, text, var, value, command=None, is_disabled=None, ipady=5, side=None, pack=True):
     radio = ttk.Radiobutton(parent, text=text, variable=var, value=value)
     if pack:
-        radio.pack(anchor=GV.UI.DI_VAR['w'], ipady=ipady, side=side)
+        radio.pack(ipady=ipady, side=side)
     if command: radio.configure(command=command)
     if is_disabled: radio.configure(state='disabled')
     return radio
@@ -199,7 +198,7 @@ def add_radio_btn(parent, text, var, value, command=None, is_disabled=None, ipad
 def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=5, pack=True, switch=False):
     check = ttk.Checkbutton(parent, text=text, variable=var, onvalue=True, offvalue=False)
     if switch: check.configure(style='Switch.TCheckbutton')
-    if pack: check.pack(anchor=GV.UI.DI_VAR['w'], ipady=5, pady=pady)
+    if pack: check.pack(ipady=5, pady=pady)
     if command: check.configure(command=command)
     if is_disabled: check.configure(state='disabled')
     return check
@@ -214,7 +213,7 @@ def add_text_label(parent, text=None, font=FONTS_small, var=None, pady=20, padx=
         label = ttk.Label(parent, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'],
                           text=text, textvariable=var, foreground=foreground, font=font)
     else: return -1
-    label.pack(pady=pady, padx=padx, anchor=GV.UI.DI_VAR['w'])
+    label.pack(pady=pady, padx=padx, )
     return label
 
 
@@ -223,16 +222,14 @@ def add_lang_list(parent, var, languages):
     lang_list['values'] = tuple(languages)
     lang_list['state'] = 'readonly'
     lang_list.set('English')
-    lang_list.pack(anchor=GV.UI.DI_VAR['w'], side='left', padx=30)
+    lang_list.pack(side='left', padx=30)
     return lang_list
 
 
-def add_frame_container(parent, padx=20, pady=20):
-    frame = ttk.Frame(parent)
-    padx_var = (padx, 0)
-    if GV.UI.DI_VAR['w'] != 'w':  # if right-to-left language
-        padx_var = (0, padx)
-    frame.pack(fill="x", padx=padx_var, pady=(pady, 0))
+def add_frame_container(parent):
+    frame = ttk.Frame(parent, width=MINWIDTH)
+    frame.pack(expand=1, fill='x', padx=0, pady=0)
+
     return frame
 
 

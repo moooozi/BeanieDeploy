@@ -12,7 +12,7 @@ def run():
     """the page on which you choose which distro/flaver and whether Autoinstall should be on or off"""
     tkt.init_frame(parent)
     # *************************************************************************************************************
-    page_frame = tkt.generic_page_layout(parent, LN.desktop_question, LN.btn_next, lambda: next_btn_action())
+    page_frame = tkt.generic_page_layout(parent, LN.startup_sentence + LN.desktop_question, LN.btn_next, lambda: next_btn_action())
     available_desktop = []
     dict_spins_with_fullname_keys = []
     for dist in GV.ACCEPTED_SPINS:
@@ -20,7 +20,7 @@ def run():
         dict_spins_with_fullname_keys.append(spin_fullname)
         if dist.desktop and dist.desktop not in available_desktop:
             available_desktop.append(dist.desktop)
-    frame_desktop = tkt.add_frame_container(page_frame, 0, 0)
+    frame_desktop = tkt.add_frame_container(page_frame)
     for index, desktop in enumerate(available_desktop):
         tkt.add_radio_btn(frame_desktop, desktop, tk_var.desktop_var, desktop, command=lambda: validate_input(),
                           pack=False).grid(ipady=5, row=index, column=0, sticky=GV.UI.DI_VAR['w'])
@@ -44,7 +44,7 @@ def run():
 
     def validate_input(*args):
         if tk_var.desktop_var.get() == 'else':
-            combo_list_spin.pack(padx=40, pady=5, anchor=GV.UI.DI_VAR['w'])
+            combo_list_spin.pack(padx=40, pady=5, )
             if combo_list_spin.get() in dict_spins_with_fullname_keys:
                 spin_index = dict_spins_with_fullname_keys.index(combo_list_spin.get())
             else:
@@ -70,7 +70,7 @@ def run():
             else:
                 dl_size_txt = LN.total_download % fn.byte_to_gb(total_size)
             dl_spin_name_text = '%s: %s %s' % (LN.selected_spin, GV.SELECTED_SPIN.name, GV.SELECTED_SPIN.version)
-            selected_spin_info_tree.pack(anchor=GV.UI.DI_VAR['w'], ipadx=10, ipady=5, padx=(0, 0), fill='x')
+            selected_spin_info_tree.pack(ipadx=10, ipady=5, padx=(0, 0), fill='x')
             selected_spin_info_tree.delete(*selected_spin_info_tree.get_children())
             selected_spin_info_tree.insert('', index='end', iid='name', values=(dl_spin_name_text,))
             selected_spin_info_tree.insert('', index='end', iid='size', values=(dl_size_txt,))

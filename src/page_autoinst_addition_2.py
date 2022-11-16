@@ -20,21 +20,27 @@ def run():
     if GV.KICKSTART.keymap_type == 'vc':
         tk_var.custom_keymap_var.set(GV.KICKSTART.keymap)
 
+    frame_radios = tkt.add_frame_container(page_frame)
+
     chosen_locale_name = autoinst.langtable.language_name(languageId=tk_var.selected_locale.get())
     if GV.IP_LOCALE:
         locale_from_ip = autoinst.langtable.list_locales(territoryId=GV.IP_LOCALE['country_code'])[0]
         locale_from_ip_name = autoinst.langtable.language_name(languageId=locale_from_ip)
         if locale_from_ip != tk_var.selected_locale.get():
-            tkt.add_radio_btn(page_frame, LN.keymap_tz_option % locale_from_ip_name, tk_var.keymap_timezone_source_var,
-                              'ip', command=lambda: spawn_more_widgets())
+            ip_local_radio = tkt.add_radio_btn(frame_radios, LN.keymap_tz_option % locale_from_ip_name, tk_var.keymap_timezone_source_var,
+                              'ip', command=lambda: spawn_more_widgets(), pack=False)
+            ip_local_radio.grid(ipady=5, row=0, column=0, sticky=GV.UI.DI_VAR['w'])
 
-    tkt.add_radio_btn(page_frame, LN.keymap_tz_option % chosen_locale_name, tk_var.keymap_timezone_source_var, 'select',
-                      lambda: spawn_more_widgets())
-    tkt.add_radio_btn(page_frame, LN.keymap_tz_custom, tk_var.keymap_timezone_source_var, 'custom',
-                      lambda: spawn_more_widgets())
+    selection_local_radio = tkt.add_radio_btn(frame_radios, LN.keymap_tz_option % chosen_locale_name,
+                                              tk_var.keymap_timezone_source_var, 'select',lambda: spawn_more_widgets(),
+                                              pack=False)
+    selection_local_radio.grid(ipady=5, row=1, column=0, sticky=GV.UI.DI_VAR['w'])
+    custom_local_radio = tkt.add_radio_btn(frame_radios, LN.keymap_tz_custom, tk_var.keymap_timezone_source_var, 'custom',
+                                           lambda: spawn_more_widgets(), pack=False)
+    custom_local_radio.grid(ipady=5, row=2, column=0, sticky=GV.UI.DI_VAR['w'])
 
     timezone_all = sorted(autoinst.all_timezones())
-    lists_frame = ttk.Frame(page_frame)
+    lists_frame = ttk.Frame(frame_radios)
     timezone_txt = ttk.Label(lists_frame, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=LN.list_timezones,
                              font=tkt.FONTS_smaller)
     timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=tk_var.custom_timezone_var)
@@ -54,7 +60,7 @@ def run():
 
     def spawn_more_widgets(*args):
         if tk_var.keymap_timezone_source_var.get() == 'custom':
-            lists_frame.pack(fill='x', padx=20)
+            lists_frame.grid(ipady=5, padx=30, row=3, column=0, sticky=GV.UI.DI_VAR['w'])
             keyboards_txt.grid(pady=5, padx=5, column=0, row=1, sticky=GV.UI.DI_VAR['w'])
             keyboard_list.grid(pady=5, padx=5, column=1, row=1)
             timezone_txt.grid(pady=5, padx=5, column=0, row=0, sticky=GV.UI.DI_VAR['w'])

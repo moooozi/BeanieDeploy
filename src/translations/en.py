@@ -34,9 +34,10 @@ error_space_9 = "Failed to check available disk space on your system drive."
 error_resizable_0 = "Not enough shrink room on system drive."
 error_resizable_9 = "Failed to check system drive resizability."
 
+startup_sentence = "Let's get started. "
 desktop_question = "Which Desktop Environment do you prefer?"
-desktop_hints = {'KDE Plasma': "Great on desktops, highly customizable, Windows-like layout by default",
-                 'GNOME': "The default Fedora. Minimal, well optimized for touchpads and touchscreens"}
+desktop_hints = {'KDE Plasma': "Powerful, highly customizable and feature-rich, Windows-like layout by default",
+                 'GNOME': "Default for Fedora. Minimal and stable, touchpad & touchscreen optimized"}
 lang = "Language"
 locale = "Locale"
 recommended = "Recommended"

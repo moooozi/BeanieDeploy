@@ -21,7 +21,7 @@ namespace eval ttk::theme::azure-dark {
 
         array set colors {
             -fg             "#ffffff"
-            -bg             "#333333"
+            -bg             "#202020"
             -disabledfg     "#ffffff"
             -disabledbg     "#737373"
             -selectfg       "#ffffff"

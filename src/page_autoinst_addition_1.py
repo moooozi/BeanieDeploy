@@ -25,10 +25,10 @@ def run():
     temp_frame.pack()
     lang_list_fedora = ttk.Treeview(temp_frame, columns='lang', show='headings', height=8)
     lang_list_fedora.heading('lang', text=LN.lang)
-    lang_list_fedora.pack(anchor=GV.UI.DI_VAR['w'], side=GV.UI.DI_VAR['l'], ipady=5, padx=5)
+    lang_list_fedora.pack(side=GV.UI.DI_VAR['l'], ipady=5, padx=5)
     locale_list_fedora = ttk.Treeview(temp_frame, columns='locale', show='headings', height=8)
     locale_list_fedora.heading('locale', text=LN.locale)
-    locale_list_fedora.pack(anchor=GV.UI.DI_VAR['w'], side=GV.UI.DI_VAR['l'], ipady=5, padx=5)
+    locale_list_fedora.pack(side=GV.UI.DI_VAR['l'], ipady=5, padx=5)
 
     for i in range(len(langs_and_locales)):
         lang_list_fedora.insert(parent='', index='end', iid=str(i), values=('%s (%s)' % langs_and_locales[i][0][:2],))
