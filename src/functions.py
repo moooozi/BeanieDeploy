@@ -3,6 +3,7 @@ import re
 import shutil
 import subprocess
 import winreg
+import ctypes
 from urllib.request import urlopen
 import libs.xmltodict as xmltodict
 import os
@@ -262,9 +263,8 @@ def get_current_dir_path():
 
 def get_admin():
     from sys import executable, argv
-    from ctypes import windll
-    if not windll.shell32.IsUserAnAdmin():
-        windll.shell32.ShellExecuteW(None, "runas", executable, " ".join(argv), None, 1)
+    if not ctypes.windll.shell32.IsUserAnAdmin():
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", executable, " ".join(argv), None, 1)
         raise SystemExit
 
 
