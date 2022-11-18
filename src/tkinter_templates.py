@@ -24,7 +24,7 @@ FONTS_tiny = ("Ariel", 9)
 tkinter_background_color = '#856ff8'
 color_red = '#e81123'
 color_blue = '#0067b8'
-top_background_color = '#eaeaea'
+top_background_color = '#e6e6e6'
 
 
 def apply_theme(theme, tkinter):
@@ -33,7 +33,7 @@ def apply_theme(theme, tkinter):
         tkinter_background_color = '#856ff8'
         color_red = '#e81123'
         color_blue = '#0067b8'
-        top_background_color = '#eaeaea'
+        top_background_color = '#e6e6e6'
     elif theme == 'dark':
         tkinter_background_color = '#856ff8'
         color_red = '#ff4a4a'
