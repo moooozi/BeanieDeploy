@@ -4,18 +4,17 @@ import page_autoinst_addition_2
 import tkinter_templates as tkt
 import globals as GV
 import translations.en as LN
-from init import MID_FRAME
 import page_autoinst2
 import global_tk_vars as tk_var
 
 
-def run():
+def run(app):
     """the autoinstall page on which you choose your language and locale"""
-    tkt.init_frame(MID_FRAME)
+    tkt.init_frame(app)
     # *************************************************************************************************************
-    page_frame = tkt.generic_page_layout(MID_FRAME, LN.title_autoinst2,
+    page_frame = tkt.generic_page_layout(app, LN.title_autoinst2,
                                          LN.btn_next, lambda: next_btn_action(),
-                                         LN.btn_back, lambda: page_autoinst2.run())
+                                         LN.btn_back, lambda: page_autoinst2.run(app))
     if GV.IP_LOCALE:
         langs_and_locales = autoinst.get_locales_and_langs_sorted_with_names(territory=GV.IP_LOCALE['country_code'])
     else:
@@ -45,4 +44,4 @@ def run():
         spin = locale_list_fedora.focus()
         if autoinst.langtable.parse_locale(spin).language:
             tk_var.selected_locale.set(spin)
-            return page_autoinst_addition_2.run()
+            return page_autoinst_addition_2.run(app)

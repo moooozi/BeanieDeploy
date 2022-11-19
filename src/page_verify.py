@@ -9,15 +9,15 @@ import page_installing
 import globals as GV
 import translations.en as LN
 import procedure as prc
-from init import MID_FRAME, app, logging
+import logging
 import global_tk_vars as tk_var
 
 
-def run():
+def run(app):
     """the page on which you get to review your selection before starting to install"""
-    tkt.init_frame(MID_FRAME)
+    tkt.init_frame(app)
     # *************************************************************************************************************
-    page_frame = tkt.generic_page_layout(MID_FRAME, LN.verify_question,
+    page_frame = tkt.generic_page_layout(app, LN.verify_question,
                                          LN.btn_install, lambda: next_btn_action(),
                                          LN.btn_back, lambda: validate_back_page())
 
@@ -144,17 +144,18 @@ def run():
                                  foreground=tkt.color_blue)
     more_options_btn.grid(ipady=5, row=2, column=0, sticky=GV.UI.DI_VAR['nw'])
     more_options_btn.bind("<Button-1>",
-                          lambda x: popup_advanced_options.run(app))
+                          lambda x: popup_advanced_options.run(master=app.master))
 
     def validate_back_page(*args):
         if GV.KICKSTART.partition_method == 'custom':
-            page_install_method.run()
+            page_install_method.run(app)
         else:
-            page_autoinst_addition_2.run()
+            page_autoinst_addition_2.run(app)
 
     def next_btn_action(*args):
         GV.INSTALL_OPTIONS.auto_restart = tk_var.auto_restart_toggle_var.get()
         GV.INSTALL_OPTIONS.torrent = tk_var.torrent_toggle_var.get()
-        return page_installing.run(installer_kwargs=installing,
+        return page_installing.run(app,
+                                   installer_kwargs=installing,
                                    installer_img_dl_percent_factor=installer_dl_percent_factor,
                                    live_img_dl_factor=live_img_dl_factor, )

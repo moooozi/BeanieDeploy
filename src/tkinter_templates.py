@@ -18,8 +18,8 @@ COLOR_MODE = 'dark' if detect_darkmode_in_windows() else 'light'
 FONTS_large = ("Ariel", 24)
 FONTS_medium = ("Ariel Bold", 16)
 FONTS_small = ("Ariel", 13)
-FONTS_smaller = ("Ariel", 10)
-FONTS_tiny = ("Ariel", 9)
+FONTS_smaller = ("Ariel", 11)
+FONTS_tiny = ("Ariel", 11)
 
 tkinter_background_color = '#856ff8'
 color_red = '#e81123'
@@ -68,8 +68,7 @@ def init_tkinter(title, icon=None):
     tkinter.tk.call('tk', 'scaling', 1.4)
     apply_theme(COLOR_MODE, tkinter)
     #tkinter.resizable(False, False)
-    ''' 
-    '''
+
     return tkinter
 
 
@@ -93,7 +92,7 @@ def build_main_gui_frames(parent, left_frame_img_path=None, top_frame_height=TOP
 
 
 def generic_page_layout(parent, title=None, primary_btn_txt=None, primary_btn_command=None, secondary_btn_txt=None,
-                        secondary_btn_command=None):
+                        secondary_btn_command=None, title_pady=15):
     if title:
         add_page_title(parent, title)
     if primary_btn_txt or secondary_btn_txt:
@@ -105,7 +104,7 @@ def generic_page_layout(parent, title=None, primary_btn_txt=None, primary_btn_co
         if secondary_btn_txt:
             add_secondary_btn(bottom_frame, secondary_btn_txt, secondary_btn_command)
     frame = ttk.Frame(parent)
-    frame.pack(fill='both', expand=1, pady=(10, 10), padx=(10, 0))
+    frame.pack(fill='both', expand=1, pady=title_pady, padx=(10, 0))
     return frame
 
 
@@ -148,7 +147,7 @@ def input_pop_up(parent, title_txt=None, msg_txt=None, primary_btn_str=None, sec
         add_text_label(pop_frame, msg_txt, msg_font, pady=10)
 
     generic_page_layout(pop_frame, title_txt, primary_btn_str, lambda *args: validate_pop_input(1),
-                        secondary_btn_str, lambda *args: validate_pop_input(0))
+                        secondary_btn_str, lambda *args: validate_pop_input(0), title_pady=5)
 
     def validate_pop_input(inputted):
         pop_var.set(inputted)
@@ -202,7 +201,7 @@ def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=5, pac
     return check
 
 
-def add_text_label(parent, text=None, font=FONTS_small, var=None, pady=20, padx=0, foreground=None):
+def add_text_label(parent, text=None, font=FONTS_small, var=None, pady=20, padx=0, foreground=None, anchor=None):
     """
     a preset for tkinter text label that packs by default
     :return: the tkinter label "ttk.Label" object
@@ -211,7 +210,7 @@ def add_text_label(parent, text=None, font=FONTS_small, var=None, pady=20, padx=
         label = ttk.Label(parent, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'],
                           text=text, textvariable=var, foreground=foreground, font=font)
     else: return -1
-    label.pack(pady=pady, padx=padx, )
+    label.pack(pady=pady, padx=padx, anchor=anchor)
     return label
 
 
@@ -233,7 +232,7 @@ def add_frame_container(parent, fill='both'):
 
 def add_progress_bar(parent, length=MINWIDTH - LEFT_FRAME_WIDTH):
     progressbar = ttk.Progressbar(parent, orient='horizontal', length=length, mode='determinate')
-    progressbar.pack(pady=25)
+    progressbar.pack(pady=(0,20))
     return progressbar
 
 

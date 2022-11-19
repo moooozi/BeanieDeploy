@@ -5,15 +5,16 @@ import functions as fn
 import procedure as prc
 import page_1, page_error
 import gui_functions as gui
-from init import app as tkinter, MID_FRAME, logging
+import logging
+
 import global_tk_vars as tk_var
 
 
-def run(run_test=True):
+def run(app, run_test=True):
     """The page on which is decided whether the app can run on the device or not"""
     # *************************************************************************************************************
-    tkinter.update()  # update tkinter GUI
-    page_frame = tkt.generic_page_layout(MID_FRAME, LN.check_running)
+    app.update()  # update tkinter GUI
+    page_frame = tkt.generic_page_layout(app, LN.check_running)
     progressbar_check = tkt.add_progress_bar(page_frame)
     tkt.add_text_label(page_frame, var=tk_var.job_var, pady=0, padx=10)
 
@@ -48,7 +49,7 @@ def run(run_test=True):
         gui.run_async_function(prc.compatibility_test, args=(GV.APP_minimal_required_space,))
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
-        gui.handle_queue_result(tkinter=tkinter, callback=callback_compatibility)
+        gui.handle_queue_result(tkinter=app, callback=callback_compatibility)
     else:  # DUMMY TEST DATA
         GV.COMPATIBILITY_RESULTS.uefi = 1
         GV.COMPATIBILITY_RESULTS.ram = 34359738368
@@ -92,9 +93,9 @@ def run(run_test=True):
         if live_os_installer_index is not None:
             GV.LIVE_OS_INSTALLER_SPIN = GV.ACCEPTED_SPINS[live_os_installer_index]
         GV.USERNAME_WINDOWS = fn.get_windows_username()
-        return page_1.run()
+        return page_1.run(app)
     else:
-        page_error.run(errors)
+        page_error.run(app, errors)
 
 
 

@@ -4,18 +4,17 @@ import page_autoinst_addition_1
 import tkinter_templates as tkt
 import globals as GV
 import translations.en as LN
-from init import MID_FRAME
 import page_install_method
 import global_tk_vars as tk_var
 
 
-def run():
+def run(app):
     """the autoinstall page on which you choose whether to install alongside windows or start clean install"""
-    tkt.init_frame(MID_FRAME)
+    tkt.init_frame(app)
     # *************************************************************************************************************
-    page_frame = tkt.generic_page_layout(MID_FRAME, LN.windows_question % GV.SELECTED_SPIN.name,
+    page_frame = tkt.generic_page_layout(app, LN.windows_question % GV.SELECTED_SPIN.name,
                                          LN.btn_next, lambda: next_btn_action(),
-                                         LN.btn_back, lambda: page_install_method.run())
+                                         LN.btn_back, lambda: page_install_method.run(app))
 
     frame_checkboxes = tkt.add_frame_container(page_frame)
     # tkt.add_check_btn(page_frame, LN.additional_setup_now, vAutoinst_additional_setup_t)
@@ -42,4 +41,4 @@ def run():
     show_encrypt_options(tk_var.enable_encryption_toggle_var)
 
     def next_btn_action(*args):
-        page_autoinst_addition_1.run()
+        page_autoinst_addition_1.run(app)

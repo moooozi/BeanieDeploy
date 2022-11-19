@@ -5,8 +5,8 @@ import translations.en as LN
 import global_tk_vars as tk_var
 
 
-def run(parent):
-    pop, pop_frame = tkt.open_popup(parent, x_size=500, y_size=700)
+def run(master):
+    pop, pop_frame = tkt.open_popup(master, x_size=500, y_size=700)
     tkt.generic_page_layout(pop_frame, "Advanced Settings", "Confirm", lambda *args: pop.destroy(),)
     auto_install_frame = tk.Frame(pop_frame)
     encryption_frame = tk.Frame(auto_install_frame)

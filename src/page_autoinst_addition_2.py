@@ -5,17 +5,16 @@ import page_verify
 import tkinter_templates as tkt
 import globals as GV
 import translations.en as LN
-from init import MID_FRAME
 import global_tk_vars as tk_var
 
 
-def run():
+def run(app):
     """the autoinstall page on which you choose your timezone and keyboard layout"""
-    tkt.init_frame(MID_FRAME)
+    tkt.init_frame(app)
     # *************************************************************************************************************
-    page_frame = tkt.generic_page_layout(MID_FRAME, LN.title_autoinst3,
+    page_frame = tkt.generic_page_layout(app, LN.title_autoinst3,
                                          LN.btn_next, lambda: next_btn_action(),
-                                         LN.btn_back, lambda: page_autoinst_addition_1.run())
+                                         LN.btn_back, lambda: page_autoinst_addition_1.run(app))
 
     if GV.KICKSTART.keymap_type == 'vc':
         tk_var.custom_keymap_var.set(GV.KICKSTART.keymap)
@@ -69,4 +68,4 @@ def run():
             lists_frame.pack_forget()
 
     def next_btn_action(*args):
-        page_verify.run()
+        page_verify.run(app)

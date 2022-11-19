@@ -6,17 +6,16 @@ import globals as GV
 import translations.en as LN
 import functions as fn
 import page_1
-from init import app as tkinter, MID_FRAME
 import global_tk_vars as tk_var
 
 
-def run():
+def run(app):
     """the autoinstall page on which you choose whether to install alongside windows or start clean install"""
-    tkt.init_frame(MID_FRAME)
+    tkt.init_frame(app)
     # *************************************************************************************************************
-    page_frame = tkt.generic_page_layout(MID_FRAME, LN.windows_question % GV.SELECTED_SPIN.name,
+    page_frame = tkt.generic_page_layout(app, LN.windows_question % GV.SELECTED_SPIN.name,
                                          LN.btn_next, lambda: next_btn_action(),
-                                         LN.btn_back, lambda: page_1.run())
+                                         LN.btn_back, lambda: page_1.run(app))
 
     radio_buttons = tkt.add_frame_container(page_frame)
     r1_autoinst_dualboot = tkt.add_radio_btn(radio_buttons, LN.windows_options['dualboot'],
@@ -62,7 +61,7 @@ def run():
         r1_autoinst_dualboot.configure(state='disabled')
         r2_autoinst_clean.configure(state='disabled')
         tk_var.install_method_var.set('custom')
-    tkinter.update_idletasks()
+    app.update_idletasks()
 
     def show_dualboot_options(is_true: bool):
         if is_true:
@@ -88,5 +87,5 @@ def run():
             else:
                 return -1
         if GV.KICKSTART.partition_method == 'custom':
-            return page_verify.run()
-        return page_autoinst2.run()
+            return page_verify.run(app)
+        return page_autoinst2.run(app)

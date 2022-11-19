@@ -5,14 +5,14 @@ import globals as GV
 import translations.en as LN
 import functions as fn
 import page_install_method
-from init import MID_FRAME as parent, logging
+import logging
 import global_tk_vars as tk_var
 
-def run():
+def run(app):
     """the page on which you choose which distro/flaver and whether Autoinstall should be on or off"""
-    tkt.init_frame(parent)
+    tkt.init_frame(app)
     # *************************************************************************************************************
-    page_frame = tkt.generic_page_layout(parent, LN.startup_sentence + LN.desktop_question, LN.btn_next, lambda: next_btn_action())
+    page_frame = tkt.generic_page_layout(app, LN.startup_sentence + LN.desktop_question, LN.btn_next, lambda: next_btn_action())
     available_desktop = []
     dict_spins_with_fullname_keys = []
     for dist in GV.ACCEPTED_SPINS:
@@ -92,4 +92,4 @@ def run():
             log += '\n --> %s: %s' % (str(key), str(value))
         logging.info(log)
         # #################################################
-        return page_install_method.run()
+        return page_install_method.run(app)
