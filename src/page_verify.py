@@ -11,8 +11,7 @@ import translations.en as LN
 import procedure as prc
 import logging
 import global_tk_vars as tk_var
-
-
+from gui_functions import get_first_tk_parent
 def run(app):
     """the page on which you get to review your selection before starting to install"""
     tkt.init_frame(app)
@@ -144,7 +143,7 @@ def run(app):
                                  foreground=tkt.color_blue)
     more_options_btn.grid(ipady=5, row=2, column=0, sticky=GV.UI.DI_VAR['nw'])
     more_options_btn.bind("<Button-1>",
-                          lambda x: popup_advanced_options.run(master=app.master))
+                          lambda x: popup_advanced_options.run(master=get_first_tk_parent(app)))
 
     def validate_back_page(*args):
         if GV.KICKSTART.partition_method == 'custom':

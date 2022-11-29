@@ -20,7 +20,7 @@ def run(master):
 
     def show_options():
         if tk_var.install_method_var.get() != 'custom':
-            auto_install_frame.pack(anchor='w')
+            auto_install_frame.pack()
         else:
             auto_install_frame.pack_forget()
         if tk_var.encrypt_pass_toggle_var.get():

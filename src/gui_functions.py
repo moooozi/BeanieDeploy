@@ -66,3 +66,10 @@ def detect_darkmode_in_windows():
         except OSError:
             break
     return False
+
+
+def get_first_tk_parent(widget):
+    parent = widget
+    while parent.master is not None:
+        parent = parent.master
+    return parent

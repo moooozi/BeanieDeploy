@@ -101,7 +101,7 @@ dl_timeleft = "Time left"
 dl_speed = "Speed"
 
 keymap_tz_option = "%s - Use default timezone and keyboard layout for this region"
-keymap_tz_custom = "Custom timezone and keyboard layout"
+keymap_tz_custom = "Choose timezone and keyboard layout"
 
 job_checksum = "Checking downloaded file's integrity"
 job_checksum_failed = "Integrity check failed"

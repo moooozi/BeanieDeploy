@@ -28,12 +28,12 @@ def run(app):
         if locale_from_ip != tk_var.selected_locale.get():
             ip_local_radio = tkt.add_radio_btn(frame_radios, LN.keymap_tz_option % locale_from_ip_name, tk_var.keymap_timezone_source_var,
                               'ip', command=lambda: spawn_more_widgets(), pack=False)
-            ip_local_radio.grid(ipady=5, row=0, column=0, sticky=GV.UI.DI_VAR['nw'])
+            ip_local_radio.grid(ipady=5, row=1, column=0, sticky=GV.UI.DI_VAR['nw'])
 
     selection_local_radio = tkt.add_radio_btn(frame_radios, LN.keymap_tz_option % chosen_locale_name,
                                               tk_var.keymap_timezone_source_var, 'select',lambda: spawn_more_widgets(),
                                               pack=False)
-    selection_local_radio.grid(ipady=5, row=1, column=0, sticky=GV.UI.DI_VAR['nw'])
+    selection_local_radio.grid(ipady=5, row=0, column=0, sticky=GV.UI.DI_VAR['nw'])
     custom_local_radio = tkt.add_radio_btn(frame_radios, LN.keymap_tz_custom, tk_var.keymap_timezone_source_var, 'custom',
                                            lambda: spawn_more_widgets(), pack=False)
     custom_local_radio.grid(ipady=5, row=2, column=0, sticky=GV.UI.DI_VAR['nw'])

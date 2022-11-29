@@ -15,15 +15,15 @@ def run(app, installer_kwargs, installer_img_dl_percent_factor: float, live_img_
     progressbar_install = tkt.add_progress_bar(page_frame)
     tkt.add_text_label(page_frame, var=tk_var.install_job_var, pady=0, padx=10)
     # INSTALL STARTING
-
+    master = gui.get_first_tk_parent(app)
     progressbar_install['value'] = 0
     app.update()
 
     def gui_update_callback(queue_result):
         if queue_result == 'APP: critical_process_running':
-            app.master.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
+            master.protocol("WM_DELETE_WINDOW", False)  # prevent closing the app during partition
         elif queue_result == 'APP: critical_process_done':
-            app.master.protocol("WM_DELETE_WINDOW", None)  # re-enable closing the app
+            master.protocol("WM_DELETE_WINDOW", None)  # re-enable closing the app
         elif queue_result == 'STAGE: downloading':
             tk_var.install_job_var.set(LN.job_starting_download)
         elif queue_result == 'STAGE: verifying_checksum':
