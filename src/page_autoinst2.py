@@ -19,7 +19,8 @@ def run(app):
     frame_checkboxes = tkt.add_frame_container(page_frame)
     # tkt.add_check_btn(page_frame, LN.additional_setup_now, vAutoinst_additional_setup_t)
 
-    check_wifi = tkt.add_check_btn(frame_checkboxes, LN.add_import_wifi, tk_var.export_wifi_toggle_var, pady=(5, 0),pack=False)
+    check_wifi = tkt.add_check_btn(frame_checkboxes, LN.add_import_wifi % GV.SELECTED_SPIN.name,
+                                   tk_var.export_wifi_toggle_var, pady=(5, 0),pack=False)
     check_wifi.grid(ipady=5, row=0, column=0, sticky=GV.UI.DI_VAR['nw'])
 
     check_encrypt = tkt.add_check_btn(frame_checkboxes, LN.encrypted_root, tk_var.enable_encryption_toggle_var,

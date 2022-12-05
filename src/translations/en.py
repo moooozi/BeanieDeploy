@@ -73,7 +73,7 @@ list_keymaps = "Keyboard Layout"
 list_timezones = "Timezone"
 
 immutable_system = "Immutable system image"
-choose_spin_instead = "Something else"
+choose_spin_instead = "Choose distro instead"
 
 windows_question = "Okay! How should %s be installed?"
 windows_options = {'dualboot': 'Install alongside Windows',
@@ -85,11 +85,11 @@ verify_text = {
     'no_autoinst': "%s will be downloaded and will boot on the next restart to begin custom installation.",
     'autoinst_dualboot': "%s will be downloaded and installed alongside Windows on next restart.",
     'autoinst_clean': "%s will be downloaded and installed on next restart.",
-    'autoinst_keep_data': "None of your files will be deleted or changed in any way.",
+    'autoinst_keep_data': "Your existing data will not be affected.",
     'autoinst_rm_all': "Everything on this device will be erased.",
-    'autoinst_wifi': "Existing Wi-Fi profiles will be exported to %s."
+    'autoinst_wifi': "Existing Wi-Fi profiles will be added in %s."
 }
-add_import_wifi = "Export my Wi-Fi networks to the new OS"
+add_import_wifi = "Export my Wi-Fi networks to %s"
 add_auto_restart = "Restart automatically"
 add_torrent = "Use torrent whenever possible"
 more_options = "More options"
