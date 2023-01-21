@@ -20,19 +20,14 @@ def run(app):
         dict_spins_with_fullname_keys.append(spin_fullname)
         if dist.desktop and dist.desktop not in available_desktop:
             available_desktop.append(dist.desktop)
-    frame_desktop = tkt.add_frame_container(page_frame, fill='both')
-
-
-    for index, desktop in enumerate(available_desktop):
-        tkt.add_radio_btn(frame_desktop, desktop, tk_var.desktop_var, desktop, command=lambda: validate_input(),
-                          pack=False).grid(ipady=5, row=index, column=0, sticky=GV.UI.DI_VAR['nw'])
-        if desktop in LN.desktop_hints.keys():
-            ttk.Label(frame_desktop, wraplength=GV.UI.width, justify="center", text=LN.desktop_hints[desktop],
-                      font=tkt.FONTS_smaller, foreground=tkt.color_blue).grid(ipadx=5, row=index, column=1,
-                                                                              sticky=GV.UI.DI_VAR['w'])
-    tkt.add_radio_btn(frame_desktop, LN.choose_spin_instead, tk_var.desktop_var, 'else', command=lambda: validate_input(),
-                      pack=False).grid(ipady=5, row=len(available_desktop), column=0, sticky=GV.UI.DI_VAR['nw'])
-
+    desktops_description_dict = {}
+    for desktop in available_desktop:
+        # empty description if no description exists
+        description = LN.desktop_hints[desktop] if desktop in LN.desktop_hints.keys() else ""
+        desktops_description_dict[desktop] = {"name": desktop, "description": description}
+    desktops_description_dict["else"] = {"name": LN.choose_spin_instead}
+    frame_desktop = tkt.add_multi_radio_buttons(page_frame, desktops_description_dict, tk_var.desktop_var,
+                                                lambda: validate_input())
     combo_list_spin = ttk.Combobox(frame_desktop, values=dict_spins_with_fullname_keys, state='readonly')
     combo_list_spin.bind("<<ComboboxSelected>>", lambda *args: validate_input())
     if not GV.UI.combo_list_spin:

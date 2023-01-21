@@ -19,25 +19,19 @@ def run(app):
     if GV.KICKSTART.keymap_type == 'vc':
         tk_var.custom_keymap_var.set(GV.KICKSTART.keymap)
 
-    frame_radios = tkt.add_frame_container(page_frame)
-
     chosen_locale_name = autoinst.langtable.language_name(languageId=tk_var.selected_locale.get())
+
+    options_dict = {}
     if GV.IP_LOCALE:
         locale_from_ip = autoinst.langtable.list_locales(territoryId=GV.IP_LOCALE['country_code'])[0]
         locale_from_ip_name = autoinst.langtable.language_name(languageId=locale_from_ip)
         if locale_from_ip != tk_var.selected_locale.get():
-            ip_local_radio = tkt.add_radio_btn(frame_radios, LN.keymap_tz_option % locale_from_ip_name, tk_var.keymap_timezone_source_var,
-                              'ip', command=lambda: spawn_more_widgets(), pack=False)
-            ip_local_radio.grid(ipady=5, row=1, column=0, sticky=GV.UI.DI_VAR['nw'])
+            options_dict['ip'] = {'name': LN.keymap_tz_option % locale_from_ip_name, 'description': LN.keymap_tz_ip_description}
+    options_dict['select'] = {'name': LN.keymap_tz_option % chosen_locale_name, 'description': LN.keymap_tz_selected_description}
+    options_dict['custom'] = {'name': LN.keymap_tz_custom}
 
-    selection_local_radio = tkt.add_radio_btn(frame_radios, LN.keymap_tz_option % chosen_locale_name,
-                                              tk_var.keymap_timezone_source_var, 'select',lambda: spawn_more_widgets(),
-                                              pack=False)
-    selection_local_radio.grid(ipady=5, row=0, column=0, sticky=GV.UI.DI_VAR['nw'])
-    custom_local_radio = tkt.add_radio_btn(frame_radios, LN.keymap_tz_custom, tk_var.keymap_timezone_source_var, 'custom',
-                                           lambda: spawn_more_widgets(), pack=False)
-    custom_local_radio.grid(ipady=5, row=2, column=0, sticky=GV.UI.DI_VAR['nw'])
-
+    frame_radios = tkt.add_multi_radio_buttons(page_frame, options_dict, tk_var.keymap_timezone_source_var,
+                                               lambda: spawn_more_widgets())
     timezone_all = sorted(autoinst.all_timezones())
     lists_frame = ttk.Frame(frame_radios)
     timezone_txt = ttk.Label(lists_frame, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=LN.list_timezones,
