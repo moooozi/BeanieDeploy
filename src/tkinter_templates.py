@@ -177,16 +177,33 @@ def add_secondary_btn(parent, text, command):
     return btn_back
 
 
+def add_multi_radio_buttons(parent, items: dict, var, validate_func=None):
+    frame = add_frame_container(parent, fill='both')
+    for index, item in enumerate(items.keys()):
+        button = add_radio_btn(frame, items[item]["name"], var, item, command=lambda: validate_func(),pack=False)
+        button.grid(ipady=5, row=index, column=0, sticky=GV.UI.DI_VAR['nw'])
+        if "error" in items[item] and items[item]["error"]:
+            button.configure(state='disabled')
+            ttk.Label(frame, wraplength=GV.UI.width, justify="center", text=items[item]["error"],
+                      font=FONTS_smaller,foreground=color_red).grid(ipadx=5, row=index, column=1,
+                                                                    sticky=GV.UI.DI_VAR['w'])
+        elif "description" in items[item] and items[item]["description"]:
+            ttk.Label(frame, wraplength=GV.UI.width, justify="center", text=items[item]["description"],
+                      font=FONTS_smaller,foreground=color_blue).grid(ipadx=5, row=index, column=1,
+                                                                     sticky=GV.UI.DI_VAR['w'])
+    frame.grid_columnconfigure(0, weight=1)
+    return frame
+
+
 def add_page_title(parent, text, pady=(0, 15)):
     title = ttk.Label(parent, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=text, font=FONTS_medium)
-    title.pack(pady=pady,)
+    title.pack(pady=pady, padx=20, fill='x',)
     return title
 
 
 def add_radio_btn(parent, text, var, value, command=None, is_disabled=None, ipady=5, side=None, pack=True):
     radio = ttk.Radiobutton(parent, text=text, variable=var, value=value)
-    if pack:
-        radio.pack(ipady=ipady, side=side)
+    if pack: radio.pack(ipady=ipady, side=side)
     if command: radio.configure(command=command)
     if is_disabled: radio.configure(state='disabled')
     return radio
