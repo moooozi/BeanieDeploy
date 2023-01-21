@@ -100,7 +100,9 @@ job_dl_install_media = "Downloading install media..."
 dl_timeleft = "Time left"
 dl_speed = "Speed"
 
-keymap_tz_option = "%s - Use default timezone and keyboard layout for this region"
+keymap_tz_option = "The default timezone and keyboard layout for %s"
+keymap_tz_ip_description = "(Your IP region)"
+keymap_tz_selected_description = "(Your selected locale)"
 keymap_tz_custom = "Choose timezone and keyboard layout"
 
 job_checksum = "Checking downloaded file's integrity"
