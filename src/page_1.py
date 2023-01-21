@@ -28,27 +28,26 @@ def run(app):
     desktops_description_dict["else"] = {"name": LN.choose_spin_instead}
     frame_desktop = tkt.add_multi_radio_buttons(page_frame, desktops_description_dict, tk_var.desktop_var,
                                                 lambda: validate_input())
-    combo_list_spin = ttk.Combobox(frame_desktop, values=dict_spins_with_fullname_keys, state='readonly')
-    combo_list_spin.bind("<<ComboboxSelected>>", lambda *args: validate_input())
+    distro_description = ttk.Combobox(frame_desktop, values=dict_spins_with_fullname_keys, state='readonly')
+    distro_description.bind("<<ComboboxSelected>>", lambda *args: validate_input())
     if not GV.UI.combo_list_spin:
-        combo_list_spin.set(LN.choose_fedora_spin)
+        distro_description.set(LN.choose_fedora_spin)
     else:
-        combo_list_spin.set(GV.UI.combo_list_spin)
-    frame_desktop.grid_columnconfigure(0, weight=1)
-    frame_desktop.grid_rowconfigure(5, weight=1)
+        distro_description.set(GV.UI.combo_list_spin)
+    frame_desktop.grid_rowconfigure(len(available_desktop)+1, weight=1)  # GUI bugfix for distro_description
     selected_spin_info_tree = ttk.Treeview(frame_desktop, columns='info', show='', height=2,)
     selected_spin_info_tree.configure(selectmode='none')
 
     def validate_input(*args):
         if tk_var.desktop_var.get() == 'else':
-            combo_list_spin.grid(ipady=5,padx=(30, 0), row=len(available_desktop)+1, column=0, columnspan=2,
+            distro_description.grid(ipady=5,padx=(30, 0), row=len(available_desktop)+1, column=0, columnspan=2,
                                  sticky=GV.UI.DI_VAR['nw'])
-            if combo_list_spin.get() in dict_spins_with_fullname_keys:
-                spin_index = dict_spins_with_fullname_keys.index(combo_list_spin.get())
+            if distro_description.get() in dict_spins_with_fullname_keys:
+                spin_index = dict_spins_with_fullname_keys.index(distro_description.get())
             else:
                 spin_index = None
         else:
-            combo_list_spin.grid_forget()
+            distro_description.grid_forget()
             spin_index = None
             for index, dist in enumerate(GV.ACCEPTED_SPINS):
                 if dist.desktop == tk_var.desktop_var.get():
@@ -79,7 +78,7 @@ def run(app):
     def next_btn_action(*args):
         if validate_input() is None:
             return -1
-        GV.UI.combo_list_spin = combo_list_spin.get()
+        GV.UI.combo_list_spin = distro_description.get()
         GV.UI.desktop = tk_var.desktop_var.get()  # Saving UI settings
         # LOG #############################################
         log = '\nFedora Spin has been selected, spin details:'
