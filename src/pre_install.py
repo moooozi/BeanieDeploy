@@ -24,7 +24,10 @@ def run(app):
     GV.PARTITION.tmp_part_size = tmp_part_size
     GV.PARTITION.temp_part_label = GV.TMP_PARTITION_LABEL
     GV.PARTITION.make_root_partition = True if install_method == 'dualboot' else False
-    GV.PARTITION.boot_part_size = GV.APP_linux_boot_partition_size if install_method in ("dualboot", "clean") else 0
+    # Only create separate boot partition if encryption is enabled
+    GV.PARTITION.boot_part_size = 0
+    if install_method in ("dualboot", "clean") and GV.KICKSTART.is_encrypted:
+        GV.PARTITION.boot_part_size = GV.APP_linux_boot_partition_size
     GV.PARTITION.efi_part_size = GV.APP_linux_efi_partition_size if install_method == 'dualboot' else 0
 
     if GV.KICKSTART.partition_method != 'custom':
@@ -73,15 +76,8 @@ def run(app):
     installer_args.work_dir = GV.PATH.WORK_DIR
     installer_args.aria2_path = GV.PATH.ARIA2C
 
-    installer_args.installer_iso_name = GV.INSTALL_ISO_NAME
-    installer_args.installer_iso_path = GV.PATH.INSTALL_ISO
-    installer_args.installer_iso_url = installer_img.dl_link
-    installer_args.installer_iso_size = installer_img.size
-    installer_args.installer_img_hash256 = installer_img.hash256
-
     installer_img.file_name = GV.INSTALL_ISO_NAME
     installer_img.file_hint = "installer_iso"
-
     installer_args.dl_files = [installer_img, ]
 
     if GV.SELECTED_SPIN.is_live_img:

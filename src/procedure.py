@@ -150,32 +150,34 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
         kickstart_lines.append("firstboot --enable")
 
     if keymap_type == 'vc':
-        kickstart_lines.append("keyboard --vckeymap=%s" % keymap)
+        kickstart_lines.append(f"keyboard --vckeymap={keymap}")
     else:
-        kickstart_lines.append("keyboard --xlayouts='%s'" % keymap)
+        kickstart_lines.append(f"keyboard --xlayouts='{keymap}'")
     kickstart_lines.append("lang " + lang)
     kickstart_lines.append("firewall --use-system-defaults")
     if ostree_args:
         kickstart_lines.append("ostreesetup " + ostree_args)
     if live_img_url:
-        kickstart_lines.append("liveimg --url='%s' --noverifyssl" % live_img_url)
+        kickstart_lines.append(f"liveimg --url='{live_img_url}' --noverifyssl")
 
-    kickstart_lines.append("timezone " + timezone + " --utc")
+    kickstart_lines.append(f"timezone {timezone} --utc")
 
     root_partition = "part btrfs.01"
-    efi_partition = "part /boot/efi --fstype=efi --label=fedora_efi"
+
     if partition_method == 'dualboot':
-        efi_partition += " --onpart=/dev/disk/by-label/ALLOC-EFI"
+        efi_partition = f"mount /dev/disk/by-uuid/{sys_efi_uuid} /boot/efi "
         root_partition += " --onpart=/dev/disk/by-label/ALLOC-ROOT"
     elif partition_method == 'clean':
-        efi_partition += f" --onpart=/dev/disk/by-uuid/{sys_efi_uuid.upper()}"
-        root_partition += f" --onpart=/dev/disk/by-uuid/{sys_drive_uuid.upper()}"
+        efi_partition = f"part /boot/efi --fstype=efi --label=efi --onpart=/dev/disk/by-uuid/{sys_efi_uuid}"
+        root_partition += f" --onpart=/dev/disk/by-uuid/{sys_drive_uuid}"
     if is_encrypted:
+        # separate boot partition if encryption is enabled
+        boot_partition = "part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-label/ALLOC-BOOT"
         root_partition += ' --encrypted'
         if passphrase:
             root_partition += ' --passphrase=' + passphrase
-
-    boot_partition = "part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-label/ALLOC-BOOT"
+    else:
+        boot_partition = "btrfs /boot --subvol --name=boot fedora"
     kickstart_lines.append(root_partition)
     kickstart_lines.append("btrfs none --label=fedora btrfs.01")
     kickstart_lines.append("btrfs / --subvol --name=root fedora")
@@ -185,7 +187,7 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
     kickstart_lines.append(efi_partition)
 
     if username:
-        kickstart_lines.append("user --name=" + username + " --gecos='" + fullname + "' --groups=wheel")
+        kickstart_lines.append(f"user --name={username} --gecos='{fullname}' --groups=wheel")
     kickstart_lines.append("rootpw --lock")
     kickstart_lines.append("reboot")
 

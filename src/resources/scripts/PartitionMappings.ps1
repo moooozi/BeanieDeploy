@@ -33,7 +33,6 @@ do {
                DriveLetter = $sbMountPoint.toString()[0..0] -join ""
                VolumeName = $volume
                DevicePath = $sbPathName.ToString()
-               IsSystem = (get-volume -Path $volume | Get-Partition |  Select-Object -Property *).IsSystem
            }
 
            Write-Output (New-Object PSObject -Property $DriveMapping)
