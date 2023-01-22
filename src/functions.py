@@ -207,6 +207,12 @@ def quit_and_restart_windows():
     app_quit()
 
 
+def run_powershell_script(script):
+    out = subprocess.run([r'powershell.exe', '-ExecutionPolicy', 'Unrestricted', script], stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+    return out.stdout
+
+
 def make_boot_entry_first(bootguid, is_permanent: bool = False):
     """
 
@@ -222,17 +228,26 @@ def make_boot_entry_first(bootguid, is_permanent: bool = False):
     #log(out.stdout)
 
 
-def create_new_wbm(boot_efi_file_path, boot_drive_letter):
-    arg = r'bcdedit /copy "{bootmgr}" /d "Linux Install Media"'
+def create_new_wbm(boot_efi_file_path, device_path):
+    arg = r'bcdedit /copy "{bootmgr}" /d "Linux Recovery"'
     bootguid = subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout.strip()
     #log(bootguid)
     bootguid = bootguid[bootguid.index('{'):bootguid.index('}') + 1]
-    arg = r'bcdedit /set  "' + bootguid + '" path ' + boot_efi_file_path + ''
+    arg = fr'bcdedit /set  "{bootguid}" path {boot_efi_file_path}'
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    arg = r'bcdedit /set "' + bootguid + '" device partition=' + boot_drive_letter + ':'
+    arg = fr'bcdedit /set "{bootguid}" device partition={device_path}'
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     return bootguid
+
+
+def get_system_efi_drive_uuid():
+    args = """(Get-Partition | Where-Object -Property "IsSystem" -EQ true).AccessPaths 
+    | Where-Object { $_ -like '\\?\volume*' }"""
+    out = subprocess.run([r'powershell.exe', args],
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout
+    trimmed_uuid = out[out.index('{') + 1:out.index('}')]
+    return trimmed_uuid
 
 
 def extract_wifi_profiles(folder_path):
@@ -255,10 +270,6 @@ def validate_with_regex(var, regex, mode='read'):
             print('Note: input has been modified, reason: forbidden character')
     # indicate the string is empty now
     return 'empty'
-
-
-def get_current_dir_path():
-    return str(pathlib.Path(__file__).parent.absolute())
 
 
 def get_admin():

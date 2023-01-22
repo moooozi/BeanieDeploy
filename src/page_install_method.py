@@ -76,5 +76,8 @@ def run(app):
             else:
                 return -1
         if GV.KICKSTART.partition_method == 'custom':
+            GV.PARTITION.shrink_space = 0
+            GV.PARTITION.boot_part_size = 0
+            GV.PARTITION.efi_part_size = 0
             return page_verify.run(app)
         return page_autoinst2.run(app)

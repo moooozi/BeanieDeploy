@@ -7,7 +7,7 @@ import gui_functions as gui
 import global_tk_vars as tk_var
 
 
-def run(app, installer_kwargs, installer_img_dl_percent_factor: float, live_img_dl_factor: float = 0, queue=multiprocessing.Queue()):
+def run(app, installer_args, queue=multiprocessing.Queue()):
     """the page on which the initial installation (creating bootable media) takes place"""
     tkt.init_frame(app)
     # *************************************************************************************************************
@@ -18,6 +18,11 @@ def run(app, installer_kwargs, installer_img_dl_percent_factor: float, live_img_
     master = gui.get_first_tk_parent(app)
     progressbar_install['value'] = 0
     app.update()
+
+    # GUI Logic
+    total_download_size = installer_args.live_img_iso_size + installer_args.installer_iso_size
+    installer_img_dl_percent_factor = installer_args.installer_iso_size / total_download_size * 0.90
+    live_img_dl_factor = installer_args.live_img_iso_size / total_download_size * 0.90
 
     def gui_update_callback(queue_result):
         if queue_result == 'APP: critical_process_running':
@@ -39,14 +44,14 @@ def run(app, installer_kwargs, installer_img_dl_percent_factor: float, live_img_
             progressbar_install['value'] = 98
         elif queue_result == 'STAGE: install_done':
             return 1
-        elif isinstance(queue_result, tuple) and queue_result[0] == 'ARIA2C: Tracking %s' % installer_kwargs.installer_iso_name:
+        elif isinstance(queue_result, tuple) and queue_result[0] == 'ARIA2C: Tracking %s' % installer_args.installer_iso_name:
             result = queue_result[1]
             progressbar_install['value'] = result['%'] * installer_img_dl_percent_factor
             tk_var.install_job_var.set(LN.job_dl_install_media + '\n%s\n%s: %s/s, %s: %s' % (result['size'], LN.dl_speed,
                                                                                              result['speed'],
                                                                                              LN.dl_timeleft,
                                                                                              result['eta']))
-        elif isinstance(queue_result, tuple) and queue_result[0] == 'ARIA2C: Tracking %s' % installer_kwargs.live_img_iso_name:
+        elif isinstance(queue_result, tuple) and queue_result[0] == 'ARIA2C: Tracking %s' % installer_args.live_img_iso_name:
             result = queue_result[1]
             progressbar_install['value'] = result['%'] * live_img_dl_factor
             tk_var.install_job_var.set(LN.job_dl_install_media + '\n%s\n%s: %s/s, %s: %s' % (result['size'], LN.dl_speed,
@@ -60,7 +65,7 @@ def run(app, installer_kwargs, installer_img_dl_percent_factor: float, live_img_
             response_queue.put(response)
 
     tk_var.install_job_var.set(LN.check_existing_download_files)
-    gui.run_async_function(installation.install, kwargs=vars(installer_kwargs), queue=queue)
+    gui.run_async_function(installation.install, kwargs=vars(installer_args), queue=queue)
     gui.handle_queue_result(tkinter=app, callback=gui_update_callback, queue=queue)
     return page_restart_required.run(app)
 

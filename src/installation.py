@@ -1,6 +1,4 @@
 import multiprocessing
-import time
-
 import functions as fn
 import procedure as prc
 #import globals as GV
@@ -64,34 +62,49 @@ def download_spin_and_get_checksum(aria2_path, url, destination, new_file_name=N
 
 
 def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
-            installer_iso_name, installer_iso_path, installer_iso_url, installer_img_hash256=None,
-            live_img_iso_name=None, live_img_iso_path=None, live_img_iso_url=None, live_img_hash256=None,
-            rpm_source_dir=None, rpm_dest_dir_name=None,
+            dl_files, rpm_source_dir=None, rpm_dest_dir_name=None,
             queue=None, grub_cfg_relative_path=None,
             tmp_partition_label=None, kickstart_cfg_relative_path=None, efi_file_relative_path=None):
     # INSTALL STARTING
     fn.mkdir(work_dir)
-    live_img_required = bool(live_img_iso_url)
-    installer_exist = prc.check_valid_existing_file(installer_iso_path, installer_img_hash256)
-    live_img_exist = live_img_required and prc.check_valid_existing_file(live_img_iso_path, live_img_hash256)
-    if not installer_exist:
-        while True:
-            file_hash = download_spin_and_get_checksum(aria2_path, installer_iso_url, work_dir,
-                                                       installer_iso_name, queue)
-            if download_hash_handler(file_hash, installer_img_hash256, work_dir, queue):
-                break  # this will re-download if file checksum didn't match expected, and continue otherwise
+    installer_iso_path = ""
+    live_image_required = False
+    live_img_iso_path = ""
+    for file in dl_files:
+        if not hasattr(file, "file_name"):
+            file.file_name = fn.get_file_name_from_url(file.dl_link)
+        if not hasattr(file, "file_name"):
+            file.file_name = fn.get_file_name_from_url(file.dl_link)
+        if not hasattr(file, "hash256"):
+            file.hash256 = ""
+        file_path = fr"{file.dl_path}\{file.file_name}"
+        # Logic for special files with a hint
+        if hasattr(file, "file_hint") and (hint := file.file_hint):
+            if hint == "installer_iso":
+                installer_iso_path = file_path
+            elif hint == "live_img_iso":
+                live_img_iso_path = file_path
+                live_image_required = True
 
-    if live_img_required and not live_img_exist:
+        file_exists = prc.check_valid_existing_file(file_path, file.hash256)
+        if file_exists: continue
         while True:
-            file_hash = download_spin_and_get_checksum(aria2_path, live_img_iso_url, work_dir,
-                                                       live_img_iso_name, queue)
-            if download_hash_handler(file_hash, live_img_hash256, work_dir, queue):
+            file_hash = download_spin_and_get_checksum(aria2_path, file.dl_link, work_dir,
+                                                       file.file_name, queue)
+            if not file.hash256 or download_hash_handler(file_hash, file.hash256, work_dir, queue):
                 break  # this will re-download if file checksum didn't match expected, and continue otherwise
 
     queue_safe_put(queue, 'APP: critical_process_running')
     queue_safe_put(queue, 'STAGE: creating_tmp_part')
 
-    tmp_part_letter = prc.partition_procedure(**vars(part_kwargs))
+    partitioning_results = prc.partition_procedure(**vars(part_kwargs))
+    tmp_part_letter = partitioning_results['tmp_part_letter']
+    tmp_part_device_path = partitioning_results['tmp_part_device_path']
+    sys_drive_uuid = partitioning_results['sys_drive_uuid']
+    sys_drive_win_uuid = partitioning_results['sys_drive_win_uuid']
+
+    ks_kwargs.sys_drive_uuid = partitioning_results['sys_drive_uuid']
+    ks_kwargs.sys_efi_uuid = partitioning_results['sys_efi_uuid']
 
     queue_safe_put(queue, 'APP: critical_process_done')
     queue_safe_put(queue, 'STAGE: copying_to_tmp_part')
@@ -100,7 +113,7 @@ def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
     source_files = installer_mount_letter + ':\\'
     destination = tmp_part_letter + ':\\'
     fn.copy_files(source=source_files, destination=destination)
-    if live_img_iso_url:
+    if live_image_required:
         live_img_mount_letter = fn.mount_iso(live_img_iso_path)
         source_files = live_img_mount_letter + ':\\LiveOS\\'
         destination = tmp_part_letter + ':\\LiveOS\\'
@@ -117,30 +130,32 @@ def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
     grub_cfg_txt = prc.build_grub_cfg_file(tmp_partition_label,
                                            ks_kwargs.partition_method != 'custom')
     fn.set_file_readonly(grub_cfg_dest_path, False)
-    grub_cfg = open(grub_cfg_dest_path, 'w')
-    grub_cfg.write(grub_cfg_txt)
-    grub_cfg.close()
+    with open(grub_cfg_dest_path, 'w') as grub_cfg:
+        grub_cfg.write(grub_cfg_txt)
     fn.set_file_readonly(grub_cfg_dest_path, True)
     if not ks_kwargs.partition_method == 'custom':
         kickstart_txt = prc.build_autoinstall_ks_file(**vars(ks_kwargs))
-        kickstart = open(tmp_part_letter + ':\\%s' % kickstart_cfg_relative_path, 'w')
-        kickstart.write(kickstart_txt)
-        kickstart.close()
+        with open(tmp_part_letter + ':\\%s' % kickstart_cfg_relative_path, 'w') as kickstart:
+            kickstart.write(kickstart_txt)
 
     queue_safe_put(queue, 'APP: critical_process_running')  # prevent closing the app
 
-    if ks_kwargs.partition_method == 'clean':
-        is_new_boot_order_permanent = True
-    else:
-        is_new_boot_order_permanent = False
+
+    # Getting temporary partition's DevicePath, like e.g. "\Device\HarddiskVolume5"
+
+    # Drive Letter no longer needed, so we remove it
+    fn.remove_drive_letter(tmp_part_letter)
+
+    is_new_boot_order_permanent = True if ks_kwargs.partition_method == 'clean' else False
+
     boot_kwargs = {'boot_efi_file_path': efi_file_relative_path,
-                   'boot_drive_letter': tmp_part_letter,
+                   'device_path': tmp_part_device_path,
                    'is_permanent': is_new_boot_order_permanent}
     prc.add_boot_entry(**boot_kwargs)
-    # step 5: clean up iso and other downloaded files since install is complete
+    # unmount and clean up iso and other downloaded files since installation is now complete
     fn.unmount_iso(installer_iso_path)
     fn.unmount_iso(live_img_iso_path)
-    #fn.remove_drive_letter(tmp_part_letter)
+
     # fn.rmdir(DOWNLOAD_PATH)
     fn.set_windows_time_to_utc()
 

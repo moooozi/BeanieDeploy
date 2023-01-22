@@ -4,7 +4,7 @@ import os
 import types
 import multiprocessing
 import functions as fn
-
+import globals as GV
 
 def compatibility_test(required_space_min, queue):
     # check starting...
@@ -54,34 +54,46 @@ def compatibility_test(required_space_min, queue):
     else: return check_results
 
 
-def partition_procedure(tmp_part_size: int, temp_part_label: str, queue=None, shrink_space: int = None,
-                        boot_part_size: int = None, efi_part_size: int = None):
+def partition_procedure(tmp_part_size: int, temp_part_label: str, queue=None, shrink_space: int = 0,
+                        boot_part_size: int = 0, efi_part_size: int = 0, make_root_partition: bool = False):
+    ps_script = fr"{GV.PATH.SCRIPTS}\PartitionMappings.ps1"
+
     sys_drive_letter = fn.get_sys_drive_letter()
-    print(fn.relabel_volume(sys_drive_letter, 'WindowsOS'))
+    sys_uuid_script = f'(({ps_script}) | Where-Object -Property DriveLetter -EQ "C").VolumeName'
+    sys_drive_win_uuid = fn.run_powershell_script(sys_uuid_script)
+    sys_drive_uuid = sys_drive_win_uuid[sys_drive_win_uuid.index('{') + 1:sys_drive_win_uuid.index('}')]
+    sys_efi_uuid = fn.get_system_efi_drive_uuid()
     sys_disk_number = fn.get_disk_number(sys_drive_letter)
-    if not (efi_part_size and boot_part_size):
-        shrink_space = tmp_part_size
+    if not (shrink_space and make_root_partition):
+        shrink_space = tmp_part_size + efi_part_size + boot_part_size
     sys_drive_new_size = fn.get_drive_size_after_resize(sys_drive_letter, shrink_space + 1100000)
     fn.resize_partition(sys_drive_letter, sys_drive_new_size)
-    if efi_part_size and boot_part_size and shrink_space:
+    if make_root_partition:
         root_space = shrink_space - (tmp_part_size + efi_part_size + boot_part_size + 1100000)
         fn.new_volume(sys_disk_number, root_space, 'EXFAT', 'ALLOC-ROOT')
+    if boot_part_size:
         fn.new_volume(sys_disk_number, boot_part_size, 'EXFAT', 'ALLOC-BOOT')
+    if efi_part_size:
         fn.new_volume(sys_disk_number, efi_part_size, 'EXFAT', 'ALLOC-EFI')
     tmp_part_letter = fn.get_unused_drive_letter()
     fn.new_volume(sys_disk_number, tmp_part_size, 'FAT32', temp_part_label, tmp_part_letter)
+
+    tmp_part_path_script = f'(({ps_script}) | Where-Object -Property DriveLetter -EQ "{tmp_part_letter}:\\).DevicePath"'
+    tmp_part_device_path = fn.run_powershell_script(tmp_part_path_script)
     if queue: queue.put(tmp_part_letter)
-    return tmp_part_letter
+    return {'tmp_part_letter': tmp_part_letter, 'tmp_part_device_path': tmp_part_device_path,
+            'sys_drive_uuid': sys_drive_uuid, 'sys_drive_win_uuid': sys_drive_win_uuid, 'sys_efi_uuid': sys_efi_uuid}
 
 
-def add_boot_entry(boot_efi_file_path, boot_drive_letter, is_permanent: bool = False):
-    bootguid = fn.create_new_wbm(boot_efi_file_path, boot_drive_letter)
+def add_boot_entry(boot_efi_file_path, device_path, is_permanent: bool = False):
+    bootguid = fn.create_new_wbm(boot_efi_file_path, device_path)
     fn.make_boot_entry_first(bootguid, is_permanent)
 
 
 def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone=None, ostree_args=None, username='', fullname='',
                               wifi_profiles=None, is_encrypted: bool = False, passphrase: str = None,
                               tpm_auto_unlock: bool = True, live_img_url='', additional_repos=True,
+                              sys_drive_uuid=None, sys_efi_uuid=None,
                               partition_method=None, additional_rpm_dir=None):
     kickstart_lines = []
     kickstart_lines.append("# Kickstart file created by Lnixify.")
@@ -150,21 +162,27 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
 
     kickstart_lines.append("timezone " + timezone + " --utc")
 
-    if partition_method == 'clean':
-        kickstart_lines.append("clearpart --all")
-    root_partition = "part btrfs.01 --onpart=/dev/disk/by-label/ALLOC-ROOT"
+    root_partition = "part btrfs.01"
+    efi_partition = "part /boot/efi --fstype=efi --label=fedora_efi"
+    if partition_method == 'dualboot':
+        efi_partition += " --onpart=/dev/disk/by-label/ALLOC-EFI"
+        root_partition += " --onpart=/dev/disk/by-label/ALLOC-ROOT"
+    elif partition_method == 'clean':
+        efi_partition += f" --onpart=/dev/disk/by-uuid/{sys_efi_uuid.upper()}"
+        root_partition += f" --onpart=/dev/disk/by-uuid/{sys_drive_uuid.upper()}"
     if is_encrypted:
         root_partition += ' --encrypted'
         if passphrase:
             root_partition += ' --passphrase=' + passphrase
 
+    boot_partition = "part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-label/ALLOC-BOOT"
     kickstart_lines.append(root_partition)
     kickstart_lines.append("btrfs none --label=fedora btrfs.01")
     kickstart_lines.append("btrfs / --subvol --name=root fedora")
     kickstart_lines.append("btrfs /home --subvol --name=home fedora")
     kickstart_lines.append("btrfs /var --subvol --name=var fedora")
-    kickstart_lines.append("part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-label/ALLOC-BOOT ")
-    kickstart_lines.append("part /boot/efi --fstype=efi --label=fedora_efi --onpart=/dev/disk/by-label/ALLOC-EFI")
+    kickstart_lines.append(boot_partition)
+    kickstart_lines.append(efi_partition)
 
     if username:
         kickstart_lines.append("user --name=" + username + " --gecos='" + fullname + "' --groups=wheel")
@@ -321,6 +339,7 @@ def check_valid_existing_file(path, file_hash):
         return True
     else:
         os.remove(path)
+        return False
 
 
 def initiate_kickstart_arguments_from_user_input(autoinstall: dict, install_options: dict):
@@ -328,7 +347,7 @@ def initiate_kickstart_arguments_from_user_input(autoinstall: dict, install_opti
 
 
 def init_paths(paths_namespace):
-    current_dir = fn.get_current_dir_path()
+    current_dir = os.path.dirname(__file__)
     downloads_dir = fn.get_user_downloads_folder()
     for key, value in (path_dict := vars(paths_namespace)).items():
         path_dict[key] = value.replace('%CURRENT_DIR%', current_dir).replace('%DOWNLOADS_DIR%', downloads_dir)

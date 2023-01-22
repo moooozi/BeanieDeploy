@@ -64,11 +64,12 @@ KICKSTART.ostree_args = ''
 KICKSTART.wifi_profiles = []
 
 PARTITION = types.SimpleNamespace()
-PARTITION.shrink_space = APP_dualboot_required_space
-PARTITION.tmp_part_size = None
-PARTITION.temp_part_label = None
-PARTITION.boot_part_size = None
-PARTITION.efi_part_size = None
+PARTITION.make_root_partition = False
+PARTITION.shrink_space = None
+PARTITION.tmp_part_size = 0
+PARTITION.temp_part_label = 0
+PARTITION.boot_part_size = 0
+PARTITION.efi_part_size = 0
 
 TMP_PARTITION_LETTER = ''
 TMP_PARTITION_LABEL = 'FEDORA-INST'  # Max 12 Chars
