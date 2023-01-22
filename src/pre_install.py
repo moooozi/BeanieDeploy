@@ -28,7 +28,8 @@ def run(app):
     GV.PARTITION.boot_part_size = 0
     if install_method in ("dualboot", "clean") and GV.KICKSTART.is_encrypted:
         GV.PARTITION.boot_part_size = GV.APP_linux_boot_partition_size
-    GV.PARTITION.efi_part_size = GV.APP_linux_efi_partition_size if install_method == 'dualboot' else 0
+    # Do not create additional efi partition
+    GV.PARTITION.efi_part_size = 0
 
     if GV.KICKSTART.partition_method != 'custom':
         GV.KICKSTART.ostree_args = GV.SELECTED_SPIN.ostree_args
