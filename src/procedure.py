@@ -163,13 +163,14 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
     kickstart_lines.append(f"timezone {timezone} --utc")
 
     root_partition = "part btrfs.01"
-
+    efi_partition = ""
     if partition_method == 'dualboot':
-        efi_partition = f"mount /dev/disk/by-uuid/{sys_efi_uuid} /boot/efi "
+        efi_partition = f"mount /dev/disk/by-partuuid/{sys_efi_uuid} /boot/efi "
         root_partition += " --onpart=/dev/disk/by-label/ALLOC-ROOT"
     elif partition_method == 'clean':
-        efi_partition = f"part /boot/efi --fstype=efi --label=efi --onpart=/dev/disk/by-uuid/{sys_efi_uuid}"
-        root_partition += f" --onpart=/dev/disk/by-uuid/{sys_drive_uuid}"
+        efi_partition = f"part /boot/efi --fstype=efi --label=efi --onpart=/dev/disk/by-partuuid/{sys_efi_uuid}"
+        root_partition += f" --onpart=/dev/disk/by-partuuid/{sys_drive_uuid}"
+
     if is_encrypted:
         # separate boot partition if encryption is enabled
         boot_partition = "part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-label/ALLOC-BOOT"
@@ -177,7 +178,9 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
         if passphrase:
             root_partition += ' --passphrase=' + passphrase
     else:
+        # create /boot subvolume inside root if encryption is disable
         boot_partition = "btrfs /boot --subvol --name=boot fedora"
+
     kickstart_lines.append(root_partition)
     kickstart_lines.append("btrfs none --label=fedora btrfs.01")
     kickstart_lines.append("btrfs / --subvol --name=root fedora")
