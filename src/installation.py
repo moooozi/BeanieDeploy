@@ -1,7 +1,6 @@
-import multiprocessing
+import time
 import functions as fn
 import procedure as prc
-#import globals as GV
 
 
 def download_hash_handler(file_hash, expected_hash, work_dir, queue=None):
@@ -11,16 +10,20 @@ def download_hash_handler(file_hash, expected_hash, work_dir, queue=None):
         return True
     if file_hash == expected_hash:
         return True
-    error = 'mismatch'
-    if not file_hash:
-        error = 'failed'
+    error = 'failed' if not file_hash else 'mismatch'
     response = {'go_next': False, 'cleanup': False, 'app_quit': False}
     if queue:  # for GUI mode
-        response_queue = multiprocessing.Queue()
         response_dict = {'error': error, 'file_hash': file_hash, 'expected_hash': expected_hash}
-        queue.put(('ERR: checksum', response_dict, response_queue))
-        while response_queue.qsize() == 0: pass
-        response = response_queue.get()
+        queue.put(('ERR: checksum', response_dict))
+        # Wait to make sure the front end receives ur Queue and not u receive your own.
+        time.sleep(2)
+        while True:
+            while queue.qsize() == 0: pass
+            _response = queue.get()
+            if isinstance(_response, dict) and 'go_next' in _response.keys():
+                response = _response
+                print(response)
+                break
     else:  # for CLI mode
         yes_responses = ('y', 'yes')
         if file_hash == '':
@@ -42,7 +45,7 @@ def download_hash_handler(file_hash, expected_hash, work_dir, queue=None):
 
     if response['go_next']: return True
     if response['cleanup']: fn.rmdir(work_dir)
-    if response['app_quit']: fn.app_quit()
+    if response['app_quit']: fn.app_quit()  # This will only exit the backend process
 
 
 def queue_safe_put(queue, data):
@@ -63,21 +66,15 @@ def download_spin_and_get_checksum(aria2_path, url, destination, new_file_name=N
 
 def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
             dl_files, rpm_source_dir=None, rpm_dest_dir_name=None,
-            queue=None, grub_cfg_relative_path=None,
-            tmp_partition_label=None, kickstart_cfg_relative_path=None, efi_file_relative_path=None):
+            grub_cfg_relative_path=None,tmp_partition_label=None, kickstart_cfg_relative_path=None,
+            efi_file_relative_path=None, queue=None):
     # INSTALL STARTING
     fn.mkdir(work_dir)
     installer_iso_path = ""
     live_image_required = False
     live_img_iso_path = ""
     for file in dl_files:
-        if not hasattr(file, "file_name"):
-            file.file_name = fn.get_file_name_from_url(file.dl_link)
-        if not hasattr(file, "file_name"):
-            file.file_name = fn.get_file_name_from_url(file.dl_link)
-        if not hasattr(file, "hash256"):
-            file.hash256 = ""
-        file_path = fr"{file.dl_path}\{file.file_name}"
+        file_path = fr"{work_dir}\{file.file_name}"
         # Logic for special files with a hint
         if hasattr(file, "file_hint") and (hint := file.file_hint):
             if hint == "installer_iso":
@@ -87,7 +84,9 @@ def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
                 live_image_required = True
 
         file_exists = prc.check_valid_existing_file(file_path, file.hash256)
-        if file_exists: continue
+        if file_exists:
+            queue.put({'type': 'dl_tracker', 'file_name': file.file_name, 'status': "complete"})
+            continue
         while True:
             file_hash = download_spin_and_get_checksum(aria2_path, file.dl_link, work_dir,
                                                        file.file_name, queue)
@@ -146,7 +145,7 @@ def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
     # Drive Letter no longer needed, so we remove it
     fn.remove_drive_letter(tmp_part_letter)
 
-    is_new_boot_order_permanent = True if ks_kwargs.partition_method == 'clean' else False
+    is_new_boot_order_permanent = True if ks_kwargs.partition_method == 'replace_win' else False
 
     boot_kwargs = {'boot_efi_file_path': efi_file_relative_path,
                    'device_path': tmp_part_device_path,

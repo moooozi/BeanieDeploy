@@ -67,6 +67,9 @@ def download_with_aria2(aria2_path, url, destination, output_name=None,  is_torr
     p = subprocess.Popen(aria2_path + arg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                          universal_newlines=True)
     tracker = {
+        'type': 'dl_tracker',
+        'file_name': output_name,
+        'status': "downloading",
         'speed': '0',
         'eta': 'N/A',
         'size': '',
@@ -78,10 +81,12 @@ def download_with_aria2(aria2_path, url, destination, output_name=None,  is_torr
         if output == '' and p.poll() is not None:
             return 0
         if output:
+            if not queue: continue
             if '(OK):download completed' in output:
-                if queue: queue.put('ARIA2C: Done')
+                tracker['status'] = "complete"
+                queue.put(tracker)
                 return 1
-            elif queue:
+            else:
                 if (txt := output.strip())[0:2] == '[#':
                     txt = txt[1:-1]
                     try:
@@ -97,7 +102,7 @@ def download_with_aria2(aria2_path, url, destination, output_name=None,  is_torr
                             index2 = txt.index('(')
                             tracker['size'] = txt.split()[1]
                             tracker['%'] = int(txt[index2 + 1:index1])
-                        queue.put(('ARIA2C: Tracking %s' % output_name, tracker))
+                        queue.put(tracker)
                     except (ValueError, IndexError): pass
 
 

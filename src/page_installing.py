@@ -1,3 +1,4 @@
+import time
 import multiprocessing
 import installation
 import page_restart_required
@@ -18,11 +19,21 @@ def run(app, installer_args, queue=multiprocessing.Queue()):
     master = gui.get_first_tk_parent(app)
     progressbar_install['value'] = 0
     app.update()
-
     # GUI Logic
-    total_download_size = installer_args.live_img_iso_size + installer_args.installer_iso_size
-    installer_img_dl_percent_factor = installer_args.installer_iso_size / total_download_size * 0.90
-    live_img_dl_factor = installer_args.live_img_iso_size / total_download_size * 0.90
+    # Tracking downloads
+    file_index = 0
+    current_dl_file_name = "NONE"
+    current_dl_file_size = 0
+    current_dl_file_percent_factor = 0
+    global_downloads_factor = 0.90  # When all downloads are complete, the progressbar will be at 90%
+    total_already_downloaded = 0
+    already_downloaded_percent = 0
+    total_download_size = 0
+
+    num_of_files = 0
+    for file in installer_args.dl_files:
+        num_of_files += 1
+        total_download_size += file.size
 
     def gui_update_callback(queue_result):
         if queue_result == 'APP: critical_process_running':
@@ -44,25 +55,39 @@ def run(app, installer_args, queue=multiprocessing.Queue()):
             progressbar_install['value'] = 98
         elif queue_result == 'STAGE: install_done':
             return 1
-        elif isinstance(queue_result, tuple) and queue_result[0] == 'ARIA2C: Tracking %s' % installer_args.installer_iso_name:
-            result = queue_result[1]
-            progressbar_install['value'] = result['%'] * installer_img_dl_percent_factor
-            tk_var.install_job_var.set(LN.job_dl_install_media + '\n%s\n%s: %s/s, %s: %s' % (result['size'], LN.dl_speed,
-                                                                                             result['speed'],
-                                                                                             LN.dl_timeleft,
-                                                                                             result['eta']))
-        elif isinstance(queue_result, tuple) and queue_result[0] == 'ARIA2C: Tracking %s' % installer_args.live_img_iso_name:
-            result = queue_result[1]
-            progressbar_install['value'] = result['%'] * live_img_dl_factor
-            tk_var.install_job_var.set(LN.job_dl_install_media + '\n%s\n%s: %s/s, %s: %s' % (result['size'], LN.dl_speed,
-                                                                              result['speed'],
-                                                                              LN.dl_timeleft,
-                                                                              result['eta']))
+        elif isinstance(queue_result, dict) and 'type' in queue_result.keys() and queue_result['type'] == 'dl_tracker':
+            nonlocal file_index, current_dl_file_name, current_dl_file_size, current_dl_file_percent_factor
+            nonlocal total_already_downloaded, already_downloaded_percent
+            if queue_result['file_name'] != current_dl_file_name:
+                total_already_downloaded += current_dl_file_size
+                already_downloaded_percent = (total_already_downloaded / total_download_size) * 100
+                file_index += 1
+                for file in installer_args.dl_files:
+                    if queue_result['file_name'] != file.file_name: continue
+                    current_dl_file_name = file.file_name
+                    current_dl_file_size = file.size
+                    current_dl_file_percent_factor = file.size / total_download_size
+                    break
+            if queue_result['status'] == "complete":
+                pass
+            elif queue_result['status'] == "downloading":
+                progressbar_install['value'] = ((queue_result['%'] * current_dl_file_percent_factor)
+                                                + already_downloaded_percent) * global_downloads_factor
+                tk_var.install_job_var.set(LN.job_dl_install_media +
+                                           f"\n{LN.downloads_number % (file_index, num_of_files)}"
+                                           f"\n{queue_result['size']}"
+                                           f"\n{LN.dl_speed}: {queue_result['speed']}/s"
+                                           f"\n{LN.dl_timeleft}: {queue_result['eta']}")
+
         elif isinstance(queue_result, tuple) and queue_result[0] == 'ERR: checksum':
             error_dict = queue_result[1]
-            response_queue = queue_result[2]
+            response_queue = queue
+            print(error_dict)
             response = gui_download_hash_handler(app.master, **error_dict)
             response_queue.put(response)
+            time.sleep(1)
+            # Now exit the front end
+            if response['app_quit']: raise SystemExit
 
     tk_var.install_job_var.set(LN.check_existing_download_files)
     gui.run_async_function(installation.install, kwargs=vars(installer_args), queue=queue)
@@ -97,5 +122,5 @@ def gui_download_hash_handler(master, error, file_hash='', expected_hash=''):
                                         primary_btn_str=LN.btn_yes, secondary_btn_str=LN.btn_no)
             if question:
                 cleanup = True
-            app_quit = False
+            app_quit = True
     return {'go_next': go_next, 'cleanup': cleanup, 'app_quit': app_quit}
