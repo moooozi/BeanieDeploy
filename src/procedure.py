@@ -2,9 +2,9 @@
 
 import os
 import types
-import multiprocessing
 import functions as fn
 import globals as GV
+
 
 def compatibility_test(required_space_min, queue):
     # check starting...
@@ -56,10 +56,10 @@ def compatibility_test(required_space_min, queue):
 
 def partition_procedure(tmp_part_size: int, temp_part_label: str, queue=None, shrink_space: int = 0,
                         boot_part_size: int = 0, efi_part_size: int = 0, make_root_partition: bool = False):
-    ps_script = fr"{GV.PATH.SCRIPTS}\PartitionMappings.ps1"
+    ps_script = fr"{parse_path(GV.PATH.SCRIPTS)}\PartitionMappings.ps1"
 
     sys_drive_letter = fn.get_sys_drive_letter()
-    sys_uuid_script = f'(({ps_script}) | Where-Object -Property DriveLetter -EQ "C").VolumeName'
+    sys_uuid_script = f'(({ps_script}) | Where-Object -Property DriveLetter -EQ {sys_drive_letter}).VolumeName'
     sys_drive_win_uuid = fn.run_powershell_script(sys_uuid_script)
     sys_drive_uuid = sys_drive_win_uuid[sys_drive_win_uuid.index('{') + 1:sys_drive_win_uuid.index('}')]
     sys_efi_uuid = fn.get_system_efi_drive_uuid()
@@ -90,7 +90,7 @@ def add_boot_entry(boot_efi_file_path, device_path, is_permanent: bool = False):
     fn.make_boot_entry_first(bootguid, is_permanent)
 
 
-def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone=None, ostree_args=None, username='', fullname='',
+def build_autoinstall_ks_file(keymap=None, keymap_type='vc', locale=None, timezone=None, ostree_args=None, username='', fullname='',
                               wifi_profiles=None, is_encrypted: bool = False, passphrase: str = None,
                               tpm_auto_unlock: bool = True, live_img_url='', additional_repos=True,
                               sys_drive_uuid=None, sys_efi_uuid=None,
@@ -141,9 +141,9 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
         kickstart_lines.append("flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo")
         kickstart_lines.append("%end")
 
-    if not (keymap and lang and timezone):
+    if not (keymap and locale and timezone):
         if not keymap: keymap = 'us'
-        if not lang: lang = 'en_US.UTF-8'
+        if not locale: locale = 'en_US.UTF-8'
         if not timezone: timezone = 'America/New_York'
         kickstart_lines.append("firstboot --reconfig")
     else:
@@ -153,7 +153,7 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
         kickstart_lines.append(f"keyboard --vckeymap={keymap}")
     else:
         kickstart_lines.append(f"keyboard --xlayouts='{keymap}'")
-    kickstart_lines.append("lang " + lang)
+    kickstart_lines.append("lang " + locale)
     kickstart_lines.append("firewall --use-system-defaults")
     if ostree_args:
         kickstart_lines.append("ostreesetup " + ostree_args)
@@ -321,11 +321,6 @@ def get_wifi_profiles(work_directory):
     return wifi_profiles
 
 
-def start_async_download(app_path, url, destination, is_torrent=False, queue=None):
-    args = (app_path, url, destination, is_torrent, queue)
-    multiprocessing.Process(target=fn.download_with_aria2, args=args).start()
-
-
 def decide_torrent_or_direct_download(torrent_preferred, direct_link, torrent_link):
     torrent_exist = bool(torrent_link)
     if torrent_preferred and torrent_exist:
@@ -352,9 +347,12 @@ def initiate_kickstart_arguments_from_user_input(autoinstall: dict, install_opti
 
 
 def init_paths(paths_namespace):
-    current_dir = os.path.dirname(__file__)
-    downloads_dir = fn.get_user_downloads_folder()
     for key, value in (path_dict := vars(paths_namespace)).items():
-        path_dict[key] = value.replace('%CURRENT_DIR%', current_dir).replace('%DOWNLOADS_DIR%', downloads_dir)
+        path_dict[key] = parse_path(value)
     paths_namespace.__init__(**path_dict)
 
+
+def parse_path(path):
+    current_dir = os.path.dirname(__file__)
+    downloads_dir = fn.get_user_downloads_folder()
+    return path.replace('%CURRENT_DIR%', current_dir).replace('%DOWNLOADS_DIR%', downloads_dir)

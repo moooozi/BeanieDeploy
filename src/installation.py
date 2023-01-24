@@ -1,3 +1,4 @@
+import os
 import time
 import functions as fn
 import procedure as prc
@@ -52,18 +53,6 @@ def queue_safe_put(queue, data):
     if queue: queue.put(data)
 
 
-def download_spin_and_get_checksum(aria2_path, url, destination, new_file_name=None, queue=None):
-    queue_safe_put(queue, 'STAGE: downloading')
-    fn.download_with_aria2(aria2_path, url=url, destination=destination, output_name=new_file_name, queue=queue)
-    if new_file_name:
-        file_path = destination + '\\' + new_file_name
-    else:
-        file_path = destination + '\\' + fn.get_file_name_from_url(url)
-
-    queue_safe_put(queue, 'STAGE: verifying_checksum')
-    return fn.get_sha256_hash(file_path=file_path)
-
-
 def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
             dl_files, rpm_source_dir=None, rpm_dest_dir_name=None,
             grub_cfg_relative_path=None,tmp_partition_label=None, kickstart_cfg_relative_path=None,
@@ -83,15 +72,24 @@ def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
                 live_img_iso_path = file_path
                 live_image_required = True
 
-        file_exists = prc.check_valid_existing_file(file_path, file.hash256)
-        if file_exists:
+        file_exists = False
+        if os.path.isfile(file_path):
+            if fn.get_sha256_hash(file_path) == file.hash256:
+                file_exists = True
+            else:
+                os.remove(file_path)
+        if file_exists is True:
             queue.put({'type': 'dl_tracker', 'file_name': file.file_name, 'status': "complete"})
             continue
         while True:
-            file_hash = download_spin_and_get_checksum(aria2_path, file.dl_link, work_dir,
-                                                       file.file_name, queue)
-            if not file.hash256 or download_hash_handler(file_hash, file.hash256, work_dir, queue):
-                break  # this will re-download if file checksum didn't match expected, and continue otherwise
+            queue_safe_put(queue, 'STAGE: downloading')
+            fn.download_with_aria2(aria2_path, url=file.dl_link, destination=work_dir, output_name=file.file_name, queue=queue)
+            queue_safe_put(queue, 'STAGE: verifying_checksum')
+            actual_file_hash = fn.get_sha256_hash(file_path)
+            if not file.hash256 or download_hash_handler(actual_file_hash, file.hash256, work_dir, queue):
+                break   # exit the loop if the file matches the criteria
+            # remove the file and re-download otherwise
+            os.remove(file_path)
 
     queue_safe_put(queue, 'APP: critical_process_running')
     queue_safe_put(queue, 'STAGE: creating_tmp_part')

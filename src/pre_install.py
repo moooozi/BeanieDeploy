@@ -88,6 +88,8 @@ def run(app):
             file.file_name = fn.get_file_name_from_url(file.dl_link)
         if not hasattr(file, "hash256"):
             file.hash256 = ""
+        else:  # for consistency
+            file.hash256 = file.hash256.strip().lower()
         if not hasattr(file, "size"):
             file.size = 0
 
