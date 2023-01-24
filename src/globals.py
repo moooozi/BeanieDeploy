@@ -40,7 +40,7 @@ ALL_SPINS = []
 ACCEPTED_SPINS = []
 
 ACCEPTED_ARCHITECTURES = ('amd64',)
-AVAILABLE_INSTALL_METHODS = ('dualboot', 'clean', 'custom')
+AVAILABLE_INSTALL_METHODS = ('dualboot', 'replace_win', 'custom')
 INSTALLER_STATUS = None
 
 INSTALL_OPTIONS = types.SimpleNamespace()
@@ -52,11 +52,11 @@ INSTALL_OPTIONS.keymap_timezone_source = 'select'
 
 KICKSTART = types.SimpleNamespace()
 KICKSTART.partition_method = ''
-KICKSTART.live_img_url = ''
+KICKSTART.live_img_url = APP_live_img_url
 KICKSTART.is_encrypted = False
 KICKSTART.passphrase = ''
 KICKSTART.tpm_auto_unlock = False
-KICKSTART.lang = ''
+KICKSTART.locale = ''
 KICKSTART.timezone = ''
 KICKSTART.keymap_type = ''
 KICKSTART.keymap = ''
@@ -67,12 +67,11 @@ PARTITION = types.SimpleNamespace()
 PARTITION.make_root_partition = False
 PARTITION.shrink_space = None
 PARTITION.tmp_part_size = 0
-PARTITION.temp_part_label = 0
+PARTITION.temp_part_label = 'FEDORA-INST'  # Max 12 Chars
 PARTITION.boot_part_size = 0
 PARTITION.efi_part_size = 0
 
 TMP_PARTITION_LETTER = ''
-TMP_PARTITION_LABEL = 'FEDORA-INST'  # Max 12 Chars
 Literal: types
 LIVE_OS_INSTALLER_SPIN = None
 USERNAME_WINDOWS = ''

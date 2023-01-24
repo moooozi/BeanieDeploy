@@ -26,7 +26,7 @@ def run(app):
         if GV.KICKSTART.partition_method == 'dualboot':
             review_sel.append(LN.verify_text['autoinst_dualboot'] % GV.SELECTED_SPIN.name)
             review_sel.append(LN.verify_text['autoinst_keep_data'])
-        elif GV.KICKSTART.partition_method == 'clean':
+        elif GV.KICKSTART.partition_method == 'replace_win':
             review_sel.append(LN.verify_text['autoinst_clean'] % GV.SELECTED_SPIN.name)
             review_sel.append(LN.verify_text['autoinst_rm_all'])
         if GV.INSTALL_OPTIONS.export_wifi:

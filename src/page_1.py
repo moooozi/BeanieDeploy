@@ -8,6 +8,7 @@ import page_install_method
 import logging
 import global_tk_vars as tk_var
 
+
 def run(app):
     """the page on which you choose which distro/flaver and whether Autoinstall should be on or off"""
     tkt.init_frame(app)
@@ -16,7 +17,7 @@ def run(app):
     available_desktop = []
     dict_spins_with_fullname_keys = []
     for dist in GV.ACCEPTED_SPINS:
-        spin_fullname = dist.name + ' ' + dist.version
+        spin_fullname = f"{dist.name} {dist.version}"
         dict_spins_with_fullname_keys.append(spin_fullname)
         if dist.desktop and dist.desktop not in available_desktop:
             available_desktop.append(dist.desktop)
@@ -55,13 +56,9 @@ def run(app):
                         spin_index = index
         if spin_index is not None:
             GV.SELECTED_SPIN = GV.ACCEPTED_SPINS[spin_index]
-            if GV.SELECTED_SPIN.is_live_img:
-                GV.KICKSTART.live_img_url = GV.APP_live_img_url
-
-            if GV.SELECTED_SPIN.is_live_img:
-                total_size = GV.LIVE_OS_INSTALLER_SPIN.size + GV.SELECTED_SPIN.size
-            else:
-                total_size = GV.SELECTED_SPIN.size
+            total_size = GV.SELECTED_SPIN.size
+            total_size += GV.LIVE_OS_INSTALLER_SPIN.size if GV.SELECTED_SPIN.is_live_img else 0
+            GV.PARTITION.tmp_part_size = total_size + GV.APP_temp_part_failsafe_space
             if GV.SELECTED_SPIN.is_base_netinstall:
                 dl_size_txt = LN.init_download % fn.byte_to_gb(total_size)
             else:
@@ -78,8 +75,9 @@ def run(app):
     def next_btn_action(*args):
         if validate_input() is None:
             return -1
+        # Saving UI state
         GV.UI.combo_list_spin = distro_description.get()
-        GV.UI.desktop = tk_var.desktop_var.get()  # Saving UI settings
+        GV.UI.desktop = tk_var.desktop_var.get()
         # LOG #############################################
         log = '\nFedora Spin has been selected, spin details:'
         for key, value in vars(GV.SELECTED_SPIN).items():

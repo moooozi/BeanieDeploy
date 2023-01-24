@@ -29,10 +29,10 @@ def run(app, run_test=True):
             progressbar_check['value'] = 30
         elif result == 'space':
             tk_var.job_var.set(LN.check_space)
-            progressbar_check['value'] = 50
+            progressbar_check['value'] = 40
         elif result == 'resizable':
             tk_var.job_var.set(LN.check_resizable)
-            progressbar_check['value'] = 80
+            progressbar_check['value'] = 50
         elif isinstance(result, dict) and result.keys() >= {"arch", "uefi"}:
             GV.COMPATIBILITY_RESULTS.__init__(**result)
             tk_var.job_var.set(LN.check_available_downloads)

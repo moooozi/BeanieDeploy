@@ -41,7 +41,8 @@ def run(app):
     lang_list_fedora.bind('<<TreeviewSelect>>', on_lang_click)
 
     def next_btn_action(*args):
-        spin = locale_list_fedora.focus()
-        if autoinst.langtable.parse_locale(spin).language:
-            tk_var.selected_locale.set(spin)
+        locale = locale_list_fedora.focus()
+        if autoinst.langtable.parse_locale(locale).language:
+            # tk_var.selected_locale.set(spin)
+            GV.KICKSTART.locale = locale
             return page_autoinst_addition_2.run(app)

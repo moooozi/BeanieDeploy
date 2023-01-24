@@ -77,9 +77,9 @@ choose_spin_instead = "Choose distro instead"
 
 windows_question = "Okay! How should %s be installed?"
 windows_options = {'dualboot': 'Install alongside Windows',
-                   'clean': 'Erase everything and start fresh',
+                   'replace_win': 'Install and replace Windows',
                    'custom': 'Custom installation and partitioning'}
-dualboot_size_txt = "Size:"
+dualboot_size_txt = "Reserved space for %s:"
 verify_question = "This is what is going to happen. Click %s to start installing" % btn_install
 verify_text = {
     'no_autoinst': "%s will be downloaded and will boot on the next restart to begin custom installation.",
@@ -95,7 +95,7 @@ add_torrent = "Use torrent whenever possible"
 more_options = "More options"
 
 job_starting_download = "Starting download..."
-
+downloads_number = "File %s out of %s"
 job_dl_install_media = "Downloading install media..."
 dl_timeleft = "Time left"
 dl_speed = "Speed"
@@ -109,17 +109,18 @@ job_checksum = "Checking downloaded file's integrity"
 job_checksum_failed = "Integrity check failed"
 job_checksum_failed_txt = "Failed to check downloaded file integrity, continue anyways?"
 job_checksum_mismatch = "Checksum Mismatch"
-job_checksum_mismatch_txt = "The downloaded file has an unknown fingerprint (SHA256 Hash) and cannot be trusted.\n" \
+job_checksum_mismatch_txt = "The downloaded file has an unexpected SHA256-Hash and cannot be trusted.\n" \
                             "\nFile Hash:\n%s\n" \
                             "Expected Hash:\n%s\n\n" \
-                            "This usually means that the downloaded file is either unsafe or corrupted. Try to download again?"
+                            "This usually means that the downloaded file is either unsafe or corrupted." \
+                            "\nTry to download again?"
 
 job_creating_tmp_part = "Creating temporary boot partition for installer media..."
 job_copying_to_tmp_part = "Copying required installer media files to temporary boot partition..."
 job_adding_tmp_boot_entry = "Adding boot entry..."
 
 cleanup_question = "Clean up downloaded files?"
-cleanup_question_txt = "These files are not useful anymore unless you plan to reuse the app later.\n\nDelete them?"
+cleanup_question_txt = "These files are not useful anymore unless you plan to reuse the app later.\nDelete them?"
 finished_title = "Restart required"
 finished_text = "A restart is required to continue installation, " \
                    "click '%s' to restart now or '%s' to manually restart later" % (btn_restart_now, btn_restart_later)

@@ -11,11 +11,11 @@ custom_keymap_var = tk.StringVar(main.app)
 keymap_timezone_source_var = tk.StringVar(main.app, GV.INSTALL_OPTIONS.keymap_timezone_source)
 job_var = tk.StringVar()
 install_job_var = tk.StringVar(main.app)
-selected_locale = tk.StringVar(main.app)
+# selected_locale = tk.StringVar(main.app)
 
 
 install_method_var = tk.StringVar(main.app, GV.KICKSTART.partition_method)
-dualboot_size_var = tk.StringVar(main.app, 46)
+dualboot_size_var = tk.StringVar(main.app)
 restarting_text_var = tk.StringVar()
 auto_restart_toggle_var = tk.BooleanVar(main.app, GV.INSTALL_OPTIONS.auto_restart)
 torrent_toggle_var = tk.BooleanVar(main.app, GV.INSTALL_OPTIONS.torrent)

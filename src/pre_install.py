@@ -5,6 +5,7 @@ import procedure as prc
 import logging
 import types
 import autoinst
+import functions as fn
 
 
 def run(app):
@@ -16,34 +17,28 @@ def run(app):
 
     wifi_profiles = prc.get_wifi_profiles(GV.PATH.WORK_DIR) if GV.INSTALL_OPTIONS.export_wifi else None
 
-    tmp_part_size: int = GV.SELECTED_SPIN.size + GV.APP_temp_part_failsafe_space
-    if GV.SELECTED_SPIN.is_live_img:
-        tmp_part_size += GV.LIVE_OS_INSTALLER_SPIN.size
-
     install_method = GV.KICKSTART.partition_method
-    GV.PARTITION.tmp_part_size = tmp_part_size
-    GV.PARTITION.temp_part_label = GV.TMP_PARTITION_LABEL
+    # creating new partition for root is only needed when installing alongside Windows
     GV.PARTITION.make_root_partition = True if install_method == 'dualboot' else False
     # Only create separate boot partition if encryption is enabled
     GV.PARTITION.boot_part_size = 0
-    if install_method in ("dualboot", "clean") and GV.KICKSTART.is_encrypted:
-        GV.PARTITION.boot_part_size = GV.APP_linux_boot_partition_size
     # Do not create additional efi partition
     GV.PARTITION.efi_part_size = 0
 
     if GV.KICKSTART.partition_method != 'custom':
+        if GV.KICKSTART.is_encrypted:  # create separate boot partition
+            GV.PARTITION.boot_part_size = GV.APP_linux_boot_partition_size
         GV.KICKSTART.ostree_args = GV.SELECTED_SPIN.ostree_args
         GV.KICKSTART.wifi_profiles = wifi_profiles
-        GV.KICKSTART.lang = tk_var.selected_locale.get()
         GV.INSTALL_OPTIONS.keymap_timezone_source = tk_var.keymap_timezone_source_var.get()
         if GV.INSTALL_OPTIONS.keymap_timezone_source == 'ip':
             GV.KICKSTART.keymap = autoinst.get_keymaps(territory=GV.IP_LOCALE['country_code'])[0]
             GV.KICKSTART.keymap_type = 'xlayout'
             GV.KICKSTART.timezone = autoinst.langtable.list_timezones(territoryId=GV.IP_LOCALE['country_code'])[0]
         elif GV.INSTALL_OPTIONS.keymap_timezone_source == 'select':
-            GV.KICKSTART.keymap = autoinst.get_keymaps(lang=GV.KICKSTART.lang)[0]
+            GV.KICKSTART.keymap = autoinst.get_keymaps(lang=GV.KICKSTART.locale)[0]
             GV.KICKSTART.keymap_type = 'xlayout'
-            GV.KICKSTART.timezone = autoinst.langtable.list_timezones(languageId=GV.KICKSTART.lang)[0]
+            GV.KICKSTART.timezone = autoinst.langtable.list_timezones(languageId=GV.KICKSTART.locale)[0]
         elif GV.INSTALL_OPTIONS.keymap_timezone_source == 'custom':
             GV.KICKSTART.keymap = tk_var.custom_keymap_var.get()
             GV.KICKSTART.keymap_type = 'vc'
@@ -86,12 +81,22 @@ def run(app):
         live_img.file_hint = "live_img_iso"
         installer_args.dl_files.append(live_img)
 
+    for file in installer_args.dl_files:
+        if not hasattr(file, "file_name"):
+            file.file_name = fn.get_file_name_from_url(file.dl_link)
+        if not hasattr(file, "file_name"):
+            file.file_name = fn.get_file_name_from_url(file.dl_link)
+        if not hasattr(file, "hash256"):
+            file.hash256 = ""
+        if not hasattr(file, "size"):
+            file.size = 0
+
     installer_args.ks_kwargs = GV.KICKSTART
     installer_args.part_kwargs = GV.PARTITION
     installer_args.rpm_source_dir = GV.PATH.RPM_SOURCE_DIR
     installer_args.rpm_dest_dir_name = GV.PATH.RPM_DEST_DIR_NAME
     installer_args.grub_cfg_relative_path = GV.PATH.RELATIVE_GRUB_CFG
-    installer_args.tmp_partition_label = GV.TMP_PARTITION_LABEL
+    installer_args.tmp_partition_label = GV.PARTITION.temp_part_label
     installer_args.kickstart_cfg_relative_path = GV.PATH.RELATIVE_KICKSTART
     installer_args.efi_file_relative_path = GV.APP_default_efi_file_path
 

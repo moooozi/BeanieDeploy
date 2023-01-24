@@ -19,13 +19,13 @@ def run(app):
     if GV.KICKSTART.keymap_type == 'vc':
         tk_var.custom_keymap_var.set(GV.KICKSTART.keymap)
 
-    chosen_locale_name = autoinst.langtable.language_name(languageId=tk_var.selected_locale.get())
+    chosen_locale_name = autoinst.langtable.language_name(languageId=GV.KICKSTART.locale)
 
     options_dict = {}
     if GV.IP_LOCALE:
         locale_from_ip = autoinst.langtable.list_locales(territoryId=GV.IP_LOCALE['country_code'])[0]
         locale_from_ip_name = autoinst.langtable.language_name(languageId=locale_from_ip)
-        if locale_from_ip != tk_var.selected_locale.get():
+        if locale_from_ip != GV.KICKSTART.locale:
             options_dict['ip'] = {'name': LN.keymap_tz_option % locale_from_ip_name, 'description': LN.keymap_tz_ip_description}
     options_dict['select'] = {'name': LN.keymap_tz_option % chosen_locale_name, 'description': LN.keymap_tz_selected_description}
     options_dict['custom'] = {'name': LN.keymap_tz_custom}

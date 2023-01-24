@@ -17,23 +17,29 @@ def run(app):
                                          LN.btn_next, lambda: next_btn_action(),
                                          LN.btn_back, lambda: page_1.run(app))
 
-    space_dualboot = GV.APP_dualboot_required_space + GV.APP_additional_failsafe_space + GV.SELECTED_SPIN.size
-    dualboot_space_available = GV.COMPATIBILITY_RESULTS.resizable < space_dualboot
+    space_dualboot = GV.APP_dualboot_required_space + GV.APP_additional_failsafe_space + GV.PARTITION.tmp_part_size
+    dualboot_space_available = GV.COMPATIBILITY_RESULTS.resizable > space_dualboot
     is_auto_installable = GV.SELECTED_SPIN.is_auto_installable
-    options_dict = {}
-    options_dict['dualboot'] = {
-        "name": LN.windows_options['dualboot'],
-        "error": LN.warn_not_available if not is_auto_installable else LN.warn_space if dualboot_space_available else ""
-    }
-    options_dict['clean'] = {
-        "name": LN.windows_options['clean'],
-        "error": LN.warn_not_available if not is_auto_installable else ""}
-    options_dict['custom'] = {"name": LN.windows_options['custom']}
-    radio_buttons = tkt.add_multi_radio_buttons(page_frame, options_dict, tk_var.install_method_var,
+
+    dualboot_error_msg = ""
+    replace_win_error_msg = ""
+    if not is_auto_installable:
+        dualboot_error_msg = LN.warn_not_available
+        replace_win_error_msg = LN.warn_not_available
+    elif not dualboot_space_available:
+        dualboot_error_msg = LN.warn_space
+
+    install_methods_dict = {
+        'dualboot': {"name": LN.windows_options['dualboot'], "error": dualboot_error_msg},
+        'replace_win': {"name": LN.windows_options['replace_win'], "error": replace_win_error_msg},
+        'custom': {"name": LN.windows_options['custom']}}
+
+    radio_buttons = tkt.add_multi_radio_buttons(page_frame, install_methods_dict, tk_var.install_method_var,
                                                 lambda: show_more_options_if_needed())
-    # LOGIC
-    if not GV.SELECTED_SPIN.is_auto_installable:
-        tk_var.install_method_var.set('custom')
+
+    # GUI
+    default = 'custom' if not is_auto_installable else 'dualboot' if dualboot_space_available else 'replace_win'
+    tk_var.install_method_var.set(default)
 
     min_size = fn.byte_to_gb(GV.APP_dualboot_required_space)
     max_size = fn.byte_to_gb(
@@ -41,12 +47,13 @@ def run(app):
     max_size = round(max_size, 2)
     float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
     entry1_frame = ttk.Frame(radio_buttons)
-    entry1_frame.grid(row=1, column=0, columnspan=4, padx=10)
-    size_dualboot_txt_pre = ttk.Label(entry1_frame, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'],
-                                      text=LN.dualboot_size_txt, font=tkt.FONTS_smaller)
+    radio_buttons.rowconfigure(5, weight=1)
+    entry1_frame.grid(row=5, column=0, columnspan=2, padx=0, sticky=GV.UI.DI_VAR['w'])
+    size_dualboot_txt_pre = tkt.add_text_label(entry1_frame, text=LN.dualboot_size_txt % GV.SELECTED_SPIN.name,
+                                               font=tkt.FONTS_smaller, pack=False)
     size_dualboot_entry = ttk.Entry(entry1_frame, width=10, textvariable=tk_var.dualboot_size_var)
-    size_dualboot_txt_post = ttk.Label(entry1_frame, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'],
-                                       text='(%sGB - %sGB)' % (min_size, max_size), font=tkt.FONTS_smaller)
+    size_dualboot_txt_post = tkt.add_text_label(entry1_frame, text='(%sGB - %sGB)' % (min_size, max_size),
+                                                font=tkt.FONTS_smaller, foreground=tkt.color_blue, pack=False)
     tkt.var_tracer(tk_var.dualboot_size_var, "write",
                    lambda *args: fn.validate_with_regex(tk_var.dualboot_size_var, regex=float_regex, mode='fix'))
 
@@ -54,9 +61,9 @@ def run(app):
 
     def show_more_options_if_needed():
         if tk_var.install_method_var.get() == 'dualboot':
-            size_dualboot_txt_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=GV.UI.DI_VAR['nw'])
+            size_dualboot_txt_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=GV.UI.DI_VAR['w'])
             size_dualboot_entry.grid(pady=5, padx=5, column=1, row=0)
-            size_dualboot_txt_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=GV.UI.DI_VAR['nw'])
+            size_dualboot_txt_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=GV.UI.DI_VAR['w'])
         else:
             size_dualboot_txt_pre.grid_forget()
             size_dualboot_entry.grid_forget()
@@ -75,7 +82,7 @@ def run(app):
                 GV.PARTITION.shrink_space = fn.gigabyte(tk_var.dualboot_size_var.get())
             else:
                 return -1
-        if GV.KICKSTART.partition_method == 'custom':
+        elif GV.KICKSTART.partition_method == 'custom':
             GV.PARTITION.shrink_space = 0
             GV.PARTITION.boot_part_size = 0
             GV.PARTITION.efi_part_size = 0

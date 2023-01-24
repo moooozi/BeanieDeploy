@@ -167,7 +167,7 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', lang=None, timezone
     if partition_method == 'dualboot':
         efi_partition = f"mount /dev/disk/by-partuuid/{sys_efi_uuid} /boot/efi "
         root_partition += " --onpart=/dev/disk/by-label/ALLOC-ROOT"
-    elif partition_method == 'clean':
+    elif partition_method == 'replace_win':
         efi_partition = f"part /boot/efi --fstype=efi --label=efi --onpart=/dev/disk/by-partuuid/{sys_efi_uuid}"
         root_partition += f" --onpart=/dev/disk/by-partuuid/{sys_drive_uuid}"
 
@@ -337,14 +337,14 @@ def decide_torrent_or_direct_download(torrent_preferred, direct_link, torrent_li
     return link, is_torrent
 
 
-def check_valid_existing_file(path, file_hash):
-    if not os.path.isfile(path):
+def check_valid_existing_file(file_path, file_hash):
+    if not os.path.isfile(file_path):
         return False
-    if fn.get_sha256_hash(path).lower() == file_hash.lower():
+    if fn.get_sha256_hash(file_path).lower() == file_hash.lower():
         return True
     else:
-        os.remove(path)
-        return False
+        os.remove(file_path)
+        return None
 
 
 def initiate_kickstart_arguments_from_user_input(autoinstall: dict, install_options: dict):
