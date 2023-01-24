@@ -18,7 +18,7 @@ COLOR_MODE = 'dark' if detect_darkmode_in_windows() else 'light'
 FONTS_large = ("Ariel", 24)
 FONTS_medium = ("Ariel Bold", 16)
 FONTS_small = ("Ariel", 13)
-FONTS_smaller = ("Ariel", 11)
+FONTS_smaller = ("Ariel", 12)
 FONTS_tiny = ("Ariel", 11)
 
 tkinter_background_color = '#856ff8'
@@ -104,7 +104,7 @@ def generic_page_layout(parent, title=None, primary_btn_txt=None, primary_btn_co
         if secondary_btn_txt:
             add_secondary_btn(bottom_frame, secondary_btn_txt, secondary_btn_command)
     frame = ttk.Frame(parent)
-    frame.pack(fill='both', expand=1, pady=title_pady, padx=(10, 0))
+    frame.pack(fill='both', expand=1, pady=title_pady, padx=(0, 0))
     return frame
 
 
@@ -127,7 +127,6 @@ def open_popup(parent, x_size: int = None, y_size: int = None,):
     geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position + (x_app_size - x_size) / 2 + 20, y_position + (y_app_size - y_size) / 2 + 20)
     pop.geometry(geometry)
     #pop.protocol("WM_DELETE_WINDOW", False)
-    pop.overrideredirect(True)
     pop.focus_set()
     pop.grab_set()
     border_frame.pack(expand=1, fill='both', pady=5, padx=5)
@@ -142,12 +141,11 @@ def input_pop_up(parent, title_txt=None, msg_txt=None, primary_btn_str=None, sec
     y_size = int(len(msg_txt) / 2.8 + 180 + 13 * msg_txt.count('\n'))
     pop, pop_frame = open_popup(parent, x_size, y_size)
     pop_var = tk.IntVar(pop)
-    msg_font = FONTS_small
-    if msg_txt:
-        add_text_label(pop_frame, msg_txt, msg_font, pady=10)
-
-    generic_page_layout(pop_frame, title_txt, primary_btn_str, lambda *args: validate_pop_input(1),
+    msg_font = FONTS_smaller
+    layout_frame = generic_page_layout(pop_frame, title_txt, primary_btn_str, lambda *args: validate_pop_input(1),
                         secondary_btn_str, lambda *args: validate_pop_input(0), title_pady=5)
+    if msg_txt:
+        add_text_label(layout_frame, msg_txt, msg_font, pady=10)
 
     def validate_pop_input(inputted):
         pop_var.set(inputted)
@@ -197,7 +195,7 @@ def add_multi_radio_buttons(parent, items: dict, var, validate_func=None):
 
 def add_page_title(parent, text, pady=(0, 15)):
     title = ttk.Label(parent, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=text, font=FONTS_medium)
-    title.pack(pady=pady, padx=20, fill='x',)
+    title.pack(pady=pady, padx=0, fill='x',)
     return title
 
 
@@ -218,7 +216,8 @@ def add_check_btn(parent, text, var, command=None, is_disabled=None, pady=5, pac
     return check
 
 
-def add_text_label(parent, text=None, font=FONTS_small, var=None, pady=20, padx=0, foreground=None, anchor=None):
+def add_text_label(parent, text=None, font=FONTS_small, var=None, pady=20, padx=0, foreground=None, anchor=None,
+                   pack=True):
     """
     a preset for tkinter text label that packs by default
     :return: the tkinter label "ttk.Label" object
@@ -227,7 +226,7 @@ def add_text_label(parent, text=None, font=FONTS_small, var=None, pady=20, padx=
         label = ttk.Label(parent, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'],
                           text=text, textvariable=var, foreground=foreground, font=font)
     else: return -1
-    label.pack(pady=pady, padx=padx, anchor=anchor)
+    if pack: label.pack(pady=pady, padx=padx, anchor=anchor)
     return label
 
 
@@ -247,8 +246,8 @@ def add_frame_container(parent, fill='both'):
     return frame
 
 
-def add_progress_bar(parent, length=MINWIDTH - LEFT_FRAME_WIDTH):
-    progressbar = ttk.Progressbar(parent, orient='horizontal', length=length, mode='determinate')
+def add_progress_bar(parent,):
+    progressbar = ttk.Progressbar(parent, orient='horizontal', length=MAXWIDTH, mode='determinate')
     progressbar.pack(pady=(0,20))
     return progressbar
 
