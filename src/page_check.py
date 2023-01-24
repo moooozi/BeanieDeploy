@@ -45,7 +45,6 @@ def run(app, run_test=True):
             return 1
 
     if run_test:
-        fn.get_admin()  # Request elevation (admin) if not running as admin
         gui.run_async_function(prc.compatibility_test, args=(GV.APP_minimal_required_space,))
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_FEDORA_GEO_IP_URL, 'named': 'geo_ip'})

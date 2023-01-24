@@ -7,6 +7,7 @@ app = None
 
 
 def run(testmode=False):
+    fn.get_admin()  # Request elevation (admin) if not running as admin
     global app
     logging.info('APP STARTING: %s v%s' % (GV.APP_SW_NAME, GV.APP_SW_VERSION))
     print('################################################################\n'
