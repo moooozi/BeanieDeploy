@@ -1,7 +1,7 @@
+import page_autoinst_addition_3
 import tkinter.ttk as ttk
 import autoinst
 import page_autoinst_addition_1
-import page_verify
 import tkinter_templates as tkt
 import globals as GV
 import translations.en as LN
@@ -62,4 +62,4 @@ def run(app):
             lists_frame.pack_forget()
 
     def next_btn_action(*args):
-        page_verify.run(app)
+        page_autoinst_addition_3.run(app)

@@ -1,3 +1,4 @@
+import page_autoinst_addition_3
 import popup_advanced_options
 import pre_install
 import tkinter.ttk as ttk
@@ -57,6 +58,8 @@ def run(app):
     def validate_back_page(*args):
         if GV.KICKSTART.partition_method == 'custom':
             page_install_method.run(app)
+        elif GV.KICKSTART.username:
+            page_autoinst_addition_3.run(app)
         else:
             page_autoinst_addition_2.run(app)
 

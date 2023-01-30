@@ -67,7 +67,7 @@ encryption_tpm_unlock = "Auto-unlock with TPM2"
 
 entry_username = "Username"
 entry_fullname = "Full name (optional)"
-password_reminder_txt = "(You will be able to set password for your user account after the installation)"
+password_reminder_txt = "You will be able to set password for your user account after the installation"
 
 list_keymaps = "Keyboard Layout"
 list_timezones = "Timezone"

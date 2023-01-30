@@ -17,8 +17,10 @@ def run(app):
                                          LN.btn_next, lambda: next_btn_action(),
                                          LN.btn_back, lambda: page_1.run(app))
 
-    space_dualboot = GV.APP_dualboot_required_space + GV.APP_additional_failsafe_space + GV.PARTITION.tmp_part_size
+    space_dualboot = GV.APP_dualboot_required_space + GV.APP_additional_failsafe_space + GV.PARTITION.tmp_part_size * 2
+    space_clean = GV.APP_linux_boot_partition_size + GV.APP_additional_failsafe_space + GV.PARTITION.tmp_part_size * 2
     dualboot_space_available = GV.COMPATIBILITY_RESULTS.resizable > space_dualboot
+    replace_win_space_available = GV.COMPATIBILITY_RESULTS.resizable > space_clean
     is_auto_installable = GV.SELECTED_SPIN.is_auto_installable
 
     dualboot_error_msg = ""
@@ -26,8 +28,11 @@ def run(app):
     if not is_auto_installable:
         dualboot_error_msg = LN.warn_not_available
         replace_win_error_msg = LN.warn_not_available
-    elif not dualboot_space_available:
-        dualboot_error_msg = LN.warn_space
+    else:
+        if not dualboot_space_available:
+            dualboot_error_msg = LN.warn_space
+        if not replace_win_space_available:
+            replace_win_error_msg = LN.warn_space
 
     install_methods_dict = {
         'dualboot': {"name": LN.windows_options['dualboot'], "error": dualboot_error_msg},
@@ -38,8 +43,9 @@ def run(app):
                                                 lambda: show_more_options_if_needed())
 
     # GUI
-    default = 'custom' if not is_auto_installable else 'dualboot' if dualboot_space_available else 'replace_win'
-    tk_var.install_method_var.set(default)
+    if not tk_var.install_method_var.get():
+        default = 'custom' if not is_auto_installable else 'dualboot' if dualboot_space_available else 'replace_win'
+        tk_var.install_method_var.set(default)
 
     min_size = fn.byte_to_gb(GV.APP_dualboot_required_space)
     max_size = fn.byte_to_gb(

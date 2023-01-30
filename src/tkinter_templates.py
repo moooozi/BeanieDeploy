@@ -122,10 +122,10 @@ def open_popup(parent, x_size: int = None, y_size: int = None,):
     y_position = parent.winfo_y()
     x_app_size = parent.winfo_width()
     y_app_size = parent.winfo_height()
-
     #  position the pop-up window at the center of its parent
     geometry = "%dx%d+%d+%d" % (x_size, y_size, x_position + (x_app_size - x_size) / 2 + 20, y_position + (y_app_size - y_size) / 2 + 20)
     pop.geometry(geometry)
+    apply_theme(COLOR_MODE, pop)
     #pop.protocol("WM_DELETE_WINDOW", False)
     pop.focus_set()
     pop.grab_set()
@@ -187,8 +187,8 @@ def add_multi_radio_buttons(parent, items: dict, var, validate_func=None):
                                                                     sticky=GV.UI.DI_VAR['w'])
         elif "description" in items[item] and items[item]["description"]:
             ttk.Label(frame, wraplength=GV.UI.width, justify="center", text=items[item]["description"],
-                      font=FONTS_smaller,foreground=color_blue).grid(ipadx=5, row=index, column=1,
-                                                                     sticky=GV.UI.DI_VAR['w'])
+                      font=FONTS_tiny, foreground=color_blue).grid(ipadx=5, row=index, column=1,
+                                                                   sticky=GV.UI.DI_VAR['w'])
     frame.grid_columnconfigure(0, weight=1)
     return frame
 

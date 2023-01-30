@@ -21,3 +21,6 @@ auto_restart_toggle_var = tk.BooleanVar(main.app, GV.INSTALL_OPTIONS.auto_restar
 torrent_toggle_var = tk.BooleanVar(main.app, GV.INSTALL_OPTIONS.torrent)
 encrypt_passphrase_var = tk.StringVar(main.app, GV.KICKSTART.passphrase)
 encryption_tpm_unlock_toggle_var = tk.BooleanVar(main.app, GV.KICKSTART.tpm_auto_unlock)
+
+fullname = tk.StringVar(main.app, GV.KICKSTART.fullname)
+username = tk.StringVar(main.app, GV.KICKSTART.username)

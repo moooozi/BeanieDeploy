@@ -4,7 +4,7 @@ Megabyte = 1024 * 1024
 Gigabyte = 1024 * 1024 * 1024
 
 APP_SW_NAME = "Lnixify"
-APP_SW_VERSION = '0.1-alpha'
+APP_SW_VERSION = '0.4-alpha'
 APP_minimal_required_space = 4 * Gigabyte
 APP_dualboot_required_space = 35 * Gigabyte
 APP_additional_failsafe_space = 2 * Gigabyte
@@ -62,6 +62,8 @@ KICKSTART.timezone = ''
 KICKSTART.keymap_type = ''
 KICKSTART.keymap = ''
 KICKSTART.ostree_args = ''
+KICKSTART.fullname = ''
+KICKSTART.username = ''
 KICKSTART.wifi_profiles = []
 
 PARTITION = types.SimpleNamespace()

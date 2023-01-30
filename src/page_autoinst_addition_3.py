@@ -1,0 +1,42 @@
+import tkinter.ttk as ttk
+import page_autoinst_addition_2
+import page_verify
+import tkinter_templates as tkt
+import globals as GV
+import translations.en as LN
+import global_tk_vars as tk_var
+
+
+def run(app):
+    """the autoinstall page on which you choose your timezone and keyboard layout"""
+    tkt.init_frame(app)
+    # *************************************************************************************************************
+    if GV.SELECTED_SPIN.desktop == "GNOME":
+        GV.KICKSTART.username = ''
+        return page_verify.run(app)
+
+    page_frame = tkt.generic_page_layout(app, LN.title_autoinst4,
+                                         LN.btn_next, lambda: next_btn_action(),
+                                         LN.btn_back, lambda: page_autoinst_addition_2.run(app))
+
+    entry1_frame = tkt.add_frame_container(page_frame)
+    fullname_pre = tkt.add_text_label(entry1_frame, text=LN.entry_fullname, font=tkt.FONTS_smaller, pack=False)
+    fullname_entry = ttk.Entry(entry1_frame, width=10, textvariable=tk_var.fullname)
+    username_pre = tkt.add_text_label(entry1_frame, text=LN.entry_username, font=tkt.FONTS_smaller, pack=False)
+    username_entry = ttk.Entry(entry1_frame, width=10, textvariable=tk_var.username)
+
+    fullname_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=GV.UI.DI_VAR['w'])
+    fullname_entry.grid(pady=5, padx=5, column=1, row=0)
+    username_pre.grid(pady=5, padx=(10, 0), column=0, row=1, sticky=GV.UI.DI_VAR['w'])
+    username_entry.grid(pady=5, padx=5, column=1, row=1)
+    encrypt_pass_note = tkt.add_text_label(entry1_frame, text=LN.password_reminder_txt, font=tkt.FONTS_smaller,
+                                           foreground=tkt.color_blue, pack=False)
+    encrypt_pass_note.grid(pady=5, padx=(10, 0), column=0, columnspan=5, row=2, sticky=GV.UI.DI_VAR['nw'])
+
+    def next_btn_action(*args):
+        if not username_entry.get():
+            return -1
+        GV.KICKSTART.username = username_entry.get()
+        GV.KICKSTART.fullname = fullname_entry.get()
+
+        return page_verify.run(app)
