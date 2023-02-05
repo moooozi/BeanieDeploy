@@ -275,9 +275,8 @@ def var_tracer(var, mode, cb):
     :param cb: the callback function
     """
     tracers_list = var.trace_info()
-    if tracers_list:
-        return 'tracer exists'
-    else:
-        var.trace_add(mode=mode, callback=cb)
+    for tracer in tracers_list:
+        var.trace_remove(*tracer)
+    var.trace_add(mode=mode, callback=cb)
 
 
