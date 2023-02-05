@@ -264,17 +264,17 @@ def extract_wifi_profiles(folder_path):
 
 def validate_with_regex(var, regex, mode='read'):
     regex_compiled = re.compile(regex)
-    while var.get() != '':
-        if re.match(regex_compiled, var.get()):
+    while var != '':
+        if re.match(regex_compiled, var):
             print('Note: input has been accepted')
             return True
         elif mode == 'read':
             return False
         elif mode == 'fix':
-            var.set(var.get()[:-1])
+            var = var[:-1]
             print('Note: input has been modified, reason: forbidden character')
     # indicate the string is empty now
-    return 'empty'
+    return None
 
 
 def get_admin():
