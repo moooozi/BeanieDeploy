@@ -52,17 +52,17 @@ def run(app):
     max_size = fn.byte_to_gb(
         GV.COMPATIBILITY_RESULTS.resizable - GV.SELECTED_SPIN.size - GV.APP_additional_failsafe_space)
     max_size = round(max_size, 2)
-    float_regex = r'^[0-9]*\.?[0-9]{0,3}$'  # max 3 decimal digits
     entry1_frame = ttk.Frame(radio_buttons)
     radio_buttons.rowconfigure(5, weight=1)
     entry1_frame.grid(row=5, column=0, columnspan=2, padx=0, sticky=GV.UI.DI_VAR['w'])
     size_dualboot_txt_pre = tkt.add_text_label(entry1_frame, text=LN.dualboot_size_txt % GV.SELECTED_SPIN.name,
                                                font=tkt.FONTS_smaller, pack=False)
-    size_dualboot_entry = ttk.Entry(entry1_frame, width=10, textvariable=tk_var.dualboot_size_var)
+    size_dualboot_entry = ttk.Entry(entry1_frame, width=10, textvariable=tk_var.dualboot_size_var,)
+    validation_func = app.register(lambda x: x.replace('.', '', 1).isdigit() and min_size <= float(x) <= max_size)
+    size_dualboot_entry.config(validate='focusout', validatecommand=(validation_func, '%P'))
     size_dualboot_txt_post = tkt.add_text_label(entry1_frame, text='(%sGB - %sGB)' % (min_size, max_size),
                                                 font=tkt.FONTS_smaller, foreground=tkt.color_blue, pack=False)
-    tkt.var_tracer(tk_var.dualboot_size_var, "write",
-                   lambda *args: fn.validate_with_regex(tk_var.dualboot_size_var, regex=float_regex, mode='fix'))
+    tkt.var_tracer(tk_var.dualboot_size_var, "write", lambda *args: size_dualboot_entry.validate())
 
     app.update_idletasks()
 
@@ -83,9 +83,9 @@ def run(app):
             return -1
         GV.KICKSTART.partition_method = tk_var.install_method_var.get()
         if GV.KICKSTART.partition_method == 'dualboot':
-            syntax_valid = fn.validate_with_regex(tk_var.dualboot_size_var, regex=float_regex,
-                                                  mode='read') not in (False, 'empty')
-            if syntax_valid and min_size <= float(tk_var.dualboot_size_var.get()) <= max_size:
+            size_dualboot_entry.validate()
+            syntax_invalid = 'invalid' in size_dualboot_entry.state()
+            if not syntax_invalid:
                 GV.PARTITION.shrink_space = fn.gigabyte(tk_var.dualboot_size_var.get())
             else:
                 return -1
