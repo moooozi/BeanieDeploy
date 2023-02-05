@@ -17,7 +17,8 @@ def run(app):
                                          LN.btn_next, lambda: next_btn_action(),
                                          LN.btn_back, lambda: page_1.run(app))
 
-    space_dualboot = GV.APP_dualboot_required_space + GV.APP_additional_failsafe_space + GV.PARTITION.tmp_part_size * 2
+    space_dualboot = GV.APP_dualboot_required_space + GV.APP_linux_boot_partition_size + \
+                     GV.APP_additional_failsafe_space + GV.PARTITION.tmp_part_size * 2
     space_clean = GV.APP_linux_boot_partition_size + GV.APP_additional_failsafe_space + GV.PARTITION.tmp_part_size * 2
     dualboot_space_available = GV.COMPATIBILITY_RESULTS.resizable > space_dualboot
     replace_win_space_available = GV.COMPATIBILITY_RESULTS.resizable > space_clean
