@@ -59,7 +59,7 @@ def run(app):
                                                font=tkt.FONTS_smaller, pack=False)
     size_dualboot_entry = ttk.Entry(entry1_frame, width=10, textvariable=tk_var.dualboot_size_var,)
     validation_func = app.register(lambda x: x.replace('.', '', 1).isdigit() and min_size <= float(x) <= max_size)
-    size_dualboot_entry.config(validate='focusout', validatecommand=(validation_func, '%P'))
+    size_dualboot_entry.config(validate='none', validatecommand=(validation_func, '%P'))
     size_dualboot_txt_post = tkt.add_text_label(entry1_frame, text='(%sGB - %sGB)' % (min_size, max_size),
                                                 font=tkt.FONTS_smaller, foreground=tkt.color_blue, pack=False)
     tkt.var_tracer(tk_var.dualboot_size_var, "write", lambda *args: size_dualboot_entry.validate())
@@ -85,10 +85,9 @@ def run(app):
         if GV.KICKSTART.partition_method == 'dualboot':
             size_dualboot_entry.validate()
             syntax_invalid = 'invalid' in size_dualboot_entry.state()
-            if not syntax_invalid:
-                GV.PARTITION.shrink_space = fn.gigabyte(tk_var.dualboot_size_var.get())
-            else:
+            if syntax_invalid:
                 return -1
+            GV.PARTITION.shrink_space = fn.gigabyte(tk_var.dualboot_size_var.get())
         elif GV.KICKSTART.partition_method == 'custom':
             GV.PARTITION.shrink_space = 0
             GV.PARTITION.boot_part_size = 0
