@@ -5,7 +5,7 @@ import tkinter_templates as tkt
 import globals as GV
 import translations.en as LN
 import global_tk_vars as tk_var
-
+import functions as fn
 
 def run(app):
     """the autoinstall page on which you choose your timezone and keyboard layout"""
@@ -33,8 +33,19 @@ def run(app):
                                            foreground=tkt.color_blue, pack=False)
     encrypt_pass_note.grid(pady=5, padx=(10, 0), column=0, columnspan=5, row=2, sticky=GV.UI.DI_VAR['nw'])
 
+    validation_func = app.register(lambda var: fn.validate_with_regex(var, valid_username_regex) is True)
+    username_entry.config(validate='none', validatecommand=(validation_func, '%P'))
+    # Regex
+    portable_fs_chars = r'a-zA-Z0-9._-'
+    _name_base = r'[a-zA-Z0-9._][' + portable_fs_chars + r']{0,30}([' + portable_fs_chars + r']|\$)?'
+    valid_username_regex = r'^' + _name_base + '$'   # A regex for user and group names.
+
+    tkt.var_tracer(tk_var.username, "write", lambda *args: username_entry.validate())
+
     def next_btn_action(*args):
-        if not username_entry.get():
+        username_entry.validate()
+        syntax_invalid = 'invalid' in username_entry.state()
+        if syntax_invalid:
             return -1
         GV.KICKSTART.username = username_entry.get()
         GV.KICKSTART.fullname = fullname_entry.get()
