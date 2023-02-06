@@ -262,6 +262,19 @@ def extract_wifi_profiles(folder_path):
     return out.returncode
 
 
+def validate_with_regex(var, regex, mode='read'):
+    regex_compiled = re.compile(regex)
+    while var != '':
+        if re.match(regex_compiled, var):
+            return True
+        elif mode == 'read':
+            return False
+        elif mode == 'fix':
+            var = var[:-1]
+    # indicate the string is empty now
+    return None
+
+
 def get_admin():
     from sys import executable, argv
     if not ctypes.windll.shell32.IsUserAnAdmin():
