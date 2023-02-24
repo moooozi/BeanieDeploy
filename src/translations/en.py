@@ -96,7 +96,7 @@ add_auto_restart = "Restart automatically"
 add_torrent = "Use torrent whenever possible"
 more_options = "More options"
 
-distro_hint = {'Fedora Workstation': 'The main Fedora edition with GNOME desktop environment (default)'}
+distro_hint = {'Fedora Workstation': 'The main Fedora edition with GNOME desktop environment'}
 
 job_starting_download = "Starting download..."
 downloads_number = "File %s out of %s"
