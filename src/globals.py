@@ -81,7 +81,11 @@ USERNAME_WINDOWS = ''
 SELECTED_SPIN = None
 
 UI = types.SimpleNamespace()
-UI.DI_VAR = {'w': 'w', 'e': 'e', 'ne': 'ne', 'se': 'se', 'sw': 'sw', 'nw': 'nw', 'l': 'left', 'r': 'right'}
+UI.DI_VAR = {"w": "w", "e": "w",
+             "ne": "ne", "nw": "nw",
+             "se": "se", "sw": "sw",
+             "nse": "nse", "nsw": "nsw",
+             "l": "left", "r": "right"}
 UI.desktop = ''
 UI.combo_list_spin = ''
 UI.width = 1000

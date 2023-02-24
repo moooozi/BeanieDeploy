@@ -1,6 +1,7 @@
 import page_autoinst_addition_3
 import popup_advanced_options
 import pre_install
+import tkinter
 import tkinter.ttk as ttk
 import tkinter_templates as tkt
 import page_autoinst_addition_2
@@ -38,20 +39,22 @@ def run(app):
 
     for i in range(len(review_sel)):
         review_tree.insert('', index='end', iid=str(i), values=(review_sel[i],))
-    review_tree.pack(ipady=5, pady=10, padx=(0, 5), fill='x', expand=1)
+    review_tree.grid(row=0, column=0, ipady=5, pady=10, padx=(0, 5), sticky='news',)
 
     # additions options (checkboxes)
-    frame_options = tkt.add_frame_container(page_frame)
 
-    check_restart = tkt.add_check_btn(frame_options, text=LN.add_auto_restart, var=tk_var.auto_restart_toggle_var, pack=False)
-    check_restart.grid(ipady=5, row=0, column=0, sticky=GV.UI.DI_VAR['nw'])
+    page_frame.columnconfigure(0, weight=1)
+    page_frame.grid_rowconfigure(0, weight=3)
+
+    check_restart = tkt.add_check_btn(page_frame, text=LN.add_auto_restart, var=tk_var.auto_restart_toggle_var, pack=False)
+    check_restart.grid(ipady=8, row=1, column=0, sticky=GV.UI.DI_VAR['nsw'])
 
     '''
     c3_add = ttk.Checkbutton(page_frame, text=LN.add_torrent, variable=torrent_toggle_var, onvalue=1, offvalue=0)
     '''
-    more_options_btn = ttk.Label(frame_options, justify="center", text=LN.more_options, font=tkt.FONTS_smaller,
+    more_options_btn = ttk.Label(page_frame, justify="center", text=LN.more_options, font=tkt.FONTS_smaller,
                                  foreground=tkt.color_blue)
-    more_options_btn.grid(ipady=5, row=2, column=0, sticky=GV.UI.DI_VAR['nw'])
+    more_options_btn.grid(ipady=8, padx=5, row=2, column=0, sticky=GV.UI.DI_VAR['nsw'])
     more_options_btn.bind("<Button-1>",
                           lambda x: popup_advanced_options.run(master=get_first_tk_parent(app)))
 

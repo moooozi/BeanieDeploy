@@ -11,9 +11,17 @@ def right_to_left_lang(is_true):
     the input variable to False
     :rtype: dictionary with the new directions"""
     if is_true:
-        return {"w": "e", "e": "w", "ne": "nw", "se": "sw", "sw": "se", "nw": "ne", "l": "right", "r": "left"}
+        return {"w": "e", "e": "w",
+                "ne": "nw", "nw": "ne",
+                "se": "sw", "sw": "se",
+                "nse": "nsw", "nsw": "nse",
+                "l": "right", "r": "left"}
     else:
-        return {"w": "w", "e": "e", "ne": "ne", "se": "se", "sw": "sw", "nw": "nw", "l": "left", "r": "right"}
+        return {"w": "w", "e": "w",
+                "ne": "ne", "nw": "nw",
+                "se": "se", "sw": "sw",
+                "nse": "nse", "nsw": "nsw",
+                "l": "left", "r": "right"}
 
 
 def change_lang(new_lang):
