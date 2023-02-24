@@ -5,12 +5,12 @@ from gui_functions import detect_darkmode_in_windows
 import globals as GV
 import resources.style.theme.svtheme.sv_ttk as sv_ttk
 
-WIDTH = 750
-HEIGHT = 500
+WIDTH = 780
+HEIGHT = 520
 MINWIDTH = 650
 MINHEIGHT = 450
 MAXWIDTH = WIDTH + 300
-MAXHEIGHT = HEIGHT + 100
+MAXHEIGHT = HEIGHT + 200
 WIDTH_OFFSET = 400
 HEIGHT_OFFSET = 400
 TOP_FRAME_HEIGHT = 80
@@ -26,6 +26,7 @@ FONTS_tiny = ("Ariel", 11)
 tkinter_background_color = ''
 color_red = ''
 color_blue = ''
+color_green = ''
 top_background_color = ''
 
 
@@ -43,18 +44,20 @@ def dark_decorations(ye_or_nah, tkinter):
 
 
 def dark_theme(ye_or_nah, tkinter):
-    global tkinter_background_color, color_red, color_blue, top_background_color, left_background_color
+    global tkinter_background_color, color_red, color_blue, color_green, top_background_color
     if not ye_or_nah:
         color_mode = 'light'
         tkinter_background_color = '#856ff8'
         color_red = '#e81123'
         color_blue = '#0067b8'
+        color_green = '#008009'
         top_background_color = '#e6e6e6'
     else:
         color_mode = 'dark'
         tkinter_background_color = '#856ff8'
         color_red = '#ff4a4a'
         color_blue = '#3aa9ff'
+        color_green = '#5dd25e'
         top_background_color = '#2b2b2b'
     dark_decorations(ye_or_nah, tkinter)
     sv_ttk.set_theme(color_mode)
@@ -71,7 +74,7 @@ def init_tkinter(title, icon=None):
     tkinter.minsize(MINWIDTH, MINHEIGHT)
     tkinter.maxsize(int(MAXWIDTH * dpi_factor), int(MAXHEIGHT * dpi_factor))
     tkinter.iconbitmap(icon)
-    # tkinter.tk.call('tk', 'scaling', 1.4)
+    #tkinter.tk.call('tk', 'scaling', 1.4)
     dark_theme(DARK_MODE, tkinter)
     # tkinter.resizable(False, False)
 
@@ -185,7 +188,7 @@ def add_secondary_btn(parent, text, command):
 
 
 def add_multi_radio_buttons(parent, items: dict, var, validate_func=None):
-    frame = add_frame_container(parent, fill='both')
+    frame = add_frame_container(parent, fill='both', expand=1)
     for index, item in enumerate(items.keys()):
         button = add_radio_btn(frame, items[item]["name"], var, item, command=lambda: validate_func(), pack=False)
         button.grid(ipady=5, row=index, column=0, sticky=GV.UI.DI_VAR['nw'])
@@ -249,10 +252,9 @@ def add_lang_list(parent, var, languages):
     return lang_list
 
 
-def add_frame_container(parent, fill='both'):
+def add_frame_container(parent, **kwargs):
     frame = ttk.Frame(parent, width=MINWIDTH)
-    frame.pack(expand=1, fill=fill, padx=0, pady=0)
-
+    frame.pack(**kwargs)
     return frame
 
 
