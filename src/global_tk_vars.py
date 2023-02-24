@@ -2,7 +2,7 @@ import tkinter as tk
 import globals as GV
 import main
 
-desktop_var = tk.StringVar(main.app, GV.UI.desktop)
+distro_var = tk.StringVar(main.app, GV.UI.desktop)
 export_wifi_toggle_var = tk.BooleanVar(main.app, GV.INSTALL_OPTIONS.export_wifi)
 enable_encryption_toggle_var = tk.BooleanVar(main.app, GV.KICKSTART.is_encrypted)
 encrypt_pass_toggle_var = tk.BooleanVar(main.app)

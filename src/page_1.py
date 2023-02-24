@@ -1,4 +1,4 @@
-import tkinter as tk
+import tkinter
 import tkinter.ttk as ttk
 import tkinter_templates as tkt
 import globals as GV
@@ -13,47 +13,52 @@ def run(app):
     """the page on which you choose which distro/flaver and whether Autoinstall should be on or off"""
     tkt.init_frame(app)
     # *************************************************************************************************************
-    page_frame = tkt.generic_page_layout(app, LN.startup_sentence + LN.desktop_question, LN.btn_next, lambda: next_btn_action())
-    available_desktop = []
-    dict_spins_with_fullname_keys = []
+    page_frame = tkt.generic_page_layout(app, LN.desktop_question, LN.btn_next, lambda: next_btn_action())
+    list_spins_with_fullname = []
+    listed_distro_dict = {}
     for dist in GV.ACCEPTED_SPINS:
         spin_fullname = f"{dist.name} {dist.version}"
-        dict_spins_with_fullname_keys.append(spin_fullname)
-        if dist.desktop and dist.desktop not in available_desktop:
-            available_desktop.append(dist.desktop)
-    desktops_description_dict = {}
-    for desktop in available_desktop:
-        # empty description if no description exists
-        description = LN.desktop_hints[desktop] if desktop in LN.desktop_hints.keys() else ""
-        desktops_description_dict[desktop] = {"name": desktop, "description": description}
-    desktops_description_dict["else"] = {"name": LN.choose_spin_instead}
-    frame_desktop = tkt.add_multi_radio_buttons(page_frame, desktops_description_dict, tk_var.desktop_var,
-                                                lambda: validate_input())
-    distro_description = ttk.Combobox(frame_desktop, values=dict_spins_with_fullname_keys, state='readonly')
-    distro_description.bind("<<ComboboxSelected>>", lambda *args: validate_input())
+        list_spins_with_fullname.append(spin_fullname)
+        if dist.is_default:
+            # tk_var.distro_var.set(spin_fullname) if tk_var.distro_var.get() == '' else ''
+            listed_distro_dict[spin_fullname] = {
+                "name": spin_fullname,
+                "description": LN.distro_hint[dist.name] if dist.name in LN.distro_hint else ""
+            }
+
+    listed_distro_dict["else"] = {"name": LN.something_else}
+    frame_distro = tkt.add_multi_radio_buttons(page_frame, listed_distro_dict, tk_var.distro_var,
+                                               lambda: validate_input())
+    distro_combolist = ttk.Combobox(frame_distro, values=list_spins_with_fullname, state='readonly')
+    distro_combolist.bind("<<ComboboxSelected>>", lambda *args: validate_input())
+
+    # GUI Bugfix
     if not GV.UI.combo_list_spin:
-        distro_description.set(LN.choose_fedora_spin)
+        distro_combolist.set(LN.choose_distro)
     else:
-        distro_description.set(GV.UI.combo_list_spin)
-    frame_desktop.grid_rowconfigure(len(available_desktop)+1, weight=1)  # GUI bugfix for distro_description
-    selected_spin_info_tree = ttk.Treeview(frame_desktop, columns='info', show='', height=2,)
+        distro_combolist.set(GV.UI.combo_list_spin)
+
+    info_frame = tkinter.Frame(page_frame)
+    tkt.add_text_label(info_frame, LN.info_about_selection, anchor=GV.UI.DI_VAR['w'], pady=5, padx=4,
+                       foreground=tkt.color_green, font=tkt.FONTS_smaller)
+    frame_distro.grid_rowconfigure(len(listed_distro_dict)+1, weight=1)  # GUI bugfix for distro_description
+    selected_spin_info_tree = ttk.Treeview(info_frame, columns='info', show='', height=4,)
     selected_spin_info_tree.configure(selectmode='none')
+    selected_spin_info_tree.column('info', width=250)
+    selected_spin_info_tree.pack(ipady=5, fill='x', )
 
     def validate_input(*args):
-        if tk_var.desktop_var.get() == 'else':
-            distro_description.grid(ipady=5,padx=(30, 0), row=len(available_desktop)+1, column=0, columnspan=2,
-                                 sticky=GV.UI.DI_VAR['nw'])
-            if distro_description.get() in dict_spins_with_fullname_keys:
-                spin_index = dict_spins_with_fullname_keys.index(distro_description.get())
-            else:
-                spin_index = None
-        else:
-            distro_description.grid_forget()
-            spin_index = None
-            for index, dist in enumerate(GV.ACCEPTED_SPINS):
-                if dist.desktop == tk_var.desktop_var.get():
-                    if not bool(dist.ostree_args):
-                        spin_index = index
+        spin_index = None
+        if (distro := tk_var.distro_var.get()) in list_spins_with_fullname:
+            spin_index = list_spins_with_fullname.index(distro)
+            distro_combolist.grid_forget()
+
+        elif tk_var.distro_var.get() == 'else':
+            distro_combolist.grid(ipady=5, padx=(30, 0), row=len(listed_distro_dict)+1, column=0, columnspan=2,
+                                  sticky=GV.UI.DI_VAR['nw'])
+            if distro_combolist.get() in list_spins_with_fullname:
+                spin_index = list_spins_with_fullname.index(distro_combolist.get())
+
         if spin_index is not None:
             GV.SELECTED_SPIN = GV.ACCEPTED_SPINS[spin_index]
             total_size = GV.SELECTED_SPIN.size
@@ -63,11 +68,19 @@ def run(app):
                 dl_size_txt = LN.init_download % fn.byte_to_gb(total_size)
             else:
                 dl_size_txt = LN.total_download % fn.byte_to_gb(total_size)
-            dl_spin_name_text = '%s: %s %s' % (LN.selected_spin, GV.SELECTED_SPIN.name, GV.SELECTED_SPIN.version)
-            selected_spin_info_tree.grid(ipady=5, row=len(available_desktop), rowspan=5, column=1, columnspan=2, sticky=GV.UI.DI_VAR['se'])
+            dl_spin_name_text = f'{LN.selected_dist}: {GV.SELECTED_SPIN.name} {GV.SELECTED_SPIN.version}'
+            dl_spin_desktop = f'{LN.desktop_environment}: {GV.SELECTED_SPIN.desktop}'
+
+            if GV.SELECTED_SPIN.desktop in LN.desktop_hints.keys():
+                dl_spin_desktop_desc = LN.desktop_hints[GV.SELECTED_SPIN.desktop]
+            else:
+                dl_spin_desktop_desc = ""
+            info_frame.pack(side="bottom", fill='x')
             selected_spin_info_tree.delete(*selected_spin_info_tree.get_children())
             selected_spin_info_tree.insert('', index='end', iid='name', values=(dl_spin_name_text,))
             selected_spin_info_tree.insert('', index='end', iid='size', values=(dl_size_txt,))
+            selected_spin_info_tree.insert('', index='end', iid='desktop', values=(dl_spin_desktop,))
+            selected_spin_info_tree.insert('', index='end', iid='desktop_desc', values=(dl_spin_desktop_desc,))
         return spin_index
 
     validate_input()
@@ -76,8 +89,8 @@ def run(app):
         if validate_input() is None:
             return -1
         # Saving UI state
-        GV.UI.combo_list_spin = distro_description.get()
-        GV.UI.desktop = tk_var.desktop_var.get()
+        GV.UI.combo_list_spin = distro_combolist.get()
+        #GV.UI.desktop = tk_var.desktop_var.get()
         # LOG #############################################
         log = '\nFedora Spin has been selected, spin details:'
         for key, value in vars(GV.SELECTED_SPIN).items():
