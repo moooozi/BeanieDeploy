@@ -91,7 +91,7 @@ def add_boot_entry(boot_efi_file_path, device_path, is_permanent: bool = False):
 
 
 def build_autoinstall_ks_file(keymap=None, keymap_type='vc', locale=None, timezone=None, ostree_args=None, username='', fullname='',
-                              wifi_profiles=None, is_encrypted: bool = False, passphrase: str = None,
+                              wifi_profiles_dir_name=None, is_encrypted: bool = False, passphrase: str = None,
                               tpm_auto_unlock: bool = True, live_img_url='', additional_repos=True,
                               sys_drive_uuid=None, sys_efi_uuid=None,
                               partition_method=None, additional_rpm_dir=None, enable_rpm_fusion=False):
@@ -106,26 +106,25 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', locale=None, timezo
     kickstart_lines.append("%end")
 
     # Importing Wi-Fi profiles
-    if wifi_profiles and isinstance(wifi_profiles, list):
+    if wifi_profiles_dir_name:
         kickstart_lines.append("# Importing Wi-Fi profiles")
         kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post_wifi.log")
         kickstart_lines.append("mkdir -p /mnt/sysimage/etc/NetworkManager/system-connections")
-        template = r"""[connection]\nid=%name%\ntype=wifi\n\n[wifi]\nhidden=%hidden%\nssid=%ssid%\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%password%\n\n[ipv4]\nmethod=auto\n\n[ipv6]\naddr-gen-mode=stable-privacy\nmethod=auto\n\n[proxy]\n"""
-        for index, profile in enumerate(wifi_profiles):
-            network_file = template.replace('%name%', profile['name']).replace('%ssid%', profile['ssid']).replace('%hidden%', profile['hidden']).replace('%password%', profile['password'])
-            kickstart_lines.append(f"echo $'{network_file}' > /mnt/sysimage/etc/NetworkManager/system-connections/imported_wifi{str(index)}.nmconnection")
+        kickstart_lines.append(f"cp /run/install/repo/{wifi_profiles_dir_name}/*.* /mnt/sysimage/etc/NetworkManager/system-connections")
         kickstart_lines.append("%end")
+    # Installing additional packages
     if additional_rpm_dir:
         install_command = "rpm-ostree install" if ostree_args else "dnf install"
         kickstart_lines.append("# Installing additional packages")
         kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post_additional_rpm1.log")
-        kickstart_lines.append("mkdir -p /mnt/sysimage/home/tmp_rpm")
-        kickstart_lines.append("cp /run/install/repo/" + additional_rpm_dir + '/* /mnt/sysimage/root/tmp_rpm')
+        kickstart_lines.append("mkdir -p /mnt/sysimage/root/tmp_rpm")
+        kickstart_lines.append(f"cp /run/install/repo/{additional_rpm_dir}/*.rpm /mnt/sysimage/root/tmp_rpm")
         kickstart_lines.append("%end")
         kickstart_lines.append("%post --logfile=/root/ks-post_additional_rpm2.log")
         kickstart_lines.append(f"{install_command} /root/tmp_rpm/*.rpm -y")
         kickstart_lines.append("rm -rf /root/tmp_rpm")
         kickstart_lines.append("%end")
+    # Activating encryption auto-unlock using TPM2 chip
     if is_encrypted and passphrase and tpm_auto_unlock:
         kickstart_lines.append("# Activating encryption auto-unlock using TPM2 chip")
         kickstart_lines.append("%post  --logfile=/root/ks-post_tpm2_unlock.log")
