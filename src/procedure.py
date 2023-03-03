@@ -94,7 +94,7 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', locale=None, timezo
                               wifi_profiles=None, is_encrypted: bool = False, passphrase: str = None,
                               tpm_auto_unlock: bool = True, live_img_url='', additional_repos=True,
                               sys_drive_uuid=None, sys_efi_uuid=None,
-                              partition_method=None, additional_rpm_dir=None):
+                              partition_method=None, additional_rpm_dir=None, enable_rpm_fusion=False):
     kickstart_lines = []
     kickstart_lines.append("# Kickstart file created by Lnixify.")
     kickstart_lines.append("graphical")
@@ -113,50 +113,54 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', locale=None, timezo
         template = r"""[connection]\nid=%name%\ntype=wifi\n\n[wifi]\nhidden=%hidden%\nssid=%ssid%\n\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=%password%\n\n[ipv4]\nmethod=auto\n\n[ipv6]\naddr-gen-mode=stable-privacy\nmethod=auto\n\n[proxy]\n"""
         for index, profile in enumerate(wifi_profiles):
             network_file = template.replace('%name%', profile['name']).replace('%ssid%', profile['ssid']).replace('%hidden%', profile['hidden']).replace('%password%', profile['password'])
-            kickstart_lines.append("echo $'" + network_file + \
-                             "' > " + "/mnt/sysimage/etc/NetworkManager/system-connections/imported_wifi%s.nmconnection" % str(index))
+            kickstart_lines.append(f"echo $'{network_file}' > /mnt/sysimage/etc/NetworkManager/system-connections/imported_wifi{str(index)}.nmconnection")
         kickstart_lines.append("%end")
     if additional_rpm_dir:
+        install_command = "rpm-ostree install" if ostree_args else "dnf install"
         kickstart_lines.append("# Installing additional packages")
-        kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post_additional_rpm.log")
+        kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post_additional_rpm1.log")
         kickstart_lines.append("mkdir -p /mnt/sysimage/home/tmp_rpm")
-        kickstart_lines.append("cp /run/install/repo/" + additional_rpm_dir + '/* /mnt/sysimage/home/tmp_rpm')
-        kickstart_lines.append("chroot /mnt/sysimage/")
-        kickstart_lines.append("dnf install /home/tmp_rpm/*.rpm -y")
-        kickstart_lines.append("rm -rf /home/tmp_rpm")
+        kickstart_lines.append("cp /run/install/repo/" + additional_rpm_dir + '/* /mnt/sysimage/root/tmp_rpm')
+        kickstart_lines.append("%end")
+        kickstart_lines.append("%post --logfile=/root/ks-post_additional_rpm2.log")
+        kickstart_lines.append(f"{install_command} /root/tmp_rpm/*.rpm -y")
+        kickstart_lines.append("rm -rf /root/tmp_rpm")
         kickstart_lines.append("%end")
     if is_encrypted and passphrase and tpm_auto_unlock:
         kickstart_lines.append("# Activating encryption auto-unlock using TPM2 chip")
-        kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post_tpm2_unlock.log")
-        kickstart_lines.append("chroot /mnt/sysimage/")
-        kickstart_lines.append("PASSWORD=%s systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+8 $device" % passphrase)
+        kickstart_lines.append("%post  --logfile=/root/ks-post_tpm2_unlock.log")
+        kickstart_lines.append(f"PASSWORD={passphrase} systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+8 $device")
         kickstart_lines.append("sed -ie '/^luks-/s/$/,tpm2-device=auto/' /etc/crypttab")
         kickstart_lines.append("dracut -f")
         kickstart_lines.append("%end")
 
     if additional_repos:
         kickstart_lines.append("# Activating unrestricted Flatpak")
-        kickstart_lines.append("%post --nochroot --logfile=/mnt/sysimage/root/ks-post_additional_repos.log")
-        kickstart_lines.append("chroot /mnt/sysimage/")
+        kickstart_lines.append("%post --logfile=/mnt/sysimage/root/ks-post_additional_repos.log")
         kickstart_lines.append("flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo")
         kickstart_lines.append("%end")
 
-    if not (keymap and locale and timezone):
+    if keymap and locale and timezone:
+        firstboot_line = "firstboot --enable"
+        # if each of keymap, locale, timezone & username is provided, firstboot is no longer needed
+        if username:
+            firstboot_line = "firstboot --disable"
+    else:
+        firstboot_line = "firstboot --reconfig"
         if not keymap: keymap = 'us'
         if not locale: locale = 'en_US.UTF-8'
         if not timezone: timezone = 'America/New_York'
-        kickstart_lines.append("firstboot --reconfig")
-    else:
-        kickstart_lines.append("firstboot --enable")
+
+    kickstart_lines.append(firstboot_line)
 
     if keymap_type == 'vc':
         kickstart_lines.append(f"keyboard --vckeymap={keymap}")
     else:
         kickstart_lines.append(f"keyboard --xlayouts='{keymap}'")
-    kickstart_lines.append("lang " + locale)
+    kickstart_lines.append(f"lang {locale}")
     kickstart_lines.append("firewall --use-system-defaults")
     if ostree_args:
-        kickstart_lines.append("ostreesetup " + ostree_args)
+        kickstart_lines.append(f"ostreesetup {ostree_args}")
     if live_img_url:
         kickstart_lines.append(f"liveimg --url='{live_img_url}' --noverifyssl")
 
@@ -176,18 +180,18 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', locale=None, timezo
         boot_partition = "part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-label/ALLOC-BOOT"
         root_partition += ' --encrypted'
         if passphrase:
-            root_partition += ' --passphrase=' + passphrase
+            root_partition += f' --passphrase={passphrase}'
     else:
         # create /boot subvolume inside root if encryption is disable
         boot_partition = "btrfs /boot --subvol --name=boot fedora"
 
+    kickstart_lines.append(efi_partition)
     kickstart_lines.append(root_partition)
     kickstart_lines.append("btrfs none --label=fedora btrfs.01")
     kickstart_lines.append("btrfs / --subvol --name=root fedora")
     kickstart_lines.append("btrfs /home --subvol --name=home fedora")
     kickstart_lines.append("btrfs /var --subvol --name=var fedora")
     kickstart_lines.append(boot_partition)
-    kickstart_lines.append(efi_partition)
 
     if username:
         kickstart_lines.append(f"user --name={username} --gecos='{fullname}' --groups=wheel")
