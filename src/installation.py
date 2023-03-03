@@ -54,16 +54,17 @@ def queue_safe_put(queue, data):
 
 
 def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
-            dl_files, rpm_source_dir=None, rpm_dest_dir_name=None,
-            grub_cfg_relative_path=None,tmp_partition_label=None, kickstart_cfg_relative_path=None,
-            efi_file_relative_path=None, queue=None):
+            dl_files, rpm_source_dir=None, rpm_dst_dir_name=None,
+            grub_cfg_relative_path=None, tmp_partition_label=None, kickstart_cfg_relative_path=None,
+            efi_file_relative_path=None, wifi_profiles_src_dir=None, wifi_profiles_dst_dir_name=None, queue=None):
     # INSTALL STARTING
     fn.mkdir(work_dir)
     installer_iso_path = ""
     live_image_required = False
     live_img_iso_path = ""
     for file in dl_files:
-        file_path = fr"{work_dir}\{file.file_name}"
+        fn.mkdir(file.dst_dir)
+        file_path = fr"{file.dst_dir}\{file.file_name}"
         # Logic for special files with a hint
         if hasattr(file, "file_hint") and (hint := file.file_hint):
             if hint == "installer_iso":
@@ -72,18 +73,18 @@ def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
                 live_img_iso_path = file_path
                 live_image_required = True
 
-        file_exists = False
+        file_already_exists = False
         if os.path.isfile(file_path):
-            if fn.get_sha256_hash(file_path) == file.hash256:
-                file_exists = True
+            if file.hash256 == fn.get_sha256_hash(file_path):
+                file_already_exists = True
             else:
                 os.remove(file_path)
-        if file_exists is True:
+        if file_already_exists is True:
             queue.put({'type': 'dl_tracker', 'file_name': file.file_name, 'status': "complete"})
             continue
         while True:
             queue_safe_put(queue, 'STAGE: downloading')
-            fn.download_with_aria2(aria2_path, url=file.dl_link, destination=work_dir, output_name=file.file_name, queue=queue)
+            fn.download_with_aria2(aria2_path, url=file.dl_link, destination=file.dst_dir, output_name=file.file_name, queue=queue)
             queue_safe_put(queue, 'STAGE: verifying_checksum')
             actual_file_hash = fn.get_sha256_hash(file_path)
             if not file.hash256 or download_hash_handler(actual_file_hash, file.hash256, work_dir, queue):
@@ -116,10 +117,13 @@ def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
         destination = tmp_part_letter + ':\\LiveOS\\'
         fn.copy_files(source=source_files, destination=destination)
 
-    if rpm_source_dir and rpm_dest_dir_name:
-        rpm_dest_path = '%s:\\%s\\' % (tmp_part_letter, rpm_dest_dir_name)
-        fn.copy_files(source=rpm_source_dir, destination=rpm_dest_path)
+    if rpm_source_dir and rpm_dst_dir_name:
+        rpm_dst_path = f'{tmp_part_letter}:\\{rpm_dst_dir_name}\\'
+        fn.copy_files(source=rpm_source_dir, destination=rpm_dst_path)
 
+    if wifi_profiles_src_dir and wifi_profiles_dst_dir_name:
+        wifi_profiles_dst_path = f'{tmp_part_letter}:\\{wifi_profiles_dst_dir_name}\\'
+        fn.copy_files(source=wifi_profiles_src_dir, destination=wifi_profiles_dst_path)
     queue_safe_put(queue, 'STAGE: adding_tmp_boot_entry')
 
     grub_cfg_dest_path = tmp_part_letter + ':\\' + grub_cfg_relative_path

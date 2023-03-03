@@ -11,12 +11,22 @@ import functions as fn
 def run(app):
     # GETTING ARGUMENTS READY
     GV.INSTALL_OPTIONS.export_wifi = tk_var.export_wifi_toggle_var.get()
+    GV.KICKSTART.enable_rpm_fusion = tk_var.rpm_fusion_toggle_var.get()
     GV.KICKSTART.is_encrypted = tk_var.enable_encryption_toggle_var.get()
     GV.KICKSTART.passphrase = tk_var.encrypt_passphrase_var.get()
     GV.KICKSTART.tpm_auto_unlock = tk_var.encryption_tpm_unlock_toggle_var.get()
 
     wifi_profiles = prc.get_wifi_profiles(GV.PATH.WORK_DIR) if GV.INSTALL_OPTIONS.export_wifi else None
 
+    with open(GV.PATH.CURRENT_DIR + '/resources/autoinst/wifi_network_file_template') as wifi_network_file_template:
+        wifi_network_template = wifi_network_file_template.read().strip()
+        for index, profile in enumerate(wifi_profiles):
+            network_file = wifi_network_template.replace('%name%', profile['name'])
+            network_file = network_file.replace('%ssid%', profile['ssid'])
+            network_file = network_file.replace('%hidden%', profile['hidden'])
+            network_file = network_file.replace('%password%', profile['password'])
+            with open(f"{GV.PATH.WIFI_PROFILES_DIR}\\imported_wifi{str(index)}.nmconnection") as wifi_profile:
+                wifi_profile.write(network_file)
     install_method = GV.KICKSTART.partition_method
     # creating new partition for root is only needed when installing alongside Windows
     GV.PARTITION.make_root_partition = True if install_method == 'dualboot' else False
@@ -29,7 +39,7 @@ def run(app):
         if GV.KICKSTART.is_encrypted:  # create separate boot partition
             GV.PARTITION.boot_part_size = GV.APP_linux_boot_partition_size
         GV.KICKSTART.ostree_args = GV.SELECTED_SPIN.ostree_args
-        GV.KICKSTART.wifi_profiles = wifi_profiles
+        GV.KICKSTART.wifi_profiles_dir_name = GV.WIFI_PROFILES_DIR_NAME
         GV.INSTALL_OPTIONS.keymap_timezone_source = tk_var.keymap_timezone_source_var.get()
         if GV.INSTALL_OPTIONS.keymap_timezone_source == 'ip':
             GV.KICKSTART.keymap = autoinst.get_keymaps(territory=GV.IP_LOCALE['country_code'])[0]
@@ -81,11 +91,22 @@ def run(app):
         live_img.file_hint = "live_img_iso"
         installer_args.dl_files.append(live_img)
 
-    for file in installer_args.dl_files:
+    if GV.KICKSTART.enable_rpm_fusion:
+        rpm_fusion_free = types.SimpleNamespace()
+        rpm_fusion_free.dst_dir = f"{GV.PATH.WORK_DIR}\\{GV.ADDITIONAL_RPM_DIR_NAME}"
+        rpm_fusion_free.dl_link = GV.RPMFusionFREE % GV.SELECTED_SPIN.version
+
+        rpm_fusion_nonfree = types.SimpleNamespace()
+        rpm_fusion_nonfree.dst_dir = f"{GV.PATH.WORK_DIR}\\{GV.ADDITIONAL_RPM_DIR_NAME}"
+        rpm_fusion_nonfree.dl_link = GV.RPMFusionNonFREE % GV.SELECTED_SPIN.version
+
+    for index, file in enumerate(installer_args.dl_files):
+        if not hasattr(file, "dl_link") or not file.dl_link:
+            raise ValueError("items in installer_args.dl_files must include valid dl_link")
         if not hasattr(file, "file_name"):
             file.file_name = fn.get_file_name_from_url(file.dl_link)
-        if not hasattr(file, "file_name"):
-            file.file_name = fn.get_file_name_from_url(file.dl_link)
+        if not hasattr(file, "dst_dir"):
+            file.dst_dir = GV.PATH.WORK_DIR
         if not hasattr(file, "hash256"):
             file.hash256 = ""
         else:  # for consistency
@@ -96,7 +117,9 @@ def run(app):
     installer_args.ks_kwargs = GV.KICKSTART
     installer_args.part_kwargs = GV.PARTITION
     installer_args.rpm_source_dir = GV.PATH.RPM_SOURCE_DIR
-    installer_args.rpm_dest_dir_name = GV.PATH.RPM_DEST_DIR_NAME
+    installer_args.rpm_dst_dir_name = GV.PATH.ADDITIONAL_RPM_DIR_NAME
+    installer_args.wifi_profiles_src_dir = GV.PATH.WIFI_PROFILES_DIR if wifi_profiles else None
+    installer_args.wifi_profiles_dst_dir_name = GV.WIFI_PROFILES_DIR_NAME if wifi_profiles else None
     installer_args.grub_cfg_relative_path = GV.PATH.RELATIVE_GRUB_CFG
     installer_args.tmp_partition_label = GV.PARTITION.temp_part_label
     installer_args.kickstart_cfg_relative_path = GV.PATH.RELATIVE_KICKSTART

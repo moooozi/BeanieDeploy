@@ -23,9 +23,13 @@ def run(app):
                                    tk_var.export_wifi_toggle_var, pady=(5, 0),pack=False)
     check_wifi.grid(ipady=5, row=0, column=0, sticky=GV.UI.DI_VAR['nw'])
 
+    check_rpm_fusion = tkt.add_check_btn(frame_checkboxes, LN.enable_rpm_fusion, tk_var.rpm_fusion_toggle_var,
+                                         pady=(5, 0), pack=False)
+    check_rpm_fusion.grid(ipady=5, row=1, column=0, sticky=GV.UI.DI_VAR['nw'])
+
     check_encrypt = tkt.add_check_btn(frame_checkboxes, LN.encrypted_root, tk_var.enable_encryption_toggle_var,
                       lambda: show_encrypt_options(tk_var.enable_encryption_toggle_var), pack=False)
-    check_encrypt.grid(ipady=5, row=1, column=0, sticky=GV.UI.DI_VAR['nw'])
+    check_encrypt.grid(ipady=5, row=2, column=0, sticky=GV.UI.DI_VAR['nw'])
 
     frame_encryption_options = ttk.Frame(frame_checkboxes)
 
@@ -35,7 +39,7 @@ def run(app):
     # LOGIC
     def show_encrypt_options(var):
         if var.get():
-            frame_encryption_options.grid(ipady=5,padx=(30, 0), row=2, column=0, sticky=GV.UI.DI_VAR['nw'])
+            frame_encryption_options.grid(ipady=5,padx=(30, 0), row=3, column=0, sticky=GV.UI.DI_VAR['nw'])
         else:
             frame_encryption_options.grid_forget()
 

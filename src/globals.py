@@ -15,6 +15,8 @@ APP_linux_efi_partition_size = 100 * Megabyte  # (recommended=200, minimum=50)
 APP_default_efi_file_path = r"\EFI\BOOT\BOOTX64.EFI"
 APP_FEDORA_GEO_IP_URL = 'https://geoip.fedoraproject.org/city'
 APP_AVAILABLE_SPINS_LIST = 'https://gitlab.com/win2linux/lnitest/-/raw/main/fedora_spins.json'
+RPMFusionFREE = "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-%s.noarch.rpm"
+RPMFusionNonFREE = "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-%s.noarch.rpm"
 APP_TPM2_TOOLS_RPM_DL_LINK = 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Everything/x86_64/os/Packages/t/tpm2-tools-5.2-2.fc36.x86_64.rpm'
 APP_live_img_path = '/LiveOS/squashfs.img'
 APP_live_img_url = 'file:///run/install/repo' + APP_live_img_path
@@ -22,17 +24,19 @@ APP_live_img_url = 'file:///run/install/repo' + APP_live_img_path
 LIVE_ISO_NAME = 'live_os.iso'
 INSTALL_ISO_NAME = 'install_media.iso'
 
+ADDITIONAL_RPM_DIR_NAME = "ADDITIONAL_RPMs"
+WIFI_PROFILES_DIR_NAME = "WIFI_PROFILES"
 PATH = types.SimpleNamespace()
 PATH.CURRENT_DIR = '%CURRENT_DIR%'
 PATH.DOWNLOADS_DIR = '%DOWNLOADS_DIR%'
-PATH.WORK_DIR = '%DOWNLOADS_DIR%\\win2linux_tmpdir'
-PATH.RPM_SOURCE_DIR = PATH.WORK_DIR + '\\rpm'
-PATH.SCRIPTS = '%CURRENT_DIR%\\resources\\scripts'
-PATH.ARIA2C = '%CURRENT_DIR%\\resources\\aria2c.exe'
-PATH.LIVE_ISO = PATH.WORK_DIR + '\\' + LIVE_ISO_NAME
-PATH.INSTALL_ISO = PATH.WORK_DIR + '\\' + INSTALL_ISO_NAME
+PATH.WORK_DIR = f'{PATH.DOWNLOADS_DIR}\\win2linux_tmpdir'
+PATH.WIFI_PROFILES_DIR = f"{PATH.WORK_DIR}\\{WIFI_PROFILES_DIR_NAME}"
+PATH.RPM_SOURCE_DIR = rf'{PATH.WORK_DIR}\{ADDITIONAL_RPM_DIR_NAME}'
+PATH.SCRIPTS = rf'{PATH.CURRENT_DIR}\resources\\scripts'
+PATH.ARIA2C = rf'{PATH.CURRENT_DIR}\resources\\aria2c.exe'
+PATH.LIVE_ISO = rf'{PATH.WORK_DIR}\{LIVE_ISO_NAME}'
+PATH.INSTALL_ISO = rf'{PATH.WORK_DIR}\{INSTALL_ISO_NAME}'
 PATH.RELATIVE_GRUB_CFG = r'EFI\BOOT\grub.cfg'
-PATH.RPM_DEST_DIR_NAME = 'ADDITIONAL_RPMs'
 PATH.RELATIVE_KICKSTART = 'ks.cfg'
 
 COMPATIBILITY_RESULTS = types.SimpleNamespace()
@@ -64,7 +68,9 @@ KICKSTART.keymap = ''
 KICKSTART.ostree_args = ''
 KICKSTART.fullname = ''
 KICKSTART.username = ''
-KICKSTART.wifi_profiles = []
+KICKSTART.wifi_profiles_dir_name = []
+KICKSTART.enable_rpm_fusion = True
+
 
 PARTITION = types.SimpleNamespace()
 PARTITION.make_root_partition = False
@@ -91,5 +97,5 @@ UI.combo_list_spin = ''
 UI.width = 1000
 
 
-DUMMY_ALL_SPING = [{'name': 'Fedora Workstation','is_recommended': True, 'is_default': True, 'version': '36', 'desktop': 'GNOME', 'size': 2018148352, 'is_auto_installable': True, 'is_live_img': True, 'dl_link': 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Workstation/x86_64/iso/Fedora-Workstation-Live-x86_64-36-1.5.iso', 'hash256': '80169891cb10c679cdc31dc035dab9aae3e874395adc5229f0fe5cfcc111cc8c', 'torrent_link': 'https://torrent.fedoraproject.org/torrents/Fedora-Workstation-Live-x86_64-36.torrent'}, {'name': 'Fedora KDE Spin', 'version': '36', 'desktop': 'KDE Plasma', 'size': 2214592512, 'is_auto_installable': True, 'is_live_img': True, 'dl_link': 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Spins/x86_64/iso/Fedora-KDE-Live-x86_64-36-1.5.iso', 'hash256': 'b1da6062ee2e90695557f93a3e13a594884d8ab08ac48a93118eca68bc9108a8', 'torrent_link': 'https://torrent.fedoraproject.org/torrents/Fedora-KDE-Live-x86_64-36.torrent'}, {'name': 'Fedora Silverblue', 'version': '36', 'desktop': 'GNOME', 'size': 2762833920, 'is_auto_installable': True, 'dl_link': 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Silverblue/x86_64/iso/Fedora-Silverblue-ostree-x86_64-36-1.5.iso', 'hash256': 'c8bac5756017c08135f7ff1be346584eba72e8c74e2842e7e1fc89dd26222dbe', 'torrent_link': 'https://torrent.fedoraproject.org/torrents/Fedora-Silverblue-ostree-x86_64-36.torrent', 'ostree_args': '--osname="fedora" --remote="fedora" --url="file:///ostree/repo" --ref="fedora/36/x86_64/silverblue" --nogpg'}, {'name': 'Fedora Kinoite', 'version': '36', 'desktop': 'KDE Plasma', 'size': 2980511744, 'is_auto_installable': True, 'dl_link': 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Kinoite/x86_64/iso/Fedora-Kinoite-ostree-x86_64-36-1.5.iso', 'hash256': '9a7e538961ae22c0f85a88fed240dbdc8b82452340fe8a83d66c0c84c28813e4', 'torrent_link': 'https://torrent.fedoraproject.org/torrents/Fedora-Kinoite-ostree-x86_64-36.torrent', 'ostree_args': '--osname="fedora" --remote="fedora" --url="file:///ostree/repo" --ref="fedora/36/x86_64/kinoite" --nogpg'}, {'name': 'Fedora Everything', 'version': '36', 'size': 702545920, 'is_advanced': True, 'is_base_netinstall': True, 'dl_link': 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Everything/x86_64/iso/Fedora-Everything-netinst-x86_64-36-1.5.iso', 'hash256': '85cb450443d68d513b41e57b0bd818a740279dac5dfc09c68e681ff8a3006404'}]
+DUMMY_ALL_SPING = [{'name': 'Fedora Workstation', 'is_recommended': True, 'is_default': True, 'version': '36', 'desktop': 'GNOME', 'size': 2018148352, 'is_auto_installable': True, 'is_live_img': True, 'dl_link': 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Workstation/x86_64/iso/Fedora-Workstation-Live-x86_64-36-1.5.iso', 'hash256': '80169891cb10c679cdc31dc035dab9aae3e874395adc5229f0fe5cfcc111cc8c', 'torrent_link': 'https://torrent.fedoraproject.org/torrents/Fedora-Workstation-Live-x86_64-36.torrent'}, {'name': 'Fedora KDE Spin', 'version': '36', 'desktop': 'KDE Plasma', 'size': 2214592512, 'is_auto_installable': True, 'is_live_img': True, 'dl_link': 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Spins/x86_64/iso/Fedora-KDE-Live-x86_64-36-1.5.iso', 'hash256': 'b1da6062ee2e90695557f93a3e13a594884d8ab08ac48a93118eca68bc9108a8', 'torrent_link': 'https://torrent.fedoraproject.org/torrents/Fedora-KDE-Live-x86_64-36.torrent'}, {'name': 'Fedora Silverblue', 'version': '36', 'desktop': 'GNOME', 'size': 2762833920, 'is_auto_installable': True, 'dl_link': 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Silverblue/x86_64/iso/Fedora-Silverblue-ostree-x86_64-36-1.5.iso', 'hash256': 'c8bac5756017c08135f7ff1be346584eba72e8c74e2842e7e1fc89dd26222dbe', 'torrent_link': 'https://torrent.fedoraproject.org/torrents/Fedora-Silverblue-ostree-x86_64-36.torrent', 'ostree_args': '--osname="fedora" --remote="fedora" --url="file:///ostree/repo" --ref="fedora/36/x86_64/silverblue" --nogpg'}, {'name': 'Fedora Kinoite', 'version': '36', 'desktop': 'KDE Plasma', 'size': 2980511744, 'is_auto_installable': True, 'dl_link': 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Kinoite/x86_64/iso/Fedora-Kinoite-ostree-x86_64-36-1.5.iso', 'hash256': '9a7e538961ae22c0f85a88fed240dbdc8b82452340fe8a83d66c0c84c28813e4', 'torrent_link': 'https://torrent.fedoraproject.org/torrents/Fedora-Kinoite-ostree-x86_64-36.torrent', 'ostree_args': '--osname="fedora" --remote="fedora" --url="file:///ostree/repo" --ref="fedora/36/x86_64/kinoite" --nogpg'}, {'name': 'Fedora Everything', 'version': '36', 'size': 702545920, 'is_advanced': True, 'is_base_netinstall': True, 'dl_link': 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Everything/x86_64/iso/Fedora-Everything-netinst-x86_64-36-1.5.iso', 'hash256': '85cb450443d68d513b41e57b0bd818a740279dac5dfc09c68e681ff8a3006404'}]
 DUMMY_IP_LOCALE = {"time_zone": "Europe/Berlin", "country_code3": "DEU", "country_code": "DE", "country_name": "Germany"}
