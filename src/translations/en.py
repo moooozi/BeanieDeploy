@@ -82,6 +82,7 @@ windows_options = {'dualboot': 'Install alongside Windows',
                    'replace_win': 'Install and replace Windows',
                    'custom': 'Custom installation and partitioning'}
 dualboot_size_txt = "Reserved space for %s:"
+warn_backup_files_txt = "Backup your files! Everything inside %s will be permanently deleted"
 verify_question = "This is what is going to happen. Click %s to start installing" % btn_install
 verify_text = {
     'no_autoinst': "%s will be downloaded and will boot on the next restart to begin custom installation.",
@@ -92,6 +93,7 @@ verify_text = {
     'autoinst_wifi': "Existing Wi-Fi profiles will be added in %s."
 }
 add_import_wifi = "Export my Wi-Fi networks to %s"
+enable_rpm_fusion = "Enable additional repositories for extended software and multimedia codecs support"
 add_auto_restart = "Restart automatically"
 add_torrent = "Use torrent whenever possible"
 more_options = "More options"

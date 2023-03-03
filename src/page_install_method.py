@@ -55,6 +55,10 @@ def run(app):
     entry1_frame = ttk.Frame(radio_buttons)
     radio_buttons.rowconfigure(5, weight=1)
     entry1_frame.grid(row=5, column=0, columnspan=2, padx=0, sticky=GV.UI.DI_VAR['w'])
+
+    warn_backup_sys_drive_files = tkt.add_text_label(entry1_frame,
+                                                     text=LN.warn_backup_files_txt % f"{fn.get_sys_drive_letter()}:\\",
+                                                     font=tkt.FONTS_smaller, foreground=tkt.color_red, pack=False)
     size_dualboot_txt_pre = tkt.add_text_label(entry1_frame, text=LN.dualboot_size_txt % GV.SELECTED_SPIN.name,
                                                font=tkt.FONTS_smaller, pack=False)
     size_dualboot_entry = ttk.Entry(entry1_frame, width=10, textvariable=tk_var.dualboot_size_var,)
@@ -67,14 +71,17 @@ def run(app):
     app.update_idletasks()
 
     def show_more_options_if_needed():
+
+        warn_backup_sys_drive_files.grid_forget()
+        size_dualboot_txt_pre.grid_forget()
+        size_dualboot_entry.grid_forget()
+        size_dualboot_txt_post.grid_forget()
         if tk_var.install_method_var.get() == 'dualboot':
             size_dualboot_txt_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=GV.UI.DI_VAR['w'])
             size_dualboot_entry.grid(pady=5, padx=5, column=1, row=0)
             size_dualboot_txt_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=GV.UI.DI_VAR['w'])
-        else:
-            size_dualboot_txt_pre.grid_forget()
-            size_dualboot_entry.grid_forget()
-            size_dualboot_txt_post.grid_forget()
+        elif tk_var.install_method_var.get() == 'replace_win':
+            warn_backup_sys_drive_files.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=GV.UI.DI_VAR['w'])
 
     show_more_options_if_needed()  # GUI bugfix
 
