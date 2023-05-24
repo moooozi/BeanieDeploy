@@ -117,7 +117,7 @@ def run(app):
     installer_args.ks_kwargs = GV.KICKSTART
     installer_args.part_kwargs = GV.PARTITION
     installer_args.rpm_source_dir = GV.PATH.RPM_SOURCE_DIR
-    installer_args.rpm_dst_dir_name = GV.PATH.ADDITIONAL_RPM_DIR_NAME
+    installer_args.rpm_dst_dir_name = GV.ADDITIONAL_RPM_DIR_NAME
     installer_args.wifi_profiles_src_dir = GV.PATH.WIFI_PROFILES_DIR if wifi_profiles else None
     installer_args.wifi_profiles_dst_dir_name = GV.WIFI_PROFILES_DIR_NAME if wifi_profiles else None
     installer_args.grub_cfg_relative_path = GV.PATH.RELATIVE_GRUB_CFG
