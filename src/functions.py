@@ -8,39 +8,49 @@ from urllib.request import urlopen
 import libs.xmltodict as xmltodict
 import os
 import pathlib
-
+from dataclasses import dataclass
+from typing import Any
 
 def open_url(url):
     import webbrowser
     webbrowser.open_new_tab(url)
 
+@dataclass
+class Check:
+    result: Any
+    returncode: int
+    process: subprocess.CompletedProcess
+
 
 def check_arch():
-    return subprocess.run([r'powershell.exe', r'$env:PROCESSOR_ARCHITECTURE'], stdout=subprocess.PIPE,
+    proc = subprocess.run([r'powershell.exe', r'$env:PROCESSOR_ARCHITECTURE'], stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
-
+    return Check(proc.stdout.strip().lower(), proc.returncode, proc)
 
 def check_uefi():
-    return subprocess.run([r'powershell.exe', r'$env:firmware_type'], stdout=subprocess.PIPE,
+    proc = subprocess.run([r'powershell.exe', r'$env:firmware_type'], stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+    return Check(proc.stdout.strip().lower(), proc.returncode, proc)
 
-
-def check_totalram():
-    return subprocess.run([r'powershell.exe',
+def check_ram():
+    proc = subprocess.run([r'powershell.exe',
                            r'(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property capacity -Sum).sum'],
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+    return Check(int(proc.stdout.strip()), proc.returncode, proc)
 
 
 def check_space():
-    return subprocess.run([r'powershell.exe',
+    proc = subprocess.run([r'powershell.exe',
                            r'(Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).SizeRemaining'],
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+    return Check(int(proc.stdout.strip()), proc.returncode, proc)
 
 
 def check_resizable():
-    return subprocess.run([r'powershell.exe',
+    proc = subprocess.run([r'powershell.exe',
                            r'((Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).Size - (Get-PartitionSupportedSize -DriveLetter $env:SystemDrive.Substring(0, 1)).SizeMin)'],
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+    return Check(int(proc.stdout.strip()), proc.returncode, proc)
 
 
 def get_windows_username():

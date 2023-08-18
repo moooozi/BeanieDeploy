@@ -6,6 +6,32 @@ import functions as fn
 import globals as GV
 
 
+class CompatibilityResult:
+    def __init__(self):
+        self.uefi = None
+        self.ram = None
+        self.space = None
+        self.resizable = None
+        self.arch = None
+
+    def compatibility_test(self, check_order=None, queue=None):
+        if check_order is None:
+            check_order = ['arch', 'uefi', 'ram', 'space', 'resizable']
+
+        for check_type in check_order:
+            queue.put(check_type)
+            check_function = getattr(fn, f'check_{check_type}')
+            check = check_function()
+            if check.returncode != 0:
+                setattr(self, f'{check_type}', -1)
+            else:
+                setattr(self, f'{check_type}', check.result)
+
+        check_results = {check_type: getattr(self, f'{check_type}') for check_type in check_order}
+        if queue:
+            queue.put(check_results)
+
+
 def compatibility_test(required_space_min, queue):
     # check starting...
     queue.put('arch')

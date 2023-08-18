@@ -10,6 +10,7 @@ import logging
 import global_tk_vars as tk_var
 
 
+
 def run(app, run_test=True):
     """The page on which is decided whether the app can run on the device or not"""
     # *************************************************************************************************************
@@ -45,7 +46,8 @@ def run(app, run_test=True):
             return 1
 
     if run_test:
-        gui.run_async_function(prc.compatibility_test, args=(GV.APP_minimal_required_space,))
+        compatibility_results = prc.CompatibilityResult()
+        gui.run_async_function(compatibility_results.compatibility_test,)
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
         gui.handle_queue_result(tkinter=app, callback=callback_compatibility)
@@ -73,7 +75,7 @@ def run(app, run_test=True):
         errors.append(LN.error_arch_0)
     if GV.COMPATIBILITY_RESULTS.uefi == -1:
         errors.append(LN.error_uefi_9)
-    elif GV.COMPATIBILITY_RESULTS.uefi != 1:
+    elif GV.COMPATIBILITY_RESULTS.uefi != 'uefi':
         errors.append(LN.error_uefi_0)
     if GV.COMPATIBILITY_RESULTS.ram == -1:
         errors.append(LN.error_totalram_9)
@@ -95,6 +97,4 @@ def run(app, run_test=True):
         return page_1.run(app)
     else:
         page_error.run(app, errors)
-
-
 
