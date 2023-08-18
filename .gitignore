@@ -1,4 +1,8 @@
 /appLogo.png
+/interpreter/python/
+
 /src/resources/aria2c.exe
 /src/resources/style
-/interpreter/python/
+/src/__pycache__
+/src/dist
+/src/build
