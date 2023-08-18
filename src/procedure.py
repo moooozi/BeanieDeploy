@@ -31,55 +31,6 @@ class CompatibilityResult:
         if queue:
             queue.put(check_results)
 
-
-def compatibility_test(required_space_min, queue):
-    # check starting...
-    queue.put('arch')
-    check = fn.check_arch()
-    if check.returncode != 0:
-        result_arch_check = -1
-    else:
-        result_arch_check = check.stdout.strip().lower()
-    queue.put('uefi')
-    check = fn.check_uefi()
-    if check.returncode != 0:
-        result_uefi_check = -1
-    elif 'uefi' in check.stdout.lower():
-        result_uefi_check = 1
-    else:
-        result_uefi_check = 0
-    queue.put('ram')
-    check = fn.check_totalram()
-    if check.returncode != 0:
-        result_totalram_check = -1
-    else:
-        result_totalram_check = int(check.stdout.strip())
-    queue.put('space')
-    check = fn.check_space()
-    if check.returncode != 0:
-        result_space_check = -1
-    else:
-        result_space_check = int(check.stdout.strip())
-
-    if result_space_check > required_space_min:
-        queue.put('resizable')
-        check = fn.check_resizable()
-        if check.returncode != 0:
-            result_resizable_check = -1
-        else:
-            result_resizable_check = int(check.stdout.strip())
-    else:
-        result_resizable_check = -2
-
-    check_results = {'uefi': result_uefi_check,
-                     'ram': result_totalram_check,
-                     'space': result_space_check,
-                     'resizable': result_resizable_check,
-                     'arch': result_arch_check}
-    if queue: queue.put(check_results)
-    else: return check_results
-
-
 def partition_procedure(tmp_part_size: int, temp_part_label: str, queue=None, shrink_space: int = 0,
                         boot_part_size: int = 0, efi_part_size: int = 0, make_root_partition: bool = False):
     ps_script = fr"{parse_path(GV.PATH.SCRIPTS)}\PartitionMappings.ps1"
