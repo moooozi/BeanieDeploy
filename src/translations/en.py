@@ -35,7 +35,7 @@ error_resizable_0 = "Not enough shrink room on system drive."
 error_resizable_9 = "Failed to check system drive resizability."
 
 info_about_selection = "Info about selection:"
-desktop_question = "Now let's get started, select your preferred distribution."
+desktop_question = "Select your preferred distribution."
 desktop_hints = {'KDE Plasma': "KDE is very feature-rich, highly customizable, and has Windows-like layout by default",
                  'GNOME': "GNOME desktop is Minimal and very stable, touchpad & touchscreen optimized"}
 lang = "Language"
@@ -131,3 +131,5 @@ finished_title = "Restart required"
 finished_text = "A restart is required to continue installation, " \
                    "click '%s' to restart now or '%s' to manually restart later" % (btn_restart_now, btn_restart_later)
 finished_text_restarting_now = "Automatic restart in %s seconds"
+
+lang_question = "Now let's get started, select your preferred language."

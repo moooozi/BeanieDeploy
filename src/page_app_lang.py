@@ -13,7 +13,7 @@ def run(app):
     LN = multilingual.get_lang()
     DI_VAR = multilingual.get_di_var()
     # *************************************************************************************************************
-    page_frame = tkt.generic_page_layout(app, LN.desktop_question, LN.btn_next, lambda: next_btn_action())
+    page_frame = tkt.generic_page_layout(app, LN.lang_question, LN.btn_next, lambda: next_btn_action())
 
     frame_distro = tkt.add_frame_container(page_frame, fill='both', expand=1)
     lang_list = ttk.Combobox(frame_distro, values=list(multilingual.available_languages.keys()), state='readonly')

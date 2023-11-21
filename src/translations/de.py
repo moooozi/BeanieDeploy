@@ -35,7 +35,7 @@ error_resizable_0 = "Nicht genügend Verkleinerungsraum auf dem Systemlaufwerk."
 error_resizable_9 = "Die Verkleinerbarkeit des Systemlaufwerks konnte nicht überprüft werden."
 
 info_about_selection = "Informationen zur Auswahl:"
-desktop_question = "Jetzt geht's los, wählen Sie Ihre bevorzugte Distribution."
+desktop_question = "Wählen Sie Ihre bevorzugte Distribution."
 desktop_hints = {'KDE Plasma': "KDE ist sehr funktionsreich, hochgradig anpassbar und hat standardmäßig ein Windows-ähnliches Layout",
                  'GNOME': "Die GNOME-Desktop-Umgebung ist minimal und sehr stabil, optimiert für Touchpad & Touchscreen"}
 lang = "Sprache"
@@ -131,3 +131,5 @@ finished_title = "Neustart erforderlich"
 finished_text = "Ein Neustart ist erforderlich, um die Installation fortzusetzen, " \
                    "klicken Sie auf '%s', um jetzt neu zu starten oder auf '%s', um später manuell neu zu starten" % (btn_restart_now, btn_restart_later)
 finished_text_restarting_now = "Automatischer Neustart in %s Sekunden"
+
+lang_question = "Jetzt geht's los, wählen Sie Ihre bevorzugte Sprache."
