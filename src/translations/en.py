@@ -63,7 +63,7 @@ choose_distro = "Choose a distro"
 encrypted_root = "Encrypt the new operating system"
 entry_encrypt_passphrase = "Set encryption passphrase"
 
-encrypt_reminder_txt = "You will be asked to enter encryption passphase before the installation begins"
+encrypt_reminder_txt = "You will be asked to enter encryption passphase later"
 encryption_tpm_unlock = "Auto-unlock with TPM2"
 
 entry_username = "Username"
