@@ -112,10 +112,7 @@ def build_autoinstall_ks_file(keymap=None, keymap_type='vc', locale=None, timezo
         kickstart_lines.append("%end")
 
     if additional_repos:
-        kickstart_lines.append("# Activating unrestricted Flatpak")
-        kickstart_lines.append("%post --logfile=/mnt/sysimage/root/ks-post_additional_repos.log")
-        kickstart_lines.append("flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo")
-        kickstart_lines.append("%end")
+        pass
 
     if keymap and locale and timezone:
         firstboot_line = "firstboot --enable"
