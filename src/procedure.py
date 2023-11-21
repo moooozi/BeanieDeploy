@@ -55,8 +55,9 @@ def partition_procedure(tmp_part_size: int, temp_part_label: str, queue=None, sh
     tmp_part_letter = fn.get_unused_drive_letter()
     fn.new_volume(sys_disk_number, tmp_part_size, 'FAT32', temp_part_label, tmp_part_letter)
 
-    tmp_part_path_script = f'(({ps_script}) | Where-Object -Property DriveLetter -EQ "{tmp_part_letter}).DevicePath"'
+    tmp_part_path_script = f'(({ps_script}) | Where-Object -Property DriveLetter -EQ "{tmp_part_letter}").DevicePath'
     tmp_part_device_path = fn.run_powershell_script(tmp_part_path_script)
+    print("tmp_part_device_path: ", tmp_part_device_path)
     if queue: queue.put(tmp_part_letter)
     return {'tmp_part_letter': tmp_part_letter, 'tmp_part_device_path': tmp_part_device_path,
             'sys_drive_uuid': sys_drive_uuid, 'sys_drive_win_uuid': sys_drive_win_uuid, 'sys_efi_uuid': sys_efi_uuid}
