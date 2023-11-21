@@ -24,13 +24,17 @@ def right_to_left_lang(is_true):
                 "l": "left", "r": "right"}
 
 
-def change_lang(new_lang):
+def set_lang(new_lang):
     """Used to change GUI's display language"""
     from importlib import import_module
-    lang_new = available_languages[new_lang]
-    ln = import_module('.' + lang_new[0], 'translations')
+    lang_new = available_languages[new_lang]#
+    global LN, DI_VAR
+    LN = import_module('.' + lang_new[0], 'translations')
     DI_VAR = right_to_left_lang(lang_new[1])
-    return DI_VAR, ln
+    return DI_VAR, LN
 
+def get_lang():
+    return LN
 
-
+def get_di_var():
+    return DI_VAR
