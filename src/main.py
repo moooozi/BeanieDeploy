@@ -36,7 +36,7 @@ def run():
           'IMPORTANT: DO NOT CLOSE THIS CONSOLE WINDOW WHILE APP IS RUNNING\n'
           '################################################################\n\n')
     prc.init_paths(GV.PATH)
-    app = tkt.init_tkinter(GV.APP_SW_NAME)  # initialize tkinter
+    app = tkt.init_tkinter(GV.APP_SW_NAME, GV.PATH.APP_ICON)  # initialize tkinter
     fn.mkdir(GV.PATH.WORK_DIR)
     TOP_FRAME, MID_FRAME, LEFT_FRAME = tkt.build_main_gui_frames(app)
     #tk.Label(LEFT_FRAME, image=tk.PhotoImage(file=GV.PATH.CURRENT_DIR + r'\resources\style\left_frame.gif')).pack()
