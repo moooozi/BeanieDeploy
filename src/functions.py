@@ -171,6 +171,13 @@ def new_volume(disk_number: int, size: int, filesystem: str, label: str, drive_l
     return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
 
+def set_partition_as_efi(drive_letter: str):
+    arg = 'Get-Partition -DriveLetter ' + drive_letter + ' | Set-Partition -GptType "{c12a7328-f81f-11d2-ba4b-00a0c93ec93b}"'
+
+    return subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+
+
 def mount_iso(iso_path):
     arg = '(Mount-DiskImage -ImagePath "' + iso_path + '" | Get-Volume).DriveLetter'
     return str(subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,

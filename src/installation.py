@@ -141,9 +141,6 @@ def install(work_dir, aria2_path, ks_kwargs, part_kwargs,
 
     queue_safe_put(queue, 'APP: critical_process_running')  # prevent closing the app
 
-
-    # Getting temporary partition's DevicePath, like e.g. "\Device\HarddiskVolume5"
-
     # Drive Letter no longer needed, so we remove it
     fn.remove_drive_letter(tmp_part_letter)
 
