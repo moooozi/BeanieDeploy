@@ -1,6 +1,7 @@
 available_languages = {
     # 'display name': ('codename(filename)', 'is right-to-left?'
-    'العربية': ('ar', 1),
+    
+    #'العربية': ('ar', 1),
     'English': ('en', 0),
     'Deutsch': ('de', 0),
 }
