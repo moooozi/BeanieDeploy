@@ -5,6 +5,7 @@ import globals as GV
 import procedure as prc
 import tkinter_templates as tkt
 import functions as fn
+import tkinter.messagebox
 
 app = None
 
@@ -45,4 +46,8 @@ def run():
     app.mainloop()
 
 if __name__ == "__main__":
-    run()
+    try:
+        run()
+    except Exception as e:
+        # show a pop-up window with the error message
+        message = tkinter.messagebox.showerror("Error", str(e))
