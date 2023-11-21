@@ -1,12 +1,15 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter_templates as tkt
-import translations.en as LN
+import multilingual
 import global_tk_vars as tk_var
 
 
 def run(master):
     pop, pop_frame = tkt.open_popup(master, x_size=500, y_size=700)
+    global LN, DI_VAR
+    LN = multilingual.get_lang()
+    DI_VAR = multilingual.get_di_var()
     tkt.generic_page_layout(pop_frame, "Advanced Settings", "Confirm", lambda *args: pop.destroy(),)
     auto_install_frame = tk.Frame(pop_frame)
     encryption_frame = tk.Frame(auto_install_frame)

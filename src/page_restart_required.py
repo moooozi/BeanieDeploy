@@ -1,6 +1,6 @@
 import tkinter_templates as tkt
 import globals as GV
-import translations.en as LN
+import multilingual
 import functions as fn
 import global_tk_vars as tk_var
 
@@ -8,6 +8,9 @@ import global_tk_vars as tk_var
 def run(app):
     """the page on which user is prompted to restart the device to continue installation (boot into install media)"""
     tkt.init_frame(app)
+    global LN, DI_VAR
+    LN = multilingual.get_lang()
+    DI_VAR = multilingual.get_di_var()
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(app, LN.finished_title,
                                          LN.btn_restart_now, lambda: fn.quit_and_restart_windows(),

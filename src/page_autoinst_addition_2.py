@@ -4,13 +4,16 @@ import autoinst
 import page_autoinst_addition_1
 import tkinter_templates as tkt
 import globals as GV
-import translations.en as LN
+import multilingual
 import global_tk_vars as tk_var
 
 
 def run(app):
     """the autoinstall page on which you choose your timezone and keyboard layout"""
     tkt.init_frame(app)
+    global LN, DI_VAR
+    LN = multilingual.get_lang()
+    DI_VAR = multilingual.get_di_var()
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(app, LN.title_autoinst3,
                                          LN.btn_next, lambda: next_btn_action(),
@@ -34,7 +37,7 @@ def run(app):
                                                lambda: spawn_more_widgets())
     timezone_all = sorted(autoinst.all_timezones())
     lists_frame = ttk.Frame(frame_radios)
-    timezone_txt = ttk.Label(lists_frame, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=LN.list_timezones,
+    timezone_txt = ttk.Label(lists_frame, wraplength=GV.UI.width, justify=DI_VAR['l'], text=LN.list_timezones,
                              font=tkt.FONTS_tiny)
     timezone_list = ttk.Combobox(lists_frame, name="timezone", textvariable=tk_var.custom_timezone_var)
     timezone_list['values'] = tuple(timezone_all)
@@ -42,7 +45,7 @@ def run(app):
 
     all_keymaps = autoinst.get_available_keymaps()
 
-    keyboards_txt = ttk.Label(lists_frame, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=LN.list_keymaps,
+    keyboards_txt = ttk.Label(lists_frame, wraplength=GV.UI.width, justify=DI_VAR['l'], text=LN.list_keymaps,
                               font=tkt.FONTS_tiny)
     keyboard_list = ttk.Combobox(lists_frame, name="keyboard", textvariable=tk_var.custom_keymap_var)
     keyboard_list['values'] = tuple(all_keymaps)
@@ -53,10 +56,10 @@ def run(app):
 
     def spawn_more_widgets(*args):
         if tk_var.keymap_timezone_source_var.get() == 'custom':
-            lists_frame.grid(ipady=5, padx=30, row=3, column=0, sticky=GV.UI.DI_VAR['w'])
-            keyboards_txt.grid(pady=5, padx=5, column=0, row=1, sticky=GV.UI.DI_VAR['w'])
+            lists_frame.grid(ipady=5, padx=30, row=3, column=0, sticky=DI_VAR['w'])
+            keyboards_txt.grid(pady=5, padx=5, column=0, row=1, sticky=DI_VAR['w'])
             keyboard_list.grid(pady=5, padx=5, column=1, row=1)
-            timezone_txt.grid(pady=5, padx=5, column=0, row=0, sticky=GV.UI.DI_VAR['w'])
+            timezone_txt.grid(pady=5, padx=5, column=0, row=0, sticky=DI_VAR['w'])
             timezone_list.grid(pady=5, padx=5, column=1, row=0)
         else:
             lists_frame.grid_forget()

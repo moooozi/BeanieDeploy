@@ -3,7 +3,7 @@ import autoinst
 import page_autoinst_addition_2
 import tkinter_templates as tkt
 import globals as GV
-import translations.en as LN
+import multilingual
 import page_autoinst2
 import global_tk_vars as tk_var
 
@@ -11,6 +11,9 @@ import global_tk_vars as tk_var
 def run(app):
     """the autoinstall page on which you choose your language and locale"""
     tkt.init_frame(app)
+    global LN, DI_VAR
+    LN = multilingual.get_lang()
+    DI_VAR = multilingual.get_di_var()
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(app, LN.title_autoinst2,
                                          LN.btn_next, lambda: next_btn_action(),

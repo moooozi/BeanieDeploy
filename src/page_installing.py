@@ -3,7 +3,7 @@ import multiprocessing
 import installation
 import page_restart_required
 import tkinter_templates as tkt
-import translations.en as LN
+import multilingual
 import gui_functions as gui
 import global_tk_vars as tk_var
 
@@ -11,6 +11,9 @@ import global_tk_vars as tk_var
 def run(app, installer_args, queue=multiprocessing.Queue()):
     """the page on which the initial installation (creating bootable media) takes place"""
     tkt.init_frame(app)
+    global LN, DI_VAR
+    LN = multilingual.get_lang()
+    DI_VAR = multilingual.get_di_var()
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(app, LN.install_running)
     progressbar_install = tkt.add_progress_bar(page_frame)

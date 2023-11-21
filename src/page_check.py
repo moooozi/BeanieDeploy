@@ -1,9 +1,9 @@
 import tkinter_templates as tkt
 import globals as GV
-import translations.en as LN
+import multilingual
 import functions as fn
 import procedure as prc
-import page_1, page_error
+import page_app_lang, page_error
 import gui_functions as gui
 import logging
 
@@ -11,8 +11,11 @@ import global_tk_vars as tk_var
 
 
 
-def run(app, run_test=True):
+def run(app, skip_check=False):
     """The page on which is decided whether the app can run on the device or not"""
+    global LN, DI_VAR
+    LN = multilingual.get_lang()
+    DI_VAR = multilingual.get_di_var()
     # *************************************************************************************************************
     app.update()  # update tkinter GUI
     page_frame = tkt.generic_page_layout(app, LN.check_running)
@@ -45,14 +48,14 @@ def run(app, run_test=True):
         if GV.ALL_SPINS and vars(GV.COMPATIBILITY_RESULTS):
             return 1
 
-    if run_test:
+    if not skip_check:
         compatibility_results = prc.CompatibilityResult()
         gui.run_async_function(compatibility_results.compatibility_test,)
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
         gui.handle_queue_result(tkinter=app, callback=callback_compatibility)
     else:  # DUMMY TEST DATA
-        GV.COMPATIBILITY_RESULTS.uefi = 1
+        GV.COMPATIBILITY_RESULTS.uefi = 'uefi'
         GV.COMPATIBILITY_RESULTS.ram = 34359738368
         GV.COMPATIBILITY_RESULTS.space = 133264248832
         GV.COMPATIBILITY_RESULTS.resizable = 432008358400
@@ -94,7 +97,7 @@ def run(app, run_test=True):
         if live_os_installer_index is not None:
             GV.LIVE_OS_INSTALLER_SPIN = GV.ACCEPTED_SPINS[live_os_installer_index]
         GV.USERNAME_WINDOWS = fn.get_windows_username()
-        return page_1.run(app)
+        return page_app_lang.run(app)
     else:
         page_error.run(app, errors)
 

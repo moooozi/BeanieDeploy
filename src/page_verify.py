@@ -7,7 +7,7 @@ import tkinter_templates as tkt
 import page_autoinst_addition_2
 import page_install_method
 import globals as GV
-import translations.en as LN
+import multilingual
 import global_tk_vars as tk_var
 from gui_functions import get_first_tk_parent
 
@@ -15,6 +15,9 @@ from gui_functions import get_first_tk_parent
 def run(app):
     """the page on which you get to review your selection before starting to install"""
     tkt.init_frame(app)
+    global LN, DI_VAR
+    LN = multilingual.get_lang()
+    DI_VAR = multilingual.get_di_var()
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(app, LN.verify_question,
                                          LN.btn_install, lambda: next_btn_action(),
@@ -47,14 +50,14 @@ def run(app):
     page_frame.grid_rowconfigure(0, weight=3)
 
     check_restart = tkt.add_check_btn(page_frame, text=LN.add_auto_restart, var=tk_var.auto_restart_toggle_var, pack=False)
-    check_restart.grid(ipady=8, row=1, column=0, sticky=GV.UI.DI_VAR['nsw'])
+    check_restart.grid(ipady=8, row=1, column=0, sticky=DI_VAR['nsw'])
 
     '''
     c3_add = ttk.Checkbutton(page_frame, text=LN.add_torrent, variable=torrent_toggle_var, onvalue=1, offvalue=0)
     '''
     more_options_btn = ttk.Label(page_frame, justify="center", text=LN.more_options, font=tkt.FONTS_smaller,
                                  foreground=tkt.color_blue)
-    more_options_btn.grid(ipady=8, padx=5, row=2, column=0, sticky=GV.UI.DI_VAR['nsw'])
+    more_options_btn.grid(ipady=8, padx=5, row=2, column=0, sticky=DI_VAR['nsw'])
     more_options_btn.bind("<Button-1>",
                           lambda x: popup_advanced_options.run(master=get_first_tk_parent(app)))
 

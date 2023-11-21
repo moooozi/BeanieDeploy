@@ -3,7 +3,7 @@ import page_autoinst2
 import page_verify
 import tkinter_templates as tkt
 import globals as GV
-import translations.en as LN
+import multilingual
 import functions as fn
 import page_1
 import global_tk_vars as tk_var
@@ -12,6 +12,9 @@ import global_tk_vars as tk_var
 def run(app):
     """the autoinstall page on which you choose whether to install alongside windows or start clean install"""
     tkt.init_frame(app)
+    global LN, DI_VAR
+    LN = multilingual.get_lang()
+    DI_VAR = multilingual.get_di_var()
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(app, LN.windows_question % GV.SELECTED_SPIN.name,
                                          LN.btn_next, lambda: next_btn_action(),
@@ -54,7 +57,7 @@ def run(app):
     max_size = round(max_size, 2)
     entry1_frame = ttk.Frame(radio_buttons)
     radio_buttons.rowconfigure(5, weight=1)
-    entry1_frame.grid(row=5, column=0, columnspan=2, padx=0, sticky=GV.UI.DI_VAR['w'])
+    entry1_frame.grid(row=5, column=0, columnspan=2, padx=0, sticky=DI_VAR['w'])
 
     warn_backup_sys_drive_files = tkt.add_text_label(entry1_frame,
                                                      text=LN.warn_backup_files_txt % f"{fn.get_sys_drive_letter()}:\\",
@@ -77,11 +80,11 @@ def run(app):
         size_dualboot_entry.grid_forget()
         size_dualboot_txt_post.grid_forget()
         if tk_var.install_method_var.get() == 'dualboot':
-            size_dualboot_txt_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=GV.UI.DI_VAR['w'])
+            size_dualboot_txt_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=DI_VAR['w'])
             size_dualboot_entry.grid(pady=5, padx=5, column=1, row=0)
-            size_dualboot_txt_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=GV.UI.DI_VAR['w'])
+            size_dualboot_txt_post.grid(pady=5, padx=(0, 0), column=2, row=0, sticky=DI_VAR['w'])
         elif tk_var.install_method_var.get() == 'replace_win':
-            warn_backup_sys_drive_files.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=GV.UI.DI_VAR['w'])
+            warn_backup_sys_drive_files.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=DI_VAR['w'])
 
     show_more_options_if_needed()  # GUI bugfix
 

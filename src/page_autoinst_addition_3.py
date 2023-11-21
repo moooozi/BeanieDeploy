@@ -3,7 +3,7 @@ import page_autoinst_addition_2
 import page_verify
 import tkinter_templates as tkt
 import globals as GV
-import translations.en as LN
+import multilingual
 import global_tk_vars as tk_var
 import functions as fn
 
@@ -11,6 +11,9 @@ import functions as fn
 def run(app):
     """the autoinstall page on which you choose your timezone and keyboard layout"""
     tkt.init_frame(app)
+    global LN, DI_VAR
+    LN = multilingual.get_lang()
+    DI_VAR = multilingual.get_di_var()
     # *************************************************************************************************************
     if GV.SELECTED_SPIN.desktop == "GNOME":
         GV.KICKSTART.username = ''
@@ -26,13 +29,13 @@ def run(app):
     username_pre = tkt.add_text_label(userinfo_frame, text=LN.entry_username, font=tkt.FONTS_smaller, pack=False)
     username_entry = ttk.Entry(userinfo_frame, width=10, textvariable=tk_var.username)
 
-    fullname_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=GV.UI.DI_VAR['w'])
+    fullname_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=DI_VAR['w'])
     fullname_entry.grid(pady=5, padx=5, column=1, row=0)
-    username_pre.grid(pady=5, padx=(10, 0), column=0, row=1, sticky=GV.UI.DI_VAR['w'])
+    username_pre.grid(pady=5, padx=(10, 0), column=0, row=1, sticky=DI_VAR['w'])
     username_entry.grid(pady=5, padx=5, column=1, row=1)
     encrypt_pass_note = tkt.add_text_label(userinfo_frame, text=LN.password_reminder_txt, font=tkt.FONTS_smaller,
                                            foreground=tkt.color_blue, pack=False)
-    encrypt_pass_note.grid(pady=5, padx=(10, 0), column=0, columnspan=5, row=2, sticky=GV.UI.DI_VAR['nw'])
+    encrypt_pass_note.grid(pady=5, padx=(10, 0), column=0, columnspan=5, row=2, sticky=DI_VAR['nw'])
 
     validation_func = app.register(lambda var: fn.validate_with_regex(var, valid_username_regex) is True)
     username_entry.config(validate='none', validatecommand=(validation_func, '%P'))

@@ -2,18 +2,23 @@ import tkinter
 import tkinter.ttk as ttk
 import tkinter_templates as tkt
 import globals as GV
-import translations.en as LN
 import functions as fn
 import page_install_method
+import page_app_lang
 import logging
 import global_tk_vars as tk_var
+import multilingual
 
 
 def run(app):
     """the page on which you choose which distro/flaver and whether Autoinstall should be on or off"""
     tkt.init_frame(app)
+    global LN, DI_VAR
+    LN = multilingual.get_lang()
+    DI_VAR = multilingual.get_di_var()
     # *************************************************************************************************************
-    page_frame = tkt.generic_page_layout(app, LN.desktop_question, LN.btn_next, lambda: next_btn_action())
+    page_frame = tkt.generic_page_layout(app, LN.desktop_question, LN.btn_next, lambda: next_btn_action(),
+                                         LN.btn_back, lambda: page_app_lang.run(app))
     list_spins_with_fullname = []
     listed_distro_dict = {}
     for dist in GV.ACCEPTED_SPINS:
@@ -39,7 +44,7 @@ def run(app):
         distro_combolist.set(GV.UI.combo_list_spin)
 
     info_frame = tkinter.Frame(page_frame)
-    tkt.add_text_label(info_frame, LN.info_about_selection, anchor=GV.UI.DI_VAR['w'], pady=5, padx=4,
+    tkt.add_text_label(info_frame, LN.info_about_selection, anchor=DI_VAR['w'], pady=5, padx=4,
                        foreground=tkt.color_green, font=tkt.FONTS_smaller)
     frame_distro.grid_rowconfigure(len(listed_distro_dict)+1, weight=1)  # GUI bugfix for distro_description
     selected_spin_info_tree = ttk.Treeview(info_frame, columns='info', show='', height=4,)
@@ -55,7 +60,7 @@ def run(app):
 
         elif tk_var.distro_var.get() == 'else':
             distro_combolist.grid(ipady=5, padx=(30, 0), row=len(listed_distro_dict)+1, column=0, columnspan=2,
-                                  sticky=GV.UI.DI_VAR['nw'])
+                                  sticky=DI_VAR['nw'])
             if distro_combolist.get() in list_spins_with_fullname:
                 spin_index = list_spins_with_fullname.index(distro_combolist.get())
 
