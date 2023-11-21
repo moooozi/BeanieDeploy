@@ -4,6 +4,7 @@ import ctypes
 from gui_functions import detect_darkmode_in_windows
 import globals as GV
 import resources.style.theme.svtheme.sv_ttk as sv_ttk
+import multilingual
 
 WIDTH = 780
 HEIGHT = 520
@@ -95,7 +96,7 @@ def build_main_gui_frames(parent, left_frame_img_path=None, top_frame_height=TOP
     top_frame.pack_propagate(False)
     # dark_mode_var = tk.BooleanVar(parent, DARK_MODE)
     # add_check_btn(top_frame, "Dark Mode", dark_mode_var, lambda *args: dark_theme(dark_mode_var.get(), parent), switch=True)
-    # left_frame.pack(fill="y", side=GV.UI.DI_VAR['l'])
+    # left_frame.pack(fill="y", side=multilingual.DI_VAR['l'])
     # left_frame.pack_propagate(False)
     mid_frame.pack(fill="both", expand=True, padx=20, pady=(20, 20))
     mid_frame.pack_propagate(False)
@@ -173,7 +174,7 @@ def add_primary_btn(parent, text, command):
     :return: tkinter button object
     """
     btn_next = ttk.Button(parent, text=text, style="Accent.TButton", command=command)
-    btn_next.pack(anchor=GV.UI.DI_VAR['se'], side=GV.UI.DI_VAR['r'], ipadx=22, padx=0)
+    btn_next.pack(anchor=multilingual.DI_VAR['se'], side=multilingual.DI_VAR['r'], ipadx=22, padx=0)
     return btn_next
 
 
@@ -183,7 +184,7 @@ def add_secondary_btn(parent, text, command):
     :return: tkinter button object
     """
     btn_back = ttk.Button(parent, text=text, command=command)
-    btn_back.pack(anchor=GV.UI.DI_VAR['se'], side=GV.UI.DI_VAR['r'], padx=12, ipadx=8)
+    btn_back.pack(anchor=multilingual.DI_VAR['se'], side=multilingual.DI_VAR['r'], padx=12, ipadx=8)
     return btn_back
 
 
@@ -191,22 +192,22 @@ def add_multi_radio_buttons(parent, items: dict, var, validate_func=None):
     frame = add_frame_container(parent, fill='both', expand=1)
     for index, item in enumerate(items.keys()):
         button = add_radio_btn(frame, items[item]["name"], var, item, command=lambda: validate_func(), pack=False)
-        button.grid(ipady=5, row=index, column=0, sticky=GV.UI.DI_VAR['nw'])
+        button.grid(ipady=5, row=index, column=0, sticky=multilingual.DI_VAR['nw'])
         if "error" in items[item] and items[item]["error"]:
             button.configure(state='disabled')
             ttk.Label(frame, wraplength=GV.UI.width, justify="center", text=items[item]["error"],
                       font=FONTS_smaller, foreground=color_red).grid(ipadx=5, row=index, column=1,
-                                                                     sticky=GV.UI.DI_VAR['w'])
+                                                                     sticky=multilingual.DI_VAR['w'])
         elif "description" in items[item] and items[item]["description"]:
             ttk.Label(frame, wraplength=GV.UI.width, justify="center", text=items[item]["description"],
                       font=FONTS_tiny, foreground=color_blue).grid(ipadx=5, row=index, column=1,
-                                                                   sticky=GV.UI.DI_VAR['w'])
+                                                                   sticky=multilingual.DI_VAR['w'])
     frame.grid_columnconfigure(0, weight=1)
     return frame
 
 
 def add_page_title(parent, text, pady=(0, 15)):
-    title = ttk.Label(parent, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'], text=text, font=FONTS_medium)
+    title = ttk.Label(parent, wraplength=GV.UI.width, justify=multilingual.DI_VAR['l'], text=text, font=FONTS_medium)
     title.pack(pady=pady, padx=0, fill='x', )
     return title
 
@@ -235,7 +236,7 @@ def add_text_label(parent, text=None, font=FONTS_small, var=None, pady=20, padx=
     :return: the tkinter label "ttk.Label" object
     """
     if (not var and text) or (var and not text):
-        label = ttk.Label(parent, wraplength=GV.UI.width, justify=GV.UI.DI_VAR['l'],
+        label = ttk.Label(parent, wraplength=GV.UI.width, justify=multilingual.DI_VAR['l'],
                           text=text, textvariable=var, foreground=foreground, font=font)
     else:
         return -1
