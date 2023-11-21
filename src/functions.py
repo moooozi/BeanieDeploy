@@ -139,7 +139,7 @@ def get_disk_number(drive_letter: str):
 def get_drive_size_after_resize(drive_letter: str, minus_space: int):
     arg = r'(Get-Volume | Where DriveLetter -eq ' + drive_letter + ').Size -' + str(minus_space)
     return int(float(subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                    shell=True, universal_newlines=True).stdout.strip()))
+                                    shell=True, universal_newlines=True).stdout.strip().replace(',', '.')))
 
 
 def resize_partition(drive_letter: str, new_size: int):
@@ -249,7 +249,7 @@ def create_new_wbm(boot_efi_file_path, device_path):
                               stderr=subprocess.STDOUT, shell=True, universal_newlines=True).stdout.strip()
     #log(bootguid)
     bootguid = bootguid[bootguid.index('{'):bootguid.index('}') + 1]
-    arg = fr'bcdedit /set  "{bootguid}" path {boot_efi_file_path}'
+    arg = fr'bcdedit /set "{bootguid}" path {boot_efi_file_path}'
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     arg = fr'bcdedit /set "{bootguid}" device partition={device_path}'
     subprocess.run([r'powershell.exe', arg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
