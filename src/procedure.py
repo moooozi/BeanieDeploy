@@ -273,17 +273,16 @@ def parse_spins(spins_list):
     return live_os_base_index, final_spin_list
 
 
-def get_wifi_profiles(work_directory):
+def get_wifi_profiles(wifi_profile_dir):
 
-    work_directory += r'\wifi_profiles'
-    fn.rmdir(work_directory)
-    fn.mkdir(work_directory)
+    fn.rmdir(wifi_profile_dir)
+    fn.mkdir(wifi_profile_dir)
 
-    fn.extract_wifi_profiles(work_directory)
+    fn.extract_wifi_profiles(wifi_profile_dir)
     wifi_profiles = []
-    for filename in os.listdir(work_directory):
+    for filename in os.listdir(wifi_profile_dir):
         try:
-            with open(os.path.join(work_directory, filename), 'r') as f:  # open in readonly mode
+            with open(os.path.join(wifi_profile_dir, filename), 'r') as f:  # open in readonly mode
                 xml_file = f.read()
                 wifi_profile: dict = fn.parse_xml(xml_file)
                 name = wifi_profile['WLANProfile']['name']
@@ -299,7 +298,8 @@ def get_wifi_profiles(work_directory):
         except KeyError:
             print('Note: a wifi profile could not be exported, so it will be skipped')
             continue
-    fn.rmdir(work_directory)
+    fn.rmdir(wifi_profile_dir)
+    fn.mkdir(wifi_profile_dir)
     return wifi_profiles
 
 

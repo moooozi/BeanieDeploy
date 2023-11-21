@@ -16,17 +16,8 @@ def run(app):
     GV.KICKSTART.passphrase = tk_var.encrypt_passphrase_var.get()
     GV.KICKSTART.tpm_auto_unlock = tk_var.encryption_tpm_unlock_toggle_var.get()
 
-    wifi_profiles = prc.get_wifi_profiles(GV.PATH.WORK_DIR) if GV.INSTALL_OPTIONS.export_wifi else None
-
-    with open(GV.PATH.CURRENT_DIR + '/resources/autoinst/wifi_network_file_template') as wifi_network_file_template:
-        wifi_network_template = wifi_network_file_template.read().strip()
-        for index, profile in enumerate(wifi_profiles):
-            network_file = wifi_network_template.replace('%name%', profile['name'])
-            network_file = network_file.replace('%ssid%', profile['ssid'])
-            network_file = network_file.replace('%hidden%', profile['hidden'])
-            network_file = network_file.replace('%password%', profile['password'])
-            with open(f"{GV.PATH.WIFI_PROFILES_DIR}\\imported_wifi{str(index)}.nmconnection") as wifi_profile:
-                wifi_profile.write(network_file)
+    wifi_profiles = get_wifi_profiles() if GV.INSTALL_OPTIONS.export_wifi else None
+                    
     install_method = GV.KICKSTART.partition_method
     # creating new partition for root is only needed when installing alongside Windows
     GV.PARTITION.make_root_partition = True if install_method == 'dualboot' else False
@@ -126,3 +117,16 @@ def run(app):
     installer_args.efi_file_relative_path = GV.APP_default_efi_file_path
 
     return page_installing.run(app, installer_args=installer_args)
+
+def get_wifi_profiles():
+    wifi_profiles = prc.get_wifi_profiles(GV.PATH.WIFI_PROFILES_DIR) 
+    with open(GV.PATH.CURRENT_DIR + '/resources/autoinst/wifi_network_file_template') as wifi_network_file_template:
+        wifi_network_template = wifi_network_file_template.read().strip()
+        for index, profile in enumerate(wifi_profiles):
+            network_file = wifi_network_template.replace('%name%', profile['name'])
+            network_file = network_file.replace('%ssid%', profile['ssid'])
+            network_file = network_file.replace('%hidden%', profile['hidden'])
+            network_file = network_file.replace('%password%', profile['password'])
+            with open(f"{GV.PATH.WIFI_PROFILES_DIR}\\imported_wifi{str(index)}.nmconnection",'w') as wifi_profile:
+                wifi_profile.write(network_file)
+    return wifi_profiles
