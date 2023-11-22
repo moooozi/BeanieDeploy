@@ -1,0 +1,6 @@
+Path=%temp%\BeanieDeploy
+Setup=interpreter\python\pythonw.exe ".\src\main.py"
+Silent=1
+Overwrite=1
+Title=BeanieDeploy
+Lock
