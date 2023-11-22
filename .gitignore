@@ -1,5 +1,6 @@
 /appLogo.png
-/interpreter/python/
+/interpreter/
 **/__pycache__/
-/src/dist
-/src/build
+/src/dist/
+/src/build/
+/output/
