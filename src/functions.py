@@ -292,12 +292,15 @@ def validate_with_regex(var, regex, mode='read'):
     return None
 
 
-def get_admin():
-    from sys import executable, argv
-    if not ctypes.windll.shell32.IsUserAnAdmin():
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", executable, " ".join(argv), None, 1)
-        raise SystemExit
+def is_admin():
+    return ctypes.windll.shell32.IsUserAnAdmin()
 
+def get_admin(args):
+    from sys import executable, argv
+    args = " ".join(argv) + " " + args
+    if not is_admin():
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", executable, args, None, 1)
+        raise SystemExit
 
 def get_json(url, queue=None, named: str = None):
     """
@@ -358,8 +361,7 @@ def set_windows_time_to_utc():
 
 
 def get_user_downloads_folder():
-
-    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders') as key:
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders') as key:
         downloads_dir = winreg.QueryValueEx(key, '{374DE290-123F-4565-9164-39C4925E467B}')[0]
     return downloads_dir
 
