@@ -27,7 +27,7 @@ for root, dirs, files in os.walk(src_dir):
         # Check the file extension
         if file.endswith(".py"):
             # Compile the python file and save it as a .pyc file
-            py_compile.compile(src_file, dst_file + "c")
+            py_compile.compile(src_file, dst_file + "c", optimize=2)
         else:
             # Copy the file as it is
             shutil.copy(src_file, dst_file)
@@ -57,7 +57,9 @@ for lib_dir in libs_dirs:
         if pathlib.Path(root).name == "__pycache__":
             continue
         pathparts = pathlib.Path(root).absolute().parts
-        if "test" in pathparts and "Lib" in  pathparts[pathparts.index("test")-1] == "Lib":
+
+        ignore_modules = ['test', 'ensurepip', 'idlelib','turtledemo', 'venv']
+        if "Lib" in pathparts and pathparts.index("Lib") < len(pathparts)-1 and pathparts[pathparts.index("Lib")+1] in ignore_modules:
             continue
         if "site-packages" in pathlib.Path(root).parts:
             continue
@@ -74,7 +76,7 @@ for lib_dir in libs_dirs:
             # Check the file extension
             if file.endswith(".py"):
                 # Compile the python file and save it as a .pyc file
-                py_compile.compile(src_file, dst_file + "c")
+                py_compile.compile(src_file, dst_file + "c", optimize=2)
             else:
                 # Copy the file as it is
                 shutil.copy(src_file, dst_file)
