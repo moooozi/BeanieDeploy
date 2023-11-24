@@ -11,7 +11,7 @@ import global_tk_vars as tk_var
 
 
 
-def run(app, skip_check=False):
+def run(app, skip_check=False, done_checks : dict = {}):
     """The page on which is decided whether the app can run on the device or not"""
     global LN, DI_VAR
     LN = multilingual.get_lang()
@@ -21,7 +21,6 @@ def run(app, skip_check=False):
     page_frame = tkt.generic_page_layout(app, LN.check_running)
     progressbar_check = tkt.add_progress_bar(page_frame)
     tkt.add_text_label(page_frame, var=tk_var.job_var, pady=0, padx=10)
-
     def callback_compatibility(result):
         if result == 'arch':
             progressbar_check['value'] = 10
@@ -32,27 +31,34 @@ def run(app, skip_check=False):
             tk_var.job_var.set(LN.check_ram)
             progressbar_check['value'] = 30
         elif result == 'space':
+            progressbar_check['value'] = 50
             tk_var.job_var.set(LN.check_space)
-            progressbar_check['value'] = 40
+        elif result == 'get_admin':
+            args_list = [f"--check_{key} {value}" for key, value in vars(GV.COMPATIBILITY_RESULTS).items()]
+            args_string = " ".join(args_list)
+            fn.get_admin(args_string)
         elif result == 'resizable':
             tk_var.job_var.set(LN.check_resizable)
-            progressbar_check['value'] = 50
-        elif isinstance(result, dict) and result.keys() >= {"arch", "uefi"}:
-            GV.COMPATIBILITY_RESULTS.__init__(**result)
+            progressbar_check['value'] = 80
+            # get available spins and ip location data once the last test begins
+            gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
+            gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
+
+        elif isinstance(result, list) and result[0] == 'compatibility_result':
+            setattr(GV.COMPATIBILITY_RESULTS, result[1], result[2])
             tk_var.job_var.set(LN.check_available_downloads)
-            progressbar_check['value'] = 95
         elif isinstance(result, tuple) and result[0] == 'spin_list':
             GV.ALL_SPINS = result[1]
         elif isinstance(result, tuple) and result[0] == 'geo_ip':
             GV.IP_LOCALE = result[1]
-        if GV.ALL_SPINS and vars(GV.COMPATIBILITY_RESULTS):
+        if GV.ALL_SPINS and set(required_checks).issubset(set(vars(GV.COMPATIBILITY_RESULTS).keys())):
             return 1
 
     if not skip_check:
         compatibility_results = prc.CompatibilityResult()
-        gui.run_async_function(compatibility_results.compatibility_test,)
-        gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
-        gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
+        required_checks = [x for x in compatibility_results.checks if x not in done_checks]
+        gui.run_async_function(compatibility_results.compatibility_test, kwargs={'check_order': required_checks})
+
         gui.handle_queue_result(tkinter=app, callback=callback_compatibility)
     else:  # DUMMY TEST DATA
         GV.COMPATIBILITY_RESULTS.uefi = 'uefi'
@@ -62,6 +68,9 @@ def run(app, skip_check=False):
         GV.COMPATIBILITY_RESULTS.arch = 'amd64'
         GV.ALL_SPINS = GV.DUMMY_ALL_SPING
         GV.IP_LOCALE = GV.DUMMY_IP_LOCALE
+
+    for check, result in done_checks.items():
+        setattr(GV.COMPATIBILITY_RESULTS, check, result)
     # Try to detect GEO-IP locale while compatibility check is running. Timeout once check has finished
     # LOG #########################################################
     log = '\nInitial Test completed, results:'
