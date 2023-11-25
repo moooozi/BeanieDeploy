@@ -1,0 +1,5 @@
+;!@Install@!UTF-8!
+InstallPath="%temp%\BeanieDeploy"
+RunProgram="release\interpreter\pythonw.exe .\release\src\main.pyc"
+GUIMode="2"
+;!@InstallEnd@! 

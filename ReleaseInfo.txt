@@ -1,2 +1,3 @@
 AppName: BeanieDeploy
 AppVersion: 0.9-Beta
+Author: Mohammed Zidane
