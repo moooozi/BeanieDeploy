@@ -1,3 +1,5 @@
+current_lang = 'English'
+
 available_languages = {
     # 'display name': ('codename(filename)', 'is right-to-left?'
     
@@ -33,11 +35,16 @@ def right_to_left_lang(is_true):
 def set_lang(new_lang):
     """Used to change GUI's display language"""
     from importlib import import_module
-    lang_new = available_languages[new_lang]#
+    lang_new = available_languages[new_lang]
     global LN, DI_VAR
     LN = import_module('.' + lang_new[0], 'translations')
     DI_VAR = right_to_left_lang(lang_new[1])
+    global current_lang
+    current_lang = new_lang
     return DI_VAR, LN
+
+def get_current_lang():
+    return current_lang
 
 def get_lang():
     return LN

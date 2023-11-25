@@ -132,4 +132,4 @@ finished_text = "A restart is required to continue installation, " \
                    "click '%s' to restart now or '%s' to manually restart later" % (btn_restart_now, btn_restart_later)
 finished_text_restarting_now = "Automatic restart in %s seconds"
 
-lang_question = "Now let's get started, select your preferred language."
+lang_question = "Now let's get started, select your preferred app language."

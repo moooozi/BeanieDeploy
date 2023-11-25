@@ -132,4 +132,4 @@ finished_text = "Ein Neustart ist erforderlich, um die Installation fortzusetzen
                    "klicken Sie auf '%s', um jetzt neu zu starten oder auf '%s', um später manuell neu zu starten" % (btn_restart_now, btn_restart_later)
 finished_text_restarting_now = "Automatischer Neustart in %s Sekunden"
 
-lang_question = "Jetzt geht's los, wählen Sie Ihre bevorzugte Sprache."
+lang_question = "Jetzt geht's los, wählen Sie Ihre bevorzugte App-Sprache."
