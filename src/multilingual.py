@@ -6,6 +6,11 @@ available_languages = {
     'Deutsch': ('de', 0),
 }
 
+def get_lang_by_code(code):
+    for lang, values in available_languages.items():
+        if values[0] == code:
+            return lang
+    return None
 
 def right_to_left_lang(is_true):
     """invert default directions. This enables support for 'right-to-left' written languages, can be reverted by setting

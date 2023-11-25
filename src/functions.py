@@ -365,3 +365,17 @@ def get_user_downloads_folder():
         downloads_dir = winreg.QueryValueEx(key, '{374DE290-123F-4565-9164-39C4925E467B}')[0]
     return downloads_dir
 
+def enqueue_output(out, queue):
+    for line in iter(out.readline, b''):
+        try:
+            parsed_line = json.loads(line)
+        except json.decoder.JSONDecodeError:
+            parsed_line = line
+        queue.put(parsed_line)
+    out.close()
+
+def windows_language_code():
+    import locale
+    lang_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+    lang_code = locale.windows_locale[lang_id]
+    return lang_code.split('_')[0]

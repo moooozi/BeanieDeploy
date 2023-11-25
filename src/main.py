@@ -30,8 +30,6 @@ def run():
     creates the required directories, builds the main GUI frames, and runs the page check. Finally, it starts the main event 
     loop of the application.
     """
-    from sys import argv
-    print(argv)
     skip_check= False
     args = parse_arguments()
     if args.skip_check:
@@ -48,19 +46,17 @@ def run():
         done_checks['space'] = int(args.check_space)
     if args.check_resizable:
         done_checks['resizable'] = int(args.check_resizable)
-    print(done_checks)
     # fn.get_admin()  # Request elevation (admin) if not running as admin
     global app
     logging.info('APP STARTING: %s v%s' % (GV.APP_SW_NAME, GV.APP_SW_VERSION))
-    print('################################################################\n'
-          'IMPORTANT: DO NOT CLOSE THIS CONSOLE WINDOW WHILE APP IS RUNNING\n'
-          '################################################################\n\n')
     prc.init_paths(GV.PATH)
     app = tkt.init_tkinter(GV.APP_SW_NAME, GV.PATH.APP_ICON)  # initialize tkinter
     fn.mkdir(GV.PATH.WORK_DIR)
     TOP_FRAME, MID_FRAME, LEFT_FRAME = tkt.build_main_gui_frames(app)
     #tk.Label(LEFT_FRAME, image=tk.PhotoImage(file=GV.PATH.CURRENT_DIR + r'\resources\style\left_frame.gif')).pack()
-    multilingual.set_lang("English")
+    lang_code = multilingual.get_lang_by_code(fn.windows_language_code())
+    multilingual.set_lang(lang_code if lang_code else 'en')
+
     import page_check
     page_check.run(MID_FRAME, skip_check, done_checks)
     app.mainloop()
