@@ -30,11 +30,10 @@ class CompatibilityResult:
             check = check_function()
             if check.returncode != 0:
                 result = -1
-                setattr(self, f'{check_type}', -1)
             else:
                 result = check.result
-                setattr(self, f'{check_type}', check.result)
-            
+    
+            setattr(self, f'{check_type}', result)
             queue.put(["compatibility_result",check_type, result])
             check_results[check_type] = result
 
