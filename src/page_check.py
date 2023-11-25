@@ -1,7 +1,3 @@
-import queue
-import subprocess
-import sys
-import threading
 import tkinter_templates as tkt
 import globals as GV
 import multilingual
@@ -45,8 +41,8 @@ def run(app, skip_check=False, done_checks : dict = {}):
             tk_var.job_var.set(LN.check_resizable)
             progressbar_check['value'] = 80
             # get available spins and ip location data once the last test begins
-            gui.run_async_function(fn.get_json, queue=q_check, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
-            gui.run_async_function(fn.get_json, queue=q_check, kwargs={'url': GV.APP_FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
+            gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
+            gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
 
         elif isinstance(result, list) and result[0] == 'compatibility_result':
             setattr(GV.COMPATIBILITY_RESULTS, result[1], result[2])
@@ -61,16 +57,9 @@ def run(app, skip_check=False, done_checks : dict = {}):
     if not skip_check:
         compatibility_results = prc.CompatibilityResult()
         required_checks = [x for x in compatibility_results.checks if x not in done_checks]
-        q_check = queue.Queue()
-        p_check = subprocess.Popen ([sys.executable,"-u", "-c", "import compatibility_check"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+        gui.run_async_function(compatibility_results.compatibility_test, kwargs={'check_order': required_checks})
 
-        # Create and start a thread to run the subprocess
-        thread = threading.Thread (target=fn.enqueue_output, args=(p_check.stdout, q_check))
-        thread.daemon = True
-        thread.start()
-        #gui.run_async_function(compatibility_results.compatibility_test, queue=q_check, kwargs={'check_order': required_checks})
-
-        gui.handle_queue_result(tkinter=app, callback=callback_compatibility, queue=q_check)
+        gui.handle_queue_result(tkinter=app, callback=callback_compatibility)
     else:  # DUMMY TEST DATA
         GV.COMPATIBILITY_RESULTS.uefi = 'uefi'
         GV.COMPATIBILITY_RESULTS.ram = 34359738368
