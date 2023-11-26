@@ -7,5 +7,5 @@
 /release/
 make-stanalone/winres/winres.json
 ReleaseInfo.txt
-make-stanalone/innosetup_template.iss
-make-stanalone/nsis_template.nsi
+make-stanalone/innosetup.iss
+make-stanalone/nsis.nsi
