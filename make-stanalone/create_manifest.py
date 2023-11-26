@@ -17,24 +17,33 @@ app_name = app_info.get('AppName', '')
 app_version = app_info.get('AppVersion', '')
 app_version_base = app_version.split('-')[0]
 author = app_info.get('Author', '')
+copyright = app_info.get('Copyright', '')
+description = app_info.get('Description', '')
+app_url = app_info.get('AppUrl', '')
+dev_url = app_info.get('DevUrl', '')
 
+def create_maifest():
+    # Read the winres.json file
+    with open(INPUT, 'r') as f:
+        data = json.load(f)
 
-# Read the winres.json file
-with open(INPUT, 'r') as f:
-    data = json.load(f)
+    # Update the json data
+    data['RT_MANIFEST']['#1']['0409']['identity']['name'] = app_name
+    data['RT_MANIFEST']['#1']['0409']['identity']['version'] = app_version_base
+    data['RT_VERSION']['#1']['0000']['fixed']['file_version'] = "1.0"
+    data['RT_VERSION']['#1']['0000']['fixed']['product_version'] = app_version_base
+    data['RT_VERSION']['#1']['0000']['info']['0409']['ProductName'] = app_name
+    data['RT_VERSION']['#1']['0000']['info']['0409']['ProductVersion'] = app_version
+    data['RT_VERSION']['#1']['0000']['info']['0409']['FileDescription'] = description
+    data['RT_VERSION']['#1']['0000']['info']['0409']['LegalCopyright'] = copyright
+    data['RT_VERSION']['#1']['0000']['info']['0409']['CompanyName'] = author
+    data['RT_VERSION']['#1']['0000']['info']['0409']['OriginalFilename'] = f"{app_name}-{app_version}-Bundled-Win64.exe"
 
-# Update the json data
-data['RT_MANIFEST']['#1']['0409']['identity']['name'] = app_name
-data['RT_MANIFEST']['#1']['0409']['identity']['version'] = app_version_base
-data['RT_VERSION']['#1']['0000']['fixed']['file_version'] = "1.0"
-data['RT_VERSION']['#1']['0000']['fixed']['product_version'] = app_version_base
-data['RT_VERSION']['#1']['0000']['info']['0409']['ProductName'] = app_name
-data['RT_VERSION']['#1']['0000']['info']['0409']['ProductVersion'] = app_version
-data['RT_VERSION']['#1']['0000']['info']['0409']['CompanyName'] = ""
-data['RT_VERSION']['#1']['0000']['info']['0409']['FileDescription'] = "The quickest way to switch to Fedora Linux"
-data['RT_VERSION']['#1']['0000']['info']['0409']['LegalCopyright'] = f"Copyright (c) 2021-2023 {author}"
-data['RT_VERSION']['#1']['0000']['info']['0409']['OriginalFilename'] = f"{app_name}-{app_version}-Bundled-Win64.exe"
+    # Write the updated data back to the winres.json file
+    with open(OUTPUT, 'w') as f:
+        json.dump(data, f, indent=2)
+    return data['RT_VERSION']['#1']['0000']['info']['0409']
 
-# Write the updated data back to the winres.json file
-with open(OUTPUT, 'w') as f:
-    json.dump(data, f, indent=2)
+if __name__ == '__main__':
+    create_maifest()
+

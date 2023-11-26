@@ -17,10 +17,10 @@ set SFXName=%AppName%-v%AppVersion%-Bundled-Win64.exe
 rem Check if file exists
 if exist "%OUTPUTDIR%\%SFXName%" del "%OUTPUTDIR%\%SFXName%"
 rem Run compile collect script
-python "./compile_and_collect.py"
+rem python "./compile_and_collect.py"
 rem Create the 7Zip archive
 copy "%PROJECTDIR%\ReleaseInfo.txt" "%PROJECTDIR%\release\ReleaseInfo.txt"
-"%SEVENZIPEXE%" a -y -mx9 -m0=LZMA2 "%OUTPUTDIR%\Installer.7z" "%PROJECTDIR%\release"
+rem "%SEVENZIPEXE%" a -y -mx9 -m0=LZMA2 "%OUTPUTDIR%\Installer.7z" "%PROJECTDIR%\release"
 
 rem Create the SFX archive by concatenating the SFX module, the config file and the 7Zip archive
 copy /b "%SEVENSFXMOD%" + "7zip_sfx_options.txt" + "%OUTPUTDIR%\Installer.7z" "%OUTPUTDIR%\%SFXName%"

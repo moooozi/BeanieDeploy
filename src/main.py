@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import multilingual
 import globals as GV
 import procedure as prc
@@ -30,6 +31,8 @@ def run():
     creates the required directories, builds the main GUI frames, and runs the page check. Finally, it starts the main event 
     loop of the application.
     """
+    #script_dir = os.path.dirname(os.path.abspath(__file__))
+    #os.chdir(script_dir)
     skip_check= False
     args = parse_arguments()
     if args.skip_check:
