@@ -3,7 +3,7 @@ Outfile "{OutputFileName}"
 InstallDir $TEMP\{MyAppName}
 RequestExecutionLevel user
 SilentInstall silent
-
+SetCompressor /SOLID /FINAL lzma
 Icon "{IconPath}"
 
 ; Metadata
@@ -18,6 +18,6 @@ Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   File /r "{SourcePath}\interpreter\*"
   File /r "{SourcePath}\src\*"
-  ExecShell "open" "$INSTDIR\interpreter\pythonw.exe" "$INSTDIR\src\main.pyc"
+  ExecShell "open" "$INSTDIR\pythonw.exe" "$INSTDIR\main.pyc --release"
 
 SectionEnd
