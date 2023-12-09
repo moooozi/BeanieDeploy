@@ -1,5 +1,6 @@
 import multiprocessing
 import functions as fn
+import atexit
 
 GLOBAL_QUEUE = multiprocessing.Queue()
 
@@ -16,7 +17,10 @@ def run_async_function(function, queue=GLOBAL_QUEUE, args=(), kwargs=None):
     if kwargs is None: kwargs = {}
     if queue: kwargs['queue'] = queue
     while queue.qsize(): queue.get()
-    multiprocessing.Process(target=function, args=args, kwargs=kwargs).start()
+    procces = multiprocessing.Process(target=function, args=args, kwargs=kwargs)
+    procces.start()
+    atexit.register(procces.terminate)
+    
 
 
 def handle_queue_result(tkinter, callback=None, wait_for_result=None, queue=GLOBAL_QUEUE):
