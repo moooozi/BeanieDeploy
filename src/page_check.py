@@ -51,23 +51,18 @@ def run(app, skip_check=False, done_checks : dict = {}):
             GV.ALL_SPINS = result[1]
         elif isinstance(result, tuple) and result[0] == 'geo_ip':
             GV.IP_LOCALE = result[1]
-        if GV.ALL_SPINS and set(required_checks).issubset(set(vars(GV.COMPATIBILITY_RESULTS).keys())):
+        if GV.ALL_SPINS and (skip_check or set(required_checks).issubset(set(vars(GV.COMPATIBILITY_RESULTS).keys()))):
             return 1
 
     if not skip_check:
         compatibility_results = prc.CompatibilityResult()
         required_checks = [x for x in compatibility_results.checks if x not in done_checks]
         gui.run_async_function(compatibility_results.compatibility_test, kwargs={'check_order': required_checks})
+    else:
+        gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
+        gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
 
-        gui.handle_queue_result(tkinter=app, callback=callback_compatibility)
-    else:  # DUMMY TEST DATA
-        GV.COMPATIBILITY_RESULTS.uefi = 'uefi'
-        GV.COMPATIBILITY_RESULTS.ram = 34359738368
-        GV.COMPATIBILITY_RESULTS.space = 133264248832
-        GV.COMPATIBILITY_RESULTS.resizable = 432008358400
-        GV.COMPATIBILITY_RESULTS.arch = 'amd64'
-        GV.ALL_SPINS = GV.DUMMY_ALL_SPING
-        GV.IP_LOCALE = GV.DUMMY_IP_LOCALE
+    gui.handle_queue_result(tkinter=app, callback=callback_compatibility)
 
     for check, result in done_checks.items():
         setattr(GV.COMPATIBILITY_RESULTS, check, result)
@@ -81,26 +76,27 @@ def run(app, skip_check=False, done_checks : dict = {}):
         logging.info('\nNote: NVIDIA Graphics card detected')
     # #############################################################
     errors = []
-    if GV.COMPATIBILITY_RESULTS.arch == -1:
-        errors.append(LN.error_arch_9)
-    elif GV.COMPATIBILITY_RESULTS.arch not in GV.ACCEPTED_ARCHITECTURES:
-        errors.append(LN.error_arch_0)
-    if GV.COMPATIBILITY_RESULTS.uefi == -1:
-        errors.append(LN.error_uefi_9)
-    elif GV.COMPATIBILITY_RESULTS.uefi != 'uefi':
-        errors.append(LN.error_uefi_0)
-    if GV.COMPATIBILITY_RESULTS.ram == -1:
-        errors.append(LN.error_totalram_9)
-    elif GV.COMPATIBILITY_RESULTS.ram < GV.APP_minimal_required_ram:
-        errors.append(LN.error_totalram_0)
-    if GV.COMPATIBILITY_RESULTS.space == -1:
-        errors.append(LN.error_space_9)
-    elif GV.COMPATIBILITY_RESULTS.space < GV.APP_minimal_required_space:
-        errors.append(LN.error_space_0)
-    if GV.COMPATIBILITY_RESULTS.resizable == -1:
-        errors.append(LN.error_resizable_9)
-    elif GV.COMPATIBILITY_RESULTS.resizable < GV.APP_minimal_required_space:
-        errors.append(LN.error_resizable_0)
+    if not skip_check:
+        if GV.COMPATIBILITY_RESULTS.arch == -1:
+            errors.append(LN.error_arch_9)
+        elif GV.COMPATIBILITY_RESULTS.arch not in GV.ACCEPTED_ARCHITECTURES:
+            errors.append(LN.error_arch_0)
+        if GV.COMPATIBILITY_RESULTS.uefi == -1:
+            errors.append(LN.error_uefi_9)
+        elif GV.COMPATIBILITY_RESULTS.uefi != 'uefi':
+            errors.append(LN.error_uefi_0)
+        if GV.COMPATIBILITY_RESULTS.ram == -1:
+            errors.append(LN.error_totalram_9)
+        elif GV.COMPATIBILITY_RESULTS.ram < GV.APP_minimal_required_ram:
+            errors.append(LN.error_totalram_0)
+        if GV.COMPATIBILITY_RESULTS.space == -1:
+            errors.append(LN.error_space_9)
+        elif GV.COMPATIBILITY_RESULTS.space < GV.APP_minimal_required_space:
+            errors.append(LN.error_space_0)
+        if GV.COMPATIBILITY_RESULTS.resizable == -1:
+            errors.append(LN.error_resizable_9)
+        elif GV.COMPATIBILITY_RESULTS.resizable < GV.APP_minimal_required_space:
+            errors.append(LN.error_resizable_0)
     if not errors:
         live_os_installer_index, GV.ACCEPTED_SPINS = prc.parse_spins(GV.ALL_SPINS)
         if live_os_installer_index is not None:
@@ -109,4 +105,3 @@ def run(app, skip_check=False, done_checks : dict = {}):
         return page_app_lang.run(app)
     else:
         page_error.run(app, errors)
-

@@ -12,7 +12,7 @@ app = None
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--skip-check", action="store_true", help="Skip the check")
+    parser.add_argument("--skip_check", action="store_true", help="Skip the check")
     parser.add_argument("--release", action="store_true", help="The App is in release mode")
     parser.add_argument("--check_arch", type=str,)
     parser.add_argument("--check_uefi", type=str,)
@@ -52,6 +52,11 @@ def run():
         done_checks['resizable'] = int(args.check_resizable)
     if args.release:
         fn.cleanup_on_reboot(script_dir)
+    else:
+        import sys
+        sys.argv.append("--skip_check")
+        skip_check = True
+        print("The App is in debug mode")
     # fn.get_admin()  # Request elevation (admin) if not running as admin
     global app
     logging.info('APP STARTING: %s v%s' % (GV.APP_SW_NAME, GV.APP_SW_VERSION))

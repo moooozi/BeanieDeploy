@@ -23,8 +23,19 @@ def run(app):
     space_dualboot = GV.APP_dualboot_required_space + GV.APP_linux_boot_partition_size + \
                      GV.APP_additional_failsafe_space + GV.PARTITION.tmp_part_size * 2
     space_clean = GV.APP_linux_boot_partition_size + GV.APP_additional_failsafe_space + GV.PARTITION.tmp_part_size * 2
-    dualboot_space_available = GV.COMPATIBILITY_RESULTS.resizable > space_dualboot
-    replace_win_space_available = GV.COMPATIBILITY_RESULTS.resizable > space_clean
+    
+    from sys import argv
+    if '--skip_check' not in argv:
+        dualboot_space_available = GV.COMPATIBILITY_RESULTS.resizable > space_dualboot
+        replace_win_space_available = GV.COMPATIBILITY_RESULTS.resizable > space_clean
+        max_size = fn.byte_to_gb(
+        GV.COMPATIBILITY_RESULTS.resizable - GV.SELECTED_SPIN.size - GV.APP_additional_failsafe_space)
+        max_size = round(max_size, 2)
+    else:
+        dualboot_space_available = True
+        replace_win_space_available = True
+        max_size = 9999
+    
     is_auto_installable = GV.SELECTED_SPIN.is_auto_installable
 
     dualboot_error_msg = ""
@@ -52,9 +63,6 @@ def run(app):
         tk_var.install_method_var.set(default)
 
     min_size = fn.byte_to_gb(GV.APP_dualboot_required_space)
-    max_size = fn.byte_to_gb(
-        GV.COMPATIBILITY_RESULTS.resizable - GV.SELECTED_SPIN.size - GV.APP_additional_failsafe_space)
-    max_size = round(max_size, 2)
     entry1_frame = ttk.Frame(radio_buttons)
     radio_buttons.rowconfigure(5, weight=1)
     entry1_frame.grid(row=5, column=0, columnspan=2, padx=0, sticky=DI_VAR['w'])
