@@ -379,3 +379,13 @@ def windows_language_code():
     lang_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
     lang_code = locale.windows_locale[lang_id]
     return lang_code.split('_')[0]
+
+
+def cleanup_on_reboot(dir_to_delete):
+    dir_to_delete = dir_to_delete.replace('/', '\\')
+    cmd = f'CMD /C rmdir /s /q "{dir_to_delete}"'
+    
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                        r"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce", 
+                        0, winreg.KEY_SET_VALUE) as key:
+        winreg.SetValueEx(key, "MyAppCleanup", 0, winreg.REG_SZ, cmd)

@@ -13,6 +13,7 @@ app = None
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--skip-check", action="store_true", help="Skip the check")
+    parser.add_argument("--release", action="store_true", help="The App is in release mode")
     parser.add_argument("--check_arch", type=str,)
     parser.add_argument("--check_uefi", type=str,)
     parser.add_argument("--check_ram", type=str,)
@@ -31,8 +32,8 @@ def run():
     creates the required directories, builds the main GUI frames, and runs the page check. Finally, it starts the main event 
     loop of the application.
     """
-    #script_dir = os.path.dirname(os.path.abspath(__file__))
-    #os.chdir(script_dir)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(script_dir)
     skip_check= False
     args = parse_arguments()
     if args.skip_check:
@@ -49,6 +50,8 @@ def run():
         done_checks['space'] = int(args.check_space)
     if args.check_resizable:
         done_checks['resizable'] = int(args.check_resizable)
+    if args.release:
+        fn.cleanup_on_reboot(script_dir)
     # fn.get_admin()  # Request elevation (admin) if not running as admin
     global app
     logging.info('APP STARTING: %s v%s' % (GV.APP_SW_NAME, GV.APP_SW_VERSION))
