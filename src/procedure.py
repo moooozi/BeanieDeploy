@@ -260,6 +260,8 @@ def parse_spins(spins_list):
             current_spin[attr] = False
         if (attr := "is_default") not in spin_keys:
             current_spin[attr] = False
+        if (attr := "is_featured") not in spin_keys:
+            current_spin[attr] = False
         spin_ns = types.SimpleNamespace(**current_spin)
         accepted_spins_list.append(spin_ns)
     for index, spin in enumerate(accepted_spins_list):

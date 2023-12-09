@@ -19,22 +19,34 @@ def run(app):
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(app, LN.desktop_question, LN.btn_next, lambda: next_btn_action(),
                                          LN.btn_back, lambda: page_app_lang.run(app))
-    list_spins_with_fullname = []
-    listed_distro_dict = {}
+    full_spin_list = []
+    non_featured_spin_list = []
+    featured_spin_desc = {}
+    current_listed_spin_index = 0
     for dist in GV.ACCEPTED_SPINS:
         spin_fullname = f"{dist.name} {dist.version}"
-        list_spins_with_fullname.append(spin_fullname)
-        if dist.is_default:
-            # tk_var.distro_var.set(spin_fullname) if tk_var.distro_var.get() == '' else ''
-            listed_distro_dict[spin_fullname] = {
+        full_spin_list.append(spin_fullname)
+        if dist.is_default or dist.is_featured:
+            featured_spin_desc[spin_fullname] = {
                 "name": spin_fullname,
                 "description": LN.distro_hint[dist.name] if dist.name in LN.distro_hint else ""
             }
+            if dist.is_default:
+                tk_var.distro_var.set(spin_fullname)  if tk_var.distro_var.get() == '' else ''
+                # Moving the default spin to top of the list:
+                default_spin = [spin_fullname,featured_spin_desc.pop(spin_fullname)]
+                featured_spin_desc = {default_spin[0]: default_spin[1], **featured_spin_desc}
+            
+            current_listed_spin_index += 1
+            
+        else:
+            non_featured_spin_list.append(spin_fullname)
+    
 
-    listed_distro_dict["else"] = {"name": LN.something_else}
-    frame_distro = tkt.add_multi_radio_buttons(page_frame, listed_distro_dict, tk_var.distro_var,
+    featured_spin_desc["else"] = {"name": LN.something_else}
+    frame_distro = tkt.add_multi_radio_buttons(page_frame, featured_spin_desc, tk_var.distro_var,
                                                lambda: validate_input())
-    distro_combolist = ttk.Combobox(frame_distro, values=list_spins_with_fullname, state='readonly')
+    distro_combolist = ttk.Combobox(frame_distro, values=non_featured_spin_list, state='readonly')
     distro_combolist.bind("<<ComboboxSelected>>", lambda *args: validate_input())
 
     # GUI Bugfix
@@ -46,7 +58,7 @@ def run(app):
     info_frame = tkinter.Frame(page_frame)
     tkt.add_text_label(info_frame, LN.info_about_selection, anchor=DI_VAR['w'], pady=5, padx=4,
                        foreground=tkt.color_green, font=tkt.FONTS_smaller)
-    frame_distro.grid_rowconfigure(len(listed_distro_dict)+1, weight=1)  # GUI bugfix for distro_description
+    frame_distro.grid_rowconfigure(len(featured_spin_desc)+1, weight=1)  # GUI bugfix for distro_description
     selected_spin_info_tree = ttk.Treeview(info_frame, columns='info', show='', height=4,)
     selected_spin_info_tree.configure(selectmode='none')
     selected_spin_info_tree.column('info', width=250)
@@ -54,15 +66,15 @@ def run(app):
 
     def validate_input(*args):
         spin_index = None
-        if (distro := tk_var.distro_var.get()) in list_spins_with_fullname:
-            spin_index = list_spins_with_fullname.index(distro)
+        if (distro := tk_var.distro_var.get()) in full_spin_list:
+            spin_index = full_spin_list.index(distro)
             distro_combolist.grid_forget()
 
         elif tk_var.distro_var.get() == 'else':
-            distro_combolist.grid(ipady=5, padx=(30, 0), row=len(listed_distro_dict)+1, column=0, columnspan=2,
+            distro_combolist.grid(ipady=5, padx=(30, 0), row=len(featured_spin_desc)+1, column=0, columnspan=2,
                                   sticky=DI_VAR['nw'])
-            if distro_combolist.get() in list_spins_with_fullname:
-                spin_index = list_spins_with_fullname.index(distro_combolist.get())
+            if distro_combolist.get() in non_featured_spin_list:
+                spin_index = full_spin_list.index(distro_combolist.get())
 
         if spin_index is not None:
             GV.SELECTED_SPIN = GV.ACCEPTED_SPINS[spin_index]
