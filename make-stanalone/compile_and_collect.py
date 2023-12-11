@@ -22,23 +22,24 @@ dst_dir = Path(r"../release/src")
 
 
 def is_ignored(name, ignores):
-
     for ignore in ignores:
         if isinstance(ignore, re.Pattern):
-            return bool(re.fullmatch(ignore, name))
+            if bool(re.fullmatch(ignore, name)):
+                return True
         elif isinstance(ignore, str):
-            return ignore == name
+            if ignore == name:
+                return True
         else:
             raise ValueError(f"Invalid type: {type(ignore)}. Expected str or re.Pattern.")
     return False
 
 # Function to copy and compile files
-def copy_and_compile_files(src_dir, dst_dir, ignore_modules=[], ignore_files=[]):
+def copy_and_compile_files(src_dir, dst_dir, ignore_paths=[], ignore_files=[]):
     for root, dirs, files in os.walk(src_dir):
         if "__pycache__" in root:
             continue
-        pathparts = Path(root).absolute().parts
-        if "Lib" in pathparts and pathparts.index("Lib") < len(pathparts)-1 and pathparts[pathparts.index("Lib")+1] in ignore_modules:
+        current_path = Path(root).absolute().as_posix()
+        if is_ignored(current_path, ignore_paths):
             continue
         rel_path = os.path.relpath(root, src_dir)
         (dst_dir / rel_path).mkdir(parents=True, exist_ok=True)
@@ -53,7 +54,7 @@ def copy_and_compile_files(src_dir, dst_dir, ignore_modules=[], ignore_files=[])
                 shutil.copy(src_file, dst_file)
 
 # Copy and compile files in the source directory
-ignored_src_file_names = ["__init__.py", "playground.py", "install_args.pkl"]
+ignored_src_file_names = ["playground.py", "install_args.pkl"]
 copy_and_compile_files(src_dir, dst_dir, ignore_files=ignored_src_file_names)
 
 # Copy Python libraries
@@ -66,10 +67,12 @@ for src_file in python_libs:
 # Define library directories
 libs_dirs = [Path(sys.exec_prefix) / "tcl"]
 libs_dirs.extend(Path(p) for p in sys.path if p.startswith(sys.exec_prefix) and p != sys.exec_prefix)
-
+libs_dirs.remove("site-packages") if "site-packages" in libs_dirs else None
 # Copy and compile files in the library directories
-ignore_modules = ['test', 'ensurepip', 'idlelib','turtledemo', 'venv','site-packages']
+ignore_modules = ['test', 'ensurepip', 'idlelib','turtledemo', 'venv', 'site-packages']
+ignored_paths = [re.compile(f'.*/Lib/{module_name}(/.*)?$') for module_name in ignore_modules]
+
 ignored_file_names = [re.compile('.*_test.*'),]
 for lib_dir in libs_dirs:
     dst_dir = Path(r"../release/interpreter/") / lib_dir.name
-    copy_and_compile_files(lib_dir, dst_dir, ignore_modules, ignored_file_names)
+    copy_and_compile_files(lib_dir, dst_dir, ignored_paths, ignored_file_names)
