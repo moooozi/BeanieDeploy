@@ -86,7 +86,7 @@ def run(app):
             else:
                 dl_size_txt = LN.total_download % fn.byte_to_gb(total_size)
             dl_spin_name_text = f'{LN.selected_dist}: {GV.SELECTED_SPIN.name} {GV.SELECTED_SPIN.version}'
-            dl_spin_desktop = f'{LN.desktop_environment}: {GV.SELECTED_SPIN.desktop}'
+            dl_spin_desktop = f'{LN.desktop_environment}: {GV.SELECTED_SPIN.desktop}' if GV.SELECTED_SPIN.desktop else ''
 
             if GV.SELECTED_SPIN.desktop in LN.desktop_hints.keys():
                 dl_spin_desktop_desc = LN.desktop_hints[GV.SELECTED_SPIN.desktop]
