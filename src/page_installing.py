@@ -1,3 +1,5 @@
+import pathlib
+import pickle
 import time
 import multiprocessing
 import installation
@@ -6,10 +8,11 @@ import tkinter_templates as tkt
 import multilingual
 import gui_functions as gui
 import global_tk_vars as tk_var
-
+import functions as fn
 
 def run(app, installer_args, queue=multiprocessing.Queue()):
     """the page on which the initial installation (creating bootable media) takes place"""
+    app.update()
     tkt.init_frame(app)
     global LN, DI_VAR
     LN = multilingual.get_lang()
@@ -22,6 +25,14 @@ def run(app, installer_args, queue=multiprocessing.Queue()):
     master = gui.get_first_tk_parent(app)
     progressbar_install['value'] = 0
     app.update()
+
+    if not fn.is_admin():
+        with open('install_args.pkl', 'wb') as file:
+            pickle.dump(installer_args, file)
+        installer_args_path = pathlib.Path('install_args.pkl').absolute()
+        fn.get_admin(f'--install_args "{installer_args_path}"')
+        return 0
+
     # GUI Logic
     # Tracking downloads
     file_index = 0

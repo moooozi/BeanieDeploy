@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import pickle
 import multilingual
 import globals as GV
 import procedure as prc
@@ -19,6 +20,7 @@ def parse_arguments():
     parser.add_argument("--check_ram", type=str,)
     parser.add_argument("--check_space", type=str,)
     parser.add_argument("--check_resizable", type=str,)
+    parser.add_argument("--install_args", type=argparse.FileType('rb'),)
     args = parser.parse_args()
     return args
 
@@ -35,6 +37,7 @@ def run():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
     skip_check= False
+    install_args = None
     args = parse_arguments()
     if args.skip_check:
         skip_check = True
@@ -50,6 +53,8 @@ def run():
         done_checks['space'] = int(args.check_space)
     if args.check_resizable:
         done_checks['resizable'] = int(args.check_resizable)
+    if args.install_args:
+        install_args = pickle.load(args.install_args)
     if args.release:
         fn.cleanup_on_reboot(script_dir)
     else:
@@ -68,8 +73,12 @@ def run():
     lang_code = multilingual.get_lang_by_code(fn.windows_language_code())
     multilingual.set_lang(lang_code if lang_code else 'en')
 
-    import page_check
-    page_check.run(MID_FRAME, skip_check, done_checks)
+    if install_args:
+        import page_installing
+        page_installing.run(MID_FRAME, install_args)
+    else:
+        import page_check
+        page_check.run(MID_FRAME, skip_check, done_checks)
     app.mainloop()
 
 if __name__ == "__main__":
