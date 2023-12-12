@@ -22,6 +22,7 @@
 #     list_locales()
 #     list_keyboards()
 #     list_common_languages()
+#     list_common_locales()
 #     list_common_keyboards()
 #     list_consolefonts()
 #     list_inputmethods()
@@ -33,6 +34,14 @@
 #     languageId()
 #     territoryId()
 #     supports_ascii()
+#     list_all_languages()
+#     list_all_locales()
+#     list_all_keyboards()
+#     list_all_territories()
+#     list_all_timezones()
+#     list_all_scripts()
+#     list_all_input_methods()
+#     list_all_console_fonts()
 #
 # These are the functions which do not start with an “_” in their name.
 # All global functions and global variables whose name starts with an
@@ -96,6 +105,8 @@
 #
 ######################################################################
 
+from typing import List
+from typing import Dict
 import os
 import re
 import logging
@@ -109,7 +120,7 @@ Locale = collections.namedtuple(
     'Locale',
     ['language', 'script', 'territory', 'variant', 'encoding'])
 
-_INFO = {'data_files_read': []}
+_INFO: Dict[str, List[str]] = {'data_files_read': []}
 
 # will be replaced by “make install”:
 _DATADIR = '/usr/share/langtable'
@@ -117,6 +128,10 @@ _DATADIR = '/usr/share/langtable'
 # Rank threshold to qualify a
 # keyboard layout as prevalent
 _KEYBOARD_LAYOUT_RANK_THRESHOLD = 500
+
+# Rank threshold to qualify a
+# locale as prevalent
+_LOCALE_RANK_THRESHOLD = 500
 
 # For the ICU/CLDR locale pattern see: http://userguide.icu-project.org/locale
 # (We ignore the variant code here)
@@ -1127,7 +1142,7 @@ def parse_locale(localeId):
     if localeId:
         dot_index = localeId.find('.')
         at_index = localeId.find('@')
-        if dot_index >= 0 and at_index > dot_index:
+        if 0 <= dot_index < at_index:
             encoding  = localeId[dot_index + 1:at_index]
             localeId = localeId[:dot_index] + localeId[at_index:]
         elif dot_index >= 0:
@@ -1147,11 +1162,11 @@ def parse_locale(localeId):
             variant = 'POSIX'
             localeId = ''
     if localeId:
-        for key in _glibc_script_ids:
-            localeId = localeId.replace(key, _glibc_script_ids[key])
-            if localeId.endswith('@' + _glibc_script_ids[key]):
-                script = _glibc_script_ids[key]
-                localeId = localeId.replace('@' + _glibc_script_ids[key], '')
+        for key, script_id_iso in _glibc_script_ids.items():
+            localeId = localeId.replace(key, script_id_iso)
+            if localeId.endswith('@' + script_id_iso):
+                script = script_id_iso
+                localeId = localeId.replace('@' + script_id_iso, '')
     if localeId:
         at_index = localeId.find('@')
         if at_index >= 0:
@@ -2075,7 +2090,7 @@ def list_inputmethods(concise=True, show_weights=False, languageId = None, scrip
     List the suitable input methods for the language “Japanese”:
 
     >>> list_inputmethods(languageId="ja")
-    ['ibus/kkc', 'ibus/anthy']
+    ['ibus/anthy', 'ibus/kkc']
 
     So this returns a list of input methods for Japanese. These lists are
     sorted in order of decreasing likelyhood, i.e. the most common
@@ -2084,7 +2099,7 @@ def list_inputmethods(concise=True, show_weights=False, languageId = None, scrip
     One can also list the possible input methods for the territory “Japan”:
 
     >>> list_inputmethods(territoryId="JP")
-    ['ibus/kkc', 'ibus/anthy']
+    ['ibus/anthy', 'ibus/kkc']
     '''
     ranked_inputmethods = {}
     skipTerritory = False
@@ -2191,7 +2206,7 @@ def list_keyboards(concise=True, show_weights=False, languageId = None, scriptId
                     ranked_keyboards[keyboard] *= extra_bonus
                 ranked_keyboards[keyboard] *= language_bonus
     territory_bonus = 1
-    if territoryId in _territories_db:
+    if territoryId in _territories_db and not skipTerritory:
         for keyboard in _territories_db[territoryId].keyboards:
             if _territories_db[territoryId].keyboards[keyboard] != 0:
                 if keyboard not in ranked_keyboards:
@@ -2210,7 +2225,7 @@ def list_keyboards(concise=True, show_weights=False, languageId = None, scriptId
 
 def list_common_keyboards(languageId = None, scriptId = None, territoryId = None):
     '''Returns highest ranked keyboard layout(s)
-
+2
     :param languageId: identifier for the language
     :type languageId: string
     :param scriptId: identifier for the script
@@ -2267,6 +2282,81 @@ def list_common_keyboards(languageId = None, scriptId = None, territoryId = None
         high_ranked_keyboards.append(common_layouts[0])
 
     return sorted(high_ranked_keyboards)
+
+def list_common_locales(languageId = None, scriptId = None, territoryId = None):
+    '''Returns highest ranked locales
+
+    :param languageId: identifier for the language
+    :type languageId: string
+    :param scriptId: identifier for the script
+    :type scriptId: string
+    :param territoryId: identifier for the territory
+    :type territoryId: string
+    :return: list of locales
+    :rtype: list of strings
+
+    **Examples:**
+
+    >>> list_common_locales()
+    ['ar_EG.UTF-8', 'en_US.UTF-8', 'en_GB.UTF-8', 'fr_FR.UTF-8', 'de_DE.UTF-8', 'ja_JP.UTF-8', 'zh_CN.UTF-8', 'ru_RU.UTF-8', 'es_ES.UTF-8']
+
+    >>> list_common_locales(languageId='fr')
+    ['fr_FR.UTF-8']
+
+    >>> list_common_locales(territoryId='CA')
+    ['en_CA.UTF-8']
+
+    >>> list_common_locales(territoryId='FR')
+    ['fr_FR.UTF-8']
+
+    >>> list_common_locales(languageId='fr', territoryId='CA')
+    ['fr_CA.UTF-8']
+
+    >>> list_common_locales(languageId='de', territoryId='FR')
+    ['de_DE.UTF-8']
+
+    >>> list_common_locales(languageId='sr', scriptId='Latn')
+    ['sr_RS.UTF-8@latin']
+
+    >>> list_common_locales(languageId='sr', scriptId='Cyrl')
+    ['sr_RS.UTF-8']
+
+    >>> list_common_locales(languageId='zh', scriptId='Hans')
+    ['zh_CN.UTF-8']
+
+    >>> list_common_locales(languageId='zh', scriptId='Hant')
+    ['zh_TW.UTF-8']
+
+    >>> list_common_locales(languageId='zh', territoryId='TW')
+    ['zh_TW.UTF-8']
+    '''
+    high_ranked_locales = list()
+    if not languageId and not scriptId and not territoryId:
+        for language in list_common_languages():
+            locales = _languages_db[language].locales
+            selected_locales = [locale for locale, rank
+                                in sorted(locales.items(),
+                                          key=lambda x: (-x[1]))
+                                if rank >= _LOCALE_RANK_THRESHOLD]
+            if selected_locales:
+                high_ranked_locales.extend(selected_locales)
+        return high_ranked_locales
+
+    kwargs = dict()
+    locale = _parse_and_split_languageId(
+        languageId=languageId, scriptId=scriptId, territoryId=territoryId
+    )
+    if locale.language:
+        kwargs.update(dict(languageId=locale.language))
+    if locale.script:
+        kwargs.update(dict(scriptId=locale.script))
+    if locale.territory:
+        kwargs.update(dict(territoryId=locale.territory))
+    common_locales = list_locales(**kwargs)
+    if common_locales:
+        # Picking up first locale from the list
+        high_ranked_locales.append(common_locales[0])
+    return high_ranked_locales
 
 def list_consolefonts(concise=True, show_weights=False, languageId = None, scriptId = None, territoryId = None):
     u'''List likely Linux Console fonts
@@ -2350,7 +2440,7 @@ def list_consolefonts(concise=True, show_weights=False, languageId = None, scrip
                     ranked_consolefonts[consolefont] *= extra_bonus
                 ranked_consolefonts[consolefont] *= language_bonus
     territory_bonus = 1
-    if territoryId in _territories_db:
+    if territoryId in _territories_db and not skipTerritory:
         for consolefont in _territories_db[territoryId].consolefonts:
             if _territories_db[territoryId].consolefonts[consolefont] != 0:
                 if consolefont not in ranked_consolefonts:
@@ -2431,7 +2521,7 @@ def list_timezones(concise=True, show_weights=False, languageId = None, scriptId
                     ranked_timezones[timezone] *= extra_bonus
                 ranked_timezones[timezone] *= language_bonus
     territory_bonus = 100
-    if territoryId in _territories_db:
+    if territoryId in _territories_db and not skipTerritory:
         for timezone in _territories_db[territoryId].timezones:
             if _territories_db[territoryId].timezones[timezone] != 0:
                 if timezone not in ranked_timezones:
@@ -2447,6 +2537,80 @@ def list_timezones(concise=True, show_weights=False, languageId = None, scriptId
         return ranked_list
     else:
         return _ranked_list_to_list(ranked_list)
+
+def list_all_languages() -> List[str]:
+    '''
+    List all language ids langtable knows something about
+    '''
+    return sorted(_languages_db.keys())
+
+def list_all_locales() -> List[str]:
+    '''
+    List all (glibc style) locales langtable knows something about
+    '''
+    all_locales = set()
+    for (_key, item) in _languages_db.items():
+        all_locales.update(item.locales)
+    for (_key, item) in _territories_db.items():
+        all_locales.update(item.locales)
+    return sorted(all_locales)
+
+def list_all_keyboards() -> List[str]:
+    '''
+    List all keyboards langtable knows something about
+    '''
+    return sorted(_keyboards_db.keys())
+
+def list_all_territories() -> List[str]:
+    '''
+    List all territory ids langtable knows something about
+    '''
+    return list(_territories_db.keys())
+
+def list_all_timezones() -> List[str]:
+    '''
+    List all timezone ids langtable knows something about
+    '''
+    all_timezones = set()
+    all_timezones.update(list(_timezones_db.keys()))
+    for (_key, item) in _languages_db.items():
+        all_timezones.update(item.timezones)
+    for (_key, item) in _territories_db.items():
+        all_timezones.update(item.timezones)
+    return sorted(all_timezones)
+
+def list_all_scripts() -> List[str]:
+    '''
+    List all script ids langtable knows something about
+    '''
+    all_scripts = set()
+    for (_key, item) in _languages_db.items():
+        all_scripts.update(item.scripts)
+    for (_key, item) in _territories_db.items():
+        all_scripts.update(item.scripts)
+    return sorted(all_scripts)
+
+def list_all_input_methods() -> List[str]:
+    '''
+    List all input methods langtable knows something about
+    '''
+    all_inputmethods = set()
+    for (_key, item) in _languages_db.items():
+        all_inputmethods.update(item.inputmethods)
+    for (_key, item) in _territories_db.items():
+        all_inputmethods.update(item.inputmethods)
+    return sorted(all_inputmethods)
+
+def list_all_console_fonts() -> List[str]:
+    '''
+    List all console fonts langtable knows something about
+    '''
+    all_consolefonts = set()
+    for (_key, item) in _languages_db.items():
+        all_consolefonts.update(item.consolefonts)
+    for (_key, item) in _territories_db.items():
+        all_consolefonts.update(item.consolefonts)
+    return sorted(all_consolefonts)
 
 def supports_ascii(keyboardId=None):
     '''Check whether a keyboard layout supports ASCII
@@ -2475,7 +2639,8 @@ def version():
     '''
     Return version of langtable
     '''
-    import pkg_resources  # part of setuptools
+    # pkg_resources is part of setuptools
+    import pkg_resources  # type: ignore
     return pkg_resources.require("langtable")[0].version
 
 def info():
