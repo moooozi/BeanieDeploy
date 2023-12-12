@@ -1,3 +1,5 @@
+import os
+import functions as fn
 import types
 
 Megabyte = 1024 * 1024
@@ -27,8 +29,8 @@ INSTALL_ISO_NAME = 'install_media.iso'
 ADDITIONAL_RPM_DIR_NAME = "ADDITIONAL_RPMs"
 WIFI_PROFILES_DIR_NAME = "WIFI_PROFILES"
 PATH = types.SimpleNamespace()
-PATH.CURRENT_DIR = '%CURRENT_DIR%'
-PATH.DOWNLOADS_DIR = '%DOWNLOADS_DIR%'
+PATH.CURRENT_DIR = os.path.dirname(__file__)
+PATH.DOWNLOADS_DIR = fn.get_user_downloads_folder()
 PATH.WORK_DIR = f'{PATH.DOWNLOADS_DIR}\\win2linux_tmpdir'
 PATH.WIFI_PROFILES_DIR = f"{PATH.WORK_DIR}\\{WIFI_PROFILES_DIR_NAME}"
 PATH.RPM_SOURCE_DIR = rf'{PATH.WORK_DIR}\{ADDITIONAL_RPM_DIR_NAME}'

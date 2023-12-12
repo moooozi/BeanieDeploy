@@ -333,15 +333,3 @@ def check_valid_existing_file(file_path, file_hash):
 
 def initiate_kickstart_arguments_from_user_input(autoinstall: dict, install_options: dict):
     pass
-
-
-def init_paths(paths_namespace):
-    for key, value in (path_dict := vars(paths_namespace)).items():
-        path_dict[key] = parse_path(value)
-    paths_namespace.__init__(**path_dict)
-
-
-def parse_path(path):
-    current_dir = os.path.dirname(__file__)
-    downloads_dir = fn.get_user_downloads_folder()
-    return path.replace('%CURRENT_DIR%', current_dir).replace('%DOWNLOADS_DIR%', downloads_dir)
