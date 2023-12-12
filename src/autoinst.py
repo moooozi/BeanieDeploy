@@ -1,21 +1,11 @@
 import libs.langtable as langtable
 import globals as GV
-ETC_ZONES = ['GMT+1', 'GMT+2', 'GMT+3', 'GMT+4', 'GMT+5', 'GMT+6', 'GMT+7',
-             'GMT+8', 'GMT+9', 'GMT+10', 'GMT+11', 'GMT+12',
-             'GMT-1', 'GMT-2', 'GMT-3', 'GMT-4', 'GMT-5', 'GMT-6', 'GMT-7',
-             'GMT-8', 'GMT-9', 'GMT-10', 'GMT-11', 'GMT-12', 'GMT-13',
-             'GMT-14', 'UTC', 'GMT']
-
-with open(GV.PATH.CURRENT_DIR + '/resources/autoinst/list_timezones') as timezones:
-    ALL_TIMEZONES = timezones.read().strip().split('\n')
-
-with open(GV.PATH.CURRENT_DIR + '/resources/autoinst/list_locale') as locales:
-    ALL_LOCALES = locales.read().strip().split('\n')
 
 COMMON_LANGUAGES = langtable.list_common_languages()
-
-with open(GV.PATH.CURRENT_DIR + '/resources/autoinst/list_keymaps') as keymaps:
-    ALL_KEYMAPS = keymaps.read().strip().split('\n')
+ALL_LOCALES = langtable.list_all_locales()
+#ALL_TIMEZONES = langtable.list_all_timezones()
+ALL_KEYMAPS = langtable.list_all_keyboards()
+#ALL_KEYMAPS_BY_DESC = {langtable._keyboards_db[key].description: key for key in ALL_KEYMAPS}
 
 
 def all_timezones():
@@ -23,12 +13,21 @@ def all_timezones():
     Get all timezones, but with the Etc zones reduced. Cached.
     :rtype: set
     """
-    return ALL_TIMEZONES
+    return langtable.list_all_timezones()
 
 
 def get_available_keymaps():
     return ALL_KEYMAPS
 
+'''
+def get_available_keymaps_by_description():
+    return ALL_KEYMAPS_BY_DESC
+
+def get_keymap_by_description(keymap_description):
+    return ALL_KEYMAPS_BY_DESC[keymap_description]
+'''
+def get_keymap_description(keymap):
+    return langtable._keyboards_db[keymap].description
 
 def is_valid_timezone(timezone):
     """
@@ -80,8 +79,8 @@ def get_keymaps(lang=None, territory=None):
     keymaps_list = langtable.list_keyboards(territoryId=territory, languageId=lang)
     new_keymap_list = []
     for keymap in keymaps_list:
-        new_keymap = keymap.replace('(', ' (')
-        new_keymap_list.append(new_keymap)
+        #keymap = keymap.replace('(', ' (')
+        new_keymap_list.append(keymap)
     return new_keymap_list
 
 
@@ -125,3 +124,5 @@ def get_locales_and_langs_sorted_with_names(territory=None):
         for j in range(len(langs_locales_sorted[i][1])):
             langs_locales_sorted[i][1][j] = get_lang_or_locale_native_and_en_name(langs_locales_sorted[i][1][j])
     return langs_locales_sorted
+
+print(langtable._keyboards_db['de(nodeadkeys)'].description)
