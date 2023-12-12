@@ -15,6 +15,7 @@ def run(app):
     LN = multilingual.get_lang()
     DI_VAR = multilingual.get_di_var()
     # *************************************************************************************************************
+    # GNOME allows User account creation during initial start tour, so we use that and skip creating a user
     if GV.SELECTED_SPIN.desktop == "GNOME":
         GV.KICKSTART.username = ''
         return page_verify.run(app)

@@ -64,7 +64,11 @@ def run(app):
 
 
     if not GV.KICKSTART.locale:
-        GV.KICKSTART.locale = 'en_GB.UTF-8'
+        if GV.IP_LOCALE:
+            GV.KICKSTART.locale = GV.IP_LOCALE['locale']
+        else:
+            GV.KICKSTART.locale = 'en_GB.UTF-8'
+
     #app.update()
     language = autoinst.langtable.parse_locale(GV.KICKSTART.locale).language
     lang_list.focus(language)
