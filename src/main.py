@@ -65,7 +65,6 @@ def run():
     # fn.get_admin()  # Request elevation (admin) if not running as admin
     global app
     logging.info('APP STARTING: %s v%s' % (GV.APP_SW_NAME, GV.APP_SW_VERSION))
-    prc.init_paths(GV.PATH)
     app = tkt.init_tkinter(GV.APP_SW_NAME, GV.PATH.APP_ICON)  # initialize tkinter
     fn.mkdir(GV.PATH.WORK_DIR)
     TOP_FRAME, MID_FRAME, LEFT_FRAME = tkt.build_main_gui_frames(app)

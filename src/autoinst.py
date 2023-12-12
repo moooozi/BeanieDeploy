@@ -87,7 +87,7 @@ def get_keymaps(lang=None, territory=None):
 def get_lang_or_locale_native_and_en_name(lang_or_locale):
     lang_or_locale_native_name = langtable.language_name(languageId=lang_or_locale)
     lang_or_locale_english_name = langtable.language_name(languageId=lang_or_locale, languageIdQuery='en')
-    return lang_or_locale_english_name, lang_or_locale_native_name, lang_or_locale
+    return {'english': lang_or_locale_english_name, 'native': lang_or_locale_native_name,}
 
 
 def check_valid_locale(locale):
@@ -110,7 +110,7 @@ def get_locales_and_langs_sorted_with_names(territory=None):
         lang_in_locale = get_language_in_locale(locale)
         if lang_in_locale not in langs_id:
             langs_id.append(lang_in_locale)
-    langs_locales_sorted = []
+    langs_locales_sorted = {}
     for lang_id in langs_id:
         all_lang_locales = get_locales_in_language(lang_id)
         supported_lang_locales = []
@@ -118,11 +118,7 @@ def get_locales_and_langs_sorted_with_names(territory=None):
             if check_valid_locale(locale):
                 supported_lang_locales.append(locale)
         if supported_lang_locales:
-            langs_locales_sorted.append([lang_id, supported_lang_locales])
-    for i in range(len(langs_locales_sorted)):
-        langs_locales_sorted[i][0] = get_lang_or_locale_native_and_en_name(langs_locales_sorted[i][0])
-        for j in range(len(langs_locales_sorted[i][1])):
-            langs_locales_sorted[i][1][j] = get_lang_or_locale_native_and_en_name(langs_locales_sorted[i][1][j])
+            langs_locales_sorted[lang_id] =  {'locales': {locale: {'names': get_lang_or_locale_native_and_en_name(locale)} for locale in supported_lang_locales},}
+    for lang_id in langs_locales_sorted.keys():
+        langs_locales_sorted[lang_id]['names'] = get_lang_or_locale_native_and_en_name(lang_id)
     return langs_locales_sorted
-
-print(langtable._keyboards_db['de(nodeadkeys)'].description)
