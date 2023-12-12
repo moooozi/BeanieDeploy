@@ -32,18 +32,6 @@ def run(app):
         GV.KICKSTART.ostree_args = GV.SELECTED_SPIN.ostree_args
         GV.KICKSTART.wifi_profiles_dir_name = GV.WIFI_PROFILES_DIR_NAME
         GV.INSTALL_OPTIONS.keymap_timezone_source = tk_var.keymap_timezone_source_var.get()
-        if GV.INSTALL_OPTIONS.keymap_timezone_source == 'ip':
-            GV.KICKSTART.keymap = autoinst.get_keymaps(territory=GV.IP_LOCALE['country_code'])[0]
-            GV.KICKSTART.keymap_type = 'xlayout'
-            GV.KICKSTART.timezone = autoinst.langtable.list_timezones(territoryId=GV.IP_LOCALE['country_code'])[0]
-        elif GV.INSTALL_OPTIONS.keymap_timezone_source == 'select':
-            GV.KICKSTART.keymap = autoinst.get_keymaps(lang=GV.KICKSTART.locale)[0]
-            GV.KICKSTART.keymap_type = 'xlayout'
-            GV.KICKSTART.timezone = autoinst.langtable.list_timezones(languageId=GV.KICKSTART.locale)[0]
-        elif GV.INSTALL_OPTIONS.keymap_timezone_source == 'custom':
-            GV.KICKSTART.keymap = tk_var.custom_keymap_var.get()
-            GV.KICKSTART.keymap_type = 'vc'
-            GV.KICKSTART.timezone = tk_var.custom_timezone_var.get()
 
         # LOG ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         log_kickstart = '\nKickstart arguments (sensitive data sensored):'

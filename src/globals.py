@@ -56,7 +56,6 @@ INSTALL_OPTIONS.spin_index = -1
 INSTALL_OPTIONS.auto_restart = False
 INSTALL_OPTIONS.torrent = False
 INSTALL_OPTIONS.export_wifi = True
-INSTALL_OPTIONS.keymap_timezone_source = 'select'
 
 KICKSTART = types.SimpleNamespace()
 KICKSTART.partition_method = ''
