@@ -9,7 +9,6 @@ enable_encryption_toggle_var = tk.BooleanVar(main.app, GV.KICKSTART.is_encrypted
 encrypt_pass_toggle_var = tk.BooleanVar(main.app)
 custom_timezone_var = tk.StringVar(main.app, GV.KICKSTART.timezone)
 custom_keymap_var = tk.StringVar(main.app)
-keymap_timezone_source_var = tk.StringVar(main.app, GV.INSTALL_OPTIONS.keymap_timezone_source)
 job_var = tk.StringVar()
 install_job_var = tk.StringVar(main.app)
 # selected_locale = tk.StringVar(main.app)

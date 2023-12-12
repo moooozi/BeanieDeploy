@@ -69,16 +69,16 @@ def run(app):
         timezone_list.insert(parent='', index='end', iid=timezone, values=(timezone,))
 
     
-    if not (GV.KICKSTART.timezone and GV.KICKSTART.keymap):
-        GV.KICKSTART.timezone = selected_locale_timezones[0]
-        GV.KICKSTART.keymap = selected_locale_keymaps[0]
+    default_timezone = selected_locale_timezones[0] if not GV.KICKSTART.timezone else GV.KICKSTART.timezone
+    default_keymap = selected_locale_keymaps[0] if not GV.KICKSTART.keymap else GV.KICKSTART.keymap
+
     #app.update()
-    keyboard_list.focus(GV.KICKSTART.keymap)
-    keyboard_list.selection_set(GV.KICKSTART.keymap)
+    keyboard_list.focus(default_keymap)
+    keyboard_list.selection_set(default_keymap)
     keyboard_list.yview_scroll(keyboard_list.index(keyboard_list.selection())-1, "units")
 
-    timezone_list.focus(GV.KICKSTART.timezone)
-    timezone_list.selection_set(GV.KICKSTART.timezone)
+    timezone_list.focus(default_timezone)
+    timezone_list.selection_set(default_timezone)
     timezone_list.yview_scroll(timezone_list.index(timezone_list.selection())-1, "units")
 
     def next_btn_action(*args):
