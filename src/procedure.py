@@ -40,7 +40,7 @@ class CompatibilityResult:
 
 def partition_procedure(tmp_part_size: int, temp_part_label: str, queue=None, shrink_space: int = 0,
                         boot_part_size: int = 0, efi_part_size: int = 0, make_root_partition: bool = False):
-    ps_script = fr"{parse_path(GV.PATH.SCRIPTS)}\PartitionMappings.ps1"
+    ps_script = fr"{GV.PATH.SCRIPTS}\PartitionMappings.ps1"
 
     sys_drive_letter = fn.get_sys_drive_letter()
     sys_uuid_script = f'(({ps_script}) | Where-Object -Property DriveLetter -EQ {sys_drive_letter}).VolumeName'
