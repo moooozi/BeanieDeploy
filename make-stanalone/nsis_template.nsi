@@ -18,6 +18,6 @@ Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   File /r "{SourcePath}\interpreter\*"
   File /r "{SourcePath}\src\*"
-  ExecShell "open" "$INSTDIR\pythonw.exe" "$INSTDIR\main.pyc --release"
+  ExecShell "open" "$INSTDIR\pythonw.exe" "$INSTDIR\main.pyc --release --app_version {MyAppVersion}"
 
 SectionEnd

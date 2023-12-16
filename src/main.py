@@ -21,6 +21,7 @@ def parse_arguments():
     parser.add_argument("--check_space", type=str,)
     parser.add_argument("--check_resizable", type=str,)
     parser.add_argument("--install_args", type=argparse.FileType('rb'),)
+    parser.add_argument("--app_version", type=str,)
     args = parser.parse_args()
     return args
 
@@ -53,6 +54,8 @@ def run():
         done_checks['space'] = int(args.check_space)
     if args.check_resizable:
         done_checks['resizable'] = int(args.check_resizable)
+    if args.app_version:
+        GV.APP_SW_VERSION = args.app_version
     if args.install_args:
         install_args = pickle.load(args.install_args)
     if args.release:
@@ -65,7 +68,7 @@ def run():
     # fn.get_admin()  # Request elevation (admin) if not running as admin
     global app
     logging.info('APP STARTING: %s v%s' % (GV.APP_SW_NAME, GV.APP_SW_VERSION))
-    app = tkt.init_tkinter(GV.APP_SW_NAME, GV.PATH.APP_ICON)  # initialize tkinter
+    app = tkt.init_tkinter(f'{GV.APP_SW_NAME} v{GV.APP_SW_VERSION}', GV.PATH.APP_ICON)  # initialize tkinter
     fn.mkdir(GV.PATH.WORK_DIR)
     TOP_FRAME, MID_FRAME, LEFT_FRAME = tkt.build_main_gui_frames(app)
     #tk.Label(LEFT_FRAME, image=tk.PhotoImage(file=GV.PATH.CURRENT_DIR + r'\resources\style\left_frame.gif')).pack()

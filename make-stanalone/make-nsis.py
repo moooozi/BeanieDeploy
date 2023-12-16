@@ -1,7 +1,7 @@
 import os
 import subprocess
 import create_manifest
-metadata = create_manifest.create_maifest()
+metadata = create_manifest.create_manifest()
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
