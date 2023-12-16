@@ -12,7 +12,7 @@ with open(RELEASEINFO, 'r') as f:
     lines = f.readlines()
 
 # Extract the AppName and AppVersion
-app_info = {line.split(':')[0].strip(): line.split(':')[1].strip() for line in lines if ':' in line}
+app_info = {line.split('==>')[0].strip(): line.split('==>')[1].strip() for line in lines if '==>' in line}
 app_name = app_info.get('AppName', '')
 app_version = app_info.get('AppVersion', '')
 app_version_base = app_version.split('-')[0]
@@ -22,7 +22,7 @@ description = app_info.get('Description', '')
 app_url = app_info.get('AppUrl', '')
 dev_url = app_info.get('DevUrl', '')
 
-def create_maifest():
+def create_manifest():
     # Read the winres.json file
     with open(INPUT, 'r') as f:
         data = json.load(f)
@@ -45,5 +45,5 @@ def create_maifest():
     return data['RT_VERSION']['#1']['0000']['info']['0409']
 
 if __name__ == '__main__':
-    create_maifest()
+    create_manifest()
 
