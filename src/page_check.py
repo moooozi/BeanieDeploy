@@ -22,7 +22,6 @@ def run(app, skip_check=False, done_checks : dict = {}):
     progressbar_check = tkt.add_progress_bar(page_frame)
     tkt.add_text_label(page_frame, var=tk_var.job_var, pady=0, padx=10)
     def callback_compatibility(result):
-        tk_var.job_var.set(LN.check_available_downloads)
         if result == 'arch':
             progressbar_check['value'] = 10
         elif result == 'uefi':
@@ -63,6 +62,7 @@ def run(app, skip_check=False, done_checks : dict = {}):
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_FEDORA_GEO_IP_URL, 'named': 'geo_ip'})
 
+    tk_var.job_var.set(LN.check_available_downloads)
     gui.handle_queue_result(tkinter=app, callback=callback_compatibility)
 
     for check, result in done_checks.items():

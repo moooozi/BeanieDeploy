@@ -6,7 +6,7 @@ import globals as GV
 import multilingual
 import page_autoinst2
 import global_tk_vars as tk_var
-
+import libs.langtable as langtable
 
 def run(app):
     """the autoinstall page on which you choose your language and locale"""
@@ -65,7 +65,7 @@ def run(app):
 
     if not GV.KICKSTART.locale:
         if GV.IP_LOCALE:
-            GV.KICKSTART.locale = GV.IP_LOCALE['locale']
+            GV.KICKSTART.locale = langtable.list_locales(territoryId=GV.IP_LOCALE['country_code'])[0]
         else:
             GV.KICKSTART.locale = 'en_GB.UTF-8'
 

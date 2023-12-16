@@ -21,8 +21,8 @@ def run(app):
                                          LN.btn_back, lambda: page_autoinst_addition_1.run(app))
 
 
-    # List of all keymaps, the more likely relevant keymaps (based on selected locale) will be listed first
     selected_locale_keymaps = langtable.list_keyboards(languageId=GV.KICKSTART.locale)
+    # List of all keymaps, the more likely relevant keymaps (based on selected locale) will be listed first
     #all_keymaps = selected_locale_keymaps +  [keyboard for keyboard in langtable.list_all_keyboards() if keyboard not in selected_locale_keymaps]
     all_keymaps = sorted(langtable.list_all_keyboards())
 
@@ -61,14 +61,9 @@ def run(app):
         keyboard_list.insert(parent='', index='end', iid=keymap, values=(autoinst.get_keymap_description(keymap),))
 
     for timezone in all_timezones:
-        #continent, city = timezone.split('/')
-        #if continent not in timezone_list.get_children():
-        #    timezone_list.insert(parent='', index='end', iid=continent, values=(continent,))
-        #if city not in timezone_list.get_children(continent):
-        #    timezone_list.insert(parent=continent, index='end', iid=timezone, values=(city,))
-        timezone_list.insert(parent='', index='end', iid=timezone, values=(timezone,))
+        timezone_list.insert(parent='', index='end', iid=timezone, values=(langtable.timezone_name(timezone, languageIdQuery=GV.KICKSTART.locale),))
 
-    
+    # Set the default values for the keyboard and timezone based on the selected locale if no value is perviously set
     default_timezone = selected_locale_timezones[0] if not GV.KICKSTART.timezone else GV.KICKSTART.timezone
     default_keymap = selected_locale_keymaps[0] if not GV.KICKSTART.keymap else GV.KICKSTART.keymap
 
