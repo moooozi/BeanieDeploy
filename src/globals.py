@@ -5,20 +5,20 @@ import types
 Megabyte = 1024 * 1024
 Gigabyte = 1024 * 1024 * 1024
 
-APP_SW_NAME = "Lnixify"
-APP_SW_VERSION = '0.4-alpha'
+APP_SW_NAME = 'BeanieDeploy'
+APP_SW_VERSION = 'Snapshot'
 APP_minimal_required_space = 4 * Gigabyte
 APP_dualboot_required_space = 35 * Gigabyte
 APP_additional_failsafe_space = 2 * Gigabyte
 APP_temp_part_failsafe_space = 0.15 * Gigabyte
 APP_minimal_required_ram = 2 * Gigabyte
 APP_linux_boot_partition_size = 1 * Gigabyte  # (minimum recommended 0.5)
-APP_linux_efi_partition_size = 100 * Megabyte  # (recommended=200, minimum=50)
-APP_default_efi_file_path = r"\EFI\BOOT\BOOTX64.EFI"
+APP_linux_efi_partition_size = 200 * Megabyte  # (recommended=200, minimum=50)
+APP_default_efi_file_path = r'\EFI\BOOT\BOOTX64.EFI'
 APP_FEDORA_GEO_IP_URL = 'https://geoip.fedoraproject.org/city'
 APP_AVAILABLE_SPINS_LIST = 'https://gitlab.com/win2linux/lnitest/-/raw/main/fedora_spins.json'
-RPMFusionFREE = "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-%s.noarch.rpm"
-RPMFusionNonFREE = "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-%s.noarch.rpm"
+RPMFusionFREE = 'https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-%s.noarch.rpm'
+RPMFusionNonFREE = 'https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-%s.noarch.rpm'
 APP_TPM2_TOOLS_RPM_DL_LINK = 'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Everything/x86_64/os/Packages/t/tpm2-tools-5.2-2.fc36.x86_64.rpm'
 APP_live_img_path = '/LiveOS/squashfs.img'
 APP_live_img_url = 'file:///run/install/repo' + APP_live_img_path
