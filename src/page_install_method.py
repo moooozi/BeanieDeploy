@@ -63,9 +63,9 @@ def run(app):
         tk_var.install_method_var.set(default)
 
     min_size = fn.byte_to_gb(GV.APP_dualboot_required_space)
-    entry1_frame = ttk.Frame(radio_buttons)
-    radio_buttons.rowconfigure(5, weight=1)
-    entry1_frame.grid(row=5, column=0, columnspan=2, padx=0, sticky=DI_VAR['w'])
+    entry1_frame = ttk.Frame(page_frame,height=300)
+    entry1_frame.pack_propagate(False)
+    entry1_frame.pack(fill='both', side='bottom',)
 
     warn_backup_sys_drive_files = tkt.add_text_label(entry1_frame,
                                                      text=LN.warn_backup_files_txt % f"{fn.get_sys_drive_letter()}:\\",
