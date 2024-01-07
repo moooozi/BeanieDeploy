@@ -3,7 +3,7 @@ import globals as GV
 import multilingual
 import functions as fn
 import procedure as prc
-import page_app_lang, page_error
+import page_app_lang, page_error, page_1
 import gui_functions as gui
 import logging
 
@@ -103,6 +103,6 @@ def run(app, skip_check=False, done_checks : dict = {}):
         if live_os_installer_index is not None:
             GV.LIVE_OS_INSTALLER_SPIN = GV.ACCEPTED_SPINS[live_os_installer_index]
         GV.USERNAME_WINDOWS = fn.get_windows_username()
-        return page_app_lang.run(app)
+        return page_1.run(app)
     else:
         page_error.run(app, errors)

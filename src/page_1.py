@@ -18,7 +18,8 @@ def run(app):
     DI_VAR = multilingual.get_di_var()
     # *************************************************************************************************************
     page_frame = tkt.generic_page_layout(app, LN.desktop_question, LN.btn_next, lambda: next_btn_action(),
-                                         LN.btn_back, lambda: page_app_lang.run(app))
+                                         #LN.btn_back, 
+                                         lambda: page_app_lang.run(app))
     full_spin_list = []
     non_featured_spin_list = []
     featured_spin_desc = {}
