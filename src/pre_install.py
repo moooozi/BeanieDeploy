@@ -31,7 +31,6 @@ def run(app):
             GV.PARTITION.boot_part_size = GV.APP_linux_boot_partition_size
         GV.KICKSTART.ostree_args = GV.SELECTED_SPIN.ostree_args
         GV.KICKSTART.wifi_profiles_dir_name = GV.WIFI_PROFILES_DIR_NAME
-        GV.INSTALL_OPTIONS.keymap_timezone_source = tk_var.keymap_timezone_source_var.get()
 
         # LOG ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         log_kickstart = '\nKickstart arguments (sensitive data sensored):'
