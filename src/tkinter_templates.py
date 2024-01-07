@@ -6,10 +6,10 @@ import globals as GV
 import resources.style.theme.svtheme.sv_ttk as sv_ttk
 import multilingual
 
-WIDTH = 780
-HEIGHT = 520
-MINWIDTH = 650
-MINHEIGHT = 450
+WIDTH = 850
+HEIGHT = 580
+MINWIDTH = WIDTH -50
+MINHEIGHT = HEIGHT - 50
 MAXWIDTH = WIDTH + 300
 MAXHEIGHT = HEIGHT + 200
 WIDTH_OFFSET = 400
@@ -189,7 +189,7 @@ def add_secondary_btn(parent, text, command):
 
 
 def add_multi_radio_buttons(parent, items: dict, var, validate_func=None):
-    frame = add_frame_container(parent, fill='both', expand=1)
+    frame = add_frame_container(parent, fill='x', expand=1)
     for index, item in enumerate(items.keys()):
         button = add_radio_btn(frame, items[item]["name"], var, item, command=lambda: validate_func(), pack=False)
         button.grid(ipady=5, row=index, column=0, sticky=multilingual.DI_VAR['nw'])
@@ -198,15 +198,20 @@ def add_multi_radio_buttons(parent, items: dict, var, validate_func=None):
             ttk.Label(frame, wraplength=GV.UI.width, justify="center", text=items[item]["error"],
                       font=FONTS_smaller, foreground=color_red).grid(ipadx=5, row=index, column=1,
                                                                      sticky=multilingual.DI_VAR['w'])
+            if var.get() == item:
+                var.set("")
         elif "description" in items[item] and items[item]["description"]:
             ttk.Label(frame, wraplength=GV.UI.width, justify="center", text=items[item]["description"],
                       font=FONTS_tiny, foreground=color_blue).grid(ipadx=5, row=index, column=1,
                                                                    sticky=multilingual.DI_VAR['w'])
-    frame.grid_columnconfigure(0, weight=1)
+        frame.grid_columnconfigure(index, weight=1)
+    #temp_frame = ttk.Label(frame,text="Yo wtf")
+    #temp_frame.grid(row=index+1, rowspan=5, column=0, sticky=multilingual.DI_VAR['nw'])
+    #temp_frame.grid_columnconfigure(index+1, weight=5)
     return frame
 
 
-def add_page_title(parent, text, pady=(0, 15)):
+def add_page_title(parent, text, pady=(0, 5)):
     title = ttk.Label(parent, wraplength=GV.UI.width, justify=multilingual.DI_VAR['l'], text=text, font=FONTS_medium)
     title.pack(pady=pady, padx=0, fill='x', )
     return title
