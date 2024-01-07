@@ -9,10 +9,9 @@ class Elevator:
     elevated_object = None
 
     def __init__(self):
-        self.is_elevated = fn.is_admin()
         self.elevated_object = None
 
-    def elevate(self, command):
+    def create_elevated_object(self, command):
         if not self.is_elevated:
             if self.elevated_object is None:
                 self.elevated_object = subprocess.Popen(['powershell.exe', 'Start-Process',sys.executable,'-Verb RunAs', '-ArgumentList "-u -c import elevator"',],stdout=subprocess.PIPE,stdin=subprocess.PIPE)        
@@ -20,7 +19,23 @@ class Elevator:
         else:
             process =subprocess.Popen([command,],stdin=subprocess.PIPE)
             process.communicate()
-
+            
+    def is_elevated():
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    
+    def elevate_this(self, args):
+        args = " ".join(sys.argv) + " " + args
+        if not self.is_admin():
+            result = ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, args, None, 1)
+            if result <= 32:
+                #error = ctypes.windll.kernel32.GetLastError()
+                #print(f"Error code: {error}")
+                return False
+            else:
+                return True
+        else:
+            return True
+        
 if __name__ == "__main__":
     e = Elevator()
     e.elevate('cmd')

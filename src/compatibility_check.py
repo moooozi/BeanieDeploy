@@ -1,4 +1,5 @@
 import argparse
+from elevator import Elevator
 import functions as fn
 
 checks = ['arch', 'uefi', 'ram', 'space', 'resizable']
@@ -6,6 +7,7 @@ checks = ['arch', 'uefi', 'ram', 'space', 'resizable']
 def parse_arguments():
     parser = argparse.ArgumentParser()
     for check in checks:
+        #parser.add_argument(f"--check_{check}", type=str,)
         parser.add_argument(f"--skip_{check}",)
     args = parser.parse_args()
     return args
@@ -18,18 +20,23 @@ class CompatibilityResult:
         self.resizable = None
         self.arch = None
 
-    def compatibility_test(self, check_order=None, queue=None):
+    def compatibility_test(self, check_order=None,):
         check_results = {}   
         if check_order is None:
             check_order = self.checks
         for check_type in check_order:
+            # Override for resizable check
             if check_type == 'resizable' and not fn.is_admin():
                 args = []
                 for done_check in check_results.keys():
                     args.append(f'--skip_{done_check}')
-                fn.get_admin(' '.join(args))
-                return
-            print(check_type)
+                elevator = Elevator()
+                got_admin = elevator.elevate_this(' '.join(args))
+                if got_admin:
+                    return
+                else:
+                    result = -1
+            print('Current check ===>',check_type)
             check_function = getattr(fn, f'check_{check_type}')
             check = check_function()
             if check.returncode != 0:
@@ -37,7 +44,7 @@ class CompatibilityResult:
             else:
                 result = check.result
             setattr(self, f'{check_type}', result)
-            print(["compatibility_result",check_type, result])
+            print(["Check Result ",check_type, '===>', result])
             check_results[check_type] = result
 
 if __name__ == "__main__":

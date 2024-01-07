@@ -5,6 +5,7 @@ COMMON_LANGUAGES = langtable.list_common_languages()
 ALL_LOCALES = langtable.list_all_locales()
 #ALL_TIMEZONES = langtable.list_all_timezones()
 ALL_KEYMAPS = langtable.list_all_keyboards()
+ALL_LANGUAGES = langtable.list_all_languages()
 #ALL_KEYMAPS_BY_DESC = {langtable._keyboards_db[key].description: key for key in ALL_KEYMAPS}
 
 
@@ -64,11 +65,11 @@ def get_xlated_timezone(tz_spec_part):
 
 
 def get_locales_in_territory(territory):
-    return langtable.list_locales(territoryId=territory)
+    return langtable.list_locales(concise=True, territoryId=territory)
 
 
 def get_locales_in_language(lang):
-    return langtable.list_locales(languageId=lang)
+    return langtable.list_locales(concise=True, languageId=lang)
 
 
 def get_language_in_locale(locale):
@@ -99,17 +100,17 @@ def get_locales_and_langs_sorted_with_names(territory=None):
     if territory:
         locales_in_territory = get_locales_in_territory(territory)
         for locale in locales_in_territory:
-            if check_valid_locale(locale):
-                lang_in_locale = get_language_in_locale(locale)
-                if lang_in_locale not in langs_id:
-                    langs_id.append(lang_in_locale)
+            if not check_valid_locale(locale):
+                continue
+            lang_in_locale = get_language_in_locale(locale)
+            if lang_in_locale not in ALL_LANGUAGES:
+                continue
+            if lang_in_locale not in langs_id:
+                langs_id.append(lang_in_locale)
     for lang in COMMON_LANGUAGES:
         if lang not in langs_id:
             langs_id.append(lang)
-    for locale in ALL_LOCALES:
-        lang_in_locale = get_language_in_locale(locale)
-        if lang_in_locale not in langs_id:
-            langs_id.append(lang_in_locale)
+    langs_id += [lang for lang in ALL_LANGUAGES if lang not in langs_id]
     langs_locales_sorted = {}
     for lang_id in langs_id:
         all_lang_locales = get_locales_in_language(lang_id)

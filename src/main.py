@@ -28,12 +28,6 @@ def parse_arguments():
 def run():
     """
     Run the application.
-
-    This function initializes the application by parsing command line arguments and setting up the necessary resources. 
-    It then requests elevation (admin) if the application is not already running as admin. After that, it logs the starting 
-    of the application, prints an important message to the console, initializes the necessary paths, initializes tkinter, 
-    creates the required directories, builds the main GUI frames, and runs the page check. Finally, it starts the main event 
-    loop of the application.
     """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
