@@ -16,6 +16,8 @@ APP_linux_boot_partition_size = 1 * Gigabyte  # (minimum recommended 0.5)
 APP_linux_efi_partition_size = 200 * Megabyte  # (recommended=200, minimum=50)
 APP_default_efi_file_path = r'\EFI\BOOT\BOOTX64.EFI'
 APP_FEDORA_GEO_IP_URL = 'https://geoip.fedoraproject.org/city'
+FEDORA_BASE_DOWNLOAD_URL = 'https://download.fedoraproject.org'
+FEDORA_TORRENT_DOWNLOAD_URL = 'https://torrent.fedoraproject.org'
 APP_AVAILABLE_SPINS_LIST = 'https://gitlab.com/win2linux/lnitest/-/raw/main/fedora_spins.json'
 RPMFusionFREE = 'https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-%s.noarch.rpm'
 RPMFusionNonFREE = 'https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-%s.noarch.rpm'
@@ -71,7 +73,7 @@ KICKSTART.ostree_args = ''
 KICKSTART.fullname = ''
 KICKSTART.username = ''
 KICKSTART.wifi_profiles_dir_name = []
-KICKSTART.enable_rpm_fusion = True
+KICKSTART.enable_rpm_fusion = False
 
 
 PARTITION = types.SimpleNamespace()

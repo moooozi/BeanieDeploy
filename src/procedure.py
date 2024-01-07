@@ -238,8 +238,7 @@ def parse_spins(spins_list):
         spin_keys = list(current_spin.keys())
         if not all(i in spin_keys for i in ("name", "size", "hash256", "dl_link")):
             continue
-        if (attr := "dl_link") not in spin_keys:
-            current_spin[attr] = ''
+        current_spin['dl_link'] = GV.FEDORA_BASE_DOWNLOAD_URL + current_spin['dl_link']
         if (attr := "is_live_img") not in spin_keys:
             current_spin[attr] = False
         if (attr := "version") not in spin_keys:
@@ -248,12 +247,12 @@ def parse_spins(spins_list):
             current_spin[attr] = ''
         if (attr := "is_auto_installable") not in spin_keys:
             current_spin[attr] = False
-        if (attr := "is_recommended") not in spin_keys:
-            current_spin[attr] = False
         if (attr := "is_advanced") not in spin_keys:
             current_spin[attr] = False
         if (attr := "torrent_link") not in spin_keys:
             current_spin[attr] = ''
+        else:
+            current_spin[attr] = GV.FEDORA_TORRENT_DOWNLOAD_URL + current_spin[attr]
         if (attr := "ostree_args") not in spin_keys:
             current_spin[attr] = ''
         if (attr := "is_base_netinstall") not in spin_keys:
