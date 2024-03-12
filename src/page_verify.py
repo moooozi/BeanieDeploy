@@ -54,12 +54,10 @@ def run(app):
 
     '''
     c3_add = ttk.Checkbutton(page_frame, text=LN.add_torrent, variable=torrent_toggle_var, onvalue=1, offvalue=0)
-    '''
-    more_options_btn = ttk.Label(page_frame, justify="center", text=LN.more_options, font=tkt.FONTS_smaller,
-                                 foreground=tkt.color_blue)
+    more_options_btn = ttk.Label(page_frame, justify="center", text=LN.more_options, font=tkt.FONTS_smaller,foreground=tkt.color_blue)
     more_options_btn.grid(ipady=8, padx=5, row=2, column=0, sticky=DI_VAR['nsw'])
-    more_options_btn.bind("<Button-1>",
-                          lambda x: popup_advanced_options.run(master=get_first_tk_parent(app)))
+    more_options_btn.bind("<Button-1>", lambda x: popup_advanced_options.run(master=get_first_tk_parent(app)))
+    '''
 
     def validate_back_page(*args):
         if GV.KICKSTART.partition_method == 'custom':

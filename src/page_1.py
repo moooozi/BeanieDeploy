@@ -4,22 +4,19 @@ import tkinter_templates as tkt
 import globals as GV
 import functions as fn
 import page_install_method
-import page_app_lang
 import logging
 import global_tk_vars as tk_var
 import multilingual
 
 
 def run(app):
-    """the page on which you choose which distro/flaver and whether Autoinstall should be on or off"""
+    """the page on which you choose which distro and whether Autoinstall should be on or off"""
     tkt.init_frame(app)
     global LN, DI_VAR
     LN = multilingual.get_lang()
     DI_VAR = multilingual.get_di_var()
     # *************************************************************************************************************
-    page_frame = tkt.generic_page_layout(app, LN.desktop_question, LN.btn_next, lambda: next_btn_action(),
-                                         #LN.btn_back, 
-                                         lambda: page_app_lang.run(app))
+    page_frame = tkt.generic_page_layout(app, LN.desktop_question, LN.btn_next, lambda: next_btn_action())
     full_spin_list = []
     non_featured_spin_list = []
     featured_spin_desc = {}
@@ -62,7 +59,7 @@ def run(app):
     frame_distro.grid_rowconfigure(len(featured_spin_desc)+1, weight=1)  # GUI bugfix for distro_description
     selected_spin_info_tree = ttk.Treeview(info_frame, columns='info', show='', height=4,)
     selected_spin_info_tree.configure(selectmode='none')
-    selected_spin_info_tree.column('info', width=250)
+    selected_spin_info_tree.column('info', stretch=True)
     selected_spin_info_tree.pack(ipady=5, fill='x', )
 
     def validate_input(*args):

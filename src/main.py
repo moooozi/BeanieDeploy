@@ -8,6 +8,7 @@ import procedure as prc
 import tkinter_templates as tkt
 import functions as fn
 import tkinter.messagebox
+import traceback
 
 app = None
 
@@ -59,15 +60,14 @@ def run():
         sys.argv.append("--skip_check")
         skip_check = True
         print("The App is in debug mode")
-    # fn.get_admin()  # Request elevation (admin) if not running as admin
     global app
     logging.info('APP STARTING: %s v%s' % (GV.APP_SW_NAME, GV.APP_SW_VERSION))
     app = tkt.init_tkinter(f'{GV.APP_SW_NAME} v{GV.APP_SW_VERSION}', GV.PATH.APP_ICON)  # initialize tkinter
     fn.mkdir(GV.PATH.WORK_DIR)
-    TOP_FRAME, MID_FRAME, LEFT_FRAME = tkt.build_main_gui_frames(app)
+    TOP_FRAME, MID_FRAME = tkt.build_main_gui_frames(app)
     #tk.Label(LEFT_FRAME, image=tk.PhotoImage(file=GV.PATH.CURRENT_DIR + r'\resources\style\left_frame.gif')).pack()
     lang_code = multilingual.get_lang_by_code(fn.windows_language_code())
-    multilingual.set_lang(lang_code if lang_code else 'en')
+    multilingual.set_lang(lang_code if lang_code else 'English')
 
     if install_args:
         import page_installing
@@ -82,5 +82,6 @@ if __name__ == "__main__":
     try:
         run()
     except Exception as e:
+
         # show a pop-up window with the error message
-        message = tkinter.messagebox.showerror("Error", str(e))
+        message = tkinter.messagebox.showerror(title="Error", message=traceback.format_exc())

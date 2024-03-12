@@ -19,7 +19,7 @@ def run(app):
                                          LN.btn_next, lambda: next_btn_action(),
                                          LN.btn_back, lambda: page_install_method.run(app))
 
-    frame_checkboxes = tkt.add_frame_container(page_frame)
+    frame_checkboxes = tkt.add_frame_container(page_frame, fill='x', expand=1)
     # tkt.add_check_btn(page_frame, LN.additional_setup_now, vAutoinst_additional_setup_t)
 
     check_wifi = tkt.add_check_btn(frame_checkboxes, LN.add_import_wifi % GV.SELECTED_SPIN.name,

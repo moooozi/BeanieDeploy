@@ -49,7 +49,7 @@ def run(app):
     locale_list.configure(yscrollcommand=locale_list_scrollbar.set)
 
     for lang, lang_details in langs_and_locales.items():
-        lang_list.insert(parent='', index='end', iid=lang, values=(f'{lang_details['names']['english']} ({lang_details['names']['native']})',))
+        lang_list.insert(parent='', index='end', iid=lang, values=(f"{lang_details['names']['english']} ({lang_details['names']['native']})",))
 
     #for i in range(len(langs_and_locales)):
     #    lang_list.insert(parent='', index='end', iid=langs_and_locales[i][0][2], values=('%s (%s)' % langs_and_locales[i][0][:2],))

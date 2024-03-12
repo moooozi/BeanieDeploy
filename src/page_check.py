@@ -3,7 +3,7 @@ import globals as GV
 import multilingual
 import functions as fn
 import procedure as prc
-import page_app_lang, page_error, page_1
+import page_error, page_1
 import gui_functions as gui
 import logging
 
