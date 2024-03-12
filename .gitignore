@@ -1,13 +1,10 @@
 /appLogo.png
 /interpreter/
 **/__pycache__/
-/src/dist/
-/src/build/
 /output/
 /release/
 make-stanalone/winres/winres.json
 ReleaseInfo.txt
-make-stanalone/innosetup.iss
-make-stanalone/nsis.nsi
 **/playground.py
 **/install_args.pkl
+**/.cache_*

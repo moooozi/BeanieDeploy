@@ -6,7 +6,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 RELEASEINFO="..\ReleaseInfo.txt"
 INPUT="winres\winres.json.template"
-OUTPUT="winres\winres.json"
+OUTPUT="winres\.cache_winres.json"
 # Read the ReleaseInfo.txt file
 with open(RELEASEINFO, 'r') as f:
     lines = f.readlines()
@@ -17,7 +17,7 @@ app_name = app_info.get('AppName', '')
 app_version = app_info.get('AppVersion', '')
 app_version_base = app_version.split('-')[0]
 author = app_info.get('Author', '')
-copyright = app_info.get('Copyright', '')
+copyright = f'Copyright (c) {app_info.get('ReleaseYear', '')} {author}'
 description = app_info.get('Description', '')
 app_url = app_info.get('AppUrl', '')
 dev_url = app_info.get('DevUrl', '')

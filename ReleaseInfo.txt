@@ -1,3 +1,7 @@
-AppName: BeanieDeploy
-AppVersion: 0.9-Beta
-Author: Mohammed Zidane
+AppName ==> BeanieDeploy
+AppVersion ==> 0.92-Beta
+Description ==> The quickest way to switch to Fedora Linux
+Author ==> Mohammed Zidane
+ReleaseYear ==> 2021-2024
+AppURL ==> https://gitlab.com/win2linux/BeanieDeploy
+DevURL ==> https://zidane.dev/

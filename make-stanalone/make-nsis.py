@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 import create_manifest
 metadata = create_manifest.create_manifest()
 
@@ -17,13 +18,13 @@ values = {
         "MyDevUrl": create_manifest.dev_url,
         "SourcePath": '../release',
         "OutputFileName": "../output/" + metadata['OriginalFilename'],
-        "IconPath": f"{script_dir}\winres\icon.ico",
+        "IconPath": fr"{script_dir}\winres\icon.ico",
 
     }
 
 compiler = r"C:\Program Files (x86)\NSIS\makensis.exe"
 INPUT="nsis_template.nsi"
-OUTPUT="nsis.nsi"
+OUTPUT=".cache_nsis.nsi"
 
 with open(INPUT, 'r') as file:
     lines = file.readlines()
@@ -42,4 +43,5 @@ with open(OUTPUT, "w") as file:
     file.writelines(lines)
 
 if __name__ == '__main__':
-    subprocess.run([compiler, OUTPUT])
+    subprocess.run([compiler, OUTPUT], shell=True)
+    time.sleep(5)
