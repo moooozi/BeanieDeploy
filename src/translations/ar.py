@@ -98,7 +98,8 @@ add_auto_restart = "إعادة التشغيل تلقائيا"
 add_torrent = "استخدم التورنت عندما يكون ذلك ممكنا"
 more_options = "المزيد من الخيارات"
 
-distro_hint = {'Fedora Workstation': 'الإصدار الرئيسي من Fedora مع بيئة سطح المكتب GNOME'}
+distro_hint = {'Fedora Workstation': 'الإصدار الرئيسي من Fedora مع بيئة سطح المكتب GNOME',
+               'Fedora KDE Plasma': 'Fedora مع بيئة سطح المكتب KDE Plasma'}
 
 job_starting_download = "بدء التنزيل..."
 downloads_number = "الملف %s من %s"

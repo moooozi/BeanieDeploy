@@ -98,7 +98,8 @@ add_auto_restart = "Automatisch neu starten"
 add_torrent = "Verwenden Sie Torrent, wann immer möglich"
 more_options = "Weitere Optionen"
 
-distro_hint = {'Fedora Workstation': 'Die Hauptausgabe von Fedora mit der GNOME-Desktop-Umgebung'}
+distro_hint = {'Fedora Workstation': 'Die Hauptausgabe von Fedora mit der GNOME-Desktop-Umgebung',
+               'Fedora KDE Plasma': 'Fedora mit der KDE-Desktop-Umgebung'}
 
 job_starting_download = "Download wird gestartet..."
 downloads_number = "Datei %s von %s"
