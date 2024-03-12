@@ -10,7 +10,7 @@ WIDTH = 850
 HEIGHT = 580
 MINWIDTH = WIDTH -50
 MINHEIGHT = HEIGHT - 50
-MAXWIDTH = WIDTH + 300
+MAXWIDTH = WIDTH + 600
 MAXHEIGHT = HEIGHT + 200
 WIDTH_OFFSET = 400
 HEIGHT_OFFSET = 400
@@ -89,34 +89,44 @@ def build_main_gui_frames(parent, left_frame_img_path=None, top_frame_height=TOP
     (see function right_to_left_lang)
     """
     top_frame = tk.Frame(parent, height=top_frame_height, width=MINWIDTH, background=top_background_color)
-    left_frame = tk.Frame(parent, width=left_frame_width, height=MINHEIGHT)
-    mid_frame = tk.Frame(parent, height=MINHEIGHT - top_frame_height, )
+    mid_frame = tk.Frame(parent)
 
-    top_frame.pack(fill="x", side='top')
-    top_frame.pack_propagate(False)
+    top_frame.grid(sticky='nswe', row=0, column=0,)
+    parent.grid_columnconfigure(0, weight=1)
+    #top_frame.pack_propagate(False)
     # dark_mode_var = tk.BooleanVar(parent, DARK_MODE)
     # add_check_btn(top_frame, "Dark Mode", dark_mode_var, lambda *args: dark_theme(dark_mode_var.get(), parent), switch=True)
     # left_frame.pack(fill="y", side=multilingual.DI_VAR['l'])
     # left_frame.pack_propagate(False)
-    mid_frame.pack(fill="both", expand=True, padx=20, pady=(20, 20))
-    mid_frame.pack_propagate(False)
-    return top_frame, mid_frame, left_frame
+    mid_frame.grid(sticky="nswe", padx=20, pady=(20, 20), row=1, column=0)
+    mid_frame.grid_propagate(False)
+
+    parent.grid_columnconfigure(0, weight=1)
+    parent.grid_rowconfigure(1, weight=1)
+
+
+    return top_frame, mid_frame
 
 
 def generic_page_layout(parent, title=None, primary_btn_txt=None, primary_btn_command=None, secondary_btn_txt=None,
-                        secondary_btn_command=None, title_pady=15):
+                        secondary_btn_command=None, title_pady=20):
     if title:
         add_page_title(parent, title)
     if primary_btn_txt or secondary_btn_txt:
         bottom_frame = tk.Frame(parent, height=34)
-        bottom_frame.pack(side='bottom', fill='x')
-        bottom_frame.pack_propagate(False)
+        bottom_frame.grid(row=2, column=0, sticky='ew')
+        bottom_frame.grid_propagate(False)
         if primary_btn_txt:
             add_primary_btn(bottom_frame, primary_btn_txt, primary_btn_command)
         if secondary_btn_txt:
             add_secondary_btn(bottom_frame, secondary_btn_txt, secondary_btn_command)
-    frame = ttk.Frame(parent)
-    frame.pack(fill='both', expand=1, pady=title_pady, padx=(0, 0))
+    frame = ttk.Frame(parent,)
+    frame.grid(row=1, column=0, pady=title_pady, padx=(0, 0), sticky='nsew')
+
+    parent.grid_columnconfigure(0, weight=1)
+    parent.grid_rowconfigure(1, weight=1)
+    parent.grid_rowconfigure(2, weight=0)
+    # Set a specific size for the frame
     return frame
 
 
@@ -192,34 +202,32 @@ def add_multi_radio_buttons(parent, items: dict, var, validate_func=None):
     frame = add_frame_container(parent, fill='x', expand=1)
     for index, item in enumerate(items.keys()):
         button = add_radio_btn(frame, items[item]["name"], var, item, command=lambda: validate_func(), pack=False)
-        button.grid(ipady=5, row=index, column=0, sticky=multilingual.DI_VAR['nw'])
+        button.grid(ipady=5, row=index, column=0, sticky='nwe')
         if "error" in items[item] and items[item]["error"]:
             button.configure(state='disabled')
-            ttk.Label(frame, wraplength=GV.UI.width, justify="center", text=items[item]["error"],
+            ttk.Label(frame, justify="center", text=items[item]["error"],
                       font=FONTS_smaller, foreground=color_red).grid(ipadx=5, row=index, column=1,
                                                                      sticky=multilingual.DI_VAR['w'])
             if var.get() == item:
                 var.set("")
         elif "description" in items[item] and items[item]["description"]:
-            ttk.Label(frame, wraplength=GV.UI.width, justify="center", text=items[item]["description"],
+            ttk.Label(frame, justify="center", text=items[item]["description"],
                       font=FONTS_tiny, foreground=color_blue).grid(ipadx=5, row=index, column=1,
                                                                    sticky=multilingual.DI_VAR['w'])
-        frame.grid_columnconfigure(index, weight=1)
-    #temp_frame = ttk.Label(frame,text="Yo wtf")
-    #temp_frame.grid(row=index+1, rowspan=5, column=0, sticky=multilingual.DI_VAR['nw'])
-    #temp_frame.grid_columnconfigure(index+1, weight=5)
+    frame.grid_columnconfigure(0, weight=1)
+
     return frame
 
 
 def add_page_title(parent, text, pady=(0, 5)):
     title = ttk.Label(parent, wraplength=GV.UI.width, justify=multilingual.DI_VAR['l'], text=text, font=FONTS_medium)
-    title.pack(pady=pady, padx=0, fill='x', )
+    title.grid(row=0, column=0, pady=pady, padx=0, sticky='', )
     return title
 
 
 def add_radio_btn(parent, text, var, value, command=None, is_disabled=None, ipady=5, side=None, pack=True):
-    radio = ttk.Radiobutton(parent, text=text, variable=var, value=value, width=99)
-    if pack: radio.pack(ipady=ipady, side=side)
+    radio = ttk.Radiobutton(parent, text=text, variable=var, value=value, )
+    if pack: radio.pack(ipady=ipady, side=side, fill='x')
     if command: radio.configure(command=command)
     if is_disabled: radio.configure(state='disabled')
     return radio
@@ -265,8 +273,8 @@ def add_frame_container(parent, **kwargs):
 
 
 def add_progress_bar(parent, ):
-    progressbar = ttk.Progressbar(parent, orient='horizontal', length=MAXWIDTH, mode='determinate')
-    progressbar.pack(pady=(0, 20))
+    progressbar = ttk.Progressbar(parent, orient='horizontal', mode='determinate',)
+    progressbar.pack(pady=(0, 20), fill='both')
     return progressbar
 
 
