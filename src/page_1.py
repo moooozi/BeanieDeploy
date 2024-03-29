@@ -46,7 +46,8 @@ def run(app):
                                                lambda: validate_input())
     distro_combolist = ttk.Combobox(frame_distro, values=non_featured_spin_list, state='readonly')
     distro_combolist.bind("<<ComboboxSelected>>", lambda *args: validate_input())
-
+    distro_combolist.grid(ipady=5, padx=(30, 0), row=len(featured_spin_desc)+1, column=0, columnspan=2,
+                                  sticky=DI_VAR['nw'])
     # GUI Bugfix
     if not GV.UI.combo_list_spin:
         distro_combolist.set(LN.choose_distro)
@@ -66,11 +67,10 @@ def run(app):
         spin_index = None
         if (distro := tk_var.distro_var.get()) in full_spin_list:
             spin_index = full_spin_list.index(distro)
-            distro_combolist.grid_forget()
+            distro_combolist.configure(state='disabled')
 
         elif tk_var.distro_var.get() == 'else':
-            distro_combolist.grid(ipady=5, padx=(30, 0), row=len(featured_spin_desc)+1, column=0, columnspan=2,
-                                  sticky=DI_VAR['nw'])
+            distro_combolist.configure(state='readonly')
             if distro_combolist.get() in non_featured_spin_list:
                 spin_index = full_spin_list.index(distro_combolist.get())
 

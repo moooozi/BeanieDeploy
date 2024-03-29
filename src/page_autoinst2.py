@@ -33,17 +33,15 @@ def run(app):
                       lambda: show_encrypt_options(tk_var.enable_encryption_toggle_var), pack=False)
     check_encrypt.grid(ipady=5, row=2, column=0, sticky=DI_VAR['nw'])
 
-    frame_encryption_options = ttk.Frame(frame_checkboxes)
-
-    encrypt_pass_note = ttk.Label(frame_encryption_options, wraplength=GV.UI.width, justify=DI_VAR['l'], text=LN.encrypt_reminder_txt, font=tkt.FONTS_smaller, foreground=tkt.color_blue)
-    encrypt_pass_note.grid(pady=5, padx=(0, 0), column=0, columnspan=5, row=1, sticky=DI_VAR['nw'])
+    encrypt_pass_note = ttk.Label(page_frame, wraplength=GV.UI.width, justify=DI_VAR['l'], text='', font=tkt.FONTS_smaller, foreground=tkt.color_blue)
+    encrypt_pass_note.pack(pady=5, padx=(0, 0), side='bottom', anchor=DI_VAR['w'])
 
     # LOGIC
     def show_encrypt_options(var):
         if var.get():
-            frame_encryption_options.grid(ipady=5,padx=(30, 0), row=3, column=0, sticky=DI_VAR['nw'])
+            encrypt_pass_note.configure(text=LN.encrypt_reminder_txt)
         else:
-            frame_encryption_options.grid_forget()
+            encrypt_pass_note.configure(text='')
 
     show_encrypt_options(tk_var.enable_encryption_toggle_var)
 
