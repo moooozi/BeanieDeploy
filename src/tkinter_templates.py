@@ -59,28 +59,42 @@ def dark_theme(ye_or_nah, tkinter):
         color_red = '#ff4a4a'
         color_blue = '#3aa9ff'
         color_green = '#5dd25e'
-        top_background_color = '#2b2b2b'
+        top_background_color = '#6b6b6b'
     dark_decorations(ye_or_nah, tkinter)
     sv_ttk.set_theme(color_mode)
     tkinter.update()
 
 
-def init_tkinter(title, icon=None):
-    tkinter = tk.Tk()
-    tkinter.title(title)
-    # windll.shcore.SetProcessDpiAwareness(1)
-    dpi_factor = ctypes.windll.user32.GetDpiForSystem() / 96
+class Application(tk.Tk):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # windll.shcore.SetProcessDpiAwareness(1)
+        dpi_factor = ctypes.windll.user32.GetDpiForSystem() / 96
+        self.geometry(str("%sx%s+%s+%s" % (WIDTH, HEIGHT, WIDTH_OFFSET, HEIGHT_OFFSET)))
+        self.minsize(MINWIDTH, MINHEIGHT)
+        self.maxsize(int(MAXWIDTH * dpi_factor), int(MAXHEIGHT * dpi_factor))
+        #tkinter.tk.call('tk', 'scaling', 1.4)
+        # tkinter.resizable(False, False)
+        top_frame = tk.Frame(self, height=TOP_FRAME_HEIGHT, width=MINWIDTH, background=top_background_color)
+        self.mid_frame = tk.Frame(self)
 
-    tkinter.geometry(str("%sx%s+%s+%s" % (WIDTH, HEIGHT, WIDTH_OFFSET, HEIGHT_OFFSET)))
-    tkinter.minsize(MINWIDTH, MINHEIGHT)
-    tkinter.maxsize(int(MAXWIDTH * dpi_factor), int(MAXHEIGHT * dpi_factor))
-    tkinter.iconbitmap(icon)
-    #tkinter.tk.call('tk', 'scaling', 1.4)
-    dark_theme(DARK_MODE, tkinter)
-    # tkinter.resizable(False, False)
+        #top_frame.grid_propagate(False)
+        self.mid_frame.grid_columnconfigure(0, weight=1)
 
-    return tkinter
 
+        self.top_title = ttk.Label(top_frame, text="", font=FONTS_large, background=top_background_color, justify=tk.CENTER, anchor="center", foreground="white")
+
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=8)
+        dark_theme(DARK_MODE, self)
+        top_frame.grid(sticky='nswe', row=0, column=0,)
+        self.top_title.grid(sticky="nswe", )
+        self.mid_frame.grid(sticky="nswe", padx=20, pady=(20, 20), row=1, column=0)
+        self.mid_frame.grid_propagate(False)
+
+    def set_title(self, title):
+        self.top_title.configure(text=title)
 
 def build_main_gui_frames(parent, left_frame_img_path=None, top_frame_height=TOP_FRAME_HEIGHT,
                           left_frame_width=LEFT_FRAME_WIDTH):
@@ -88,24 +102,12 @@ def build_main_gui_frames(parent, left_frame_img_path=None, top_frame_height=TOP
     Used to build or rebuild the main frames after language change to a language with different direction
     (see function right_to_left_lang)
     """
-    top_frame = tk.Frame(parent, height=top_frame_height, width=MINWIDTH, background=top_background_color)
-    mid_frame = tk.Frame(parent)
 
-    top_frame.grid(sticky='nswe', row=0, column=0,)
-    parent.grid_columnconfigure(0, weight=1)
     #top_frame.pack_propagate(False)
     # dark_mode_var = tk.BooleanVar(parent, DARK_MODE)
     # add_check_btn(top_frame, "Dark Mode", dark_mode_var, lambda *args: dark_theme(dark_mode_var.get(), parent), switch=True)
     # left_frame.pack(fill="y", side=multilingual.DI_VAR['l'])
     # left_frame.pack_propagate(False)
-    mid_frame.grid(sticky="nswe", padx=20, pady=(20, 20), row=1, column=0)
-    mid_frame.grid_propagate(False)
-
-    parent.grid_columnconfigure(0, weight=1)
-    parent.grid_rowconfigure(1, weight=1)
-
-
-    return top_frame, mid_frame
 
 
 def generic_page_layout(parent, title=None, primary_btn_txt=None, primary_btn_command=None, secondary_btn_txt=None,

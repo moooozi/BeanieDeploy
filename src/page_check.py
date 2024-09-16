@@ -56,7 +56,7 @@ def run(app, skip_check=False, done_checks : dict = {}):
 
     if not skip_check:
         compatibility_results = prc.CompatibilityResult()
-        required_checks = [x for x in compatibility_results.checks if x not in done_checks]
+        required_checks = list(set(compatibility_results.checks) - set(done_checks))
         gui.run_async_function(compatibility_results.compatibility_test, kwargs={'check_order': required_checks})
     else:
         gui.run_async_function(fn.get_json, kwargs={'url': GV.APP_AVAILABLE_SPINS_LIST, 'named': 'spin_list'})

@@ -1,11 +1,13 @@
 import multiprocessing
+import queue
+import subprocess
 import functions as fn
 import atexit
 
 GLOBAL_QUEUE = multiprocessing.Queue()
 
 
-def run_async_function(function, queue=GLOBAL_QUEUE, args=(), kwargs=None):
+def run_async_function(function, queue=GLOBAL_QUEUE, args=(), kwargs={}):
     """
     run a function without blocking the GUI
     :param function: the function
@@ -14,7 +16,6 @@ def run_async_function(function, queue=GLOBAL_QUEUE, args=(), kwargs=None):
     :param kwargs: keyworded-arguments to be passed to th function
     :return: returns the first output from queue if no callback is specified, or the return of the callback if specified
     """
-    if kwargs is None: kwargs = {}
     if queue: kwargs['queue'] = queue
     while queue.qsize(): queue.get()
     procces = multiprocessing.Process(target=function, args=args, kwargs=kwargs)
@@ -77,3 +78,52 @@ def get_first_tk_parent(widget):
     while parent.master is not None:
         parent = parent.master
     return parent
+
+def run_command(cmd):
+    return subprocess.run(cmd, text=True, check=True, capture_output=True,creationflags=DETACHED_PROCESS_FLAG)
+
+def _read_cmd_output(command, output_queue: multiprocessing.Queue):
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, creationflags=DETACHED_PROCESS_FLAG)
+    output = process.stdout.readlines() or ''
+    while output and process.poll() is None:
+        output_queue.put(output)
+
+def _read_function_output(function, output_queue: multiprocessing.Queue, args, kwargs):
+    output = function(*args, **kwargs)
+    output_queue.put(output)
+
+
+def run_async_proccess(function=None, cmd=None, args=(), kwargs={}):
+    if not (bool(cmd) ^ bool(function)):
+        raise ValueError("Either 'cmd' or 'function' must be provided")
+    q = multiprocessing.Queue()
+    if cmd:
+        if isinstance(cmd, str):
+            cmd = [cmd]
+        command = cmd + list(args) + [f'{key}={value}' for key, value in kwargs.items()]
+        p = multiprocessing.Process(target=_read_cmd_output, args=(command,q))
+        p.start()
+    if function:
+        p = multiprocessing.Process(target=_read_function_output, args=(function, q, args, kwargs))
+        p.start()
+        
+    return q
+
+def run_async_process_infinite(tkinter, function=None, cmd=None, args=(), kwargs={}, interval_in_seconds=2, timeout_in_seconds=1, update_frequency_in_ms=100, callback=None):
+    if not (bool(cmd) ^ bool(function)):
+        raise ValueError("Either 'cmd' or 'function' must be provided")
+    q = run_async_proccess(function=function, cmd=cmd, args=args, kwargs=kwargs)
+    retry_count = timeout_in_seconds * 1000 / update_frequency_in_ms
+    if callback is not None:
+        wait_and_handle_queue_output( q, callback, update_frequency_in_ms, retry_count )
+    tkinter.after(interval_in_seconds * 1000, self.run_async_process_infinite, function, cmd, args, kwargs, interval_in_seconds, timeout_in_seconds, update_frequency_in_ms, callback)
+
+
+def wait_and_handle_queue_output(self, output_queue: multiprocessing.Queue, callback, frequency=100, retry_count=0):
+    try:
+        output = output_queue.get_nowait()
+        callback(output)
+    except queue.Empty:
+        if retry_count:
+            self.master.after(frequency, self.wait_and_handle_queue_output, output_queue, callback, frequency, retry_count - 1)
+    
