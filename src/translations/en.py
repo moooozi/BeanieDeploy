@@ -1,4 +1,3 @@
-
 btn_next = "Next"
 btn_yes = "Yes"
 btn_no = "No"
@@ -36,8 +35,10 @@ error_resizable_9 = "Failed to check system drive resizability."
 
 info_about_selection = "Info about selection:"
 desktop_question = "Select your preferred distribution."
-desktop_hints = {'KDE Plasma': "KDE is very feature-rich, highly customizable, and has Windows-like layout by default",
-                 'GNOME': "GNOME desktop is Minimal and very stable, touchpad & touchscreen optimized"}
+desktop_hints = {
+    "KDE Plasma": "KDE is very feature-rich, highly customizable, and has Windows-like layout by default",
+    "GNOME": "GNOME desktop is Minimal and very stable, touchpad & touchscreen optimized",
+}
 lang = "Language"
 locale = "Locale"
 recommended = "Recommended"
@@ -68,7 +69,9 @@ encryption_tpm_unlock = "Auto-unlock with TPM2"
 
 entry_username = "Username"
 entry_fullname = "Full name (optional)"
-password_reminder_txt = "You will be able to set password for your user account after the installation"
+password_reminder_txt = (
+    "You will be able to set password for your user account after the installation"
+)
 
 list_keymaps = "Keyboard Layout"
 list_timezones = "Timezone"
@@ -78,34 +81,45 @@ immutable_system = "Immutable system image"
 something_else = "Something else"
 
 windows_question = "Okay! How should %s be installed?"
-windows_options = {'dualboot': 'Install alongside Windows',
-                   'replace_win': 'Install and replace Windows',
-                   'custom': 'Custom installation and partitioning'}
+windows_options = {
+    "dualboot": "Install alongside Windows",
+    "replace_win": "Install and replace Windows",
+    "custom": "Custom installation and partitioning",
+}
 dualboot_size_txt = "Reserved space for %s:"
-warn_backup_files_txt = "Backup your files! Everything inside %s will be permanently deleted"
-verify_question = "This is what is going to happen. Click %s to start installing" % btn_install
+warn_backup_files_txt = (
+    "Backup your files! Everything inside %s will be permanently deleted"
+)
+verify_question = (
+    "This is what is going to happen. Click %s to start installing" % btn_install
+)
 verify_text = {
-    'no_autoinst': "%s will be downloaded and will boot on the next restart to begin custom installation.",
-    'autoinst_dualboot': "%s will be downloaded and installed alongside Windows.",
-    'autoinst_replace_win': "%s will be downloaded and installed to replace Windows.",
-    'autoinst_keep_data': "Your existing data will not be affected.",
-    'autoinst_rm_all': "Everything on this device will be erased.",
-    'autoinst_wifi': "Existing Wi-Fi profiles will be added in %s."
+    "no_autoinst": "%s will be downloaded and will boot on the next restart to begin custom installation.",
+    "autoinst_dualboot": "%s will be downloaded and installed alongside Windows.",
+    "autoinst_replace_win": "%s will be downloaded and installed to replace Windows.",
+    "autoinst_keep_data": "Your existing data will not be affected.",
+    "autoinst_rm_all": "Everything on this device will be erased.",
+    "autoinst_wifi": "Existing Wi-Fi profiles will be added in %s.",
 }
 add_import_wifi = "Export my Wi-Fi networks to %s"
-enable_rpm_fusion = "Enable additional repositories for extended software and multimedia codecs support"
+enable_rpm_fusion = (
+    "Enable additional repositories for extended software and multimedia codecs support"
+)
 add_auto_restart = "Restart automatically"
 add_torrent = "Use torrent whenever possible"
 more_options = "More options"
 
-distro_hint = {'Fedora Workstation': 'The main Fedora edition with GNOME desktop environment',
-               'Fedora KDE Plasma': 'Fedora with KDE desktop environment'}
+distro_hint = {
+    "Fedora Workstation": "The main Fedora edition with GNOME desktop environment",
+    "Fedora KDE Plasma": "Fedora with KDE desktop environment",
+}
 
 job_starting_download = "Starting download..."
 downloads_number = "File %s out of %s"
 job_dl_install_media = "Downloading install media..."
 dl_timeleft = "Time left"
 dl_speed = "Speed"
+dl_file_size = "File size"
 
 keymap_tz_option = "The default timezone and keyboard layout for %s"
 keymap_tz_ip_description = "(Your IP region)"
@@ -116,21 +130,28 @@ job_checksum = "Checking downloaded file's integrity"
 job_checksum_failed = "Integrity check failed"
 job_checksum_failed_txt = "Failed to check downloaded file integrity, continue anyways?"
 job_checksum_mismatch = "Checksum Mismatch"
-job_checksum_mismatch_txt = "The downloaded file has an unexpected SHA256-Hash and cannot be trusted.\n" \
-                            "\nFile Hash:\n%s" \
-                            "\nExpected Hash:\n%s\n" \
-                            "\nThis usually means that the file is not properly downloaded." \
-                            "\nTry to download again?"
+job_checksum_mismatch_txt = (
+    "The downloaded file has an unexpected SHA256-Hash and cannot be trusted.\n"
+    "\nFile Hash:\n%s"
+    "\nExpected Hash:\n%s\n"
+    "\nThis usually means that the file is not properly downloaded."
+    "\nTry to download again?"
+)
 
 job_creating_tmp_part = "Creating temporary boot partition for installer media..."
-job_copying_to_tmp_part = "Copying required installer media files to temporary boot partition..."
+job_copying_to_tmp_part = (
+    "Copying required installer media files to temporary boot partition..."
+)
 job_adding_tmp_boot_entry = "Adding boot entry..."
 
 cleanup_question = "Clean up downloaded files?"
 cleanup_question_txt = "These files are not useful anymore unless you plan to reuse the app later.\nDelete them?"
 finished_title = "Restart required"
-finished_text = "A restart is required to continue installation, " \
-                   "click '%s' to restart now or '%s' to manually restart later" % (btn_restart_now, btn_restart_later)
+finished_text = (
+    "A restart is required to continue installation, "
+    "click '%s' to restart now or '%s' to manually restart later"
+    % (btn_restart_now, btn_restart_later)
+)
 finished_text_restarting_now = "Automatic restart in %s seconds"
 
 lang_question = "Now let's get started, select your preferred app language."
