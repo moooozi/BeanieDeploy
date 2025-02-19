@@ -64,13 +64,19 @@ def format_speed(speed):
         return f"{speed_bits / (1024 * 1024):.2f} Mbit/s"
 
 
-def format_eta(eta):
-    if eta < 60:
-        return f"{eta:.2f} s"
-    elif eta < 3600:
-        return f"{eta / 60:.2f} min"
+def format_eta(eta_in_seconds):
+    if eta_in_seconds == "N/A":
+        return eta_in_seconds
+    hours, remainder = divmod(eta_in_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours > 0:
+        return f"{int(hours)} {{ln_hour}} {int(minutes):02} {{ln_minute}} {int(seconds):02} {{ln_second}} {{ln_left}}"
+    elif minutes > 0:
+        return (
+            f"{int(minutes)} {{ln_minute}} {int(seconds):02} {{ln_second}} {{ln_left}}"
+        )
     else:
-        return f"{eta / 3600:.2f} h"
+        return f"{int(seconds)} {{ln_second}} {{ln_left}}"
 
 
 def download_with_standard_lib(url, destination, output_name=None, queue=None):
@@ -92,6 +98,7 @@ def download_with_standard_lib(url, destination, output_name=None, queue=None):
         tracker["size"] = total_size
         downloaded_size = 0
         start_time = time.time()
+        last_update_time = start_time
 
         with open(local_filepath, "wb") as f:
             while True:
@@ -110,8 +117,12 @@ def download_with_standard_lib(url, destination, output_name=None, queue=None):
                 tracker["speed"] = f"{speed:.2f}"
                 tracker["eta"] = f"{eta:.2f}" if eta != "N/A" else "N/A"
                 tracker["%"] = int((downloaded_size / total_size) * 100)
-                if queue:
-                    queue.put(tracker)
+
+                current_time = time.time()
+                if current_time - last_update_time >= 0.5:
+                    if queue:
+                        queue.put(tracker)
+                    last_update_time = current_time
 
     tracker["status"] = "complete"
     if queue:

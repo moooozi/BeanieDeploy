@@ -161,3 +161,8 @@ finished_text = (
 finished_text_restarting_now = "Automatischer Neustart in %s Sekunden"
 
 lang_question = "Jetzt geht's los, wählen Sie Ihre bevorzugte App-Sprache."
+
+eta_hour = "Stunden"
+eta_minute = "Minuten"
+eta_second = "Sekunden"
+eta_left = "verbleibend"

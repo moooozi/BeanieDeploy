@@ -155,3 +155,8 @@ finished_text = (
 finished_text_restarting_now = "Automatic restart in %s seconds"
 
 lang_question = "Now let's get started, select your preferred app language."
+
+eta_hour = "hours"
+eta_minute = "minutes"
+eta_second = "seconds"
+eta_left = "left"

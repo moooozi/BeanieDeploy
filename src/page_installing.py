@@ -103,7 +103,12 @@ def run(app, installer_args, queue=multiprocessing.Queue()):
                 ) * global_downloads_factor
 
                 formatted_speed = fn.format_speed(float(queue_result["speed"]))
-                formatted_eta = fn.format_eta(float(queue_result["eta"]))
+                formatted_eta = fn.format_eta(float(queue_result["eta"])).format(
+                    ln_hour=LN.eta_hour,
+                    ln_minute=LN.eta_minute,
+                    ln_second=LN.eta_second,
+                    ln_left=LN.eta_left,
+                )
                 formatted_size = fn.format_size(float(queue_result["size"]))
 
                 tk_var.install_job_var.set(
