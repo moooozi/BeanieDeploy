@@ -110,10 +110,13 @@ def run():
 
 if __name__ == "__main__":
     # run()
-    try:
+    if parse_arguments().release:
+        try:
+            run()
+        except Exception as e:
+            # show a pop-up window with the error message
+            message = tkinter.messagebox.showerror(
+                title="Error", message=traceback.format_exc()
+            )
+    else:
         run()
-    except Exception as e:
-        # show a pop-up window with the error message
-        message = tkinter.messagebox.showerror(
-            title="Error", message=traceback.format_exc()
-        )

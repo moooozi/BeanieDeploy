@@ -158,13 +158,16 @@ def install(
         check=True,
         capture_output=True,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
     )
 
     # Check if the mount was successful
     if out.returncode != 0:
         raise RuntimeError(f"Failed to mount EFI partition: {out.stderr}")
+
+    # Create the destination directory if it doesn't exist
+    if not bootloader_dst_path.exists():
+        print(f"Creating destination directory: {bootloader_dst_path}")
+        bootloader_dst_path.mkdir(parents=True, exist_ok=True)
 
     # Copy the contents of the bootloader directory
     for item in bootloader_src_path.iterdir():
@@ -232,9 +235,11 @@ def install(
     # Otherwise, look for the boot entry with name "Windows Boot Manager" and use that as a reference
     for entry in list_boot_entries:
         if entry["description"] == "Windows Boot Manager":
-            reference_entry = entry["entry_id"]
-            if entry["entry_id"] == boot_current:
+            reference_entry = entry["entry_id"][4:]  # remove the "Boot" prefix
+            if entry["entry_id"] == f"Boot{boot_current}":
                 break
+    if reference_entry is None:
+        raise RuntimeError("Windows Boot Manager entry not found")
 
     new_boot_entry = fn.create_boot_entry(
         "Fedora Recovery",

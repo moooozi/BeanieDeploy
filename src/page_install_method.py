@@ -1,4 +1,4 @@
-import tkinter.ttk as ttk
+import customtkinter as ctk
 import page_autoinst2
 import page_verify
 import tkinter_templates as tkt
@@ -70,12 +70,17 @@ def run(app):
         "dualboot": {
             "name": LN.windows_options["dualboot"],
             "error": dualboot_error_msg,
+            "advanced": True,
         },
         "replace_win": {
             "name": LN.windows_options["replace_win"],
             "error": replace_win_error_msg,
+            "advanced": False,
         },
-        "custom": {"name": LN.windows_options["custom"]},
+        "custom": {
+            "name": LN.windows_options["custom"],
+            "advanced": True,
+        },
     }
 
     radio_buttons = tkt.add_multi_radio_buttons(
@@ -95,7 +100,7 @@ def run(app):
         tk_var.install_method_var.set(default)
 
     min_size = fn.byte_to_gb(GV.APP_DUALBOOT_REQUIRED_SPACE)
-    entry1_frame = ttk.Frame(page_frame, height=300)
+    entry1_frame = ctk.CTkFrame(page_frame, height=300)
     entry1_frame.pack_propagate(False)
     entry1_frame.pack(
         fill="both",
@@ -115,7 +120,7 @@ def run(app):
         font=tkt.FONTS_smaller,
         pack=False,
     )
-    size_dualboot_entry = ttk.Entry(
+    size_dualboot_entry = ctk.CTkEntry(
         entry1_frame,
         width=10,
         textvariable=tk_var.dualboot_size_var,
@@ -123,7 +128,9 @@ def run(app):
     validation_func = app.register(
         lambda x: x.replace(".", "", 1).isdigit() and min_size <= float(x) <= max_size
     )
-    size_dualboot_entry.config(validate="none", validatecommand=(validation_func, "%P"))
+    size_dualboot_entry.configure(
+        validate="none", validatecommand=(validation_func, "%P")
+    )
     size_dualboot_txt_post = tkt.add_text_label(
         entry1_frame,
         text="(%sGB - %sGB)" % (min_size, max_size),

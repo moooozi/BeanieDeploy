@@ -1,8 +1,8 @@
 import multiprocessing
 import queue
 import subprocess
-import tkinter as tk
-import tkinter.ttk as ttk
+from tkinter import ttk
+import customtkinter as ctk
 import ctypes
 from gui_functions import detect_darkmode_in_windows
 import globals as GV
@@ -21,17 +21,25 @@ TOP_FRAME_HEIGHT = 80
 LEFT_FRAME_WIDTH = 0
 DARK_MODE = detect_darkmode_in_windows()
 
-FONTS_large = ("Ariel", 24)
-FONTS_medium = ("Ariel Bold", 16)
-FONTS_small = ("Ariel", 13)
-FONTS_smaller = ("Ariel", 12)
-FONTS_tiny = ("Ariel", 11)
 
-tkinter_background_color = ""
-color_red = ""
-color_blue = ""
-color_green = ""
-top_background_color = ""
+def get_dpi_scaling_factor():
+    return ctypes.windll.user32.GetDpiForSystem() / 96
+
+
+dpi_scaling_factor = 1.35
+print("DPI scaling factor: ", dpi_scaling_factor)
+FONTS_large = ("Ariel", int(24 * dpi_scaling_factor))
+FONTS_medium = ("Ariel Bold", int(16 * dpi_scaling_factor))
+FONTS_small = ("Ariel", int(13 * dpi_scaling_factor))
+FONTS_smaller = ("Ariel", int(12 * dpi_scaling_factor))
+FONTS_tiny = ("Ariel", int(11 * dpi_scaling_factor))
+
+# Initialize color variables with default values
+tkinter_background_color = "#856ff8"
+color_red = "#e81123"
+color_blue = "#0067b8"
+color_green = "#008009"
+top_background_color = "#e6e6e6"
 
 
 def dark_decorations(ye_or_nah, tkinter):
@@ -65,58 +73,63 @@ def dark_theme(ye_or_nah, tkinter):
         color_green = "#5dd25e"
         top_background_color = "#6b6b6b"
     dark_decorations(ye_or_nah, tkinter)
-    sv_ttk.set_theme(color_mode)
+    # sv_ttk.set_theme(color_mode)
     tkinter.update()
 
 
-class Application(tk.Tk):
+class Application(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # windll.shcore.SetProcessDpiAwareness(1)
-        dpi_factor = ctypes.windll.user32.GetDpiForSystem() / 96
+        dpi_factor = get_dpi_scaling_factor()
         self.geometry(str("%sx%s+%s+%s" % (WIDTH, HEIGHT, WIDTH_OFFSET, HEIGHT_OFFSET)))
         self.minsize(MINWIDTH, MINHEIGHT)
         self.maxsize(int(MAXWIDTH * dpi_factor), int(MAXHEIGHT * dpi_factor))
-        # tkinter.tk.call('tk', 'scaling', 1.4)
-        # tkinter.resizable(False, False)
-        top_frame = tk.Frame(
+        # ctk.tk.call('tk', 'scaling', 1.4)
+        # ctk.resizable(False, False)
+        self.mid_frame = ctk.CTkFrame(
             self,
-            height=TOP_FRAME_HEIGHT,
-            width=MINWIDTH,
-            background=top_background_color,
+            bg_color="transparent",
+            fg_color="transparent",
         )
-        self.mid_frame = tk.Frame(self)
 
         # top_frame.grid_propagate(False)
         self.mid_frame.grid_columnconfigure(0, weight=1)
-
-        self.top_title = ttk.Label(
-            top_frame,
-            text="",
-            font=FONTS_large,
-            background=top_background_color,
-            justify=tk.CENTER,
-            anchor="center",
-            foreground="white",
-        )
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=8)
         dark_theme(DARK_MODE, self)
-        top_frame.grid(
-            sticky="nswe",
-            row=0,
-            column=0,
-        )
-        self.top_title.grid(
-            sticky="nswe",
-        )
+
         self.mid_frame.grid(sticky="nswe", padx=20, pady=(20, 20), row=1, column=0)
         self.mid_frame.grid_propagate(False)
+        ####
+        ###Treeview Customisation (theme colors are selected)
+        bg_color = self._apply_appearance_mode(
+            ctk.ThemeManager.theme["CTkFrame"]["fg_color"]
+        )
+        text_color = self._apply_appearance_mode(
+            ctk.ThemeManager.theme["CTkLabel"]["text_color"]
+        )
+        selected_color = self._apply_appearance_mode(
+            ctk.ThemeManager.theme["CTkButton"]["fg_color"]
+        )
 
-    def set_title(self, title):
-        self.top_title.configure(text=title)
+        treestyle = ttk.Style()
+        treestyle.theme_use("default")
+        treestyle.configure(
+            "Treeview",
+            background=bg_color,
+            foreground=text_color,
+            fieldbackground=bg_color,
+            borderwidth=0,
+        )
+        treestyle.map(
+            "Treeview",
+            background=[("selected", bg_color)],
+            foreground=[("selected", selected_color)],
+        )
+        self.bind("<<TreeviewSelect>>", lambda event: self.focus_set())
 
     def wait_and_handle_queue_output(
         self,
@@ -153,7 +166,7 @@ def build_main_gui_frames(
     """
 
     # top_frame.pack_propagate(False)
-    # dark_mode_var = tk.BooleanVar(parent, DARK_MODE)
+    # dark_mode_var = ctk.BooleanVar(parent, DARK_MODE)
     # add_check_btn(top_frame, "Dark Mode", dark_mode_var, lambda *args: dark_theme(dark_mode_var.get(), parent), switch=True)
     # left_frame.pack(fill="y", side=multilingual.DI_VAR['l'])
     # left_frame.pack_propagate(False)
@@ -171,15 +184,19 @@ def generic_page_layout(
     if title:
         add_page_title(parent, title)
     if primary_btn_txt or secondary_btn_txt:
-        bottom_frame = tk.Frame(parent, height=34)
+        bottom_frame = ctk.CTkFrame(
+            parent, height=34, bg_color="transparent", fg_color="transparent"
+        )
         bottom_frame.grid(row=2, column=0, sticky="ew")
         bottom_frame.grid_propagate(False)
         if primary_btn_txt:
             add_primary_btn(bottom_frame, primary_btn_txt, primary_btn_command)
         if secondary_btn_txt:
             add_secondary_btn(bottom_frame, secondary_btn_txt, secondary_btn_command)
-    frame = ttk.Frame(
+    frame = ctk.CTkFrame(
         parent,
+        bg_color="transparent",
+        fg_color="transparent",
     )
     frame.grid(row=1, column=0, pady=title_pady, padx=(0, 0), sticky="nsew")
 
@@ -199,11 +216,11 @@ def open_popup(
     Pops up window to get input from user and freezes the main GUI while waiting for response
     :param y_size: window height in pixels
     :param x_size: window width in pixels
-    :param parent: the parent for the Tkinter Toplevel
+    :param parent: the parent for the CustomTkinter Toplevel
     :return:
     """
-    pop = tk.Toplevel(parent)
-    border_frame = tk.Frame(pop, highlightbackground="gray", highlightthickness=1)
+    pop = ctk.CTkToplevel(parent)
+    border_frame = ctk.CTkFrame(pop, fg_color="gray", corner_radius=1)
     x_position = parent.winfo_x()
     y_position = parent.winfo_y()
     x_app_size = parent.winfo_width()
@@ -221,7 +238,7 @@ def open_popup(
     pop.focus_set()
     pop.grab_set()
     border_frame.pack(expand=1, fill="both", pady=5, padx=5)
-    pop_frame = tk.Frame(border_frame)
+    pop_frame = ctk.CTkFrame(border_frame)
     pop_frame.pack(expand=1, fill="both", padx=10, pady=(20, 10))
 
     return pop, pop_frame
@@ -237,7 +254,7 @@ def input_pop_up(
     x_size = 600
     y_size = int(len(msg_txt) / 2.8 + 180 + 13 * msg_txt.count("\n"))
     pop, pop_frame = open_popup(parent, x_size, y_size)
-    pop_var = tk.IntVar(pop)
+    pop_var = ctk.IntVar(pop)
     msg_font = FONTS_smaller
     layout_frame = generic_page_layout(
         pop_frame,
@@ -261,10 +278,10 @@ def input_pop_up(
 
 def add_primary_btn(parent, text, command):
     """
-    a preset for adding a tkinter button. Used for the likes of "Next" and "Install" buttons
-    :return: tkinter button object
+    a preset for adding a CustomTkinter button. Used for the likes of "Next" and "Install" buttons
+    :return: CustomTkinter button object
     """
-    btn_next = ttk.Button(parent, text=text, style="Accent.TButton", command=command)
+    btn_next = ctk.CTkButton(parent, text=text, command=command)
     btn_next.pack(
         anchor=multilingual.DI_VAR["se"],
         side=multilingual.DI_VAR["r"],
@@ -276,10 +293,10 @@ def add_primary_btn(parent, text, command):
 
 def add_secondary_btn(parent, text, command):
     """
-    a preset for adding a tkinter button. Used for the likes of "Back", "Cancel" and "Abort" buttons
-    :return: tkinter button object
+    a preset for adding a CustomTkinter button. Used for the likes of "Back", "Cancel" and "Abort" buttons
+    :return: CustomTkinter button object
     """
-    btn_back = ttk.Button(parent, text=text, command=command)
+    btn_back = ctk.CTkButton(parent, text=text, command=command)
     btn_back.pack(
         anchor=multilingual.DI_VAR["se"],
         side=multilingual.DI_VAR["r"],
@@ -291,9 +308,31 @@ def add_secondary_btn(parent, text, command):
 
 def add_multi_radio_buttons(parent, items: dict, var, validate_func=None):
     frame = add_frame_container(parent, fill="x", expand=1)
+    advanced_frame = ctk.CTkFrame(  # advanced options frame
+        frame,
+        bg_color="transparent",
+        fg_color="transparent",
+    )
+
+    def show_advanced_options():
+        advanced_frame.grid(row=len(items), column=0, sticky="w")
+        show_advanced_label.grid_remove()
+
+    show_advanced_label = ctk.CTkLabel(
+        frame,
+        text="Show advanced options",
+        font=FONTS_smaller,
+        text_color=color_blue,
+        cursor="hand2",
+    )
+    if any(items[item].get("advanced", False) for item in items):
+        show_advanced_label.grid(ipady=5, row=len(items) + 1, column=0, sticky="w")
+        show_advanced_label.bind("<Button-1>", lambda e: show_advanced_options())
+
     for index, item in enumerate(items.keys()):
+        target_frame = advanced_frame if items[item].get("advanced", False) else frame
         button = add_radio_btn(
-            frame,
+            target_frame,
             items[item]["name"],
             var,
             item,
@@ -303,30 +342,31 @@ def add_multi_radio_buttons(parent, items: dict, var, validate_func=None):
         button.grid(ipady=5, row=index, column=0, sticky="nwe")
         if "error" in items[item] and items[item]["error"]:
             button.configure(state="disabled")
-            ttk.Label(
-                frame,
+            ctk.CTkLabel(
+                target_frame,
                 justify="center",
                 text=items[item]["error"],
                 font=FONTS_smaller,
-                foreground=color_red,
+                text_color=color_red,
             ).grid(ipadx=5, row=index, column=1, sticky=multilingual.DI_VAR["w"])
             if var.get() == item:
                 var.set("")
         elif "description" in items[item] and items[item]["description"]:
-            ttk.Label(
-                frame,
+            ctk.CTkLabel(
+                target_frame,
                 justify="center",
                 text=items[item]["description"],
                 font=FONTS_tiny,
-                foreground=color_blue,
+                text_color=color_blue,
             ).grid(ipadx=5, row=index, column=1, sticky=multilingual.DI_VAR["w"])
     frame.grid_columnconfigure(0, weight=1)
+    advanced_frame.grid_columnconfigure(0, weight=1)
 
     return frame
 
 
 def add_page_title(parent, text, pady=(0, 5)):
-    title = ttk.Label(
+    title = ctk.CTkLabel(
         parent,
         wraplength=GV.UI.width,
         justify=multilingual.DI_VAR["l"],
@@ -354,7 +394,7 @@ def add_radio_btn(
     side=None,
     pack=True,
 ):
-    radio = ttk.Radiobutton(
+    radio = ctk.CTkRadioButton(
         parent,
         text=text,
         variable=var,
@@ -372,7 +412,7 @@ def add_radio_btn(
 def add_check_btn(
     parent, text, var, command=None, is_disabled=None, pady=5, pack=True, switch=False
 ):
-    check = ttk.Checkbutton(
+    check = ctk.CTkCheckBox(
         parent, text=text, variable=var, onvalue=True, offvalue=False, width=99
     )
     if switch:
@@ -398,17 +438,17 @@ def add_text_label(
     pack=True,
 ):
     """
-    a preset for tkinter text label that packs by default
-    :return: the tkinter label "ttk.Label" object
+    a preset for CustomTkinter text label that packs by default
+    :return: the CustomTkinter label "ctk.CTkLabel" object
     """
     if (not var and text) or (var and not text):
-        label = ttk.Label(
+        label = ctk.CTkLabel(
             parent,
             wraplength=GV.UI.width,
             justify=multilingual.DI_VAR["l"],
             text=text,
             textvariable=var,
-            foreground=foreground,
+            text_color=foreground,
             font=font,
         )
     else:
@@ -419,8 +459,8 @@ def add_text_label(
 
 
 def add_lang_list(parent, var, languages):
-    lang_list = ttk.Combobox(
-        parent, name="language", textvariable=var, background=top_background_color
+    lang_list = ctk.CTkComboBox(
+        parent, name="language", textvariable=var, fg_color=top_background_color
     )
     lang_list["values"] = tuple(languages)
     lang_list["state"] = "readonly"
@@ -430,7 +470,14 @@ def add_lang_list(parent, var, languages):
 
 
 def add_frame_container(parent, **kwargs):
-    frame = ttk.Frame(parent, width=MINWIDTH)
+    frame = ctk.CTkFrame(
+        parent,
+        width=MINWIDTH,
+        bg_color="transparent",
+        fg_color="transparent",
+        corner_radius=0,
+        border_width=0,
+    )
     frame.pack(**kwargs)
     return frame
 
@@ -438,9 +485,9 @@ def add_frame_container(parent, **kwargs):
 def add_progress_bar(
     parent,
 ):
-    progressbar = ttk.Progressbar(
+    progressbar = ctk.CTkProgressBar(
         parent,
-        orient="horizontal",
+        orientation="horizontal",
         mode="determinate",
     )
     progressbar.pack(pady=(0, 20), fill="both")
@@ -448,11 +495,11 @@ def add_progress_bar(
 
 
 def stylize(parent, theme_dir, theme_name):
-    style = ttk.Style(parent)
+    style = ctk.CTkStyle(parent)
     parent.tk.call("source", theme_dir)
     style.theme_use(theme_name)
-    style.configure("Accent.TButton", foreground="white")
-    style.configure("Togglebutton", foreground="white")
+    style.configure("Accent.TButton", text_color="white")
+    style.configure("Togglebutton", text_color="white")
 
 
 def init_frame(frame):
@@ -464,9 +511,9 @@ def init_frame(frame):
 
 def var_tracer(var, mode, cb):
     """
-    add tkinter variable tracer if no tracer exists
-    :param var: tkinter variable
-    :param mode: tkinter tracer mode (see trace_add docs)
+    add CustomTkinter variable tracer if no tracer exists
+    :param var: CustomTkinter variable
+    :param mode: CustomTkinter tracer mode (see trace_add docs)
     :param cb: the callback function
     """
     tracers_list = var.trace_info()
