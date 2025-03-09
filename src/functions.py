@@ -14,6 +14,7 @@ import os
 import pathlib
 from dataclasses import dataclass
 from typing import Any
+import globals as GV
 
 
 def open_url(url):
@@ -362,53 +363,8 @@ def run_powershell_script(script):
     return out.stdout
 
 
-def make_boot_entry_first(bootguid, is_permanent: bool = False):
-    """
-
-    :param bootguid:
-    :param is_permanent:
-    """
-    if is_permanent:
-        arg = r'bcdedit /set "{fwbootmgr}" displayorder "' + bootguid + '" /addfirst'
-    else:
-        arg = r'bcdedit /set "{fwbootmgr}" bootsequence "' + bootguid + '" /addfirst'
-
-    out = subprocess.run(
-        [r"powershell.exe", arg],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-    # log(out.stdout)
-
-
-def create_new_wbm(boot_efi_file_path, device_path):
-    arg = r'bcdedit /copy "{bootmgr}" /d "Linux Recovery"'
-    bootguid = subprocess.run(
-        [r"powershell.exe", arg],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-    ).stdout.strip()
-    # log(bootguid)
-    bootguid = bootguid[bootguid.index("{") : bootguid.index("}") + 1]
-    arg = rf'bcdedit /set "{bootguid}" path {boot_efi_file_path}'
-    subprocess.run(
-        [r"powershell.exe", arg],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-    arg = rf'bcdedit /set "{bootguid}" device partition={device_path}'
-    subprocess.run(
-        [r"powershell.exe", arg],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-    return bootguid
-
-
 def get_system_efi_drive_uuid():
-    args = """(Get-Partition | Where-Object -Property "IsSystem" -EQ true).AccessPaths 
-    | Where-Object { $_ -like '\\?\volume*' }"""
+    args = '(Get-Partition | Where-Object -Property "IsSystem" -EQ true).AccessPaths'
     out = subprocess.run(
         [r"powershell.exe", args],
         stdout=subprocess.PIPE,
@@ -420,9 +376,9 @@ def get_system_efi_drive_uuid():
 
 
 def extract_wifi_profiles(folder_path):
-    args = 'netsh wlan export profile key=clear folder="%s"' % folder_path
+    args = ["netsh", "wlan", "export", "profile", "key=clear", f"folder={folder_path}"]
     out = subprocess.run(
-        [r"powershell.exe", args],
+        args,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
@@ -447,7 +403,7 @@ def is_admin():
     return ctypes.windll.shell32.IsUserAnAdmin()
 
 
-def get_admin(args):
+def get_admin(args=""):
     from sys import executable, argv
 
     args = " ".join(argv) + " " + args
@@ -533,17 +489,6 @@ def set_windows_time_to_utc():
         # log("Error: Couldn't change Windows Time settings to use UTC universal timing")
 
 
-def get_user_downloads_folder():
-    with winreg.OpenKey(
-        winreg.HKEY_CURRENT_USER,
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
-    ) as key:
-        downloads_dir = winreg.QueryValueEx(
-            key, "{374DE290-123F-4565-9164-39C4925E467B}"
-        )[0]
-    return downloads_dir
-
-
 def enqueue_output(out, queue):
     for line in iter(out.readline, b""):
         try:
@@ -573,3 +518,116 @@ def cleanup_on_reboot(dir_to_delete):
         winreg.KEY_SET_VALUE,
     ) as key:
         winreg.SetValueEx(key, "MyAppCleanup", 0, winreg.REG_SZ, cmd)
+
+
+def create_boot_entry(name, path, duplicate_of):
+    """
+    Creates a boot entry from an existing one.
+
+    Args:
+        name (str): The name of the boot entry.
+        path (str): The path to the boot entry.
+        duplicate_of (str): The identifier of an existing boot entry to duplicate.
+
+    Returns:
+        str: The new boot entry identifier.
+    """
+    if not all([name, path, duplicate_of]):
+        raise ValueError("One or more arguments are missing")
+    # Make sure duplicate_of consists of 4 hexadecimal digits
+    if not re.match(r"^[0-9A-Fa-f]{4}$", duplicate_of):
+        raise ValueError("Invalid duplicate_of argument")
+
+    out = subprocess.run(
+        [GV.PATH.RELATIVE_BOOTMGR_HELPER, "-c", f"Boot{duplicate_of}", name, path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+    )
+    # The output usually looks like this: Successfully duplicated Boot0000 to Boot0006 with new description "New Entry" and new file path "\EFI\fedora\grubx64.efi".
+    # We need to extract the new identifier from it and return it
+    print(out.stdout)
+    match = re.search(
+        r"Successfully duplicated Boot[0-9A-Fa-f]{4} to Boot([0-9A-Fa-f]{4}) with",
+        out.stdout,
+    )
+
+    if match:
+        return match.group(1)
+    else:
+        raise RuntimeError("Failed to extract new boot entry identifier from output")
+
+
+def set_bootnext(entry_id):
+    """
+    Sets the bootnext value to the specified entry.
+
+    Args:
+        entry_id (str): The identifier of the boot entry to set as the next boot.
+    """
+    # Make sure entry_id consists of 4 hexadecimal digits
+    if not re.match(r"^[0-9A-Fa-f]{4}$", entry_id):
+        raise ValueError("Invalid entry_id argument")
+
+    out = subprocess.run(
+        [GV.PATH.RELATIVE_BOOTMGR_HELPER, "-N", f"{entry_id}"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+    )
+
+    # If the command was successful, the output contains ": Set to XXXX"
+    if f": set to {entry_id.lower()}" not in out.stdout.lower():
+        raise RuntimeError("Failed to set bootnext value")
+
+
+def get_boot_current():
+    """
+    Get the current boot entry.
+
+    Returns:
+        str: The identifier of the current boot entry.
+    """
+    out = subprocess.run(
+        [GV.PATH.RELATIVE_BOOTMGR_HELPER, "-c"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+    )
+    # The output usually looks like this: "BootCurrent   : 0002 (hex)"
+    match = re.search(r"BootCurrent\s+:\s+([0-9A-Fa-f]{4})\s+\(hex\)", out.stdout)
+
+    if match:
+        return match.group(1)
+    else:
+        raise RuntimeError(
+            "Failed to extract current boot entry identifier from output"
+        )
+
+
+def get_boot_entries():
+    """
+    Get the list of boot entries.
+
+    Returns:
+        list: A list of dictionaries containing the boot entries.
+    """
+    out = subprocess.run(
+        [GV.PATH.RELATIVE_BOOTMGR_HELPER, "-B"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+    )
+
+    boot_entries = []
+    entry_pattern = re.compile(r"^(Boot[0-9A-Fa-f]{4})\[\*\]\s+:\s+(.+)$", re.MULTILINE)
+    matches = entry_pattern.findall(out.stdout)
+
+    if not matches:
+        raise RuntimeError("Error:", out.stdout)
+
+    for match in matches:
+        entry_id, description = match
+        boot_entries.append({"entry_id": entry_id, "description": description})
+
+    return boot_entries

@@ -1,114 +1,146 @@
 import os
+import winreg
+from data_units import DataUnit
 import functions as fn
 import types
 
-Megabyte = 1024 * 1024
-Gigabyte = 1024 * 1024 * 1024
 
 APP_SW_NAME = "BeanieDeploy"
 APP_SW_VERSION = "Snapshot"
-APP_minimal_required_space = 4 * Gigabyte
-APP_dualboot_required_space = 35 * Gigabyte
-APP_additional_failsafe_space = 2 * Gigabyte
-APP_temp_part_failsafe_space = 0.15 * Gigabyte
-APP_minimal_required_ram = 2 * Gigabyte
-APP_linux_boot_partition_size = 1 * Gigabyte  # (minimum recommended 0.5)
-APP_linux_efi_partition_size = 200 * Megabyte  # (recommended=200, minimum=50)
-APP_default_efi_file_path = r"\EFI\BOOT\BOOTX64.EFI"
+APP_MINIMAL_REQUIRED_SPACE = DataUnit.from_gigabytes(4)
+APP_DUALBOOT_REQUIRED_SPACE = DataUnit.from_gigabytes(35)
+APP_ADDITIONAL_FAILSAFE_SPACE = DataUnit.from_gigabytes(2)
+APP_TEMP_PART_FAILSAFE_SPACE = DataUnit.from_gigabytes(0.15)
+APP_MINIMAL_REQUIRED_RAM = DataUnit.from_gigabytes(2)
+APP_LINUX_BOOT_PARTITION_SIZE = DataUnit.from_gigabytes(1)
+APP_LINUX_EFI_PARTITION_SIZE = DataUnit.from_megabytes(500)
+APP_DEFAULT_EFI_FILE_PATH = r"\EFI\BOOT\BOOTX64.EFI"
 APP_FEDORA_GEO_IP_URL = "https://geoip.fedoraproject.org/city"
 FEDORA_BASE_DOWNLOAD_URL = "https://download.fedoraproject.org"
 FEDORA_TORRENT_DOWNLOAD_URL = "https://torrent.fedoraproject.org"
 APP_AVAILABLE_SPINS_LIST = (
     "https://gitlab.com/win2linux/lnitest/-/raw/main/fedora_spins.json"
 )
-RPMFusionFREE = (
+RPM_FUSION_FREE = (
     "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-%s.noarch.rpm"
 )
-RPMFusionNonFREE = "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-%s.noarch.rpm"
+RPM_FUSION_NON_FREE = "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-%s.noarch.rpm"
 APP_TPM2_TOOLS_RPM_DL_LINK = "https://download.fedoraproject.org/pub/fedora/linux/releases/36/Everything/x86_64/os/Packages/t/tpm2-tools-5.2-2.fc36.x86_64.rpm"
-APP_live_img_path = "/LiveOS/squashfs.img"
-APP_live_img_url = "file:///run/install/repo" + APP_live_img_path
+APP_LIVE_IMG_PATH = "/LiveOS/squashfs.img"
+APP_LIVE_IMG_URL = "file:///run/install/repo" + APP_LIVE_IMG_PATH
 
 LIVE_ISO_NAME = "live_os.iso"
 INSTALL_ISO_NAME = "install_media.iso"
 
 ADDITIONAL_RPM_DIR_NAME = "ADDITIONAL_RPMs"
 WIFI_PROFILES_DIR_NAME = "WIFI_PROFILES"
-PATH = types.SimpleNamespace()
-PATH.CURRENT_DIR = os.path.dirname(__file__)
-PATH.DOWNLOADS_DIR = fn.get_user_downloads_folder()
-PATH.WORK_DIR = f"{PATH.DOWNLOADS_DIR}\\win2linux_tmpdir"
-PATH.WIFI_PROFILES_DIR = f"{PATH.WORK_DIR}\\{WIFI_PROFILES_DIR_NAME}"
-PATH.RPM_SOURCE_DIR = rf"{PATH.WORK_DIR}\{ADDITIONAL_RPM_DIR_NAME}"
-PATH.SCRIPTS = rf"{PATH.CURRENT_DIR}\resources\\scripts"
-PATH.APP_ICON = rf"{PATH.CURRENT_DIR}\resources\\style\\app-icon.ico"
-PATH.LIVE_ISO = rf"{PATH.WORK_DIR}\{LIVE_ISO_NAME}"
-PATH.INSTALL_ISO = rf"{PATH.WORK_DIR}\{INSTALL_ISO_NAME}"
-PATH.RELATIVE_GRUB_CFG = r"EFI\BOOT\grub.cfg"
-PATH.RELATIVE_KICKSTART = "ks.cfg"
 
-COMPATIBILITY_RESULTS = types.SimpleNamespace()
+
+class PathConfig:
+    def __init__(self):
+        self.CURRENT_DIR = os.path.dirname(__file__)
+        self.DOWNLOADS_DIR = self._get_user_downloads_folder()
+        self.WORK_DIR = f"{self.DOWNLOADS_DIR}\\win2linux_tmpdir"
+        self.WIFI_PROFILES_DIR = f"{self.WORK_DIR}\\{WIFI_PROFILES_DIR_NAME}"
+        self.RPM_SOURCE_DIR = rf"{self.WORK_DIR}\{ADDITIONAL_RPM_DIR_NAME}"
+        self.SCRIPTS = rf"{self.CURRENT_DIR}\resources\\scripts"
+        self.APP_ICON = rf"{self.CURRENT_DIR}\resources\\style\\app-icon.ico"
+        self.LIVE_ISO = rf"{self.WORK_DIR}\{LIVE_ISO_NAME}"
+        self.INSTALL_ISO = rf"{self.WORK_DIR}\{INSTALL_ISO_NAME}"
+        self.RELATIVE_GRUB_CFG = r"EFI\BOOT\grub.cfg"
+        self.RELATIVE_KICKSTART = "ks.cfg"
+        self.RELATIVE_BOOTMGR_HELPER = (
+            rf"{self.CURRENT_DIR}\resources\\bootmgrhelper.exe"
+        )
+
+    @staticmethod
+    def _get_user_downloads_folder():
+        with winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
+        ) as key:
+            downloads_dir = winreg.QueryValueEx(
+                key, "{374DE290-123F-4565-9164-39C4925E467B}"
+            )[0]
+        return downloads_dir
+
+
+class CompatibilityResults:
+    pass
+
+
+class InstallOptions:
+    def __init__(self):
+        self.spin_index = -1
+        self.auto_restart = False
+        self.torrent = False
+        self.export_wifi = True
+
+
+class Kickstart:
+    def __init__(self):
+        self.partition_method = ""
+        self.live_img_url = APP_LIVE_IMG_URL
+        self.is_encrypted = False
+        self.passphrase = ""
+        self.tpm_auto_unlock = False
+        self.locale = ""
+        self.timezone = ""
+        self.keymap_type = ""
+        self.keymap = ""
+        self.ostree_args = ""
+        self.fullname = ""
+        self.username = ""
+        self.wifi_profiles_dir_name = []
+        self.enable_rpm_fusion = False
+
+
+class Partition:
+    def __init__(self):
+        self.make_root_partition = False
+        self.shrink_space = None
+        self.tmp_part_size = 0
+        self.temp_part_label = "FEDORA-INST"  # Max 12 Chars
+        self.boot_part_size = 0
+        self.efi_part_size = 0
+
+
+class UI:
+    def __init__(self):
+        self.DI_VAR = {
+            "w": "w",
+            "e": "w",
+            "ne": "ne",
+            "nw": "nw",
+            "se": "se",
+            "sw": "sw",
+            "nse": "nse",
+            "nsw": "nsw",
+            "l": "left",
+            "r": "right",
+        }
+        self.desktop = ""
+        self.combo_list_spin = ""
+        self.width = 1000
+
+
+PATH = PathConfig()
+COMPATIBILITY_RESULTS = CompatibilityResults()
 IP_LOCALE = {}
 ALL_SPINS = []
 ACCEPTED_SPINS = []
-
 ACCEPTED_ARCHITECTURES = ("amd64",)
 AVAILABLE_INSTALL_METHODS = ("dualboot", "replace_win", "custom")
 INSTALLER_STATUS = None
-
-INSTALL_OPTIONS = types.SimpleNamespace()
-INSTALL_OPTIONS.spin_index = -1
-INSTALL_OPTIONS.auto_restart = False
-INSTALL_OPTIONS.torrent = False
-INSTALL_OPTIONS.export_wifi = True
-
-KICKSTART = types.SimpleNamespace()
-KICKSTART.partition_method = ""
-KICKSTART.live_img_url = APP_live_img_url
-KICKSTART.is_encrypted = False
-KICKSTART.passphrase = ""
-KICKSTART.tpm_auto_unlock = False
-KICKSTART.locale = ""
-KICKSTART.timezone = ""
-KICKSTART.keymap_type = ""
-KICKSTART.keymap = ""
-KICKSTART.ostree_args = ""
-KICKSTART.fullname = ""
-KICKSTART.username = ""
-KICKSTART.wifi_profiles_dir_name = []
-KICKSTART.enable_rpm_fusion = False
-
-
-PARTITION = types.SimpleNamespace()
-PARTITION.make_root_partition = False
-PARTITION.shrink_space = None
-PARTITION.tmp_part_size = 0
-PARTITION.temp_part_label = "FEDORA-INST"  # Max 12 Chars
-PARTITION.boot_part_size = 0
-PARTITION.efi_part_size = 0
-
+INSTALL_OPTIONS = InstallOptions()
+KICKSTART = Kickstart()
+PARTITION = Partition()
 TMP_PARTITION_LETTER = ""
-Literal: types
+Literal = types
 LIVE_OS_INSTALLER_SPIN = None
 USERNAME_WINDOWS = ""
 SELECTED_SPIN = None
-
-UI = types.SimpleNamespace()
-UI.DI_VAR = {
-    "w": "w",
-    "e": "w",
-    "ne": "ne",
-    "nw": "nw",
-    "se": "se",
-    "sw": "sw",
-    "nse": "nse",
-    "nsw": "nsw",
-    "l": "left",
-    "r": "right",
-}
-UI.desktop = ""
-UI.combo_list_spin = ""
-UI.width = 1000
+UI = UI()
 
 DUMMY_ALL_SPING = [
     {

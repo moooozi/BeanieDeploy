@@ -1,7 +1,11 @@
 import os
+from pathlib import Path
+import shutil
+import subprocess
 import time
 import functions as fn
 import procedure as prc
+import globals as GV
 
 
 def download_hash_handler(file_hash, expected_hash, work_dir, queue=None):
@@ -64,7 +68,7 @@ def queue_safe_put(queue, data):
 
 def install(
     work_dir,
-    ks_kwargs,
+    ks_kwargs: GV.Kickstart,
     part_kwargs,
     dl_files,
     rpm_source_dir=None,
@@ -132,10 +136,7 @@ def install(
     tmp_part_letter = partitioning_results["tmp_part_letter"]
     tmp_part_device_path = partitioning_results["tmp_part_device_path"]
     sys_drive_uuid = partitioning_results["sys_drive_uuid"]
-    sys_drive_win_uuid = partitioning_results["sys_drive_win_uuid"]
-
-    ks_kwargs.sys_drive_uuid = partitioning_results["sys_drive_uuid"]
-    ks_kwargs.sys_efi_uuid = partitioning_results["sys_efi_uuid"]
+    sys_efi_uuid = partitioning_results["sys_efi_uuid"]
 
     queue_safe_put(queue, "APP: critical_process_done")
     queue_safe_put(queue, "STAGE: copying_to_tmp_part")
@@ -143,12 +144,46 @@ def install(
     installer_mount_letter = fn.mount_iso(installer_iso_path)
     source_files = installer_mount_letter + ":\\"
     destination = tmp_part_letter + ":\\"
-    fn.copy_files(source=source_files, destination=destination)
+
+    # Copy the boot loader to the EFI partition
+    bootloader_src_path = Path(source_files) / "EFI" / "BOOT"
+    efi_partition = fn.get_system_efi_drive_uuid()
+    efi_mount_letter = fn.get_unused_drive_letter()
+    bootloader_dst_path = Path(f"{efi_mount_letter}:\\EFI\\{GV.APP_SW_NAME}")
+
+    command = ["mountvol", f"{efi_mount_letter}:", rf"\\?\Volume{{{efi_partition}}}"]
+    # Mount the EFI partition
+    out = subprocess.run(
+        command,
+        check=True,
+        capture_output=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    # Check if the mount was successful
+    if out.returncode != 0:
+        raise RuntimeError(f"Failed to mount EFI partition: {out.stderr}")
+
+    # Copy the contents of the bootloader directory
+    for item in bootloader_src_path.iterdir():
+        dest = bootloader_dst_path / item.name
+        if item.is_dir():
+            shutil.copytree(item, dest, dirs_exist_ok=True)
+        else:
+            shutil.copy2(item, dest)
+
+    # Unmount the EFI partition
+    subprocess.run(["mountvol", f"{efi_mount_letter}:", "/D"], check=True)
+
+    shutil.copytree(source_files, destination, dirs_exist_ok=True)
+
     if live_image_required:
         live_img_mount_letter = fn.mount_iso(live_img_iso_path)
         source_files = live_img_mount_letter + ":\\LiveOS\\"
         destination = tmp_part_letter + ":\\LiveOS\\"
-        fn.copy_files(source=source_files, destination=destination)
+        shutil.copytree(source_files, destination, dirs_exist_ok=True)
 
     if rpm_source_dir and rpm_dst_dir_name:
         rpm_dst_path = f"{tmp_part_letter}:\\{rpm_dst_dir_name}\\"
@@ -159,12 +194,11 @@ def install(
         fn.copy_files(source=wifi_profiles_src_dir, destination=wifi_profiles_dst_path)
     queue_safe_put(queue, "STAGE: adding_tmp_boot_entry")
 
-    grub_cfg_dest_path = tmp_part_letter + ":\\" + grub_cfg_relative_path
+    grub_cfg_dest_path = bootloader_dst_path / "grub.cfg"
     fn.set_file_readonly(grub_cfg_dest_path, False)
     grub_cfg_txt = prc.build_grub_cfg_file(
         tmp_partition_label, ks_kwargs.partition_method != "custom"
     )
-    fn.set_file_readonly(grub_cfg_dest_path, False)
     with open(grub_cfg_dest_path, "w") as grub_cfg:
         grub_cfg.write(grub_cfg_txt)
     fn.set_file_readonly(grub_cfg_dest_path, True)
@@ -189,13 +223,31 @@ def install(
         "device_path": tmp_part_device_path,
         "is_permanent": is_new_boot_order_permanent,
     }
-    prc.add_boot_entry(**boot_kwargs)
+
+    boot_current = fn.get_boot_current()
+    list_boot_entries = fn.get_boot_entries()
+    reference_entry = None
+    # if the boot entry exists in the list of boot entries with the description "Windows Boot Manager"
+    # then we can use this as a reference
+    # Otherwise, look for the boot entry with name "Windows Boot Manager" and use that as a reference
+    for entry in list_boot_entries:
+        if entry["description"] == "Windows Boot Manager":
+            reference_entry = entry["entry_id"]
+            if entry["entry_id"] == boot_current:
+                break
+
+    new_boot_entry = fn.create_boot_entry(
+        "Fedora Recovery",
+        efi_file_relative_path,
+        reference_entry,
+    )
+    fn.set_bootnext(new_boot_entry)
     # unmount and clean up iso and other downloaded files since installation is now complete
     fn.unmount_iso(installer_iso_path)
     fn.unmount_iso(live_img_iso_path)
 
     # fn.rmdir(DOWNLOAD_PATH)
-    fn.set_windows_time_to_utc()
+    # fn.set_windows_time_to_utc()
 
     queue_safe_put(queue, "APP: critical_process_done")  # re-enable closing the app
     queue_safe_put(queue, "STAGE: install_done")

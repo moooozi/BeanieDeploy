@@ -1,6 +1,8 @@
 # Functions that do multiple things or call multiple other functions are declared here
 
 import os
+import shutil
+import subprocess
 import types
 import functions as fn
 import globals as GV

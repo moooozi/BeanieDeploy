@@ -107,15 +107,15 @@ def run(app, skip_check=False, done_checks: dict = {}):
             errors.append(LN.error_uefi_0)
         if GV.COMPATIBILITY_RESULTS.ram == -1:
             errors.append(LN.error_totalram_9)
-        elif GV.COMPATIBILITY_RESULTS.ram < GV.APP_minimal_required_ram:
+        elif GV.COMPATIBILITY_RESULTS.ram < GV.APP_MINIMAL_REQUIRED_RAM:
             errors.append(LN.error_totalram_0)
         if GV.COMPATIBILITY_RESULTS.space == -1:
             errors.append(LN.error_space_9)
-        elif GV.COMPATIBILITY_RESULTS.space < GV.APP_minimal_required_space:
+        elif GV.COMPATIBILITY_RESULTS.space < GV.APP_MINIMAL_REQUIRED_SPACE:
             errors.append(LN.error_space_0)
         if GV.COMPATIBILITY_RESULTS.resizable == -1:
             errors.append(LN.error_resizable_9)
-        elif GV.COMPATIBILITY_RESULTS.resizable < GV.APP_minimal_required_space:
+        elif GV.COMPATIBILITY_RESULTS.resizable < GV.APP_MINIMAL_REQUIRED_SPACE:
             errors.append(LN.error_resizable_0)
     if not errors:
         live_os_installer_index, GV.ACCEPTED_SPINS = prc.parse_spins(GV.ALL_SPINS)

@@ -28,7 +28,7 @@ def run(app):
 
     if GV.KICKSTART.partition_method != "custom":
         if GV.KICKSTART.is_encrypted:  # create separate boot partition
-            GV.PARTITION.boot_part_size = GV.APP_linux_boot_partition_size
+            GV.PARTITION.boot_part_size = GV.APP_LINUX_BOOT_PARTITION_SIZE
         GV.KICKSTART.ostree_args = GV.SELECTED_SPIN.ostree_args
         GV.KICKSTART.wifi_profiles_dir_name = GV.WIFI_PROFILES_DIR_NAME
 
@@ -73,11 +73,11 @@ def run(app):
     if GV.KICKSTART.enable_rpm_fusion:
         rpm_fusion_free = types.SimpleNamespace()
         rpm_fusion_free.dst_dir = f"{GV.PATH.WORK_DIR}\\{GV.ADDITIONAL_RPM_DIR_NAME}"
-        rpm_fusion_free.dl_link = GV.RPMFusionFREE % GV.SELECTED_SPIN.version
+        rpm_fusion_free.dl_link = GV.RPM_FUSION_FREE % GV.SELECTED_SPIN.version
 
         rpm_fusion_nonfree = types.SimpleNamespace()
         rpm_fusion_nonfree.dst_dir = f"{GV.PATH.WORK_DIR}\\{GV.ADDITIONAL_RPM_DIR_NAME}"
-        rpm_fusion_nonfree.dl_link = GV.RPMFusionNonFREE % GV.SELECTED_SPIN.version
+        rpm_fusion_nonfree.dl_link = GV.RPM_FUSION_NON_FREE % GV.SELECTED_SPIN.version
 
     for index, file in enumerate(installer_args.dl_files):
         if not hasattr(file, "dl_link") or not file.dl_link:
@@ -108,7 +108,7 @@ def run(app):
     installer_args.grub_cfg_relative_path = GV.PATH.RELATIVE_GRUB_CFG
     installer_args.tmp_partition_label = GV.PARTITION.temp_part_label
     installer_args.kickstart_cfg_relative_path = GV.PATH.RELATIVE_KICKSTART
-    installer_args.efi_file_relative_path = GV.APP_default_efi_file_path
+    installer_args.efi_file_relative_path = GV.APP_DEFAULT_EFI_FILE_PATH
 
     return page_installing.run(app, installer_args=installer_args)
 
