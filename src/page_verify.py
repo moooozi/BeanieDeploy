@@ -45,15 +45,14 @@ class PageVerify(Page):
                 )
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-        # Replace Treeview with InfoFrameRaster
         self.info_frame_raster = tkt.InfoFrameRaster(
             page_frame,
         )
+
         for i, text in enumerate(review_sel):
             self.info_frame_raster.add_label(f"review_{i}", text)
         self.info_frame_raster.pack(side="top", fill="x", pady=10, padx=5)
 
-        # additions options (checkboxes)
         page_frame.columnconfigure(0, weight=1)
         page_frame.grid_rowconfigure(0, weight=3)
 
@@ -61,9 +60,9 @@ class PageVerify(Page):
             page_frame,
             text=self.LN.add_auto_restart,
             var=self.auto_restart_toggle_var,
-            pack=True,  # Use pack instead of grid
+            pack=True,
         )
-        check_restart.pack(ipady=8, side="top", anchor="w")  # Use pack instead of grid
+        check_restart.pack(ipady=8, side="top", anchor="w")
 
     def validate_back_page(self, *args):
         if GV.KICKSTART.partition_method == "custom":
@@ -76,3 +75,9 @@ class PageVerify(Page):
     def next_btn_action(self, *args):
         GV.INSTALL_OPTIONS.auto_restart = self.auto_restart_toggle_var.get()
         self.switch_page("PageInstall")
+
+    def on_show(self):
+        """Called when the page is shown."""
+        if self._initiated:
+            tkt.init_frame(self)
+            self.init_page()

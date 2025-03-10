@@ -21,13 +21,14 @@ class PageManager(ctk.CTkFrame):
     def _show_page(self, page_name):
         self._no_page_initialized_yet = False
         print(f"Switching to {page_name}")
-        page = self.pages[page_name]
+        page: Page = self.pages[page_name]
         if not page._initiated:
             print(f"Initializing page: {page_name}")
             page.init_page()
             page._initiated = True
         else:
             print(f"Page {page_name} already initialized")
+        page.on_show()
 
     def show_page(self, page_name):
         self.after(10, lambda: self._show_page(page_name))
@@ -46,4 +47,8 @@ class Page(ctk.CTkFrame, ABC):
     @abstractmethod
     def init_page(self):
         """Initialize the page layout and widgets."""
+        pass
+
+    def on_show(self):
+        """Called when the page is shown."""
         pass
