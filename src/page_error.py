@@ -24,6 +24,8 @@ class PageError(Page):
         self.info_frame_raster.pack(fill="x", pady=5, padx=10)
 
     def set_errors(self, errors):
+        self.init_page()
+        self._initiated = True
         self.errors = errors
         self.info_frame_raster.flush_labels()  # Clear existing labels
 

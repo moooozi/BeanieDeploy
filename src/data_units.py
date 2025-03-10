@@ -80,3 +80,38 @@ class DataUnit:
         if isinstance(other, (int, float)):
             return DataUnit(other / self.bytes_value)
         return NotImplemented
+
+    def __eq__(self, other):
+        if isinstance(other, DataUnit):
+            return self.bytes_value == other.bytes_value
+        elif isinstance(other, (int, float)):
+            return self.bytes_value == other
+        return NotImplemented
+
+    def __lt__(self, other):
+        if isinstance(other, DataUnit):
+            return self.bytes_value < other.bytes_value
+        elif isinstance(other, (int, float)):
+            return self.bytes_value < other
+        return NotImplemented
+
+    def __le__(self, other):
+        if isinstance(other, DataUnit):
+            return self.bytes_value <= other.bytes_value
+        elif isinstance(other, (int, float)):
+            return self.bytes_value <= other
+        return NotImplemented
+
+    def __gt__(self, other):
+        if isinstance(other, DataUnit):
+            return self.bytes_value > other.bytes_value
+        elif isinstance(other, (int, float)):
+            return self.bytes_value > other
+        return NotImplemented
+
+    def __ge__(self, other):
+        if isinstance(other, DataUnit):
+            return self.bytes_value >= other.bytes_value
+        elif isinstance(other, (int, float)):
+            return self.bytes_value >= other
+        return NotImplemented

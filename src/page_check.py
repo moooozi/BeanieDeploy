@@ -1,9 +1,7 @@
 import tkinter_templates as tkt
 import globals as GV
-import multilingual
 import functions as fn
 import procedure as prc
-import page_error, page_1
 import gui_functions as gui
 import logging
 from page_manager import Page
@@ -24,10 +22,10 @@ class PageCheck(Page):
         self.skip_check = skip_check
 
     def init_page(self):
-        self.update()  # update tkinter GUI
         page_frame = tkt.generic_page_layout(self, self.LN.check_running)
         self.progressbar_check = tkt.add_progress_bar(page_frame)
         tkt.add_text_label(page_frame, var=self.job_var, pady=0, padx=10)
+        self.update()
 
         def callback_compatibility(result):
             if result == "arch":

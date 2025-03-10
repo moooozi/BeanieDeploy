@@ -28,14 +28,10 @@ class PageManager(ctk.CTkFrame):
             page._initiated = True
         else:
             print(f"Page {page_name} already initialized")
-        if self._no_page_initialized_yet:
-            self._no_page_initialized_yet = False
-        else:
-            page.tkraise()
-            print(f"Page {page_name} raised to top")
 
     def show_page(self, page_name):
         self.after(10, lambda: self._show_page(page_name))
+        self.after(10, lambda: self.pages[page_name].tkraise())
 
 
 class Page(ctk.CTkFrame, ABC):

@@ -187,4 +187,4 @@ class PageInstallMethod(Page):
             GV.PARTITION.efi_part_size = 0
             self.switch_page("PageVerify")
         else:
-            self.switch_page("PageAutoinstAddition1")
+            self.switch_page("PageAutoinst2")

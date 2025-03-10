@@ -7,6 +7,7 @@ import globals as GV
 import functions as fn
 import tkinter.messagebox
 import traceback
+import sys
 from app import MainApp
 
 
@@ -78,10 +79,8 @@ def run():
     if args.release:
         fn.cleanup_on_reboot(script_dir)
     else:
-        import sys
-
-        sys.argv.append("--skip_check")
-        skip_check = True
+        # sys.argv.append("--skip_check")
+        # skip_check = True
         print("The App is in debug mode")
     logging.info("APP STARTING: %s v%s" % (GV.APP_SW_NAME, GV.APP_SW_VERSION))
     fn.mkdir(GV.PATH.WORK_DIR)

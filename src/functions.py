@@ -517,7 +517,7 @@ def cleanup_on_reboot(dir_to_delete):
         0,
         winreg.KEY_SET_VALUE,
     ) as key:
-        winreg.SetValueEx(key, "MyAppCleanup", 0, winreg.REG_SZ, cmd)
+        winreg.SetValueEx(key, "BeanyDeploy Cleanup", 0, winreg.REG_SZ, cmd)
 
 
 def create_boot_entry(name, path, duplicate_of):
