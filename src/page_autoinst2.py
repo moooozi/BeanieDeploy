@@ -1,49 +1,72 @@
 import tkinter.ttk as ttk
-
-import page_autoinst_addition_1
 import tkinter_templates as tkt
 import globals as GV
-import multilingual
-import page_install_method
-import global_tk_vars as tk_var
+from page_manager import Page
+import tkinter as tk
 
 
-def run(app):
-    """the autoinstall page on which you choose whether to install alongside windows or start clean install"""
-    tkt.init_frame(app)
-    global LN, DI_VAR
-    LN = multilingual.get_lang()
-    DI_VAR = multilingual.get_di_var()
-    # *************************************************************************************************************
-    page_frame = tkt.generic_page_layout(app, LN.windows_question % GV.SELECTED_SPIN.name,
-                                         LN.btn_next, lambda: next_btn_action(),
-                                         LN.btn_back, lambda: page_install_method.run(app))
+class PageAutoinst2(Page):
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.enable_encryption_toggle_var = tk.BooleanVar(
+            parent, GV.KICKSTART.is_encrypted
+        )
 
-    frame_checkboxes = tkt.add_frame_container(page_frame, fill='x', expand=1)
-    # tkt.add_check_btn(page_frame, LN.additional_setup_now, vAutoinst_additional_setup_t)
+        self.export_wifi_toggle_var = tk.BooleanVar(
+            parent, GV.INSTALL_OPTIONS.export_wifi
+        )
 
-    check_wifi = tkt.add_check_btn(frame_checkboxes, LN.add_import_wifi % GV.SELECTED_SPIN.name,
-                                   tk_var.export_wifi_toggle_var, pady=(5, 0),pack=False)
-    check_wifi.grid(ipady=5, row=0, column=0, sticky=DI_VAR['nw'])
+    def init_page(self):
+        page_frame = tkt.generic_page_layout(
+            self,
+            self.LN.windows_question % GV.SELECTED_SPIN.name,
+            self.LN.btn_next,
+            lambda: self.next_btn_action(),
+            self.LN.btn_back,
+            lambda: self.switch_page("PageInstallMethod"),
+        )
 
-    #check_rpm_fusion = tkt.add_check_btn(frame_checkboxes, LN.enable_rpm_fusion, tk_var.rpm_fusion_toggle_var,pady=(5, 0), pack=False)
-    #check_rpm_fusion.grid(ipady=5, row=1, column=0, sticky=DI_VAR['nw'])
+        frame_checkboxes = tkt.add_frame_container(page_frame, fill="x", expand=1)
 
-    check_encrypt = tkt.add_check_btn(frame_checkboxes, LN.encrypted_root, tk_var.enable_encryption_toggle_var,
-                      lambda: show_encrypt_options(tk_var.enable_encryption_toggle_var), pack=False)
-    check_encrypt.grid(ipady=5, row=2, column=0, sticky=DI_VAR['nw'])
+        check_wifi = tkt.add_check_btn(
+            frame_checkboxes,
+            self.LN.add_import_wifi % GV.SELECTED_SPIN.name,
+            self.export_wifi_toggle_var,
+            pady=(5, 0),
+            pack=False,
+        )
+        check_wifi.grid(ipady=5, row=0, column=0, sticky=self.DI_VAR.nw)
 
-    encrypt_pass_note = ttk.Label(page_frame, wraplength=GV.UI.width, justify=DI_VAR['l'], text='', font=tkt.FONTS_smaller, foreground=tkt.color_blue)
-    encrypt_pass_note.pack(pady=5, padx=(0, 0), side='bottom', anchor=DI_VAR['w'])
+        check_encrypt = tkt.add_check_btn(
+            frame_checkboxes,
+            self.LN.encrypted_root,
+            self.enable_encryption_toggle_var,
+            lambda: self.show_encrypt_options(self.enable_encryption_toggle_var),
+            pack=False,
+        )
+        check_encrypt.grid(ipady=5, row=2, column=0, sticky=self.DI_VAR.nw)
 
-    # LOGIC
-    def show_encrypt_options(var):
+        self.encrypt_pass_note = ttk.Label(
+            page_frame,
+            wraplength=GV.UI.width,
+            justify=self.DI_VAR.l,
+            text="",
+            font=tkt.FONTS_smaller,
+            foreground=tkt.color_blue,
+        )
+        self.encrypt_pass_note.pack(
+            pady=5, padx=(0, 0), side="bottom", anchor=self.DI_VAR.w
+        )
+
+        self.show_encrypt_options(self.enable_encryption_toggle_var)
+
+    def show_encrypt_options(self, var):
         if var.get():
-            encrypt_pass_note.configure(text=LN.encrypt_reminder_txt)
+            self.encrypt_pass_note.configure(text=self.LN.encrypt_reminder_txt)
         else:
-            encrypt_pass_note.configure(text='')
+            self.encrypt_pass_note.configure(text="")
 
-    show_encrypt_options(tk_var.enable_encryption_toggle_var)
-
-    def next_btn_action(*args):
-        page_autoinst_addition_1.run(app)
+    def next_btn_action(self, *args):
+        GV.KICKSTART.is_encrypted = self.enable_encryption_toggle_var.get()
+        GV.INSTALL_OPTIONS.export_wifi = self.export_wifi_toggle_var.get()
+        self.switch_page("PageAutoinstAddition1")

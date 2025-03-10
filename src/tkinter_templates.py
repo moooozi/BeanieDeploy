@@ -27,7 +27,7 @@ def get_dpi_scaling_factor():
 
 
 dpi_scaling_factor = 1.35
-print("DPI scaling factor: ", dpi_scaling_factor)
+# print("DPI scaling factor: ", dpi_scaling_factor)
 FONTS_large = ("Ariel", int(24 * dpi_scaling_factor))
 FONTS_medium = ("Ariel Bold", int(16 * dpi_scaling_factor))
 FONTS_small = ("Ariel", int(13 * dpi_scaling_factor))
@@ -85,24 +85,15 @@ class Application(ctk.CTk):
         self.geometry(str("%sx%s+%s+%s" % (WIDTH, HEIGHT, WIDTH_OFFSET, HEIGHT_OFFSET)))
         self.minsize(MINWIDTH, MINHEIGHT)
         self.maxsize(int(MAXWIDTH * dpi_factor), int(MAXHEIGHT * dpi_factor))
+        self.iconbitmap(GV.PATH.APP_ICON)
+
         # ctk.tk.call('tk', 'scaling', 1.4)
         # ctk.resizable(False, False)
-        self.mid_frame = ctk.CTkFrame(
-            self,
-            bg_color="transparent",
-            fg_color="transparent",
-        )
 
         # top_frame.grid_propagate(False)
-        self.mid_frame.grid_columnconfigure(0, weight=1)
 
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=8)
         dark_theme(DARK_MODE, self)
 
-        self.mid_frame.grid(sticky="nswe", padx=20, pady=(20, 20), row=1, column=0)
-        self.mid_frame.grid_propagate(False)
         ####
         ###Treeview Customisation (theme colors are selected)
         bg_color = self._apply_appearance_mode(
@@ -198,7 +189,7 @@ def generic_page_layout(
         bg_color="transparent",
         fg_color="transparent",
     )
-    frame.grid(row=1, column=0, pady=title_pady, padx=(0, 0), sticky="nsew")
+    frame.grid(row=1, column=0, pady=title_pady, padx=(20, 20), sticky="nsew")
 
     parent.grid_columnconfigure(0, weight=1)
     parent.grid_rowconfigure(1, weight=1)
@@ -283,8 +274,8 @@ def add_primary_btn(parent, text, command):
     """
     btn_next = ctk.CTkButton(parent, text=text, command=command)
     btn_next.pack(
-        anchor=multilingual.DI_VAR["se"],
-        side=multilingual.DI_VAR["r"],
+        anchor=multilingual.get_di_var().se,
+        side=multilingual.get_di_var().r,
         ipadx=22,
         padx=0,
     )
@@ -298,8 +289,8 @@ def add_secondary_btn(parent, text, command):
     """
     btn_back = ctk.CTkButton(parent, text=text, command=command)
     btn_back.pack(
-        anchor=multilingual.DI_VAR["se"],
-        side=multilingual.DI_VAR["r"],
+        anchor=multilingual.get_di_var().se,
+        side=multilingual.get_di_var().r,
         padx=12,
         ipadx=8,
     )
@@ -348,7 +339,7 @@ def add_multi_radio_buttons(parent, items: dict, var, validate_func=None):
                 text=items[item]["error"],
                 font=FONTS_smaller,
                 text_color=color_red,
-            ).grid(ipadx=5, row=index, column=1, sticky=multilingual.DI_VAR["w"])
+            ).grid(ipadx=5, row=index, column=1, sticky=multilingual.get_di_var().w)
             if var.get() == item:
                 var.set("")
         elif "description" in items[item] and items[item]["description"]:
@@ -358,7 +349,7 @@ def add_multi_radio_buttons(parent, items: dict, var, validate_func=None):
                 text=items[item]["description"],
                 font=FONTS_tiny,
                 text_color=color_blue,
-            ).grid(ipadx=5, row=index, column=1, sticky=multilingual.DI_VAR["w"])
+            ).grid(ipadx=5, row=index, column=1, sticky=multilingual.get_di_var().w)
     frame.grid_columnconfigure(0, weight=1)
     advanced_frame.grid_columnconfigure(0, weight=1)
 
@@ -369,7 +360,7 @@ def add_page_title(parent, text, pady=(0, 5)):
     title = ctk.CTkLabel(
         parent,
         wraplength=GV.UI.width,
-        justify=multilingual.DI_VAR["l"],
+        justify=multilingual.get_di_var().l,
         text=text,
         font=FONTS_medium,
     )
@@ -445,7 +436,7 @@ def add_text_label(
         label = ctk.CTkLabel(
             parent,
             wraplength=GV.UI.width,
-            justify=multilingual.DI_VAR["l"],
+            justify=multilingual.get_di_var().l,
             text=text,
             textvariable=var,
             text_color=foreground,

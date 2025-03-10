@@ -4,13 +4,10 @@ import os
 import pickle
 import multilingual
 import globals as GV
-import procedure as prc
-import tkinter_templates as tkt
 import functions as fn
 import tkinter.messagebox
 import traceback
-
-app = None
+from app import MainApp
 
 
 def parse_arguments():
@@ -86,25 +83,21 @@ def run():
         sys.argv.append("--skip_check")
         skip_check = True
         print("The App is in debug mode")
-    global app
     logging.info("APP STARTING: %s v%s" % (GV.APP_SW_NAME, GV.APP_SW_VERSION))
-    app = tkt.Application()
-    # app.set_title(f'{GV.APP_SW_NAME} v{GV.APP_SW_VERSION}')
-    app.iconbitmap(GV.PATH.APP_ICON)
-    MID_FRAME = app.mid_frame
     fn.mkdir(GV.PATH.WORK_DIR)
     # tk.Label(LEFT_FRAME, image=tk.PhotoImage(file=GV.PATH.CURRENT_DIR + r'\resources\style\left_frame.gif')).pack()
     lang_code = multilingual.get_lang_by_code(fn.windows_language_code())
     multilingual.set_lang(lang_code if lang_code else "English")
 
     if install_args:
-        import page_installing
-
-        page_installing.run(MID_FRAME, install_args)
+        app = MainApp(install_args)
+    elif skip_check:
+        app = MainApp(skip_check=skip_check)
+    elif done_checks:
+        app = MainApp(done_checks)
     else:
-        import page_check
+        app = MainApp()
 
-        page_check.run(MID_FRAME, done_checks=done_checks, skip_check=skip_check)
     app.mainloop()
 
 
