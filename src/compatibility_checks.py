@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 import subprocess
 from typing import Any
+import functions as fn
 
 
 @dataclass
 class Check:
+    name: str
     result: Any
     returncode: int
     process: subprocess.CompletedProcess
@@ -15,10 +17,14 @@ def check_arch():
         [r"powershell.exe", r"$env:PROCESSOR_ARCHITECTURE"],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        shell=True,
         universal_newlines=True,
     )
-    return Check(proc.stdout.strip().lower(), proc.returncode, proc)
+    return Check(
+        "arch",
+        proc.stdout.strip().lower(),
+        proc.returncode,
+        proc,
+    )
 
 
 def check_uefi():
@@ -26,10 +32,14 @@ def check_uefi():
         [r"powershell.exe", r"$env:firmware_type"],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        shell=True,
         universal_newlines=True,
     )
-    return Check(proc.stdout.strip().lower(), proc.returncode, proc)
+    return Check(
+        "uefi",
+        proc.stdout.strip().lower(),
+        proc.returncode,
+        proc,
+    )
 
 
 def check_ram():
@@ -40,10 +50,14 @@ def check_ram():
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        shell=True,
         universal_newlines=True,
     )
-    return Check(int(proc.stdout.strip()), proc.returncode, proc)
+    return Check(
+        "ram",
+        int(proc.stdout.strip()),
+        proc.returncode,
+        proc,
+    )
 
 
 def check_space():
@@ -54,13 +68,19 @@ def check_space():
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        shell=True,
         universal_newlines=True,
     )
-    return Check(int(proc.stdout.strip()), proc.returncode, proc)
+    return Check(
+        "space",
+        int(proc.stdout.strip()),
+        proc.returncode,
+        proc,
+    )
 
 
 def check_resizable():
+    if not fn.is_admin():
+        return Check("resizable", "Not an admin", -200, None)
     proc = subprocess.run(
         [
             r"powershell.exe",
@@ -68,7 +88,11 @@ def check_resizable():
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        shell=True,
         universal_newlines=True,
     )
-    return Check(int(proc.stdout.strip()), proc.returncode, proc)
+    return Check(
+        "resizable",
+        int(proc.stdout.strip()),
+        proc.returncode,
+        proc,
+    )

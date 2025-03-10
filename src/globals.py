@@ -1,5 +1,6 @@
 import os
 import winreg
+from compatibility_checks import Check
 from data_units import DataUnit
 import functions as fn
 import types
@@ -65,8 +66,24 @@ class PathConfig:
         return downloads_dir
 
 
+class DoneChecks:
+    def __init__(self):
+        self.arch = Check(name="arch", result=None, returncode=-999, process=None)
+        self.uefi = Check(name="uefi", result=None, returncode=-999, process=None)
+        self.ram = Check(name="ram", result=None, returncode=-999, process=None)
+        self.space = Check(name="space", result=None, returncode=-999, process=None)
+        self.resizable = Check(
+            name="resizable", result=None, returncode=-999, process=None
+        )
+
+
 class CompatibilityResults:
-    pass
+    def __init__(self):
+        self.arch = -1
+        self.uefi = -1
+        self.ram = -1
+        self.space = -1
+        self.resizable = -1
 
 
 class InstallOptions:
@@ -126,6 +143,7 @@ class UI:
 
 PATH = PathConfig()
 COMPATIBILITY_RESULTS = CompatibilityResults()
+DONE_CHECKS = DoneChecks()
 IP_LOCALE = {}
 ALL_SPINS = []
 ACCEPTED_SPINS = []

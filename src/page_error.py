@@ -27,7 +27,7 @@ class PageError(Page):
         self.init_page()
         self._initiated = True
         self.errors = errors
-        self.info_frame_raster.flush_labels()  # Clear existing labels
+        self.info_frame_raster.flush_labels()
 
         for i, error in enumerate(self.errors):
             self.info_frame_raster.add_label(f"error_{i}", error)
