@@ -511,3 +511,40 @@ def var_tracer(var, mode, cb):
     for tracer in tracers_list:
         var.trace_remove(*tracer)
     var.trace_add(mode=mode, callback=cb)
+
+
+class InfoFrameRaster:
+    def __init__(self, parent, title=""):
+        self.info_frame = ctk.CTkFrame(parent)
+        self.labels = {}
+        if title:
+            add_text_label(
+                self.info_frame,
+                title,
+                anchor=multilingual.get_di_var().w,
+                pady=5,
+                padx=4,
+                foreground=color_green,
+                font=FONTS_smaller,
+            )
+
+    def add_label(self, key, text=""):
+        label = ctk.CTkLabel(
+            self.info_frame, text=text, anchor=multilingual.get_di_var().w
+        )
+        label.pack(fill="x", pady=2, padx=10)
+        self.labels[key] = label
+
+    def update_label(self, key, text):
+        if key in self.labels:
+            self.labels[key].configure(text=text)
+        else:
+            raise KeyError(f"Label with key '{key}' does not exist.")
+
+    def flush_labels(self):
+        for label in self.labels.values():
+            label.pack_forget()
+        self.labels.clear()
+
+    def pack(self, **kwargs):
+        self.info_frame.pack(**kwargs)

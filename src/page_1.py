@@ -4,7 +4,6 @@ import tkinter_templates as tkt
 import globals as GV
 import functions as fn
 import logging
-import multilingual
 from page_manager import Page
 import tkinter as tk
 
@@ -23,7 +22,7 @@ class Page1(Page):
         )
 
         self.full_spin_list = []
-        non_featured_spin_list = []
+        self.non_featured_spin_list = []
         featured_spin_desc = {}
         current_listed_spin_index = 0
         for dist in GV.ACCEPTED_SPINS:
@@ -57,7 +56,7 @@ class Page1(Page):
                 current_listed_spin_index += 1
 
             else:
-                non_featured_spin_list.append(spin_fullname)
+                self.non_featured_spin_list.append(spin_fullname)
 
         featured_spin_desc["else"] = {"name": self.LN.something_else}
         frame_distro = tkt.add_multi_radio_buttons(
@@ -67,7 +66,7 @@ class Page1(Page):
             lambda: self.validate_input(),
         )
         self.distro_combolist = ctk.CTkComboBox(
-            frame_distro, values=non_featured_spin_list, state="readonly"
+            frame_distro, values=self.non_featured_spin_list, state="readonly"
         )
         self.distro_combolist.bind(
             "<<ComboboxSelected>>", lambda *args: self.validate_input()
@@ -86,38 +85,12 @@ class Page1(Page):
         else:
             self.distro_combolist.set(GV.UI.combo_list_spin)
 
-        self.info_frame = ctk.CTkFrame(page_frame)
-        tkt.add_text_label(
-            self.info_frame,
-            self.LN.info_about_selection,
-            anchor=self.DI_VAR.w,
-            pady=5,
-            padx=4,
-            foreground=tkt.color_green,
-            font=tkt.FONTS_smaller,
+        self.info_frame_raster = tkt.InfoFrameRaster(
+            page_frame, self.LN.info_about_selection
         )
         frame_distro.grid_rowconfigure(
             len(featured_spin_desc) + 1, weight=1
         )  # GUI bugfix for distro_description
-
-        # Remove Treeview and add Labels
-        self.dl_spin_name_label = ctk.CTkLabel(
-            self.info_frame, text="", anchor=self.DI_VAR.w
-        )
-        self.dl_size_label = ctk.CTkLabel(
-            self.info_frame, text="", anchor=self.DI_VAR.w
-        )
-        self.dl_spin_desktop_label = ctk.CTkLabel(
-            self.info_frame, text="", anchor=self.DI_VAR.w
-        )
-        self.dl_spin_desktop_desc_label = ctk.CTkLabel(
-            self.info_frame, text="", anchor=self.DI_VAR.w
-        )
-
-        self.dl_spin_name_label.pack(fill="x", pady=2, padx=10)
-        self.dl_size_label.pack(fill="x", pady=2, padx=10)
-        self.dl_spin_desktop_label.pack(fill="x", pady=2, padx=10)
-        self.dl_spin_desktop_desc_label.pack(fill="x", pady=2, padx=10)
 
         self.validate_input()
 
@@ -155,14 +128,12 @@ class Page1(Page):
             else:
                 dl_spin_desktop_desc = ""
 
-            self.info_frame.pack(
-                side="bottom",
-                fill="x",
-            )
-            self.dl_spin_name_label.configure(text=dl_spin_name_text)
-            self.dl_size_label.configure(text=dl_size_txt)
-            self.dl_spin_desktop_label.configure(text=dl_spin_desktop)
-            self.dl_spin_desktop_desc_label.configure(text=dl_spin_desktop_desc)
+            self.info_frame_raster.flush_labels()
+            self.info_frame_raster.add_label("name", dl_spin_name_text)
+            self.info_frame_raster.add_label("size", dl_size_txt)
+            self.info_frame_raster.add_label("desktop", dl_spin_desktop)
+            self.info_frame_raster.add_label("desktop_desc", dl_spin_desktop_desc)
+            self.info_frame_raster.pack(side="bottom", fill="x")
         return spin_index
 
     def next_btn_action(self, *args):

@@ -44,22 +44,16 @@ class PageVerify(Page):
                     self.LN.verify_text["autoinst_wifi"] % GV.SELECTED_SPIN.name
                 )
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        review_tree = ttk.Treeview(page_frame, columns="error", show="", height=3)
-        review_tree.configure(selectmode="none")
 
-        for i in range(len(review_sel)):
-            review_tree.insert("", index="end", iid=str(i), values=(review_sel[i],))
-        review_tree.grid(
-            row=0,
-            column=0,
-            ipady=5,
-            pady=10,
-            padx=(0, 5),
-            sticky="news",
+        # Replace Treeview with InfoFrameRaster
+        self.info_frame_raster = tkt.InfoFrameRaster(
+            page_frame,
         )
+        for i, text in enumerate(review_sel):
+            self.info_frame_raster.add_label(f"review_{i}", text)
+        self.info_frame_raster.pack(side="top", fill="x", pady=10, padx=5)
 
         # additions options (checkboxes)
-
         page_frame.columnconfigure(0, weight=1)
         page_frame.grid_rowconfigure(0, weight=3)
 
@@ -67,9 +61,9 @@ class PageVerify(Page):
             page_frame,
             text=self.LN.add_auto_restart,
             var=self.auto_restart_toggle_var,
-            pack=False,
+            pack=True,  # Use pack instead of grid
         )
-        check_restart.grid(ipady=8, row=1, column=0, sticky=self.DI_VAR.nsw)
+        check_restart.pack(ipady=8, side="top", anchor="w")  # Use pack instead of grid
 
     def validate_back_page(self, *args):
         if GV.KICKSTART.partition_method == "custom":

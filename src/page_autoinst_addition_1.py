@@ -49,16 +49,16 @@ class PageAutoinstAddition1(Page):
         lang_list_scrollbar.pack(side="right", fill="y")
         lang_list.configure(yscrollcommand=lang_list_scrollbar.set)
 
-        locale_list = ttk.Treeview(
+        self.locale_list = ttk.Treeview(
             locale_list_frame, columns="locale", show="headings", height=8
         )
-        locale_list.heading("locale", text=self.LN.locale)
-        locale_list.pack(side="left", fill="both", expand=1)
+        self.locale_list.heading("locale", text=self.LN.locale)
+        self.locale_list.pack(side="left", fill="both", expand=1)
         locale_list_scrollbar = ttk.Scrollbar(
-            locale_list_frame, orient="vertical", command=locale_list.yview
+            locale_list_frame, orient="vertical", command=self.locale_list.yview
         )
         locale_list_scrollbar.pack(side="right", fill="y")
-        locale_list.configure(yscrollcommand=locale_list_scrollbar.set)
+        self.locale_list.configure(yscrollcommand=locale_list_scrollbar.set)
 
         for lang, lang_details in langs_and_locales.items():
             lang_list.insert(
@@ -71,12 +71,12 @@ class PageAutoinstAddition1(Page):
             )
 
         def on_lang_click(*args):
-            for item in locale_list.get_children():
-                locale_list.delete(item)
+            for item in self.locale_list.get_children():
+                self.locale_list.delete(item)
             for locale, locale_details in langs_and_locales[lang_list.focus()][
                 "locales"
             ].items():
-                locale_list.insert(
+                self.locale_list.insert(
                     parent="",
                     index="end",
                     iid=locale,
@@ -96,13 +96,15 @@ class PageAutoinstAddition1(Page):
         language = autoinst.langtable.parse_locale(GV.KICKSTART.locale).language
         lang_list.focus(language)
         lang_list.selection_set(language)
-        lang_list.yview_scroll(locale_list.index(locale_list.selection()) - 1, "units")
+        lang_list.yview_scroll(
+            self.locale_list.index(self.locale_list.selection()) - 1, "units"
+        )
         self.update()
         on_lang_click()
-        locale_list.focus(GV.KICKSTART.locale)
-        locale_list.selection_set(GV.KICKSTART.locale)
-        locale_list.yview_scroll(
-            locale_list.index(locale_list.selection()) - 1, "units"
+        self.locale_list.focus(GV.KICKSTART.locale)
+        self.locale_list.selection_set(GV.KICKSTART.locale)
+        self.locale_list.yview_scroll(
+            self.locale_list.index(self.locale_list.selection()) - 1, "units"
         )
 
     def next_btn_action(self, *args):

@@ -27,12 +27,12 @@ class PageAutoinstAddition2(Page):
         selected_locale_keymaps = langtable.list_keyboards(
             languageId=GV.KICKSTART.locale
         )
-        all_keymaps = sorted(langtable.list_all_keyboards())
+        self.all_keymaps = sorted(langtable.list_all_keyboards())
 
         selected_locale_timezones = langtable.list_timezones(
             languageId=GV.KICKSTART.locale
         )
-        all_timezones = sorted(langtable.list_all_timezones())
+        self.all_timezones = sorted(langtable.list_all_timezones())
 
         temp_frame = ttk.Frame(page_frame)
         temp_frame.pack(expand=1, fill="both")
@@ -44,38 +44,38 @@ class PageAutoinstAddition2(Page):
         timezone_list_frame = ttk.Frame(temp_frame)
         timezone_list_frame.grid(row=0, column=1, ipady=5, padx=5, sticky="news")
 
-        keyboard_list = ttk.Treeview(
+        self.keyboard_list = ttk.Treeview(
             keyboard_list_frame, columns="keyboard", show="headings", height=8
         )
-        keyboard_list.heading("keyboard", text=self.LN.list_keymaps)
-        keyboard_list.pack(side="left", fill="both", expand=1)
+        self.keyboard_list.heading("keyboard", text=self.LN.list_keymaps)
+        self.keyboard_list.pack(side="left", fill="both", expand=1)
         keyboard_list_scrollbar = ttk.Scrollbar(
-            keyboard_list_frame, orient="vertical", command=keyboard_list.yview
+            keyboard_list_frame, orient="vertical", command=self.keyboard_list.yview
         )
         keyboard_list_scrollbar.pack(side="right", fill="y")
-        keyboard_list.configure(yscrollcommand=keyboard_list_scrollbar.set)
+        self.keyboard_list.configure(yscrollcommand=keyboard_list_scrollbar.set)
 
-        timezone_list = ttk.Treeview(
+        self.timezone_list = ttk.Treeview(
             timezone_list_frame, columns="timezone", show="headings", height=8
         )
-        timezone_list.heading("timezone", text=self.LN.list_timezones)
-        timezone_list.pack(side="left", fill="both", expand=1)
+        self.timezone_list.heading("timezone", text=self.LN.list_timezones)
+        self.timezone_list.pack(side="left", fill="both", expand=1)
         timezone_list_scrollbar = ttk.Scrollbar(
-            timezone_list_frame, orient="vertical", command=timezone_list.yview
+            timezone_list_frame, orient="vertical", command=self.timezone_list.yview
         )
         timezone_list_scrollbar.pack(side="right", fill="y")
-        timezone_list.configure(yscrollcommand=timezone_list_scrollbar.set)
+        self.timezone_list.configure(yscrollcommand=timezone_list_scrollbar.set)
 
-        for keymap in all_keymaps:
-            keyboard_list.insert(
+        for keymap in self.all_keymaps:
+            self.keyboard_list.insert(
                 parent="",
                 index="end",
                 iid=keymap,
                 values=(autoinst.get_keymap_description(keymap),),
             )
 
-        for timezone in all_timezones:
-            timezone_list.insert(
+        for timezone in self.all_timezones:
+            self.timezone_list.insert(
                 parent="",
                 index="end",
                 iid=timezone,
@@ -97,16 +97,16 @@ class PageAutoinstAddition2(Page):
             else GV.KICKSTART.keymap
         )
 
-        keyboard_list.focus(default_keymap)
-        keyboard_list.selection_set(default_keymap)
-        keyboard_list.yview_scroll(
-            keyboard_list.index(keyboard_list.selection()) - 1, "units"
+        self.keyboard_list.focus(default_keymap)
+        self.keyboard_list.selection_set(default_keymap)
+        self.keyboard_list.yview_scroll(
+            self.keyboard_list.index(self.keyboard_list.selection()) - 1, "units"
         )
 
-        timezone_list.focus(default_timezone)
-        timezone_list.selection_set(default_timezone)
-        timezone_list.yview_scroll(
-            timezone_list.index(timezone_list.selection()) - 1, "units"
+        self.timezone_list.focus(default_timezone)
+        self.timezone_list.selection_set(default_timezone)
+        self.timezone_list.yview_scroll(
+            self.timezone_list.index(self.timezone_list.selection()) - 1, "units"
         )
 
     def next_btn_action(self, *args):

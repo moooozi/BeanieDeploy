@@ -20,25 +20,12 @@ class PageError(Page):
 
         tkt.add_text_label(self.page_frame, self.LN.error_list, pady=10)
 
-        self.error_labels = []  # List to store error labels
-
-        self.info_frame = ctk.CTkFrame(self.page_frame)
-        self.info_frame.pack(fill="both", expand=True, pady=5, padx=10)
-
-        # Configure grid weights for the parent container and page_frame
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)
-        self.page_frame.grid_columnconfigure(0, weight=1)
-        self.page_frame.grid_rowconfigure(0, weight=1)
+        self.info_frame_raster = tkt.InfoFrameRaster(self.page_frame)
+        self.info_frame_raster.pack(fill="x", pady=5, padx=10)
 
     def set_errors(self, errors):
         self.errors = errors
-        for label in self.error_labels:
-            label.destroy()  # Remove existing labels
+        self.info_frame_raster.flush_labels()  # Clear existing labels
 
-        self.error_labels = []  # Clear the list
-
-        for error in self.errors:
-            error_label = ctk.CTkLabel(self.info_frame, text=error, anchor="w")
-            error_label.pack(fill="x", pady=2)
-            self.error_labels.append(error_label)
+        for i, error in enumerate(self.errors):
+            self.info_frame_raster.add_label(f"error_{i}", error)
