@@ -41,18 +41,19 @@ def run():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
     skip_check = False
-    install_args = None
     args = parse_arguments()
     if args.skip_check:
         skip_check = True
 
     done_checks = None
+    install_args = None
+
     if args.checks_dumb:
         done_checks = pickle.load(args.checks_dumb)
-    if args.app_version:
-        GV.APP_SW_VERSION = args.app_version
     if args.install_args:
         install_args = pickle.load(args.install_args)
+    if args.app_version:
+        GV.APP_SW_VERSION = args.app_version
     if args.release:
         fn.cleanup_on_reboot(script_dir)
     else:
@@ -66,7 +67,7 @@ def run():
     multilingual.set_lang(lang_code if lang_code else "English")
 
     if install_args:
-        app = MainApp(install_args)
+        app = MainApp(install_args=install_args)
     elif skip_check:
         app = MainApp(skip_check=skip_check)
     elif done_checks:

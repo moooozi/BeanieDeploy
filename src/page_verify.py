@@ -74,7 +74,7 @@ class PageVerify(Page):
 
     def next_btn_action(self, *args):
         GV.INSTALL_OPTIONS.auto_restart = self.auto_restart_toggle_var.get()
-        self.switch_page("PageInstall")
+        self.switch_page("PageInstalling")
 
     def on_show(self):
         """Called when the page is shown."""

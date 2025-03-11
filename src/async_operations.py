@@ -1,3 +1,4 @@
+import atexit
 import multiprocessing
 import queue
 import threading
@@ -82,6 +83,7 @@ class AsyncOperations:
         else:
             process = multiprocessing.Process(target=target, args=target_args)
             process.start()
+            atexit.register(process.terminate)
 
         return self.queue if self.use_queue else self.output
 

@@ -38,11 +38,15 @@ class PageCheck(Page):
     def init_page(self):
         page_frame = tkt.generic_page_layout(self, self.LN.check_running)
         self.progressbar_check = tkt.add_progress_bar(page_frame)
+        self.progressbar_check.set(0)
         tkt.add_text_label(page_frame, var=self.job_var, pady=0, padx=10)
         self.update()
         if self.skip_check:
-            GV.ALL_SPINS = GV.DUMMY_ALL_SPINS
-            GV.IP_LOCALE = GV.DUMMY_IP_LOCALE
+            import dummy
+
+            GV.ALL_SPINS = dummy.DUMMY_ALL_SPINS
+            GV.IP_LOCALE = dummy.DUMMY_IP_LOCALE
+            self.finalize_and_parse_errors()
         else:
             self.spins_promise = AO.run(
                 fn.get_json,
@@ -72,19 +76,22 @@ class PageCheck(Page):
 
     def update_job_var_and_progressbar(self, current_task):
         if current_task == CheckType.ARCH:
-            self.progressbar_check["value"] = 10
+            self.progressbar_check.set(0.10)
         elif current_task == CheckType.UEFI:
             self.job_var.set(self.LN.check_uefi)
-            self.progressbar_check["value"] = 20
+            self.progressbar_check.set(0.20)
         elif current_task == CheckType.RAM:
             self.job_var.set(self.LN.check_ram)
-            self.progressbar_check["value"] = 30
+            self.progressbar_check.set(0.30)
         elif current_task == CheckType.SPACE:
             self.job_var.set(self.LN.check_space)
-            self.progressbar_check["value"] = 50
+            self.progressbar_check.set(0.50)
         elif current_task == CheckType.RESIZABLE:
             self.job_var.set(self.LN.check_resizable)
-            self.progressbar_check["value"] = 80
+            self.progressbar_check.set(0.80)
+        elif current_task == "downloads":
+            self.job_var.set(self.LN.check_available_downloads)
+            self.progressbar_check.set(0.90)
 
     def check_wrapper(self, check_type, check_function, operation):
         if self.done_checks.checks[check_type].returncode is None:
@@ -108,6 +115,17 @@ class PageCheck(Page):
         self._active_check += 1
 
     def on_checks_complete(self):
+        if self.ip_locale_promise.status == Status.COMPLETED:
+            GV.IP_LOCALE = self.ip_locale_promise.output
+
+        if self.spins_promise.status == Status.COMPLETED:
+            GV.ALL_SPINS = self.spins_promise.output
+            self.finalize_and_parse_errors()
+        else:
+            self.update_job_var_and_progressbar("downloads")
+            self.after(100, self.on_checks_complete)
+
+    def finalize_and_parse_errors(self):
         if self.done_checks:
             errors = []
             if not self.skip_check:
