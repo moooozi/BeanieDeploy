@@ -1,5 +1,6 @@
 import pathlib
 import pickle
+import tempfile
 import time
 import multiprocessing
 import installation
@@ -35,10 +36,11 @@ class PageInstalling(Page):
         self.update()
 
         if not fn.is_admin():
-            with open("install_args.pkl", "wb") as file:
-                pickle.dump(self.installer_args, file)
-            installer_args_path = pathlib.Path("install_args.pkl").absolute()
-            fn.get_admin(f'--install_args "{installer_args_path}"')
+            with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as temp_file:
+                pickle.dump(self.installer_args, temp_file)
+                temp_file_path = pathlib.Path(temp_file.name).absolute()
+            args_string = f'--install_args "{temp_file_path}"'
+            fn.get_admin(args_string)
             return 0
 
         # GUI Logic
