@@ -13,6 +13,7 @@ import logging
 import types
 import tkinter as tk
 from page_manager import Page
+from async_operations import Status, AsyncOperations as AO
 
 
 class PageInstalling(Page):
@@ -32,7 +33,7 @@ class PageInstalling(Page):
         tkt.add_text_label(page_frame, var=self.install_job_var, pady=0, padx=10)
         # INSTALL STARTING
         master = gui.get_first_tk_parent(self)
-        self.progressbar_install["value"] = 0
+        self.progressbar_install.set(0)
         self.update()
 
         if not fn.is_admin():
@@ -70,6 +71,7 @@ class PageInstalling(Page):
         )
 
     def set_installer_args(self, installer_args):
+        print("Setting installer args")
         self.installer_args = installer_args
 
     def prepare(self):
@@ -212,13 +214,13 @@ class PageInstalling(Page):
             self.install_job_var.set(self.LN.job_checksum)
         elif queue_result == "STAGE: creating_tmp_part":
             self.install_job_var.set(self.LN.job_creating_tmp_part)
-            self.progressbar_install["value"] = 92
+            self.progressbar_install.set(0.92)
         elif queue_result == "STAGE: copying_to_tmp_part":
             self.install_job_var.set(self.LN.job_copying_to_tmp_part)
-            self.progressbar_install["value"] = 94
+            self.progressbar_install.set(0.94)
         elif queue_result == "STAGE: adding_tmp_boot_entry":
             self.install_job_var.set(self.LN.job_adding_tmp_boot_entry)
-            self.progressbar_install["value"] = 98
+            self.progressbar_install.set(0.98)
         elif queue_result == "STAGE: install_done":
             return 1
         elif (
@@ -244,10 +246,14 @@ class PageInstalling(Page):
             if queue_result["status"] == "complete":
                 pass
             elif queue_result["status"] == "downloading":
-                self.progressbar_install["value"] = (
-                    (queue_result["%"] * self.current_dl_file_percent_factor)
-                    + self.already_downloaded_percent
-                ) * self.global_downloads_factor
+                self.progressbar_install.set(
+                    (
+                        (queue_result["%"] * self.current_dl_file_percent_factor)
+                        + self.already_downloaded_percent
+                    )
+                    * self.global_downloads_factor
+                    / 100
+                )
 
                 formatted_speed = fn.format_speed(float(queue_result["speed"]))
                 formatted_eta = fn.format_eta(float(queue_result["eta"])).format(
