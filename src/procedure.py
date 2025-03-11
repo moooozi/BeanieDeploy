@@ -9,39 +9,6 @@ import globals as GV
 import compatibility_checks
 
 
-class CompatibilityResult:
-    checks = ["arch", "uefi", "ram", "space", "resizable"]
-
-    def __init__(self):
-        self.uefi = None
-        self.ram = None
-        self.space = None
-        self.resizable = None
-        self.arch = None
-
-    def compatibility_test(self, check_order=None, queue=None):
-        check_results = {}
-        if check_order is None:
-            check_order = self.checks
-
-        for check_type in check_order:
-            if check_type == "resizable" and not fn.is_admin():
-                queue.put("get_admin")
-                return
-
-            queue.put(check_type)
-            check_function = getattr(compatibility_checks, f"check_{check_type}")
-            check = check_function()
-            if check.returncode != 0:
-                result = -1
-            else:
-                result = check.result
-
-            setattr(self, f"{check_type}", result)
-            queue.put(["compatibility_result", check_type, result])
-            check_results[check_type] = result
-
-
 def partition_procedure(
     tmp_part_size: int,
     temp_part_label: str,

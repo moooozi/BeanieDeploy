@@ -1,40 +1,36 @@
 import pathlib
 import pickle
 import tempfile
+import threading
 import tkinter_templates as tkt
 import globals as GV
 import functions as fn
 import procedure as prc
 from page_manager import Page
 import tkinter as tk
-from compatibility_checks import (
-    check_arch,
-    check_uefi,
-    check_ram,
-    check_space,
-    check_resizable,
-)
+from compatibility_checks import Checks, DoneChecks, CheckType
+from async_operations import AsyncOperations as AO, Status
 
 
 class PageCheck(Page):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.job_var = tk.StringVar(self)
-        self.checks = {
-            "arch": check_arch,
-            "uefi": check_uefi,
-            "ram": check_ram,
-            "space": check_space,
-            "resizable": check_resizable,
-        }
-        self.current_check = 0
-        self.check_names = list(self.checks.keys())
+        self.checks = Checks()
+        self._active_check = 0
 
-        self.done_checks = GV.DoneChecks()
+        self.done_checks = DoneChecks()
         self.skip_check = False
 
     def set_done_checks(self, done_checks):
+        print("Received done checks")
         self.done_checks = done_checks
+        done_list = [
+            check_type.value
+            for check_type, check in self.done_checks.checks.items()
+            if check.returncode is not None
+        ]
+        print(f"Done checks: {done_list}")
 
     def set_skip_check(self, skip_check):
         self.skip_check = skip_check
@@ -44,86 +40,108 @@ class PageCheck(Page):
         self.progressbar_check = tkt.add_progress_bar(page_frame)
         tkt.add_text_label(page_frame, var=self.job_var, pady=0, padx=10)
         self.update()
-        GV.ALL_SPINS = fn.get_json(url=GV.APP_AVAILABLE_SPINS_LIST)
-        self.update()
-        GV.IP_LOCALE = fn.get_json(url=GV.APP_FEDORA_GEO_IP_URL)
-        self.update()
         if self.skip_check:
-            self.on_checks_complete()
+            GV.ALL_SPINS = GV.DUMMY_ALL_SPINS
+            GV.IP_LOCALE = GV.DUMMY_IP_LOCALE
         else:
+            self.spins_promise = AO.run(
+                fn.get_json,
+                args=[GV.APP_AVAILABLE_SPINS_LIST],
+            )
+            self.ip_locale_promise = AO.run(
+                fn.get_json,
+                args=[GV.APP_FEDORA_GEO_IP_URL],
+            )
             self.run_checks()
 
     def run_checks(self):
-        if self.current_check < len(self.check_names):
-            check_name = self.check_names[self.current_check]
-            check_function = self.checks[check_name]
-            self.after(0, self.run_check, check_name, check_function)
+        check_types = list(CheckType)
+        if self._active_check < len(check_types):
+            check_type = check_types[self._active_check]
+            check_function = self.checks.check_functions[check_type]
+            check_operation = AO()
+            check_operation.run_async_process(
+                self.check_wrapper, args=(check_type, check_function, check_operation)
+            )
+            self.monitor_async_operation(
+                check_operation,
+                self.run_checks,
+            )
         else:
             self.on_checks_complete()
 
-    def update_job_var_and_progressbar(self, check_name):
-        if check_name == "arch":
+    def update_job_var_and_progressbar(self, current_task):
+        if current_task == CheckType.ARCH:
             self.progressbar_check["value"] = 10
-        elif check_name == "uefi":
+        elif current_task == CheckType.UEFI:
             self.job_var.set(self.LN.check_uefi)
             self.progressbar_check["value"] = 20
-        elif check_name == "ram":
+        elif current_task == CheckType.RAM:
             self.job_var.set(self.LN.check_ram)
             self.progressbar_check["value"] = 30
-        elif check_name == "space":
+        elif current_task == CheckType.SPACE:
             self.job_var.set(self.LN.check_space)
             self.progressbar_check["value"] = 50
-        elif check_name == "resizable":
+        elif current_task == CheckType.RESIZABLE:
             self.job_var.set(self.LN.check_resizable)
             self.progressbar_check["value"] = 80
 
-    def run_check(self, check_name, check_function):
-        if getattr(self.done_checks, check_name).returncode == -999:
-            self.update_job_var_and_progressbar(check_name)
+    def check_wrapper(self, check_type, check_function, operation):
+        if self.done_checks.checks[check_type].returncode is None:
+            self.update_job_var_and_progressbar(check_type)
             result = check_function()
             print(
-                f"Check {self.current_check + 1}: {result.result}, Return code: {result.returncode}"
+                f"Check {self._active_check + 1}: {result.result}, Return code: {result.returncode}"
             )
             if result.returncode == -200:
-                # Store the done_checks object serialized in a file in a temp directory
                 with tempfile.NamedTemporaryFile(
                     suffix=".pkl", delete=False
                 ) as temp_file:
                     pickle.dump(self.done_checks, temp_file)
                     temp_file_path = pathlib.Path(temp_file.name).absolute()
                 args_string = f'--checks_dumb "{temp_file_path}"'
+                operation.status = Status.FAILED
                 fn.get_admin(args_string)
-            else:
-                setattr(self.done_checks, check_name, result)
-        self.current_check += 1
 
-        # Schedule the next check
-        self.run_checks()
+            else:
+                self.done_checks.checks[check_type] = result
+        self._active_check += 1
 
     def on_checks_complete(self):
         if self.done_checks:
-            # Handle errors (e.g., display them in the GUI)
             errors = []
             if not self.skip_check:
-                if self.done_checks.arch.returncode != 0:
+                if self.done_checks.checks[CheckType.ARCH].returncode != 0:
                     errors.append(self.LN.error_arch_9)
-                elif self.done_checks.arch.result not in GV.ACCEPTED_ARCHITECTURES:
+                elif (
+                    self.done_checks.checks[CheckType.ARCH].result
+                    not in GV.ACCEPTED_ARCHITECTURES
+                ):
                     errors.append(self.LN.error_arch_0)
-                if self.done_checks.uefi.returncode != 0:
+                if self.done_checks.checks[CheckType.UEFI].returncode != 0:
                     errors.append(self.LN.error_uefi_9)
-                elif self.done_checks.uefi.result != "uefi":
+                elif self.done_checks.checks[CheckType.UEFI].result != "uefi":
                     errors.append(self.LN.error_uefi_0)
-                if self.done_checks.ram.returncode != 0:
+                if self.done_checks.checks[CheckType.RAM].returncode != 0:
                     errors.append(self.LN.error_totalram_9)
-                elif self.done_checks.ram.result < GV.APP_MINIMAL_REQUIRED_RAM:
+                elif (
+                    self.done_checks.checks[CheckType.RAM].result
+                    < GV.APP_MINIMAL_REQUIRED_RAM
+                ):
                     errors.append(self.LN.error_totalram_0)
-                if self.done_checks.space.returncode != 0:
+                if self.done_checks.checks[CheckType.SPACE].returncode != 0:
                     errors.append(self.LN.error_space_9)
-                elif self.done_checks.space.result < GV.APP_MINIMAL_REQUIRED_SPACE:
+                elif (
+                    self.done_checks.checks[CheckType.SPACE].result
+                    < GV.APP_MINIMAL_REQUIRED_SPACE
+                ):
                     errors.append(self.LN.error_space_0)
-                if self.done_checks.resizable.returncode != 0:
+                if self.done_checks.checks[CheckType.RESIZABLE].returncode != 0:
                     errors.append(self.LN.error_resizable_9)
-                elif self.done_checks.resizable.result < GV.APP_MINIMAL_REQUIRED_SPACE:
+                elif (
+                    self.done_checks.checks[CheckType.RESIZABLE].result
+                    < GV.APP_MINIMAL_REQUIRED_SPACE
+                ):
                     errors.append(self.LN.error_resizable_0)
             if not errors:
                 GV.DONE_CHECKS = self.done_checks
@@ -141,5 +159,28 @@ class PageCheck(Page):
                 self.switch_page("PageError")
         else:
             # All checks passed
-
             self.switch_page("Page1")
+
+    def monitor_async_operation(
+        self,
+        operation: AO,
+        callback_function,
+        update_intervall=100,
+        *args,
+        **kwargs,
+    ):
+        if operation.status == Status.COMPLETED:
+            callback_function(*args, **kwargs)
+        elif operation.status == Status.FAILED:
+            # We exit the program in this case because it will relauch with admin rights
+            raise SystemExit
+        else:
+            self.after(
+                update_intervall,
+                self.monitor_async_operation,
+                operation,
+                callback_function,
+                update_intervall,
+                *args,
+                **kwargs,
+            )

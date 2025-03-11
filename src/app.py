@@ -16,7 +16,7 @@ class MainApp(tkt.Application):
     def __init__(
         self,
         skip_check=False,
-        done_checks={},
+        done_checks=None,
         installer_args=None,
         *args,
         **kwargs,

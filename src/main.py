@@ -56,8 +56,8 @@ def run():
     if args.release:
         fn.cleanup_on_reboot(script_dir)
     else:
-        sys.argv.append("--skip_check")
-        skip_check = True
+        # sys.argv.append("--skip_check")
+        # skip_check = True
         print("The App is in debug mode")
     logging.info("APP STARTING: %s v%s" % (GV.APP_SW_NAME, GV.APP_SW_VERSION))
     fn.mkdir(GV.PATH.WORK_DIR)
@@ -89,9 +89,7 @@ if __name__ == "__main__":
             try:
                 run()
             except:
-                message = tkinter.messagebox.showerror(
-                    title="Error", message=traceback.format_exc()
-                )
+                pass
             finally:
                 time.sleep(5)
         else:

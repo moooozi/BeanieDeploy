@@ -66,26 +66,6 @@ class PathConfig:
         return downloads_dir
 
 
-class DoneChecks:
-    def __init__(self):
-        self.arch = Check(name="arch", result=None, returncode=-999, process=None)
-        self.uefi = Check(name="uefi", result=None, returncode=-999, process=None)
-        self.ram = Check(name="ram", result=None, returncode=-999, process=None)
-        self.space = Check(name="space", result=None, returncode=-999, process=None)
-        self.resizable = Check(
-            name="resizable", result=None, returncode=-999, process=None
-        )
-
-
-class CompatibilityResults:
-    def __init__(self):
-        self.arch = -1
-        self.uefi = -1
-        self.ram = -1
-        self.space = -1
-        self.resizable = -1
-
-
 class InstallOptions:
     def __init__(self):
         self.spin_index = -1
@@ -142,8 +122,7 @@ class UI:
 
 
 PATH = PathConfig()
-COMPATIBILITY_RESULTS = CompatibilityResults()
-DONE_CHECKS = DoneChecks()
+DONE_CHECKS = None
 IP_LOCALE = {}
 ALL_SPINS = []
 ACCEPTED_SPINS = []
@@ -160,7 +139,7 @@ USERNAME_WINDOWS = ""
 SELECTED_SPIN = None
 UI = UI()
 
-DUMMY_ALL_SPING = [
+DUMMY_ALL_SPINS = [
     {
         "name": "Fedora Workstation",
         "is_recommended": True,
