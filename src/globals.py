@@ -1,9 +1,12 @@
 import os
+from typing import List
 import winreg
 from compatibility_checks import Check
 from data_units import DataUnit
 import functions as fn
 import types
+
+from models.spin import Spin
 
 
 APP_SW_NAME = "BeanieDeploy"
@@ -125,7 +128,7 @@ PATH = PathConfig()
 DONE_CHECKS = None
 IP_LOCALE = {}
 ALL_SPINS = []
-ACCEPTED_SPINS = []
+ACCEPTED_SPINS: List[Spin] = []
 ACCEPTED_ARCHITECTURES = ("amd64",)
 AVAILABLE_INSTALL_METHODS = ("dualboot", "replace_win", "custom")
 INSTALLER_STATUS = None
@@ -133,8 +136,8 @@ INSTALL_OPTIONS = InstallOptions()
 KICKSTART = Kickstart()
 PARTITION = Partition()
 TMP_PARTITION_LETTER = ""
-Literal = types
-LIVE_OS_INSTALLER_SPIN = None
+LIVE_OS_INSTALLER_SPIN: Spin = None
+SELECTED_SPIN: Spin = None
+
 USERNAME_WINDOWS = ""
-SELECTED_SPIN = None
 UI = UI()

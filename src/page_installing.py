@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 import pathlib
 import pickle
+import queue
 import tempfile
 import time
-import multiprocessing
+from typing import List, Optional
 import installation
 import tkinter_templates as tkt
 import gui_functions as gui
@@ -13,14 +15,39 @@ import logging
 import types
 import tkinter as tk
 from page_manager import Page
-from async_operations import Status, AsyncOperations as AO
+
+
+@dataclass
+class DownloadFile:
+    file_name: str
+    file_hint: str
+    dl_link: str
+    dst_dir: str
+    hash256: str = ""
+    size: int = 0
+
+
+@dataclass
+class InstallerArgs:
+    work_dir: str
+    dl_files: List[DownloadFile]
+    ks_kwargs: dict
+    part_kwargs: dict
+    rpm_source_dir: str
+    rpm_dst_dir_name: str
+    wifi_profiles_src_dir: Optional[str] = None
+    wifi_profiles_dst_dir_name: Optional[str] = None
+    grub_cfg_relative_path: str = ""
+    tmp_partition_label: str = ""
+    kickstart_cfg_relative_path: str = ""
+    efi_file_relative_path: str = ""
 
 
 class PageInstalling(Page):
     def __init__(self, parent, installer_args=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.installer_args = installer_args
-        self.queue = multiprocessing.Queue()
+        self.queue = queue.Queue()
         self.install_job_var = tk.StringVar(parent)
 
     def init_page(self):

@@ -1,10 +1,8 @@
-import multiprocessing
 import queue
-import subprocess
+import threading
 import functions as fn
-import atexit
 
-GLOBAL_QUEUE = multiprocessing.Queue()
+GLOBAL_QUEUE = queue.Queue()
 
 
 def run_async_function(function, queue=GLOBAL_QUEUE, args=(), kwargs={}):
@@ -20,9 +18,8 @@ def run_async_function(function, queue=GLOBAL_QUEUE, args=(), kwargs={}):
         kwargs["queue"] = queue
     while queue.qsize():
         queue.get()
-    procces = multiprocessing.Process(target=function, args=args, kwargs=kwargs)
+    procces = threading.Thread(target=function, args=args, kwargs=kwargs)
     procces.start()
-    atexit.register(procces.terminate)
 
 
 def handle_queue_result(
@@ -83,47 +80,3 @@ def get_first_tk_parent(widget):
     while parent.master is not None:
         parent = parent.master
     return parent
-
-
-DETACHED_PROCESS_FLAG = 0x00000008
-
-
-def _read_cmd_output(command, output_queue: multiprocessing.Queue):
-    process = subprocess.Popen(
-        command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        creationflags=DETACHED_PROCESS_FLAG,
-    )
-    output = process.stdout.readlines() or ""
-    while output and process.poll() is None:
-        output_queue.put(output)
-
-
-def _read_function_output(function, output_queue: multiprocessing.Queue, args, kwargs):
-    result = function(*args, **kwargs)
-    if hasattr(result, "__iter__") and not isinstance(result, str):
-        for item in result:
-            output_queue.put(item)
-    else:
-        output_queue.put(result)
-
-
-def run_async_proccess(function=None, cmd=None, args=(), kwargs={}):
-    if not (bool(cmd) ^ bool(function)):
-        raise ValueError("Either 'cmd' or 'function' must be provided")
-    q = multiprocessing.Queue()
-    if cmd:
-        if isinstance(cmd, str):
-            cmd = [cmd]
-        command = cmd + list(args) + [f"{key}={value}" for key, value in kwargs.items()]
-        p = multiprocessing.Process(target=_read_cmd_output, args=(command, q))
-        p.start()
-    if function:
-        p = multiprocessing.Process(
-            target=_read_function_output, args=(function, q, args, kwargs)
-        )
-        p.start()
-
-    return q

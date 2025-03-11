@@ -6,7 +6,6 @@ import multilingual
 class PageManager(ctk.CTkFrame):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self._no_page_initialized_yet = True
         self.pages = {}
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -19,7 +18,6 @@ class PageManager(ctk.CTkFrame):
         page.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
     def _show_page(self, page_name):
-        self._no_page_initialized_yet = False
         print(f"Switching to {page_name}")
         page: Page = self.pages[page_name]
         if not page._initiated:

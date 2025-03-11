@@ -7,6 +7,7 @@ import types
 import functions as fn
 import globals as GV
 import compatibility_checks
+from models.spin import Spin
 
 
 def partition_procedure(
@@ -85,7 +86,6 @@ def build_autoinstall_ks_file(
     sys_efi_uuid=None,
     partition_method=None,
     additional_rpm_dir=None,
-    enable_rpm_fusion=False,
 ):
     kickstart_lines = []
     kickstart_lines.append("# Kickstart file created by Lnixify.")
@@ -293,30 +293,27 @@ def parse_spins(spins_list):
         if not all(i in spin_keys for i in ("name", "size", "hash256", "dl_link")):
             continue
         current_spin["dl_link"] = GV.FEDORA_BASE_DOWNLOAD_URL + current_spin["dl_link"]
-        if (attr := "is_live_img") not in spin_keys:
-            current_spin[attr] = False
-        if (attr := "version") not in spin_keys:
-            current_spin[attr] = ""
-        if (attr := "desktop") not in spin_keys:
-            current_spin[attr] = ""
-        if (attr := "is_auto_installable") not in spin_keys:
-            current_spin[attr] = False
-        if (attr := "is_advanced") not in spin_keys:
-            current_spin[attr] = False
-        if (attr := "torrent_link") not in spin_keys:
-            current_spin[attr] = ""
-        else:
-            current_spin[attr] = GV.FEDORA_TORRENT_DOWNLOAD_URL + current_spin[attr]
-        if (attr := "ostree_args") not in spin_keys:
-            current_spin[attr] = ""
-        if (attr := "is_base_netinstall") not in spin_keys:
-            current_spin[attr] = False
-        if (attr := "is_default") not in spin_keys:
-            current_spin[attr] = False
-        if (attr := "is_featured") not in spin_keys:
-            current_spin[attr] = False
-        spin_ns = types.SimpleNamespace(**current_spin)
-        accepted_spins_list.append(spin_ns)
+        if "torrent_link" in spin_keys:
+            current_spin["torrent_link"] = (
+                GV.FEDORA_TORRENT_DOWNLOAD_URL + current_spin["torrent_link"]
+            )
+        spin = Spin(
+            name=current_spin.get("name"),
+            size=current_spin.get("size"),
+            hash256=current_spin.get("hash256"),
+            dl_link=current_spin.get("dl_link"),
+            is_live_img=current_spin.get("is_live_img", False),
+            version=current_spin.get("version", ""),
+            desktop=current_spin.get("desktop", ""),
+            is_auto_installable=current_spin.get("is_auto_installable", False),
+            is_advanced=current_spin.get("is_advanced", False),
+            torrent_link=current_spin.get("torrent_link", ""),
+            ostree_args=current_spin.get("ostree_args", ""),
+            is_base_netinstall=current_spin.get("is_base_netinstall", False),
+            is_default=current_spin.get("is_default", False),
+            is_featured=current_spin.get("is_featured", False),
+        )
+        accepted_spins_list.append(spin)
     for index, spin in enumerate(accepted_spins_list):
         if spin.is_base_netinstall:
             live_os_base_index = index
@@ -374,17 +371,6 @@ def get_wifi_profiles(wifi_profile_dir):
     fn.rmdir(wifi_profile_dir)
     fn.mkdir(wifi_profile_dir)
     return wifi_profiles
-
-
-def decide_torrent_or_direct_download(torrent_preferred, direct_link, torrent_link):
-    torrent_exist = bool(torrent_link)
-    if torrent_preferred and torrent_exist:
-        is_torrent = True
-        link = torrent_link
-    else:
-        is_torrent = False
-        link = direct_link
-    return link, is_torrent
 
 
 def check_valid_existing_file(file_path, file_hash):
