@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 import pathlib
 import pickle
 import queue
@@ -6,6 +6,7 @@ import tempfile
 import time
 from typing import List, Optional
 import installation
+from models.spin import Spin
 import tkinter_templates as tkt
 import gui_functions as gui
 import functions as fn
@@ -23,24 +24,41 @@ class DownloadFile:
     file_hint: str
     dl_link: str
     dst_dir: str
-    hash256: str = ""
-    size: int = 0
+    hash256: str
+    size: int
+
+    @classmethod
+    def from_spin(
+        cls,
+        spin: Spin,
+        file_name=None,
+        file_hint=None,
+        dst_dir=None,
+    ) -> "DownloadFile":
+        return cls(
+            file_name=file_name,
+            file_hint=file_hint,
+            dl_link=spin.dl_link,
+            dst_dir=dst_dir,
+            hash256=spin.hash256,
+            size=spin.size,
+        )
 
 
 @dataclass
 class InstallerArgs:
-    work_dir: str
-    dl_files: List[DownloadFile]
-    ks_kwargs: dict
-    part_kwargs: dict
-    rpm_source_dir: str
-    rpm_dst_dir_name: str
+    work_dir: str = None
+    dl_files: List[DownloadFile] = None
+    ks_kwargs: dict = None
+    part_kwargs: dict = None
+    rpm_source_dir: str = None
+    rpm_dst_dir_name: str = None
     wifi_profiles_src_dir: Optional[str] = None
     wifi_profiles_dst_dir_name: Optional[str] = None
-    grub_cfg_relative_path: str = ""
-    tmp_partition_label: str = ""
-    kickstart_cfg_relative_path: str = ""
-    efi_file_relative_path: str = ""
+    grub_cfg_relative_path: str = None
+    tmp_partition_label: str = None
+    kickstart_cfg_relative_path: str = None
+    efi_file_relative_path: str = None
 
 
 class PageInstalling(Page):
@@ -139,15 +157,13 @@ class PageInstalling(Page):
             logging.info(log_partition)
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         if GV.SELECTED_SPIN.is_live_img:
-            installer_img = GV.LIVE_OS_INSTALLER_SPIN
-            live_img = GV.SELECTED_SPIN
-            live_img_size = live_img.size
+            installer_img = DownloadFile.from_spin(GV.LIVE_OS_INSTALLER_SPIN)
+            live_img = DownloadFile.from_spin(GV.SELECTED_SPIN)
         else:
             installer_img = GV.SELECTED_SPIN
             live_img = None
-            live_img_size = 0
 
-        installer_args = types.SimpleNamespace()
+        installer_args = InstallerArgs()
         installer_args.work_dir = GV.PATH.WORK_DIR
 
         installer_img.file_name = GV.INSTALL_ISO_NAME
@@ -161,35 +177,20 @@ class PageInstalling(Page):
             live_img.file_hint = "live_img_iso"
             installer_args.dl_files.append(live_img)
 
-        if GV.KICKSTART.enable_rpm_fusion:
-            rpm_fusion_free = types.SimpleNamespace()
-            rpm_fusion_free.dst_dir = (
-                f"{GV.PATH.WORK_DIR}\\{GV.ADDITIONAL_RPM_DIR_NAME}"
-            )
-            rpm_fusion_free.dl_link = GV.RPM_FUSION_FREE % GV.SELECTED_SPIN.version
-
-            rpm_fusion_nonfree = types.SimpleNamespace()
-            rpm_fusion_nonfree.dst_dir = (
-                f"{GV.PATH.WORK_DIR}\\{GV.ADDITIONAL_RPM_DIR_NAME}"
-            )
-            rpm_fusion_nonfree.dl_link = (
-                GV.RPM_FUSION_NON_FREE % GV.SELECTED_SPIN.version
-            )
-
         for index, file in enumerate(installer_args.dl_files):
-            if not hasattr(file, "dl_link") or not file.dl_link:
+            if not file.dl_link or not file.dl_link:
                 raise ValueError(
                     "items in installer_args.dl_files must include valid dl_link"
                 )
-            if not hasattr(file, "file_name"):
+            if not file.file_name:
                 file.file_name = fn.get_file_name_from_url(file.dl_link)
-            if not hasattr(file, "dst_dir"):
+            if not file.dst_dir:
                 file.dst_dir = GV.PATH.WORK_DIR
-            if not hasattr(file, "hash256"):
+            if not file.hash256:
                 file.hash256 = ""
             else:  # for consistency
                 file.hash256 = file.hash256.strip().lower()
-            if not hasattr(file, "size"):
+            if not file.size:
                 file.size = 0
 
         installer_args.ks_kwargs = GV.KICKSTART

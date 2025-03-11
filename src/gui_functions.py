@@ -25,19 +25,13 @@ def run_async_function(function, queue=GLOBAL_QUEUE, args=(), kwargs={}):
 def handle_queue_result(
     tkinter, callback=None, wait_for_result=None, queue=GLOBAL_QUEUE
 ):
-    """
-
-    :param tkinter: the tkinter instance
-    :param callback: callback function to handle Queue communication
-    :param queue: the Queue object
-    :param wait_for_result: wait for certain queue output
-    :return: returns the first output from queue if no callback is specified, or the return of the callback if specified
-    """
     if callback and wait_for_result:
         raise AttributeError("Cannot use callback and wait_for_result simultaneously")
-    while True:
-        while not queue.qsize():
-            tkinter.after(100, tkinter.update())
+
+    def process_queue():
+        if not queue.qsize():
+            tkinter.after(100, process_queue)
+            return
         queue_out = queue.get()
         if callback:
             call = callback(queue_out)
@@ -51,6 +45,9 @@ def handle_queue_result(
                 return queue_out
         else:
             return queue_out
+        tkinter.after(100, process_queue)
+
+    process_queue()
 
 
 def detect_darkmode_in_windows():
