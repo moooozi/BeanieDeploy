@@ -166,15 +166,17 @@ def install(
     # Create the destination directory if it doesn't exist
     print(f"Creating destination directory: {bootloader_dst_path}")
     try:
-        if bootloader_dst_path.exists():
-            shutil.rmtree(bootloader_dst_path)
-        bootloader_dst_path.mkdir(parents=True, exist_ok=True)
+        if not bootloader_dst_path.exists():
+            bootloader_dst_path.mkdir(parents=True, exist_ok=True)
 
         # Copy the contents of the bootloader directory
         for item in bootloader_src_path.iterdir():
             dest = bootloader_dst_path / item.name
+            if dest.exists():
+                print(f"Skipping existing file or directory: {dest}")
+                continue
             if item.is_dir():
-                shutil.copytree(item, dest, dirs_exist_ok=True)
+                shutil.copytree(item, dest)
             else:
                 shutil.copy2(item, dest)
 
@@ -192,6 +194,7 @@ def install(
         if rpm_source_dir and rpm_dst_dir_name:
             rpm_dst_path = f"{tmp_part_letter}:\\{rpm_dst_dir_name}\\"
             fn.mkdir(rpm_dst_path)
+            fn.mkdir(rpm_source_dir)
             fn.copy_files(source=rpm_source_dir, destination=rpm_dst_path)
 
         if wifi_profiles_src_dir and wifi_profiles_dst_dir_name:
@@ -202,15 +205,16 @@ def install(
                 source=wifi_profiles_src_dir, destination=wifi_profiles_dst_path
             )
         queue_safe_put(queue, "STAGE: adding_tmp_boot_entry")
+        if False:
 
-        grub_cfg_dest_path = bootloader_dst_path / "grub.cfg"
-        fn.set_file_readonly(grub_cfg_dest_path, False)
-        grub_cfg_txt = prc.build_grub_cfg_file(
-            tmp_partition_label, ks_kwargs.partition_method != "custom"
-        )
-        with open(grub_cfg_dest_path, "w") as grub_cfg:
-            grub_cfg.write(grub_cfg_txt)
-        fn.set_file_readonly(grub_cfg_dest_path, True)
+            grub_cfg_dest_path = bootloader_dst_path / "grub.cfg"
+            fn.set_file_readonly(grub_cfg_dest_path, False)
+            grub_cfg_txt = prc.build_grub_cfg_file(
+                tmp_partition_label, ks_kwargs.partition_method != "custom"
+            )
+            with open(grub_cfg_dest_path, "w") as grub_cfg:
+                grub_cfg.write(grub_cfg_txt)
+            fn.set_file_readonly(grub_cfg_dest_path, True)
         if not ks_kwargs.partition_method == "custom":
             kickstart_txt = prc.build_autoinstall_ks_file(**vars(ks_kwargs))
             with open(

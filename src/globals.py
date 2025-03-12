@@ -92,7 +92,6 @@ class Kickstart:
         self.fullname = ""
         self.username = ""
         self.wifi_profiles_dir_name = []
-        self.enable_rpm_fusion = False
 
 
 class Partition:
