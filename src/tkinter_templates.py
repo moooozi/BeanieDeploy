@@ -6,7 +6,6 @@ import customtkinter as ctk
 import ctypes
 from gui_functions import detect_darkmode_in_windows
 import globals as GV
-import resources.style.theme.svtheme.sv_ttk as sv_ttk
 import multilingual
 
 WIDTH = 850
