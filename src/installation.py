@@ -265,6 +265,7 @@ def install(
         queue_safe_put(queue, "APP: critical_process_done")  # re-enable closing the app
         queue_safe_put(queue, "STAGE: install_done")
     except Exception as e:
+
         # unmount and throw the error back
         fn.unmount_iso(installer_iso_path)
         fn.unmount_iso(live_img_iso_path)
@@ -276,4 +277,5 @@ def install(
             capture_output=True,
             text=True,
         )
+        raise
     return True
