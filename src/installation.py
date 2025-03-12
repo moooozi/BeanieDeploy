@@ -165,9 +165,11 @@ def install(
         raise RuntimeError(f"Failed to mount EFI partition: {out.stderr}")
 
     # Create the destination directory if it doesn't exist
-    if not bootloader_dst_path.exists():
-        print(f"Creating destination directory: {bootloader_dst_path}")
-        bootloader_dst_path.mkdir(parents=True, exist_ok=True)
+    print(f"Creating destination directory: {bootloader_dst_path}")
+
+    if bootloader_dst_path.exists():
+        shutil.rmtree(bootloader_dst_path)
+    bootloader_dst_path.mkdir(parents=True, exist_ok=True)
 
     # Copy the contents of the bootloader directory
     for item in bootloader_src_path.iterdir():
