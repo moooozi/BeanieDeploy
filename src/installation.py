@@ -190,6 +190,7 @@ def install(
 
     if rpm_source_dir and rpm_dst_dir_name:
         rpm_dst_path = f"{tmp_part_letter}:\\{rpm_dst_dir_name}\\"
+        fn.mkdir(rpm_dst_path)
         fn.copy_files(source=rpm_source_dir, destination=rpm_dst_path)
 
     if wifi_profiles_src_dir and wifi_profiles_dst_dir_name:
