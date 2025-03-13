@@ -14,7 +14,13 @@ class GenericPageLayout(ctk.CTkFrame):
         *args,
         **kwargs
     ):
-        super().__init__(parent, *args, **kwargs)
+        super().__init__(
+            parent,
+            bg_color="transparent",
+            fg_color="transparent",
+            *args,
+            **kwargs,
+        )
         self.title = title
         self.primary_btn_txt = primary_btn_txt
         self.primary_btn_command = primary_btn_command

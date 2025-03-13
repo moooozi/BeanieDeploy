@@ -1,5 +1,6 @@
 from tkinter import ttk
 import customtkinter as ctk
+from models.data_units import DataUnit
 from templates.info_frame import InfoFrame
 from templates.multi_radio_buttons import MultiRadioButtons
 import tkinter_templates as tkt
@@ -112,9 +113,15 @@ class Page1(Page):
             )
             GV.PARTITION.tmp_part_size = total_size + GV.APP_TEMP_PART_FAILSAFE_SPACE
             if GV.SELECTED_SPIN.is_base_netinstall:
-                dl_size_txt = self.LN.init_download % fn.byte_to_gb(total_size)
+                dl_size_txt = (
+                    self.LN.init_download
+                    % DataUnit.from_bytes(total_size).to_gigabytes()
+                )
             else:
-                dl_size_txt = self.LN.total_download % fn.byte_to_gb(total_size)
+                dl_size_txt = (
+                    self.LN.total_download
+                    % DataUnit.from_bytes(total_size).to_gigabytes()
+                )
             dl_spin_name_text = f"{self.LN.selected_dist}: {GV.SELECTED_SPIN.name} {GV.SELECTED_SPIN.version}"
             dl_spin_desktop = (
                 f"{self.LN.desktop_environment}: {GV.SELECTED_SPIN.desktop}"

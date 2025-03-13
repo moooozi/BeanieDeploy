@@ -1,9 +1,9 @@
-import tkinter.ttk as ttk
 from templates.generic_page_layout import GenericPageLayout
 import tkinter_templates as tkt
 import globals as GV
 from page_manager import Page
 import tkinter as tk
+import customtkinter as ctk
 
 
 class PageAutoinst2(Page):
@@ -27,7 +27,16 @@ class PageAutoinst2(Page):
             lambda: self.switch_page("PageInstallMethod"),
         )
         page_frame = page_layout.content_frame
-        frame_checkboxes = tkt.add_frame_container(page_frame, fill="x", expand=1)
+        frame_checkboxes = ctk.CTkFrame(
+            page_frame,
+            bg_color="transparent",
+            fg_color="transparent",
+            corner_radius=0,
+            border_width=0,
+        )
+        frame_checkboxes.grid(row=0, column=0, sticky="ew")
+        page_frame.grid_columnconfigure(0, weight=1)
+        page_frame.grid_rowconfigure(0, weight=1)
 
         check_wifi = tkt.add_check_btn(
             frame_checkboxes,
@@ -36,7 +45,7 @@ class PageAutoinst2(Page):
             pady=(5, 0),
             pack=False,
         )
-        check_wifi.grid(ipady=5, row=0, column=0, sticky=self.DI_VAR.nw)
+        check_wifi.grid(ipady=5, row=0, column=0, sticky=self.DI_VAR.w)
 
         check_encrypt = tkt.add_check_btn(
             frame_checkboxes,
@@ -45,27 +54,28 @@ class PageAutoinst2(Page):
             lambda: self.show_encrypt_options(self.enable_encryption_toggle_var),
             pack=False,
         )
-        check_encrypt.grid(ipady=5, row=2, column=0, sticky=self.DI_VAR.nw)
+        check_encrypt.grid(ipady=5, row=2, column=0, sticky=self.DI_VAR.w)
 
-        self.encrypt_pass_note = ttk.Label(
-            page_frame,
+        self.encrypt_pass_note = ctk.CTkLabel(
+            frame_checkboxes,
             wraplength=GV.MAX_WIDTH,
             justify=self.DI_VAR.l,
-            text="",
+            text=self.LN.encrypt_reminder_txt,
             font=tkt.FONTS_smaller,
-            foreground=tkt.color_blue,
+            text_color=tkt.color_blue,
         )
-        self.encrypt_pass_note.pack(
-            pady=5, padx=(0, 0), side="bottom", anchor=self.DI_VAR.w
+        self.encrypt_pass_note.grid(
+            pady=5, padx=(0, 0), row=2, column=1, sticky=self.DI_VAR.w
         )
+        self.encrypt_pass_note.grid_remove()
 
         self.show_encrypt_options(self.enable_encryption_toggle_var)
 
     def show_encrypt_options(self, var):
         if var.get():
-            self.encrypt_pass_note.configure(text=self.LN.encrypt_reminder_txt)
+            self.encrypt_pass_note.grid()
         else:
-            self.encrypt_pass_note.configure(text="")
+            self.encrypt_pass_note.grid_remove()
 
     def next_btn_action(self, *args):
         GV.KICKSTART.is_encrypted = self.enable_encryption_toggle_var.get()

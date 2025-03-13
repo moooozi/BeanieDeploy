@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from compatibility_checks import CheckType
+from models.data_units import DataUnit
 from templates.generic_page_layout import GenericPageLayout
 from templates.multi_radio_buttons import MultiRadioButtons
 import tkinter_templates as tkt
@@ -7,12 +8,13 @@ import globals as GV
 import functions as fn
 from page_manager import Page
 import tkinter as tk
+from sys import argv
 
 
 class PageInstallMethod(Page):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.install_method_var = tk.StringVar(parent, GV.KICKSTART.partition_method)
+        self.install_method_var = tk.StringVar(parent)
         self.dualboot_size_var = tk.StringVar(parent)
 
     def init_page(self):
@@ -27,6 +29,8 @@ class PageInstallMethod(Page):
         )
         page_frame = page_layout.content_frame
 
+        self.selected_spin_name = GV.SELECTED_SPIN.name
+
         space_dualboot = (
             GV.APP_DUALBOOT_REQUIRED_SPACE
             + GV.APP_LINUX_BOOT_PARTITION_SIZE
@@ -39,8 +43,6 @@ class PageInstallMethod(Page):
             + GV.PARTITION.tmp_part_size * 2
         )
 
-        from sys import argv
-
         if "--skip_check" not in argv:
             dualboot_space_available = (
                 GV.DONE_CHECKS.checks[CheckType.RESIZABLE].result > space_dualboot
@@ -48,11 +50,11 @@ class PageInstallMethod(Page):
             replace_win_space_available = (
                 GV.DONE_CHECKS.checks[CheckType.RESIZABLE].result > space_clean
             )
-            max_size = fn.byte_to_gb(
+            max_size = DataUnit.from_bytes(
                 GV.DONE_CHECKS.checks[CheckType.RESIZABLE].result
                 - GV.SELECTED_SPIN.size
                 - GV.APP_ADDITIONAL_FAILSAFE_SPACE
-            )
+            ).to_gigabytes()
             max_size = round(max_size, 2)
         else:
             dualboot_space_available = True
@@ -60,6 +62,9 @@ class PageInstallMethod(Page):
             max_size = 9999
 
         is_auto_installable = GV.SELECTED_SPIN.is_auto_installable
+
+        default = "custom" if not is_auto_installable else "replace_win"
+        self.install_method_var.set(default)
 
         dualboot_error_msg = ""
         replace_win_error_msg = ""
@@ -97,16 +102,7 @@ class PageInstallMethod(Page):
         )
         radio_buttons.pack(expand=1, fill="x")
 
-        # GUI
-        if not self.install_method_var.get():
-            default = (
-                "custom"
-                if not is_auto_installable
-                else "dualboot" if dualboot_space_available else "replace_win"
-            )
-            self.install_method_var.set(default)
-
-        min_size = fn.byte_to_gb(GV.APP_DUALBOOT_REQUIRED_SPACE)
+        min_size = DataUnit.from_bytes(GV.APP_DUALBOOT_REQUIRED_SPACE).to_gigabytes()
         self.entry1_frame = ctk.CTkFrame(page_frame, height=300)
         self.entry1_frame.pack_propagate(False)
         self.entry1_frame.pack(
@@ -182,7 +178,9 @@ class PageInstallMethod(Page):
             syntax_invalid = "invalid" in self.size_dualboot_entry.state()
             if syntax_invalid:
                 return -1
-            GV.PARTITION.shrink_space = fn.gigabyte(self.dualboot_size_var.get())
+            GV.PARTITION.shrink_space = DataUnit.from_gigabytes(
+                self.dualboot_size_var.get()
+            )
         elif GV.KICKSTART.partition_method == "custom":
             GV.PARTITION.shrink_space = 0
             GV.PARTITION.boot_part_size = 0
@@ -190,3 +188,8 @@ class PageInstallMethod(Page):
             self.switch_page("PageVerify")
         else:
             self.switch_page("PageAutoinst2")
+
+    def on_show(self):
+        if self.selected_spin_name != GV.SELECTED_SPIN.name:
+            tkt.flush_frame(self)
+            self.init_page()

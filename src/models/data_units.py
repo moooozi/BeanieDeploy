@@ -23,14 +23,17 @@ class DataUnit:
     def from_gigabytes(cls, gigabytes):
         return cls(gigabytes * cls.GIGABYTE)
 
-    def to_kilobytes(self):
-        return self.bytes_value / self.KILOBYTE
+    def to_kilobytes(self, round_decimals=2):
+        return round(self.bytes_value / self.KILOBYTE, round_decimals)
 
-    def to_megabytes(self):
-        return self.bytes_value / self.MEGABYTE
+    def to_megabytes(self, round_decimals=2):
+        return round(self.bytes_value / self.MEGABYTE, round_decimals)
 
-    def to_gigabytes(self):
-        return self.bytes_value / self.GIGABYTE
+    def to_gigabytes(self, round_decimals=2):
+        return round(self.bytes_value / self.GIGABYTE, round_decimals)
+
+    def to_bytes(self):
+        return self.bytes_value
 
     def __int__(self):
         return int(self.bytes_value)
@@ -118,3 +121,6 @@ class DataUnit:
         elif isinstance(other, (int, float)):
             return self.bytes_value >= other
         return NotImplemented
+
+    def __round__(self, ndigits=None):
+        return DataUnit(round(self.bytes_value, ndigits))

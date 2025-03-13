@@ -3,7 +3,13 @@ from tkinter_templates import *
 
 class MultiRadioButtons(ctk.CTkFrame):
     def __init__(self, parent, items: dict, var, validate_func=None, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
+        super().__init__(
+            parent,
+            bg_color="transparent",
+            fg_color="transparent",
+            *args,
+            **kwargs,
+        )
         self.var = var
         self.validate_func = validate_func
         self.items = items
@@ -19,6 +25,12 @@ class MultiRadioButtons(ctk.CTkFrame):
             cursor="hand2",
         )
         self._create_widgets()
+
+        if self.var.get() in self.items:
+            print("var is in items and its value is", self.var.get())
+            if self.items[self.var.get()].get("advanced", False):
+                print("var is advanced")
+                self.after(2000, self.show_advanced_options())
 
     def _create_widgets(self):
         if any(self.items[item].get("advanced", False) for item in self.items):

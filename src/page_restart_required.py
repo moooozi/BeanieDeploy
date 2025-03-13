@@ -31,15 +31,15 @@ class PageRestartRequired(Page):
             foreground=tkt.color_blue,
         )
 
-        def countdown_to_restart(time):
-            time -= 1
-            if time > 0:
-                self.restarting_text_var.set(
-                    self.LN.finished_text_restarting_now % (int(time))
-                )
-                self.after(1000, countdown_to_restart, time)
-            else:
-                fn.quit_and_restart_windows()
-
         if GV.INSTALL_OPTIONS.auto_restart:
-            countdown_to_restart(10)
+            self.countdown_to_restart(10)
+
+    def countdown_to_restart(self, time):
+        time -= 1
+        if time > 0:
+            self.restarting_text_var.set(
+                self.LN.finished_text_restarting_now % (int(time))
+            )
+            self.after(1000, self.countdown_to_restart, time)
+        else:
+            fn.quit_and_restart_windows()
