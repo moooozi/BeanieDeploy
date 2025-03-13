@@ -41,6 +41,9 @@ class DataUnit:
     def __repr__(self):
         return f"DataUnit({self.bytes_value} bytes)"
 
+    def __str__(self):
+        return str(int(self.bytes_value))
+
     def __add__(self, other):
         if isinstance(other, DataUnit):
             return DataUnit(self.bytes_value + other.bytes_value)

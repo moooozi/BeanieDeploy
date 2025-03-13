@@ -25,7 +25,7 @@ class AsyncOperations:
             else queue.Queue() if use_queue else None
         )
         self.status = Status.NOT_STARTED
-        self.output = []
+        self.output = None
 
     @classmethod
     def run(
@@ -90,4 +90,4 @@ class AsyncOperations:
     def _handle_received_output(self, output):
         if self.use_queue:
             self.queue.put(output)
-        self.output.append(output)
+        self.output = output

@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from compatibility_checks import CheckType
 import page_autoinst_addition_2
 import page_verify
 import tkinter_templates as tkt
@@ -42,13 +43,13 @@ class PageInstallMethod(Page):
 
         if "--skip_check" not in argv:
             dualboot_space_available = (
-                GV.COMPATIBILITY_RESULTS.resizable > space_dualboot
+                GV.DONE_CHECKS.checks[CheckType.RESIZABLE].result > space_dualboot
             )
             replace_win_space_available = (
-                GV.COMPATIBILITY_RESULTS.resizable > space_clean
+                GV.DONE_CHECKS.checks[CheckType.RESIZABLE].result > space_clean
             )
             max_size = fn.byte_to_gb(
-                GV.COMPATIBILITY_RESULTS.resizable
+                GV.DONE_CHECKS.checks[CheckType.RESIZABLE].result
                 - GV.SELECTED_SPIN.size
                 - GV.APP_ADDITIONAL_FAILSAFE_SPACE
             )
