@@ -1,11 +1,10 @@
 import os
 from typing import List
 import winreg
-from compatibility_checks import Check
-from data_units import DataUnit
-import functions as fn
-import types
-
+from models.data_units import DataUnit
+from models.install_options import InstallOptions
+from models.kickstart import Kickstart
+from models.partition import Partition
 from models.spin import Spin
 
 
@@ -69,41 +68,6 @@ class PathConfig:
         return downloads_dir
 
 
-class InstallOptions:
-    def __init__(self):
-        self.spin_index = -1
-        self.auto_restart = False
-        self.torrent = False
-        self.export_wifi = True
-
-
-class Kickstart:
-    def __init__(self):
-        self.partition_method = ""
-        self.live_img_url = APP_LIVE_IMG_URL
-        self.is_encrypted = False
-        self.passphrase = ""
-        self.tpm_auto_unlock = False
-        self.locale = ""
-        self.timezone = ""
-        self.keymap_type = ""
-        self.keymap = ""
-        self.ostree_args = ""
-        self.fullname = ""
-        self.username = ""
-        self.wifi_profiles_dir_name = []
-
-
-class Partition:
-    def __init__(self):
-        self.make_root_partition = False
-        self.shrink_space = None
-        self.tmp_part_size = 0
-        self.temp_part_label = "FEDORA-INST"  # Max 12 Chars
-        self.boot_part_size = 0
-        self.efi_part_size = 0
-
-
 class UI:
     def __init__(self):
         self.DI_VAR = {
@@ -118,11 +82,9 @@ class UI:
             "l": "left",
             "r": "right",
         }
-        self.desktop = ""
-        self.combo_list_spin = ""
-        self.width = 1000
 
 
+MAX_WIDTH = 1000
 PATH = PathConfig()
 DONE_CHECKS = None
 IP_LOCALE = {}
@@ -132,7 +94,7 @@ ACCEPTED_ARCHITECTURES = ("amd64",)
 AVAILABLE_INSTALL_METHODS = ("dualboot", "replace_win", "custom")
 INSTALLER_STATUS = None
 INSTALL_OPTIONS = InstallOptions()
-KICKSTART = Kickstart()
+KICKSTART = Kickstart(live_img_url=APP_LIVE_IMG_URL)
 PARTITION = Partition()
 TMP_PARTITION_LETTER = ""
 LIVE_OS_INSTALLER_SPIN: Spin = None

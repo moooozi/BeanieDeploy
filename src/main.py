@@ -61,7 +61,6 @@ def run():
         print("The App is in debug mode")
     logging.info("APP STARTING: %s v%s" % (GV.APP_SW_NAME, GV.APP_SW_VERSION))
     fn.mkdir(GV.PATH.WORK_DIR)
-    # tk.Label(LEFT_FRAME, image=tk.PhotoImage(file=GV.PATH.CURRENT_DIR + r'\resources\style\left_frame.gif')).pack()
     lang_code = multilingual.get_lang_by_code(fn.windows_language_code())
     multilingual.set_lang(lang_code if lang_code else "English")
 

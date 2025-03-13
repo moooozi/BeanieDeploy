@@ -30,7 +30,7 @@ class PageAutoinstAddition3(Page):
         )
         page_frame = page_layout.content_frame
 
-        userinfo_frame = tkt.add_frame_container(page_frame)
+        userinfo_frame = tkt.add_frame_container(page_frame, fill="x", expand=1)
         fullname_pre = tkt.add_text_label(
             userinfo_frame,
             text=self.LN.entry_fullname,

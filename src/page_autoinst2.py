@@ -49,7 +49,7 @@ class PageAutoinst2(Page):
 
         self.encrypt_pass_note = ttk.Label(
             page_frame,
-            wraplength=GV.UI.width,
+            wraplength=GV.MAX_WIDTH,
             justify=self.DI_VAR.l,
             text="",
             font=tkt.FONTS_smaller,

@@ -1,5 +1,5 @@
 from importlib import import_module
-from direction import Direction
+from models.direction import Direction
 
 
 class Language:

@@ -14,7 +14,7 @@ from templates.generic_page_layout import GenericPageLayout
 class Page1(Page):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.distro_var = tk.StringVar(parent, GV.UI.desktop)
+        self.distro_var = tk.StringVar(parent)
 
     def init_page(self):
         page_layout = GenericPageLayout(
@@ -83,11 +83,8 @@ class Page1(Page):
             columnspan=2,
             sticky=self.DI_VAR.nw,
         )
-        # GUI Bugfix
-        if not GV.UI.combo_list_spin:
-            self.distro_combolist.set(self.LN.choose_distro)
-        else:
-            self.distro_combolist.set(GV.UI.combo_list_spin)
+
+        self.distro_combolist.set(self.LN.choose_distro)
 
         self.info_frame_raster = InfoFrame(page_frame, self.LN.info_about_selection)
         frame_distro.grid_rowconfigure(
@@ -141,8 +138,6 @@ class Page1(Page):
     def next_btn_action(self, *args):
         if self.validate_input() is None:
             return -1
-        # Saving UI state
-        GV.UI.combo_list_spin = self.distro_combolist.get()
         # LOG #############################################
         log = "\nFedora Spin has been selected, spin details:"
         for key, value in vars(GV.SELECTED_SPIN).items():

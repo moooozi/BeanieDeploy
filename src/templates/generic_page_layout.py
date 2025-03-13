@@ -83,10 +83,10 @@ class GenericPageLayout(ctk.CTkFrame):
         )
         return btn_back
 
-    def add_page_title(self, text, pady=(0, 5)):
+    def add_page_title(self, text, pady=(40, 5)):
         title = ctk.CTkLabel(
             self,
-            wraplength=GV.UI.width,
+            wraplength=GV.MAX_WIDTH,
             justify=multilingual.get_di_var().l,
             text=text,
             font=FONTS_medium,

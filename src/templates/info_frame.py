@@ -31,6 +31,3 @@ class InfoFrame(ctk.CTkFrame):
         for label in self.labels.values():
             label.pack_forget()
         self.labels.clear()
-
-    def pack(self, **kwargs):
-        super().pack(**kwargs)

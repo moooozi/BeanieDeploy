@@ -1,4 +1,4 @@
-from language import Language
+from models.language import Language
 
 current_lang = "English"
 

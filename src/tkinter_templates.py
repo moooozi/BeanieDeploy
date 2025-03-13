@@ -191,7 +191,7 @@ def add_text_label(
     if (not var and text) or (var and not text):
         label = ctk.CTkLabel(
             parent,
-            wraplength=GV.UI.width,
+            wraplength=GV.MAX_WIDTH,
             justify=multilingual.get_di_var().l,
             text=text,
             textvariable=var,
@@ -230,7 +230,7 @@ def add_progress_bar(
 
 def flush_frame(frame):
     """removes all elements inside the middle frame, which contains all page-specific content"""
-    GV.UI.width = frame.winfo_width()
+    GV.MAX_WIDTH = frame.winfo_width()
     for widget in frame.winfo_children():
         widget.destroy()
 
