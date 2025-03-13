@@ -1,7 +1,7 @@
 from templates.generic_page_layout import GenericPageLayout
 import tkinter_templates as tkt
 import functions as fn
-from page_manager import Page
+from models.page_manager import Page
 import customtkinter as ctk  # Added import for customtkinter
 import time
 

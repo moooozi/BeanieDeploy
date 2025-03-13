@@ -6,7 +6,7 @@ from templates.multi_radio_buttons import MultiRadioButtons
 import tkinter_templates as tkt
 import globals as GV
 import functions as fn
-from page_manager import Page
+from models.page_manager import Page
 import tkinter as tk
 from sys import argv
 

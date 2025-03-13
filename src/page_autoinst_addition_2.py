@@ -1,4 +1,4 @@
-from page_manager import Page
+from models.page_manager import Page
 import tkinter.ttk as ttk
 import autoinst
 import libs.langtable as langtable

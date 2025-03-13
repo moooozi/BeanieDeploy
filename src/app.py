@@ -1,4 +1,4 @@
-from page_manager import PageManager
+from models.page_manager import PageManager
 from page_autoinst2 import PageAutoinst2
 from page_check import PageCheck
 from page_error import PageError
@@ -11,7 +11,6 @@ from page_autoinst_addition_3 import PageAutoinstAddition3
 from page_playground import PagePlayground
 from page_verify import PageVerify
 from templates.application import Application
-import tkinter_templates as tkt
 
 
 class MainApp(Application):

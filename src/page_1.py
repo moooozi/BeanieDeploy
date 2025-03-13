@@ -7,7 +7,7 @@ import tkinter_templates as tkt
 import globals as GV
 import functions as fn
 import logging
-from page_manager import Page
+from models.page_manager import Page
 import tkinter as tk
 from templates.generic_page_layout import GenericPageLayout
 

@@ -16,7 +16,7 @@ import procedure as prc
 import logging
 import types
 import tkinter as tk
-from page_manager import Page
+from models.page_manager import Page
 
 
 @dataclass

@@ -27,9 +27,7 @@ class MultiRadioButtons(ctk.CTkFrame):
         self._create_widgets()
 
         if self.var.get() in self.items:
-            print("var is in items and its value is", self.var.get())
             if self.items[self.var.get()].get("advanced", False):
-                print("var is advanced")
                 self.after(2000, self.show_advanced_options())
 
     def _create_widgets(self):
