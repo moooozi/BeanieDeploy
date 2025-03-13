@@ -1,15 +1,15 @@
 from models.page_manager import PageManager
-from page_autoinst2 import PageAutoinst2
-from page_check import PageCheck
-from page_error import PageError
-from page_install_method import PageInstallMethod
-from page_installing import PageInstalling
-from page_1 import Page1
-from page_autoinst_addition_1 import PageAutoinstAddition1
-from page_autoinst_addition_2 import PageAutoinstAddition2
-from page_autoinst_addition_3 import PageAutoinstAddition3
-from page_playground import PagePlayground
-from page_verify import PageVerify
+from pages.page_autoinst2 import PageAutoinst2
+from pages.page_check import PageCheck
+from pages.page_error import PageError
+from pages.page_install_method import PageInstallMethod
+from pages.page_installing import PageInstalling
+from pages.page_1 import Page1
+from pages.page_autoinst_addition_1 import PageAutoinstAddition1
+from pages.page_autoinst_addition_2 import PageAutoinstAddition2
+from pages.page_autoinst_addition_3 import PageAutoinstAddition3
+from pages.page_playground import PagePlayground
+from pages.page_verify import PageVerify
 from templates.application import Application
 
 
