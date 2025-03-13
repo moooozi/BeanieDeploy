@@ -1,3 +1,4 @@
+from templates.generic_page_layout import GenericPageLayout
 import tkinter_templates as tkt
 import functions as fn
 from page_manager import Page
@@ -10,12 +11,13 @@ class PagePlayground(Page):
         super().__init__(parent, *args, **kwargs)
 
     def init_page(self):
-        self.page_frame = tkt.generic_page_layout(
+        page_layout = GenericPageLayout(
             self,
             "Hello, this is a playground page!",
             secondary_btn_txt=self.LN.btn_quit,
             secondary_btn_command=lambda: fn.app_quit(),
         )
+        self.page_frame = page_layout.content_frame
 
         tkt.add_text_label(self.page_frame, "This is a label", pady=10)
 

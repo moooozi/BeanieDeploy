@@ -1,8 +1,9 @@
+from templates.generic_page_layout import GenericPageLayout
+from templates.info_frame import InfoFrame
 import tkinter_templates as tkt
 import globals as GV
 import functions as fn
 from page_manager import Page
-import customtkinter as ctk  # Added import for customtkinter
 
 
 class PageError(Page):
@@ -11,16 +12,16 @@ class PageError(Page):
         self.errors = []
 
     def init_page(self):
-        self.page_frame = tkt.generic_page_layout(
+        page_layout = GenericPageLayout(
             self,
             self.LN.error_title % GV.APP_SW_NAME,
             secondary_btn_txt=self.LN.btn_quit,
             secondary_btn_command=lambda: fn.app_quit(),
         )
-
+        self.page_frame = page_layout.content_frame
         tkt.add_text_label(self.page_frame, self.LN.error_list, pady=10)
 
-        self.info_frame_raster = tkt.InfoFrameRaster(self.page_frame)
+        self.info_frame_raster = InfoFrame(self.page_frame)
         self.info_frame_raster.pack(fill="x", pady=5, padx=10)
 
     def set_errors(self, errors):

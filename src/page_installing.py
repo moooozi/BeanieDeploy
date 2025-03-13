@@ -7,6 +7,7 @@ import time
 from typing import List, Optional
 import installation
 from models.spin import Spin
+from templates.generic_page_layout import GenericPageLayout
 import tkinter_templates as tkt
 import gui_functions as gui
 import functions as fn
@@ -73,7 +74,9 @@ class PageInstalling(Page):
         if not self.installer_args:
             self.prepare()
 
-        page_frame = tkt.generic_page_layout(self, self.LN.install_running)
+        page_layout = GenericPageLayout(self, self.LN.install_running)
+
+        page_frame = page_layout.content_frame
         self.progressbar_install = tkt.add_progress_bar(page_frame)
         tkt.add_text_label(page_frame, var=self.install_job_var, pady=0, padx=10)
         # INSTALL STARTING

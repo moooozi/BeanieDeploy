@@ -1,4 +1,5 @@
-import tkinter.ttk as ttk
+from templates.generic_page_layout import GenericPageLayout
+from templates.info_frame import InfoFrame
 import tkinter_templates as tkt
 import globals as GV
 from page_manager import Page
@@ -13,7 +14,7 @@ class PageVerify(Page):
         )
 
     def init_page(self):
-        page_frame = tkt.generic_page_layout(
+        page_layout = GenericPageLayout(
             self,
             self.LN.verify_question,
             self.LN.btn_install,
@@ -21,7 +22,7 @@ class PageVerify(Page):
             self.LN.btn_back,
             lambda: self.validate_back_page(),
         )
-
+        page_frame = page_layout.content_frame
         # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
         review_sel = []
         if GV.KICKSTART.partition_method == "custom":
@@ -45,7 +46,7 @@ class PageVerify(Page):
                 )
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-        self.info_frame_raster = tkt.InfoFrameRaster(
+        self.info_frame_raster = InfoFrame(
             page_frame,
         )
 
@@ -79,5 +80,5 @@ class PageVerify(Page):
     def on_show(self):
         """Called when the page is shown."""
         if self._initiated:
-            tkt.init_frame(self)
+            tkt.flush_frame(self)
             self.init_page()

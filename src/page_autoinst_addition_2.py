@@ -1,21 +1,26 @@
 from page_manager import Page
-import page_autoinst_addition_3
 import tkinter.ttk as ttk
 import autoinst
 import libs.langtable as langtable
-import page_autoinst_addition_1
-import tkinter_templates as tkt
+from templates.generic_page_layout import GenericPageLayout
 import globals as GV
-import multilingual
+import math
 
 
 class PageAutoinstAddition2(Page):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
+        self.set_scaling()  # Set scaling during initialization
+
+    def set_scaling(self):
+
+        scaling_factor = self._get_widget_scaling()
+        if scaling_factor > 1:
+            scaling_factor = math.ceil(scaling_factor)
+        self.tk.call("tk", "scaling", scaling_factor)
 
     def init_page(self):
-
-        page_frame = tkt.generic_page_layout(
+        page_layout = GenericPageLayout(
             self,
             self.LN.title_autoinst3,
             self.LN.btn_next,
@@ -23,6 +28,7 @@ class PageAutoinstAddition2(Page):
             self.LN.btn_back,
             lambda: self.switch_page("PageAutoinstAddition1"),
         )
+        page_frame = page_layout.content_frame
 
         selected_locale_keymaps = langtable.list_keyboards(
             languageId=GV.KICKSTART.locale

@@ -10,10 +10,11 @@ from page_autoinst_addition_2 import PageAutoinstAddition2
 from page_autoinst_addition_3 import PageAutoinstAddition3
 from page_playground import PagePlayground
 from page_verify import PageVerify
+from templates.application import Application
 import tkinter_templates as tkt
 
 
-class MainApp(tkt.Application):
+class MainApp(Application):
     def __init__(
         self,
         skip_check=False,

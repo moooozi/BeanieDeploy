@@ -1,10 +1,9 @@
 import customtkinter as ctk
 from compatibility_checks import CheckType
-import page_autoinst_addition_2
-import page_verify
+from templates.generic_page_layout import GenericPageLayout
+from templates.multi_radio_buttons import MultiRadioButtons
 import tkinter_templates as tkt
 import globals as GV
-import multilingual
 import functions as fn
 from page_manager import Page
 import tkinter as tk
@@ -18,7 +17,7 @@ class PageInstallMethod(Page):
 
     def init_page(self):
 
-        page_frame = tkt.generic_page_layout(
+        page_layout = GenericPageLayout(
             self,
             self.LN.windows_question % GV.SELECTED_SPIN.name,
             self.LN.btn_next,
@@ -26,6 +25,7 @@ class PageInstallMethod(Page):
             self.LN.btn_back,
             lambda: self.switch_page("Page1"),
         )
+        page_frame = page_layout.content_frame
 
         space_dualboot = (
             GV.APP_DUALBOOT_REQUIRED_SPACE
@@ -89,12 +89,13 @@ class PageInstallMethod(Page):
             },
         }
 
-        radio_buttons = tkt.add_multi_radio_buttons(
+        radio_buttons = MultiRadioButtons(
             page_frame,
             install_methods_dict,
             self.install_method_var,
             lambda: self.show_more_options_if_needed(),
         )
+        radio_buttons.pack(expand=1, fill="x")
 
         # GUI
         if not self.install_method_var.get():

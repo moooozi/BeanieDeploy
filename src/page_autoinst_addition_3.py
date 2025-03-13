@@ -1,7 +1,7 @@
 import tkinter.ttk as ttk
+from templates.generic_page_layout import GenericPageLayout
 import tkinter_templates as tkt
 import globals as GV
-import multilingual
 import functions as fn
 from page_manager import Page
 import tkinter as tk
@@ -20,7 +20,7 @@ class PageAutoinstAddition3(Page):
             self.switch_page("PageVerify")
             return
 
-        page_frame = tkt.generic_page_layout(
+        page_layout = GenericPageLayout(
             self,
             self.LN.title_autoinst4,
             self.LN.btn_next,
@@ -28,6 +28,7 @@ class PageAutoinstAddition3(Page):
             self.LN.btn_back,
             lambda: self.switch_page("PageAutoinstAddition2"),
         )
+        page_frame = page_layout.content_frame
 
         userinfo_frame = tkt.add_frame_container(page_frame)
         fullname_pre = tkt.add_text_label(

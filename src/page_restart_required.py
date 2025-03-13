@@ -1,6 +1,6 @@
+from templates.generic_page_layout import GenericPageLayout
 import tkinter_templates as tkt
 import globals as GV
-import multilingual
 import functions as fn
 from page_manager import Page
 import tkinter as tk
@@ -12,7 +12,7 @@ class PageRestartRequired(Page):
         self.restarting_text_var = tk.StringVar()
 
     def init_page(self):
-        page_frame = tkt.generic_page_layout(
+        page_frame = GenericPageLayout(
             self,
             self.LN.finished_title,
             self.LN.btn_restart_now,

@@ -2,8 +2,6 @@ from page_manager import Page
 import tkinter.ttk as ttk
 import autoinst
 from templates.generic_page_layout import GenericPageLayout
-from templates.list_view import ListView
-import tkinter_templates as tkt
 import globals as GV
 import libs.langtable as langtable
 
@@ -40,28 +38,52 @@ class PageAutoinstAddition1(Page):
         locale_list_frame = ttk.Frame(temp_frame)
         locale_list_frame.grid(row=0, column=1, ipady=5, padx=5, sticky="news")
 
-        lang_list = ListView(lang_list_frame, title=self.LN.lang)
+        lang_list = ttk.Treeview(
+            lang_list_frame, columns="lang", show="headings", height=8
+        )
+        lang_list.heading("lang", text=self.LN.lang)
         lang_list.pack(side="left", fill="both", expand=1)
+        lang_list_scrollbar = ttk.Scrollbar(
+            lang_list_frame, orient="vertical", command=lang_list.yview
+        )
+        lang_list_scrollbar.pack(side="right", fill="y")
+        lang_list.configure(yscrollcommand=lang_list_scrollbar.set)
 
-        self.locale_list = ListView(locale_list_frame, title=self.LN.locale)
+        self.locale_list = ttk.Treeview(
+            locale_list_frame, columns="locale", show="headings", height=8
+        )
+        self.locale_list.heading("locale", text=self.LN.locale)
         self.locale_list.pack(side="left", fill="both", expand=1)
+        locale_list_scrollbar = ttk.Scrollbar(
+            locale_list_frame, orient="vertical", command=self.locale_list.yview
+        )
+        locale_list_scrollbar.pack(side="right", fill="y")
+        self.locale_list.configure(yscrollcommand=locale_list_scrollbar.set)
 
         for lang, lang_details in langs_and_locales.items():
-            lang_list.add_item(
-                lang,
-                f"{lang_details['names']['english']} ({lang_details['names']['native']})",
+            lang_list.insert(
+                parent="",
+                index="end",
+                iid=lang,
+                values=(
+                    f"{lang_details['names']['english']} ({lang_details['names']['native']})",
+                ),
             )
 
         def on_lang_click(*args):
-            self.locale_list.clear()
-            selected_lang = lang_list.get_selected()
-            if selected_lang:
-                for locale, locale_details in langs_and_locales[selected_lang][
-                    "locales"
-                ].items():
-                    self.locale_list.add_item(locale, locale_details["names"]["native"])
+            for item in self.locale_list.get_children():
+                self.locale_list.delete(item)
+            for locale, locale_details in langs_and_locales[lang_list.focus()][
+                "locales"
+            ].items():
+                self.locale_list.insert(
+                    parent="",
+                    index="end",
+                    iid=locale,
+                    values=(locale_details["names"]["native"],),
+                )
 
-        lang_list.bind("<<ListboxSelect>>", on_lang_click)
+        lang_list.bind("<<TreeviewSelect>>", on_lang_click)
 
         if not GV.KICKSTART.locale:
             if GV.IP_LOCALE:
@@ -72,13 +94,21 @@ class PageAutoinstAddition1(Page):
                 GV.KICKSTART.locale = "en_GB.UTF-8"
 
         language = autoinst.langtable.parse_locale(GV.KICKSTART.locale).language
-        lang_list.on_click(language)
+        lang_list.focus(language)
+        lang_list.selection_set(language)
+        lang_list.yview_scroll(
+            self.locale_list.index(self.locale_list.selection()) - 1, "units"
+        )
         self.update()
         on_lang_click()
-        self.locale_list.on_click(GV.KICKSTART.locale)
+        self.locale_list.focus(GV.KICKSTART.locale)
+        self.locale_list.selection_set(GV.KICKSTART.locale)
+        self.locale_list.yview_scroll(
+            self.locale_list.index(self.locale_list.selection()) - 1, "units"
+        )
 
     def next_btn_action(self, *args):
-        locale = self.locale_list.get_selected()
+        locale = self.locale_list.focus()
         if autoinst.langtable.parse_locale(locale).language:
             GV.KICKSTART.locale = locale
             self.switch_page("PageAutoinstAddition2")

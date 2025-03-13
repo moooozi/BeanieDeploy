@@ -1,7 +1,7 @@
 import pathlib
 import pickle
 import tempfile
-import threading
+from templates.generic_page_layout import GenericPageLayout
 import tkinter_templates as tkt
 import globals as GV
 import functions as fn
@@ -36,7 +36,9 @@ class PageCheck(Page):
         self.skip_check = skip_check
 
     def init_page(self):
-        page_frame = tkt.generic_page_layout(self, self.LN.check_running)
+        page_layout = GenericPageLayout(self, self.LN.check_running)
+
+        page_frame = page_layout.content_frame
         self.progressbar_check = tkt.add_progress_bar(page_frame)
         self.progressbar_check.set(0)
         tkt.add_text_label(page_frame, var=self.job_var, pady=0, padx=10)

@@ -1,4 +1,5 @@
 import tkinter.ttk as ttk
+from templates.generic_page_layout import GenericPageLayout
 import tkinter_templates as tkt
 import globals as GV
 from page_manager import Page
@@ -17,7 +18,7 @@ class PageAutoinst2(Page):
         )
 
     def init_page(self):
-        page_frame = tkt.generic_page_layout(
+        page_layout = GenericPageLayout(
             self,
             self.LN.windows_question % GV.SELECTED_SPIN.name,
             self.LN.btn_next,
@@ -25,7 +26,7 @@ class PageAutoinst2(Page):
             self.LN.btn_back,
             lambda: self.switch_page("PageInstallMethod"),
         )
-
+        page_frame = page_layout.content_frame
         frame_checkboxes = tkt.add_frame_container(page_frame, fill="x", expand=1)
 
         check_wifi = tkt.add_check_btn(

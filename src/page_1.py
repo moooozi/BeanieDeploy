@@ -1,11 +1,14 @@
 from tkinter import ttk
 import customtkinter as ctk
+from templates.info_frame import InfoFrame
+from templates.multi_radio_buttons import MultiRadioButtons
 import tkinter_templates as tkt
 import globals as GV
 import functions as fn
 import logging
 from page_manager import Page
 import tkinter as tk
+from templates.generic_page_layout import GenericPageLayout
 
 
 class Page1(Page):
@@ -14,12 +17,13 @@ class Page1(Page):
         self.distro_var = tk.StringVar(parent, GV.UI.desktop)
 
     def init_page(self):
-        page_frame = tkt.generic_page_layout(
+        page_layout = GenericPageLayout(
             self,
             self.LN.desktop_question,
             self.LN.btn_next,
             lambda: self.next_btn_action(),
         )
+        page_frame = page_layout.content_frame
 
         self.full_spin_list = []
         self.non_featured_spin_list = []
@@ -59,7 +63,7 @@ class Page1(Page):
                 self.non_featured_spin_list.append(spin_fullname)
 
         featured_spin_desc["else"] = {"name": self.LN.something_else}
-        frame_distro = tkt.add_multi_radio_buttons(
+        frame_distro = MultiRadioButtons(
             page_frame,
             featured_spin_desc,
             self.distro_var,
@@ -85,13 +89,11 @@ class Page1(Page):
         else:
             self.distro_combolist.set(GV.UI.combo_list_spin)
 
-        self.info_frame_raster = tkt.InfoFrameRaster(
-            page_frame, self.LN.info_about_selection
-        )
+        self.info_frame_raster = InfoFrame(page_frame, self.LN.info_about_selection)
         frame_distro.grid_rowconfigure(
             len(featured_spin_desc) + 1, weight=1
         )  # GUI bugfix for distro_description
-
+        frame_distro.pack(expand=1, fill="x")
         self.validate_input()
 
     def validate_input(self, *args):
