@@ -32,6 +32,15 @@ class DataUnit:
     def to_gigabytes(self, round_decimals=2):
         return round(self.bytes_value / self.GIGABYTE, round_decimals)
 
+    def to_human_readable(self):
+        if self.bytes_value < self.KILOBYTE:
+            return f"{self.bytes_value} B"
+        elif self.bytes_value < self.MEGABYTE:
+            return f"{self.to_kilobytes()} KB"
+        elif self.bytes_value < self.GIGABYTE:
+            return f"{self.to_megabytes()} MB"
+        return f"{self.to_gigabytes()} GB"
+
     def to_bytes(self):
         return self.bytes_value
 

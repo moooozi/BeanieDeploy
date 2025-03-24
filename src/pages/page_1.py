@@ -71,11 +71,12 @@ class Page1(Page):
             lambda: self.validate_input(),
         )
         self.distro_combolist = ctk.CTkComboBox(
-            frame_distro, values=self.non_featured_spin_list, state="readonly"
+            frame_distro,
+            values=self.non_featured_spin_list,
+            state="readonly",
+            command=self.validate_input,
         )
-        self.distro_combolist.bind(
-            "<<ComboboxSelected>>", lambda *args: self.validate_input()
-        )
+
         self.distro_combolist.grid(
             ipady=5,
             padx=(30, 0),
@@ -115,12 +116,12 @@ class Page1(Page):
             if GV.SELECTED_SPIN.is_base_netinstall:
                 dl_size_txt = (
                     self.LN.init_download
-                    % DataUnit.from_bytes(total_size).to_gigabytes()
+                    % DataUnit.from_bytes(total_size).to_human_readable()
                 )
             else:
                 dl_size_txt = (
                     self.LN.total_download
-                    % DataUnit.from_bytes(total_size).to_gigabytes()
+                    % DataUnit.from_bytes(total_size).to_human_readable()
                 )
             dl_spin_name_text = f"{self.LN.selected_dist}: {GV.SELECTED_SPIN.name} {GV.SELECTED_SPIN.version}"
             dl_spin_desktop = (
