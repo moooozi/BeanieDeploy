@@ -1,10 +1,12 @@
 from models.page_manager import Page
-import tkinter.ttk as ttk
 import autoinst
 import libs.langtable as langtable
 from templates.generic_page_layout import GenericPageLayout
+from templates.list_view import ListView
 import globals as GV
 import math
+import tkinter_templates as tkt
+import tkinter.ttk as ttk
 
 
 class PageAutoinstAddition2(Page):
@@ -13,7 +15,6 @@ class PageAutoinstAddition2(Page):
         self.set_scaling()  # Set scaling during initialization
 
     def set_scaling(self):
-
         scaling_factor = self._get_widget_scaling()
         if scaling_factor > 1:
             scaling_factor = math.ceil(scaling_factor)
@@ -29,6 +30,8 @@ class PageAutoinstAddition2(Page):
             lambda: self.switch_page("PageAutoinstAddition1"),
         )
         page_frame = page_layout.content_frame
+
+        self.selected_locale = GV.KICKSTART.locale
 
         selected_locale_keymaps = langtable.list_keyboards(
             languageId=GV.KICKSTART.locale
@@ -50,46 +53,19 @@ class PageAutoinstAddition2(Page):
         timezone_list_frame = ttk.Frame(temp_frame)
         timezone_list_frame.grid(row=0, column=1, ipady=5, padx=5, sticky="news")
 
-        self.keyboard_list = ttk.Treeview(
-            keyboard_list_frame, columns="keyboard", show="headings", height=8
-        )
-        self.keyboard_list.heading("keyboard", text=self.LN.list_keymaps)
+        self.keyboard_list = ListView(keyboard_list_frame, title=self.LN.list_keymaps)
         self.keyboard_list.pack(side="left", fill="both", expand=1)
-        keyboard_list_scrollbar = ttk.Scrollbar(
-            keyboard_list_frame, orient="vertical", command=self.keyboard_list.yview
-        )
-        keyboard_list_scrollbar.pack(side="right", fill="y")
-        self.keyboard_list.configure(yscrollcommand=keyboard_list_scrollbar.set)
 
-        self.timezone_list = ttk.Treeview(
-            timezone_list_frame, columns="timezone", show="headings", height=8
-        )
-        self.timezone_list.heading("timezone", text=self.LN.list_timezones)
+        self.timezone_list = ListView(timezone_list_frame, title=self.LN.list_timezones)
         self.timezone_list.pack(side="left", fill="both", expand=1)
-        timezone_list_scrollbar = ttk.Scrollbar(
-            timezone_list_frame, orient="vertical", command=self.timezone_list.yview
-        )
-        timezone_list_scrollbar.pack(side="right", fill="y")
-        self.timezone_list.configure(yscrollcommand=timezone_list_scrollbar.set)
 
         for keymap in self.all_keymaps:
-            self.keyboard_list.insert(
-                parent="",
-                index="end",
-                iid=keymap,
-                values=(autoinst.get_keymap_description(keymap),),
-            )
+            self.keyboard_list.add_item(keymap, autoinst.get_keymap_description(keymap))
 
         for timezone in self.all_timezones:
-            self.timezone_list.insert(
-                parent="",
-                index="end",
-                iid=timezone,
-                values=(
-                    langtable.timezone_name(
-                        timezone, languageIdQuery=GV.KICKSTART.locale
-                    ),
-                ),
+            self.timezone_list.add_item(
+                timezone,
+                langtable.timezone_name(timezone, languageIdQuery=GV.KICKSTART.locale),
             )
 
         default_timezone = (
@@ -103,25 +79,21 @@ class PageAutoinstAddition2(Page):
             else GV.KICKSTART.keymap
         )
 
-        self.keyboard_list.focus(default_keymap)
-        self.keyboard_list.selection_set(default_keymap)
-        self.keyboard_list.yview_scroll(
-            self.keyboard_list.index(self.keyboard_list.selection()) - 1, "units"
-        )
-
-        self.timezone_list.focus(default_timezone)
-        self.timezone_list.selection_set(default_timezone)
-        self.timezone_list.yview_scroll(
-            self.timezone_list.index(self.timezone_list.selection()) - 1, "units"
-        )
+        self.keyboard_list.on_click(default_keymap)
+        self.timezone_list.on_click(default_timezone)
 
     def next_btn_action(self, *args):
         if (
-            self.timezone_list.focus() not in self.all_timezones
-            or self.keyboard_list.focus() not in self.all_keymaps
+            self.timezone_list.get_selected() not in self.all_timezones
+            or self.keyboard_list.get_selected() not in self.all_keymaps
         ):
             return
-        GV.KICKSTART.timezone = self.timezone_list.focus()
-        GV.KICKSTART.keymap = self.keyboard_list.focus()
+        GV.KICKSTART.timezone = self.timezone_list.get_selected()
+        GV.KICKSTART.keymap = self.keyboard_list.get_selected()
         GV.KICKSTART.keymap_type = "xlayout"
         return self.switch_page("PageAutoinstAddition3")
+
+    def on_show(self):
+        if self.selected_locale != GV.KICKSTART.locale:
+            tkt.flush_frame(self)
+            self.init_page()

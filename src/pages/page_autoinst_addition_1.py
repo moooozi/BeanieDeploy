@@ -40,7 +40,11 @@ class PageAutoinstAddition1(Page):
         locale_list_frame = ttk.Frame(temp_frame)
         locale_list_frame.grid(row=0, column=1, ipady=5, padx=5, sticky="news")
 
-        lang_list = ListView(lang_list_frame, title=self.LN.lang)
+        lang_list = ListView(
+            lang_list_frame,
+            title=self.LN.lang,
+        )
+        lang_list.selection_callback = lambda *arg: on_lang_click()
         lang_list.pack(side="left", fill="both", expand=1)
 
         self.locale_list = ListView(locale_list_frame, title=self.LN.locale)

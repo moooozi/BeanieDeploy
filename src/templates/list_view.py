@@ -71,7 +71,8 @@ class ListView(ctk.CTkFrame):
     def on_click(self, key):
         if self.selected_label:
             self.selected_label.configure(
-                text_color=self.original_colors_text[self.get_selected()]
+                text_color=self.original_colors_text[self.get_selected()],
+                fg_color=self.original_colors_fg[self.get_selected()],
             )
         self.selected_label = self.labels[key]
         self.selected_label.configure(text_color=("blue", "lightblue"))
