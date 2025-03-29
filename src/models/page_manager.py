@@ -11,7 +11,14 @@ class PageManager(ctk.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
 
     def add_page(self, page_name, page_class, *args, **kwargs):
-        page = page_class(self, *args, switch_page=self.show_page, **kwargs)
+        page = page_class(
+            self,
+            *args,
+            switch_page=self.show_page,
+            fg_color="transparent",
+            bg_color="transparent",
+            **kwargs,
+        )
         self.pages[page_name] = page
         page.grid_columnconfigure(0, weight=1)
         page.grid_rowconfigure(0, weight=1)

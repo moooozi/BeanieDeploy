@@ -23,7 +23,9 @@ class MainApp(Application):
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.page_manager = PageManager(self)
+        self.page_manager = PageManager(
+            self, fg_color="transparent", bg_color="transparent"
+        )
         self.page_manager.grid(row=0, column=0, sticky="nsew")
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)

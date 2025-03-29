@@ -6,6 +6,7 @@ import ctypes
 from gui_functions import detect_darkmode_in_windows
 import globals as GV
 import multilingual
+from templates import generic_page_layout
 
 WIDTH = 850
 HEIGHT = 580
@@ -228,7 +229,7 @@ def add_progress_bar(
     return progressbar
 
 
-def flush_frame(frame):
+def flush_frame(frame: ctk.CTkFrame):
     """removes all elements inside the middle frame, which contains all page-specific content"""
     GV.MAX_WIDTH = frame.winfo_width()
     for widget in frame.winfo_children():
