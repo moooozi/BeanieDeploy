@@ -1,11 +1,30 @@
 class DataUnit:
     BYTE = 1
-    KILOBYTE = 1024
-    MEGABYTE = 1024 * 1024
-    GIGABYTE = 1024 * 1024 * 1024
+    KILOBYTE = 1000
+    MEGABYTE = 1000 * KILOBYTE
+    GIGABYTE = 1000 * MEGABYTE
+    KIBIBYTE = 1024
+    MEBIBYTE = 1024 * KIBIBYTE
+    GIBIBYTE = 1024 * MEBIBYTE
 
     def __init__(self, bytes_value):
+        if bytes_value < 0:
+            raise ValueError("Data size cannot be negative")
         self.bytes_value = bytes_value
+
+    @classmethod
+    def from_string(cls, data_str):
+        units = {
+            "B": cls.BYTE,
+            "KB": cls.KILOBYTE,
+            "MB": cls.MEGABYTE,
+            "GB": cls.GIGABYTE,
+            "KiB": cls.KIBIBYTE,
+            "MiB": cls.MEBIBYTE,
+            "GiB": cls.GIBIBYTE,
+        }
+        value, unit = data_str.split()
+        return cls(float(value) * units[unit])
 
     @classmethod
     def from_bytes(cls, bytes):
@@ -23,6 +42,18 @@ class DataUnit:
     def from_gigabytes(cls, gigabytes):
         return cls(gigabytes * cls.GIGABYTE)
 
+    @classmethod
+    def from_kibibytes(cls, kibibytes):
+        return cls(kibibytes * cls.KIBIBYTE)
+
+    @classmethod
+    def from_mebibytes(cls, mebibytes):
+        return cls(mebibytes * cls.MEBIBYTE)
+
+    @classmethod
+    def from_gibibytes(cls, gibibytes):
+        return cls(gibibytes * cls.GIBIBYTE)
+
     def to_kilobytes(self, round_decimals=2):
         return round(self.bytes_value / self.KILOBYTE, round_decimals)
 
@@ -31,6 +62,15 @@ class DataUnit:
 
     def to_gigabytes(self, round_decimals=2):
         return round(self.bytes_value / self.GIGABYTE, round_decimals)
+
+    def to_kibibytes(self, round_decimals=2):
+        return round(self.bytes_value / self.KIBIBYTE, round_decimals)
+
+    def to_mebibytes(self, round_decimals=2):
+        return round(self.bytes_value / self.MEBIBYTE, round_decimals)
+
+    def to_gibibytes(self, round_decimals=2):
+        return round(self.bytes_value / self.GIBIBYTE, round_decimals)
 
     def to_human_readable(self):
         if self.bytes_value < self.KILOBYTE:

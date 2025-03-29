@@ -6,7 +6,10 @@ import tempfile
 import time
 from typing import List, Optional
 import installation
+from models.data_units import DataUnit
+from models.speed_unit import SpeedUnit
 from models.spin import Spin
+from models.time_left import TimeLeft
 from templates.generic_page_layout import GenericPageLayout
 import tkinter_templates as tkt
 import gui_functions as gui
@@ -286,18 +289,13 @@ class PageInstalling(Page):
                     / 100
                 )
 
-                formatted_speed = fn.format_speed(float(queue_result["speed"]))
-                formatted_eta = fn.format_eta(float(queue_result["eta"])).format(
-                    ln_hour=self.LN.eta_hour,
-                    ln_minute=self.LN.eta_minute,
-                    ln_second=self.LN.eta_second,
-                    ln_left=self.LN.eta_left,
-                )
-                formatted_size = fn.format_size(float(queue_result["size"]))
+                formatted_speed = SpeedUnit(float(queue_result["speed"]))
+                formatted_eta = TimeLeft(float(queue_result["eta"]))
+                formatted_size = DataUnit(queue_result["size"]).to_human_readable()
 
                 self.install_job_var.set(
                     self.LN.job_dl_install_media
-                    + f"\n{self.LN.downloads_number % (self.file_index, self.num_of_files)}"
+                    + f"\n{self.LN.downloads_number.format(current=self.file_index, total=self.num_of_files)}"
                     f"\n{self.LN.dl_file_size}: {formatted_size}"
                     f"\n{self.LN.dl_speed}: {formatted_speed}"
                     f"\n{self.LN.dl_timeleft}: {formatted_eta}"
