@@ -4,33 +4,43 @@ from models.data_units import DataUnit
 from templates.info_frame import InfoFrame
 from templates.multi_radio_buttons import MultiRadioButtons
 import tkinter_templates as tkt
-import globals as GV
-import functions as fn
-import logging
-from models.page_manager import Page
+from models.page import Page, PageValidationResult
 import tkinter as tk
 from templates.generic_page_layout import GenericPageLayout
 
 
 class Page1(Page):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.distro_var = tk.StringVar(parent)
+    def __init__(self, parent, page_name: str, *args, **kwargs):
+        super().__init__(parent, page_name, *args, **kwargs)
+        self.distro_var = tk.StringVar(self)
 
     def init_page(self):
-        page_layout = GenericPageLayout(
-            self,
-            self.LN.desktop_question,
-            self.LN.btn_next,
-            lambda: self.next_btn_action(),
-        )
-        page_frame = page_layout.content_frame
+        print("🔧 Page1.init_page() called")
+        try:
+            page_layout = GenericPageLayout(
+                self,
+                self.LN.desktop_question,
+                self.LN.btn_next,
+                lambda: self.navigate_next(),  # Use new navigation method
+            )
+            print("🔧 Page1 GenericPageLayout created")
+            page_frame = page_layout.content_frame
 
-        self.full_spin_list = []
-        self.non_featured_spin_list = []
-        featured_spin_desc = {}
-        current_listed_spin_index = 0
-        for dist in GV.ACCEPTED_SPINS:
+            self.full_spin_list = []
+            self.non_featured_spin_list = []
+            featured_spin_desc = {}
+            current_listed_spin_index = 0
+            print("🔧 Page1 variables initialized")
+        except Exception as e:
+            print(f"🔧 Error in Page1.init_page(): {e}")
+            import traceback
+            traceback.print_exc()
+            raise
+        
+        # Use state management instead of globals
+        accepted_spins = self.state.compatibility.accepted_spins
+        
+        for dist in accepted_spins:
             spin_fullname = f"{dist.name} {dist.version}"
             self.full_spin_list.append(spin_fullname)
             if dist.is_default or dist.is_featured:
@@ -68,13 +78,13 @@ class Page1(Page):
             page_frame,
             featured_spin_desc,
             self.distro_var,
-            lambda: self.validate_input(),
+            lambda: self.update_selection_info(),
         )
         self.distro_combolist = ctk.CTkComboBox(
             frame_distro,
             values=self.non_featured_spin_list,
             state="readonly",
-            command=self.validate_input,
+            command=self.update_selection_info,
         )
 
         self.distro_combolist.grid(
@@ -93,9 +103,56 @@ class Page1(Page):
             len(featured_spin_desc) + 1, weight=1
         )  # GUI bugfix for distro_description
         frame_distro.pack(expand=1, fill="x")
-        self.validate_input()
+        self.update_selection_info()
 
-    def validate_input(self, *args):
+    def update_selection_info(self, *args):
+        """Update the information display based on current selection."""
+        spin_index = self._get_selected_spin_index()
+        if spin_index is not None:
+            accepted_spins = self.state.compatibility.accepted_spins
+            selected_spin = accepted_spins[spin_index]
+            
+            # Calculate sizes
+            total_size = selected_spin.size
+            live_os_size = (
+                self.state.compatibility.live_os_installer_spin.size 
+                if selected_spin.is_live_img 
+                else 0
+            )
+            total_size += live_os_size
+
+            if selected_spin.is_base_netinstall:
+                dl_size_txt = (
+                    self.LN.init_download
+                    % DataUnit.from_bytes(total_size).to_human_readable()
+                )
+            else:
+                dl_size_txt = (
+                    self.LN.total_download
+                    % DataUnit.from_bytes(total_size).to_human_readable()
+                )
+            
+            dl_spin_name_text = f"{self.LN.selected_dist}: {selected_spin.name} {selected_spin.version}"
+            dl_spin_desktop = (
+                f"{self.LN.desktop_environment}: {selected_spin.desktop}"
+                if selected_spin.desktop
+                else ""
+            )
+
+            if selected_spin.desktop in self.LN.desktop_hints.keys():
+                dl_spin_desktop_desc = self.LN.desktop_hints[selected_spin.desktop]
+            else:
+                dl_spin_desktop_desc = ""
+
+            self.info_frame_raster.flush_labels()
+            self.info_frame_raster.add_label("name", dl_spin_name_text)
+            self.info_frame_raster.add_label("size", dl_size_txt)
+            self.info_frame_raster.add_label("desktop", dl_spin_desktop)
+            self.info_frame_raster.add_label("desktop_desc", dl_spin_desktop_desc)
+            self.info_frame_raster.pack(side="bottom", fill="x")
+
+    def _get_selected_spin_index(self):
+        """Get the index of the currently selected spin."""
         spin_index = None
         if (distro := self.distro_var.get()) in self.full_spin_list:
             spin_index = self.full_spin_list.index(distro)
@@ -106,50 +163,58 @@ class Page1(Page):
             if self.distro_combolist.get() in self.non_featured_spin_list:
                 spin_index = self.full_spin_list.index(self.distro_combolist.get())
 
-        if spin_index is not None:
-            GV.SELECTED_SPIN = GV.ACCEPTED_SPINS[spin_index]
-            total_size = GV.SELECTED_SPIN.size
-            total_size += (
-                GV.LIVE_OS_INSTALLER_SPIN.size if GV.SELECTED_SPIN.is_live_img else 0
-            )
-            GV.PARTITION.tmp_part_size = total_size + GV.APP_TEMP_PART_FAILSAFE_SPACE
-            if GV.SELECTED_SPIN.is_base_netinstall:
-                dl_size_txt = (
-                    self.LN.init_download
-                    % DataUnit.from_bytes(total_size).to_human_readable()
-                )
-            else:
-                dl_size_txt = (
-                    self.LN.total_download
-                    % DataUnit.from_bytes(total_size).to_human_readable()
-                )
-            dl_spin_name_text = f"{self.LN.selected_dist}: {GV.SELECTED_SPIN.name} {GV.SELECTED_SPIN.version}"
-            dl_spin_desktop = (
-                f"{self.LN.desktop_environment}: {GV.SELECTED_SPIN.desktop}"
-                if GV.SELECTED_SPIN.desktop
-                else ""
-            )
-
-            if GV.SELECTED_SPIN.desktop in self.LN.desktop_hints.keys():
-                dl_spin_desktop_desc = self.LN.desktop_hints[GV.SELECTED_SPIN.desktop]
-            else:
-                dl_spin_desktop_desc = ""
-
-            self.info_frame_raster.flush_labels()
-            self.info_frame_raster.add_label("name", dl_spin_name_text)
-            self.info_frame_raster.add_label("size", dl_size_txt)
-            self.info_frame_raster.add_label("desktop", dl_spin_desktop)
-            self.info_frame_raster.add_label("desktop_desc", dl_spin_desktop_desc)
-            self.info_frame_raster.pack(side="bottom", fill="x")
         return spin_index
 
-    def next_btn_action(self, *args):
-        if self.validate_input() is None:
-            return -1
-        # LOG #############################################
-        log = "\nFedora Spin has been selected, spin details:"
-        for key, value in vars(GV.SELECTED_SPIN).items():
-            log += "\n --> %s: %s" % (str(key), str(value))
-        logging.info(log)
-        # #################################################
-        return self.switch_page("PageInstallMethod")
+    def validate_input(self) -> PageValidationResult:
+        """Validate that a spin has been selected."""
+        if self._get_selected_spin_index() is None:
+            return PageValidationResult(
+                False, 
+                self.LN.popup_msg_no_spin_selected
+            )
+        return PageValidationResult(True)
+
+    def on_next(self):
+        """Handle next action - save the selected spin to state."""
+        spin_index = self._get_selected_spin_index()
+        if spin_index is not None:
+            accepted_spins = self.state.compatibility.accepted_spins
+            selected_spin = accepted_spins[spin_index]
+            
+            # Update state with selected spin
+            self.state.set_selected_spin(selected_spin)
+            
+            # Calculate and update partition size
+            total_size = selected_spin.size
+            live_os_size = (
+                self.state.compatibility.live_os_installer_spin.size 
+                if selected_spin.is_live_img 
+                else 0
+            )
+            total_size += live_os_size
+            
+            # Create partition if it doesn't exist and update size
+            if self.state.installation.partition is None:
+                from models.partition import Partition
+                self.state.installation.partition = Partition()
+            
+            partition_size = total_size + self.config.app.temp_part_failsafe_space.bytes_value
+            self.state.installation.partition.tmp_part_size = partition_size
+            
+            # Log the selection
+            log = f"\\nFedora Spin has been selected, spin details:"
+            for key, value in vars(selected_spin).items():
+                log += f"\\n --> {key}: {value}"
+            self.logger.info(log)
+
+    def show_validation_error(self, message: str):
+        """Show validation error using popup."""
+        # This would integrate with your existing popup system
+        # For now, just call the parent implementation
+        super().show_validation_error(message)
+        # TODO: Implement actual popup display
+        # self.show_popup(
+        #     title=self.LN.popup_title_warning,
+        #     message=message,
+        #     type_="warning",
+        # )

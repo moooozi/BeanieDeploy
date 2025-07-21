@@ -1,4 +1,5 @@
 from tkinter_templates import *
+from config.settings import get_config
 
 
 class GenericPageLayout(ctk.CTkFrame):
@@ -90,9 +91,10 @@ class GenericPageLayout(ctk.CTkFrame):
         return btn_back
 
     def add_page_title(self, text, pady=(40, 5)):
+        config = get_config()
         title = ctk.CTkLabel(
             self,
-            wraplength=GV.MAX_WIDTH,
+            wraplength=config.ui.max_width,
             justify=multilingual.get_di_var().l,
             text=text,
             font=FONTS_medium,

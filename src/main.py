@@ -1,13 +1,30 @@
 import argparse
-import logging
 import os
 import pickle
 import time
-import multilingual
-import globals as GV
-import functions as fn
 import traceback
 import sys
+from pathlib import Path
+
+# Handle PyInstaller bundle
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    # Running in a PyInstaller bundle
+    bundle_dir = Path(sys._MEIPASS)
+    # Add the bundle directory to Python path so translations can be found
+    sys.path.insert(0, str(bundle_dir))
+else:
+    # Running in normal Python environment
+    bundle_dir = Path(__file__).parent
+
+# Import our new systems
+from config.settings import get_config
+from utils.logging import setup_logging, get_logger
+from utils.errors import get_error_handler, BeanieDeployError
+from core.state import get_state_manager
+
+# Legacy imports (to be refactored)
+import multilingual
+import functions as fn
 from app import MainApp
 
 
@@ -35,61 +52,113 @@ def parse_arguments():
 
 def run():
     """
-    Run the application.
+    Run the application with proper error handling and logging.
     """
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    os.chdir(script_dir)
-    skip_check = False
-    args = parse_arguments()
-    if args.skip_check:
-        skip_check = True
-
-    done_checks = None
-    install_args = None
-
-    if args.checks_dumb:
-        done_checks = pickle.load(args.checks_dumb)
-    if args.install_args:
-        install_args = pickle.load(args.install_args)
-    if args.app_version:
-        GV.APP_SW_VERSION = args.app_version
-    if args.release:
-        fn.cleanup_on_reboot(script_dir)
-    else:
-        sys.argv.append("--skip_check")
-        skip_check = True
-        print("The App is in debug mode")
-    logging.info("APP STARTING: %s v%s" % (GV.APP_SW_NAME, GV.APP_SW_VERSION))
-    fn.mkdir(GV.PATH.WORK_DIR)
-    lang_code = multilingual.get_lang_by_code(fn.windows_language_code())
-    multilingual.set_lang(lang_code if lang_code else "English")
-
-    if install_args:
-        app = MainApp(install_args=install_args)
-    elif skip_check:
-        app = MainApp(skip_check=skip_check)
-    elif done_checks:
-        app = MainApp(done_checks=done_checks)
-    else:
-        app = MainApp()
-
-    app.mainloop()
+    try:
+        # Set up the working directory
+        script_dir = Path(__file__).parent
+        os.chdir(script_dir)
+        
+        # Initialize configuration and logging
+        config = get_config()
+        logger = setup_logging(
+            level="DEBUG",  # Will be configurable later
+            log_file=config.paths.work_dir / "beaniedeploy.log",
+            console_output=True
+        )
+        
+        # Parse arguments
+        args = parse_arguments()
+        skip_check = args.skip_check
+        
+        # Update version if provided
+        if args.app_version:
+            config.update_version(args.app_version)
+        
+        # Initialize state manager
+        state_manager = get_state_manager()
+        
+        # Load serialized data if provided
+        done_checks = None
+        install_args = None
+        
+        if args.checks_dumb:
+            done_checks = pickle.load(args.checks_dumb)
+            state_manager.state.update_compatibility_checks(done_checks)
+            
+        if args.install_args:
+            install_args = pickle.load(args.install_args)
+        
+        # Handle release mode cleanup
+        if args.release:
+            fn.cleanup_on_reboot(script_dir)
+        else:
+            # Development mode - always skip checks
+            #sys.argv.append("--skip_check")
+            #skip_check = True
+            logger.info("Running in debug mode")
+        
+        # Log application startup
+        logger.info(f"APP STARTING: {config.app.name} v{config.app.version}")
+        
+        # Create work directory
+        config.paths.work_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Set up language
+        lang_code = multilingual.get_lang_by_code(fn.windows_language_code())
+        multilingual.set_lang(lang_code if lang_code else "English")
+        
+        # Create and run the main application
+        if install_args:
+            app = MainApp(install_args=install_args)
+        elif skip_check:
+            app = MainApp(skip_check=skip_check)
+        elif done_checks:
+            app = MainApp(done_checks=done_checks)
+        else:
+            app = MainApp()
+        
+        app.mainloop()
+        
+    except BeanieDeployError as e:
+        logger.error(f"Application error: {e}")
+        get_error_handler().handle_error(e, "main")
+        raise
+    except Exception as e:
+        logger.exception(f"Unexpected error: {e}")
+        get_error_handler().handle_error(e, "main")
+        raise
 
 
 if __name__ == "__main__":
-    # run()
-    if parse_arguments().release:
+    # Initialize error handling
+    error_handler = get_error_handler()
+    logger = get_logger()
+    
+    args = parse_arguments()
+    
+    if args.release:
         try:
             run()
         except Exception as e:
-            pass
+            logger.error(f"Application failed in release mode: {e}")
+            # In release mode, fail silently to avoid showing errors to end users
+            sys.exit(1)
     else:
+        # Development mode - show errors and keep console open
         if fn.is_admin():
             try:
                 run()
-            except:
+            except Exception as e:
+                logger.exception("Application failed in debug mode")
+                print(f"\nError: {e}")
                 print(traceback.format_exc())
             finally:
-                time.sleep(5)
+                input("Press Enter to exit...")
         else:
-            run()
+            try:
+                run()
+            except Exception as e:
+                logger.exception("Application failed without admin privileges")
+                print(f"\nError: {e}")
+                input("Press Enter to exit...")

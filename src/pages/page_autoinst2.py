@@ -1,30 +1,48 @@
 from templates.generic_page_layout import GenericPageLayout
 import tkinter_templates as tkt
-import globals as GV
-from models.page_manager import Page
+from models.page import Page, PageValidationResult
 import tkinter as tk
 import customtkinter as ctk
 
 
 class PageAutoinst2(Page):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
+    def __init__(self, parent, page_name: str, *args, **kwargs):
+        super().__init__(parent, page_name, *args, **kwargs)
+        
+        # Initialize kickstart if it doesn't exist
+        if not self.state.installation.kickstart:
+            from models.kickstart import Kickstart
+            self.state.installation.kickstart = Kickstart()
+            
+        # Initialize install options if it doesn't exist  
+        if not self.state.installation.install_options:
+            from models.install_options import InstallOptions
+            self.state.installation.install_options = InstallOptions()
+        
+        kickstart = self.state.installation.kickstart
+        install_options = self.state.installation.install_options
+        
         self.enable_encryption_toggle_var = tk.BooleanVar(
-            parent, GV.KICKSTART.is_encrypted
+            parent, kickstart.is_encrypted if kickstart else False
         )
-
         self.export_wifi_toggle_var = tk.BooleanVar(
-            parent, GV.INSTALL_OPTIONS.export_wifi
+            parent, install_options.export_wifi if install_options else False
         )
 
     def init_page(self):
+        # Get selected spin from state
+        selected_spin = self.state.installation.selected_spin
+        if not selected_spin:
+            self.logger.error("No spin selected when initializing auto-install page")
+            return
+            
         page_layout = GenericPageLayout(
             self,
-            self.LN.windows_question % GV.SELECTED_SPIN.name,
+            self.LN.windows_question % selected_spin.name,
             self.LN.btn_next,
-            lambda: self.next_btn_action(),
+            lambda: self.navigate_next(),
             self.LN.btn_back,
-            lambda: self.switch_page("PageInstallMethod"),
+            lambda: self.navigate_previous(),
         )
         page_frame = page_layout.content_frame
         frame_checkboxes = ctk.CTkFrame(
@@ -40,7 +58,7 @@ class PageAutoinst2(Page):
 
         check_wifi = tkt.add_check_btn(
             frame_checkboxes,
-            self.LN.add_import_wifi % GV.SELECTED_SPIN.name,
+            self.LN.add_import_wifi % selected_spin.name,
             self.export_wifi_toggle_var,
             pady=(5, 0),
             pack=False,
@@ -56,9 +74,12 @@ class PageAutoinst2(Page):
         )
         check_encrypt.grid(ipady=5, row=2, column=0, sticky=self.DI_VAR.w)
 
+        # Get max width from config instead of global
+        max_width = self.config.ui.max_width if hasattr(self.config.ui, 'max_width') else 400
+        
         self.encrypt_pass_note = ctk.CTkLabel(
             frame_checkboxes,
-            wraplength=GV.MAX_WIDTH,
+            wraplength=max_width,
             justify=self.DI_VAR.l,
             text=self.LN.encrypt_reminder_txt,
             font=tkt.FONTS_smaller,
@@ -72,12 +93,26 @@ class PageAutoinst2(Page):
         self.show_encrypt_options(self.enable_encryption_toggle_var)
 
     def show_encrypt_options(self, var):
+        """Show/hide encryption reminder based on checkbox state."""
         if var.get():
             self.encrypt_pass_note.grid()
         else:
             self.encrypt_pass_note.grid_remove()
 
-    def next_btn_action(self, *args):
-        GV.KICKSTART.is_encrypted = self.enable_encryption_toggle_var.get()
-        GV.INSTALL_OPTIONS.export_wifi = self.export_wifi_toggle_var.get()
-        self.switch_page("PageAutoinstAddition1")
+    def validate_input(self) -> PageValidationResult:
+        """Validate the auto-install settings."""
+        # Auto-install settings are always valid since they're just checkboxes
+        return PageValidationResult(True)
+
+    def on_next(self):
+        """Save the auto-install settings to state."""
+        kickstart = self.state.installation.kickstart
+        install_options = self.state.installation.install_options
+        
+        if kickstart:
+            kickstart.is_encrypted = self.enable_encryption_toggle_var.get()
+            
+        if install_options:
+            install_options.export_wifi = self.export_wifi_toggle_var.get()
+            
+        self.logger.info(f"Auto-install settings: encryption={kickstart.is_encrypted if kickstart else False}, wifi_export={install_options.export_wifi if install_options else False}")

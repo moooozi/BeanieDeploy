@@ -4,56 +4,61 @@ from models.data_units import DataUnit
 from templates.generic_page_layout import GenericPageLayout
 from templates.multi_radio_buttons import MultiRadioButtons
 import tkinter_templates as tkt
-import globals as GV
-import functions as fn
-from models.page_manager import Page
+from models.page import Page, PageValidationResult
 import tkinter as tk
 from sys import argv
 
 
 class PageInstallMethod(Page):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
+    def __init__(self, parent, page_name: str, *args, **kwargs):
+        super().__init__(parent, page_name, *args, **kwargs)
         self.install_method_var = tk.StringVar(parent)
         self.dualboot_size_var = tk.StringVar(parent)
 
     def init_page(self):
+        # Get selected spin from state
+        selected_spin = self.state.installation.selected_spin
+        if not selected_spin:
+            self.logger.error("No spin selected when initializing install method page")
+            return
 
         page_layout = GenericPageLayout(
             self,
-            self.LN.windows_question % GV.SELECTED_SPIN.name,
+            self.LN.windows_question % selected_spin.name,
             self.LN.btn_next,
-            lambda: self.next_btn_action(),
+            lambda: self.navigate_next(),
             self.LN.btn_back,
-            lambda: self.switch_page("Page1"),
+            lambda: self.navigate_previous(),
         )
         page_frame = page_layout.content_frame
 
-        self.selected_spin_name = GV.SELECTED_SPIN.name
+        self.selected_spin_name = selected_spin.name
 
+        # Calculate space requirements using config
         space_dualboot = (
-            GV.APP_DUALBOOT_REQUIRED_SPACE
-            + GV.APP_LINUX_BOOT_PARTITION_SIZE
-            + GV.APP_ADDITIONAL_FAILSAFE_SPACE
-            + GV.PARTITION.tmp_part_size * 2
+            self.config.app.dualboot_required_space.bytes_value
+            + self.config.app.linux_boot_partition_size.bytes_value
+            + self.config.app.additional_failsafe_space.bytes_value
+            + self.state.installation.partition.tmp_part_size * 2
         )
         space_clean = (
-            GV.APP_LINUX_BOOT_PARTITION_SIZE
-            + GV.APP_ADDITIONAL_FAILSAFE_SPACE
-            + GV.PARTITION.tmp_part_size * 2
+            self.config.app.linux_boot_partition_size.bytes_value
+            + self.config.app.additional_failsafe_space.bytes_value
+            + self.state.installation.partition.tmp_part_size * 2
         )
 
         if "--skip_check" not in argv:
+            done_checks = self.state.compatibility.done_checks
             dualboot_space_available = (
-                GV.DONE_CHECKS.checks[CheckType.RESIZABLE].result > space_dualboot
+                done_checks.checks[CheckType.RESIZABLE].result > space_dualboot
             )
             replace_win_space_available = (
-                GV.DONE_CHECKS.checks[CheckType.RESIZABLE].result > space_clean
+                done_checks.checks[CheckType.RESIZABLE].result > space_clean
             )
             max_size = DataUnit.from_bytes(
-                GV.DONE_CHECKS.checks[CheckType.RESIZABLE].result
-                - GV.SELECTED_SPIN.size
-                - GV.APP_ADDITIONAL_FAILSAFE_SPACE
+                done_checks.checks[CheckType.RESIZABLE].result
+                - selected_spin.size
+                - self.config.app.additional_failsafe_space.bytes_value
             ).to_gigabytes()
             max_size = round(max_size, 2)
         else:
@@ -61,7 +66,7 @@ class PageInstallMethod(Page):
             replace_win_space_available = True
             max_size = 9999
 
-        is_auto_installable = GV.SELECTED_SPIN.is_auto_installable
+        is_auto_installable = selected_spin.is_auto_installable
 
         default = "custom" if not is_auto_installable else "replace_win"
         self.install_method_var.set(default)
@@ -102,7 +107,7 @@ class PageInstallMethod(Page):
         )
         radio_buttons.pack(expand=1, fill="x")
 
-        min_size = DataUnit.from_bytes(GV.APP_DUALBOOT_REQUIRED_SPACE).to_gigabytes()
+        min_size = DataUnit.from_bytes(self.config.app.dualboot_required_space.bytes_value).to_gigabytes()
         self.entry1_frame = ctk.CTkFrame(page_frame, height=300)
         self.entry1_frame.pack_propagate(False)
         self.entry1_frame.pack(
@@ -112,14 +117,14 @@ class PageInstallMethod(Page):
 
         self.warn_backup_sys_drive_files = tkt.add_text_label(
             self.entry1_frame,
-            text=self.LN.warn_backup_files_txt % f"{fn.get_sys_drive_letter()}:\\",
+            text=self.LN.warn_backup_files_txt % f"{self._get_sys_drive_letter()}:\\",
             font=tkt.FONTS_smaller,
             foreground=tkt.color_red,
             pack=False,
         )
         self.size_dualboot_txt_pre = tkt.add_text_label(
             self.entry1_frame,
-            text=self.LN.dualboot_size_txt % GV.SELECTED_SPIN.name,
+            text=self.LN.dualboot_size_txt % selected_spin.name,
             font=tkt.FONTS_smaller,
             pack=False,
         )
@@ -152,10 +157,12 @@ class PageInstallMethod(Page):
         self.show_more_options_if_needed()  # GUI bugfix
 
     def show_more_options_if_needed(self):
+        """Show/hide additional options based on selected install method."""
         self.warn_backup_sys_drive_files.grid_forget()
         self.size_dualboot_txt_pre.grid_forget()
         self.size_dualboot_entry.grid_forget()
         self.size_dualboot_txt_post.grid_forget()
+        
         if self.install_method_var.get() == "dualboot":
             self.size_dualboot_txt_pre.grid(
                 pady=5, padx=(10, 0), column=0, row=0, sticky=self.DI_VAR.w
@@ -169,27 +176,67 @@ class PageInstallMethod(Page):
                 pady=5, padx=(10, 0), column=0, row=0, sticky=self.DI_VAR.w
             )
 
-    def next_btn_action(self, *args):
-        if self.install_method_var.get() not in GV.AVAILABLE_INSTALL_METHODS:
-            return -1
-        GV.KICKSTART.partition_method = self.install_method_var.get()
-        if GV.KICKSTART.partition_method == "dualboot":
-            self.size_dualboot_entry.validate()
+    def validate_input(self) -> PageValidationResult:
+        """Validate the selected install method and options."""
+        method = self.install_method_var.get()
+        
+        # Check if method is available
+        available_methods = self._get_available_install_methods()
+        if method not in available_methods:
+            return PageValidationResult(False, "Selected install method is not available")
+        
+        # Validate dual boot size if needed
+        if method == "dualboot":
+            if not self.size_dualboot_entry.validate():
+                return PageValidationResult(False, "Invalid dual boot size")
+            
             syntax_invalid = "invalid" in self.size_dualboot_entry.state()
             if syntax_invalid:
-                return -1
-            GV.PARTITION.shrink_space = DataUnit.from_gigabytes(
-                self.dualboot_size_var.get()
-            )
-        elif GV.KICKSTART.partition_method == "custom":
-            GV.PARTITION.shrink_space = 0
-            GV.PARTITION.boot_part_size = 0
-            GV.PARTITION.efi_part_size = 0
-            self.switch_page("PageVerify")
-        else:
-            self.switch_page("PageAutoinst2")
+                return PageValidationResult(False, "Dual boot size is invalid")
+        
+        return PageValidationResult(True)
+
+    def on_next(self):
+        """Save the install method selection to state."""
+        method = self.install_method_var.get()
+        
+        # Update state with install method
+        self.state.installation.install_options.partition_method = method
+        
+        if method == "dualboot":
+            # Save dual boot size
+            size = DataUnit.from_gigabytes(float(self.dualboot_size_var.get()))
+            self.state.installation.partition.shrink_space = size.bytes
+        elif method == "custom":
+            # Reset partition settings for custom install
+            if self.state.installation.partition:
+                self.state.installation.partition.shrink_space = 0
+                self.state.installation.partition.boot_part_size = 0
+                self.state.installation.partition.efi_part_size = 0
+        
+        self.logger.info(f"Install method selected: {method}")
 
     def on_show(self):
-        if self.selected_spin_name != GV.SELECTED_SPIN.name:
-            tkt.flush_frame(self)
-            self.init_page()
+        """Called when page is shown - reinitialize if spin changed."""
+        if hasattr(self, 'selected_spin_name'):
+            current_spin = self.state.installation.selected_spin
+            if current_spin and self.selected_spin_name != current_spin.name:
+                self.logger.info("Spin changed, reinitializing page")
+                # Clear the frame and reinitialize
+                for widget in self.winfo_children():
+                    widget.destroy()
+                self._initiated = False
+                self.init_page()
+                self._initiated = True
+
+    def _get_available_install_methods(self):
+        """Get list of available install methods based on current state."""
+        # This would typically come from your compatibility checks or state
+        # For now, return a basic list
+        return ["dualboot", "replace_win", "custom"]
+
+    def _get_sys_drive_letter(self):
+        """Get the system drive letter."""
+        # This should be moved to a utility function
+        import os
+        return os.environ.get('SYSTEMDRIVE', 'C:').replace(':', '')

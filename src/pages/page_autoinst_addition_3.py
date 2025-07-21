@@ -1,32 +1,45 @@
-import tkinter.ttk as ttk
+import customtkinter as ctk
 from templates.generic_page_layout import GenericPageLayout
 import tkinter_templates as tkt
-import globals as GV
-import functions as fn
-from models.page_manager import Page
+from models.page import Page, PageValidationResult
 import tkinter as tk
 
 
 class PageAutoinstAddition3(Page):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.fullname = tk.StringVar(parent, GV.KICKSTART.fullname)
-        self.username = tk.StringVar(parent, GV.KICKSTART.username)
+    def __init__(self, parent, page_name: str, *args, **kwargs):
+        super().__init__(parent, page_name, *args, **kwargs)
+        
+        # Initialize kickstart if it doesn't exist
+        if not self.state.installation.kickstart:
+            from models.kickstart import Kickstart
+            self.state.installation.kickstart = Kickstart()
+            
+        kickstart = self.state.installation.kickstart
+        self.fullname = tk.StringVar(parent, kickstart.fullname if kickstart.fullname else "")
+        self.username = tk.StringVar(parent, kickstart.username if kickstart.username else "")
 
     def init_page(self):
+        # Get selected spin from state
+        selected_spin = self.state.installation.selected_spin
+        if not selected_spin:
+            self.logger.error("No spin selected when initializing user account page")
+            return
+            
         # GNOME allows User account creation during initial start tour, so we use that and skip creating a user
-        if GV.SELECTED_SPIN.desktop == "GNOME":
-            GV.KICKSTART.username = ""
-            self.switch_page("PageVerify")
+        if selected_spin.desktop == "GNOME":
+            kickstart = self.state.installation.kickstart
+            if kickstart:
+                kickstart.username = ""
+            self.navigate_to("PageVerify")
             return
 
         page_layout = GenericPageLayout(
             self,
             self.LN.title_autoinst4,
             self.LN.btn_next,
-            lambda: self.next_btn_action(),
+            lambda: self.navigate_next(),
             self.LN.btn_back,
-            lambda: self.switch_page("PageAutoinstAddition2"),
+            lambda: self.navigate_previous(),
         )
         page_frame = page_layout.content_frame
 
@@ -37,8 +50,8 @@ class PageAutoinstAddition3(Page):
             font=tkt.FONTS_smaller,
             pack=False,
         )
-        self.fullname_entry = ttk.Entry(
-            userinfo_frame, width=10, textvariable=self.fullname
+        self.fullname_entry = ctk.CTkEntry(
+            userinfo_frame, width=200, textvariable=self.fullname
         )
         username_pre = tkt.add_text_label(
             userinfo_frame,
@@ -46,8 +59,8 @@ class PageAutoinstAddition3(Page):
             font=tkt.FONTS_smaller,
             pack=False,
         )
-        self.username_entry = ttk.Entry(
-            userinfo_frame, width=10, textvariable=self.username
+        self.username_entry = ctk.CTkEntry(
+            userinfo_frame, width=200, textvariable=self.username
         )
 
         fullname_pre.grid(pady=5, padx=(10, 0), column=0, row=0, sticky=self.DI_VAR.w)
@@ -65,13 +78,22 @@ class PageAutoinstAddition3(Page):
             pady=5, padx=(10, 0), column=0, columnspan=5, row=2, sticky=self.DI_VAR.nw
         )
 
+        # Setup username validation
         validation_func = self.register(
-            lambda var: fn.validate_with_regex(var, valid_username_regex) is True
+            lambda var: self._validate_username_format(var)
         )
-        self.username_entry.config(
+        self.username_entry.configure(
             validate="none", validatecommand=(validation_func, "%P")
         )
-        # Regex
+
+        tkt.var_tracer(
+            self.username, "write", lambda *args: self.username_entry.validate()
+        )
+
+    def _validate_username_format(self, username: str) -> bool:
+        """Validate username format using regex."""
+        import re
+        # Regex for valid usernames
         portable_fs_chars = r"a-zA-Z0-9._-"
         _name_base = (
             r"[a-zA-Z0-9._]["
@@ -80,20 +102,33 @@ class PageAutoinstAddition3(Page):
             + portable_fs_chars
             + r"]|\$)?"
         )
-        valid_username_regex = (
-            r"^" + _name_base + "$"
-        )  # A regex for user and group names.
+        valid_username_regex = r"^" + _name_base + "$"
+        
+        return bool(re.match(valid_username_regex, username))
 
-        tkt.var_tracer(
-            self.username, "write", lambda *args: self.username_entry.validate()
-        )
-
-    def next_btn_action(self, *args):
+    def validate_input(self) -> PageValidationResult:
+        """Validate the user account information."""
+        # Validate username format
+        if not hasattr(self, 'username_entry'):
+            return PageValidationResult(False, "Page not properly initialized")
+            
         self.username_entry.validate()
         syntax_invalid = "invalid" in self.username_entry.state()
         if syntax_invalid:
-            return -1
-        GV.KICKSTART.username = self.username_entry.get()
-        GV.KICKSTART.fullname = self.fullname_entry.get()
+            return PageValidationResult(False, "Username format is invalid")
+            
+        # Username is required
+        username = self.username_entry.get().strip()
+        if not username:
+            return PageValidationResult(False, "Username is required")
+            
+        return PageValidationResult(True)
 
-        self.switch_page("PageVerify")
+    def on_next(self):
+        """Save the user account information to state."""
+        kickstart = self.state.installation.kickstart
+        if kickstart:
+            kickstart.username = self.username_entry.get().strip()
+            kickstart.fullname = self.fullname_entry.get().strip()
+            
+            self.logger.info(f"User account: username={kickstart.username}, fullname={kickstart.fullname}")

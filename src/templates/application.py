@@ -1,14 +1,16 @@
 from tkinter_templates import *
+from config.settings import get_config
 
 
 class Application(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        config = get_config()
         dpi_factor = get_dpi_scaling_factor()
         self.geometry(str("%sx%s+%s+%s" % (WIDTH, HEIGHT, WIDTH_OFFSET, HEIGHT_OFFSET)))
         self.minsize(MINWIDTH, MINHEIGHT)
         self.maxsize(int(MAXWIDTH * dpi_factor), int(MAXHEIGHT * dpi_factor))
-        self.iconbitmap(GV.PATH.APP_ICON)
+        self.iconbitmap(config.paths.app_icon_path)
 
         dark_theme(DARK_MODE, self)
 

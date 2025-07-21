@@ -63,6 +63,13 @@ def build_with_pyinstaller():
         "--distpath", "dist",
         "--workpath", "build",
         "--specpath", ".",
+        # Add data files
+        "--add-data", "src/translations;translations",
+        "--add-data", "src/resources;resources",
+        # Add hidden imports for translation modules
+        "--hidden-import", "translations.en",
+        "--hidden-import", "translations.de", 
+        "--hidden-import", "translations.ar",
         "src/main.py"
     ]
     

@@ -3,139 +3,220 @@ import pickle
 import tempfile
 from templates.generic_page_layout import GenericPageLayout
 import tkinter_templates as tkt
-import globals as GV
 import functions as fn
 import procedure as prc
-from models.page_manager import Page
+from models.page import Page, PageValidationResult
 import tkinter as tk
 from compatibility_checks import Checks, DoneChecks, CheckType
 from async_operations import AsyncOperations as AO, Status
 
 
 class PageCheck(Page):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
+    def on_show(self):
+        """Called when the page is shown."""
+        if self._navigation_completed:
+            print("🔧 PageCheck.on_show() called but navigation already completed, ignoring")
+            return
+        print("🔧 PageCheck.on_show() called")
+        super().on_show()
+
+    def tkraise(self, aboveThis=None):
+        """Override tkraise to prevent PageCheck from coming to front after navigation."""
+        if hasattr(self, '_navigation_completed') and self._navigation_completed:
+            print("🔧 PageCheck.tkraise() called but navigation already completed, ignoring")
+            return
+        print("🔧 PageCheck.tkraise() called")
+        super().tkraise(aboveThis)
+
+    def __init__(self, parent, page_name, *args, **kwargs):
+        super().__init__(parent, page_name, *args, **kwargs)
         self.job_var = tk.StringVar(self)
         self.checks = Checks()
         self._active_check = 0
 
         self.done_checks = DoneChecks()
         self.skip_check = False
+        self._navigation_completed = False
 
     def set_done_checks(self, done_checks):
-        print("Received done checks")
+        self.logger.info("Received done checks")
         self.done_checks = done_checks
         done_list = [
             check_type.value
             for check_type, check in self.done_checks.checks.items()
             if check.returncode is not None
         ]
-        print(f"Done checks: {done_list}")
+        self.logger.info(f"Done checks: {done_list}")
 
     def set_skip_check(self, skip_check):
         self.skip_check = skip_check
 
+    def _delayed_navigate_next(self):
+        """Navigate to next page with a delay to avoid race conditions."""
+        print("🔧 _delayed_navigate_next() called")
+        self.logger.info("_delayed_navigate_next() called")
+        self.navigate_next()
+        print("🔧 navigate_next() completed")
+
     def init_page(self):
+        print("🔧 PageCheck.init_page() called")
+        self.logger.info("PageCheck.init_page() called")
+        
         page_layout = GenericPageLayout(self, self.LN.check_running)
+        print("🔧 GenericPageLayout created")
 
         page_frame = page_layout.content_frame
         self.progressbar_check = tkt.add_progress_bar(page_frame)
         self.progressbar_check.set(0)
         tkt.add_text_label(page_frame, var=self.job_var, pady=0, padx=10)
+        print("🔧 GUI elements created")
+        
         self.update()
+        print(f"🔧 GUI updated, skip_check = {self.skip_check}")
+        
         if self.skip_check:
             import dummy
-
-            GV.ALL_SPINS = dummy.DUMMY_ALL_SPINS
-            GV.IP_LOCALE = dummy.DUMMY_IP_LOCALE
+            
+            print("🔧 Skipping checks - using dummy data")
+            self.logger.info("Skipping checks - using dummy data")
+            self.state.compatibility.all_spins = dummy.DUMMY_ALL_SPINS
+            self.state.compatibility.ip_locale = dummy.DUMMY_IP_LOCALE
+            print("🔧 Set dummy data, calling finalize_and_parse_errors")
+            self.logger.info("Set dummy data, calling finalize_and_parse_errors")
             self.finalize_and_parse_errors()
         else:
+            print("🔧 Starting real checks")
+            self.logger.info("Starting real checks")
             self.spins_promise = AO.run(
                 fn.get_json,
-                args=[GV.APP_AVAILABLE_SPINS_LIST],
+                args=[self.config.urls.available_spins_list],
             )
             self.ip_locale_promise = AO.run(
                 fn.get_json,
-                args=[GV.APP_FEDORA_GEO_IP_URL],
+                args=[self.config.urls.fedora_geo_ip],
             )
             self.run_checks()
 
     def run_checks(self):
+        self.logger.info("run_checks() called")
         check_types = list(CheckType)
+        self.logger.info(f"Total checks to run: {len(check_types)}, Current active check: {self._active_check}")
+        
         if self._active_check < len(check_types):
             check_type = check_types[self._active_check]
+            self.logger.info(f"Running check {self._active_check + 1}/{len(check_types)}: {check_type}")
+            
             check_function = self.checks.check_functions[check_type]
+            self.logger.info(f"Got check function for {check_type}: {check_function}")
+            
             check_operation = AO()
+            self.logger.info(f"Created async operation for {check_type}")
+            
             check_operation.run_async_process(
                 self.check_wrapper, args=(check_type, check_function, check_operation)
             )
+            self.logger.info(f"Started async process for {check_type}")
+            
             self.monitor_async_operation(
                 check_operation,
                 self.run_checks,
             )
+            self.logger.info(f"Monitoring async operation for {check_type}")
         else:
+            self.logger.info("All checks completed, calling on_checks_complete()")
             self.on_checks_complete()
 
     def update_job_var_and_progressbar(self, current_task):
+        self.logger.info(f"Updating progress for task: {current_task}")
         if current_task == CheckType.ARCH:
+            self.job_var.set(self.LN.check_arch if hasattr(self.LN, 'check_arch') else "Checking architecture...")
             self.progressbar_check.set(0.10)
+            self.logger.info("Progress: 10% - Architecture check")
         elif current_task == CheckType.UEFI:
-            self.job_var.set(self.LN.check_uefi)
+            self.job_var.set(self.LN.check_uefi if hasattr(self.LN, 'check_uefi') else "Checking UEFI...")
             self.progressbar_check.set(0.20)
+            self.logger.info("Progress: 20% - UEFI check")
         elif current_task == CheckType.RAM:
-            self.job_var.set(self.LN.check_ram)
+            self.job_var.set(self.LN.check_ram if hasattr(self.LN, 'check_ram') else "Checking RAM...")
             self.progressbar_check.set(0.30)
+            self.logger.info("Progress: 30% - RAM check")
         elif current_task == CheckType.SPACE:
-            self.job_var.set(self.LN.check_space)
+            self.job_var.set(self.LN.check_space if hasattr(self.LN, 'check_space') else "Checking disk space...")
             self.progressbar_check.set(0.50)
+            self.logger.info("Progress: 50% - Disk space check")
         elif current_task == CheckType.RESIZABLE:
-            self.job_var.set(self.LN.check_resizable)
+            self.job_var.set(self.LN.check_resizable if hasattr(self.LN, 'check_resizable') else "Checking resizable partitions...")
             self.progressbar_check.set(0.80)
+            self.logger.info("Progress: 80% - Resizable partition check")
         elif current_task == "downloads":
-            self.job_var.set(self.LN.check_available_downloads)
+            self.job_var.set(self.LN.check_available_downloads if hasattr(self.LN, 'check_available_downloads') else "Checking available downloads...")
             self.progressbar_check.set(0.90)
+            self.logger.info("Progress: 90% - Available downloads check")
+        self.update()  # Force GUI update
 
     def check_wrapper(self, check_type, check_function, operation):
+        self.logger.info(f"Starting check_wrapper for {check_type}")
         if self.done_checks.checks[check_type].returncode is None:
+            self.logger.info(f"Running check for {check_type}")
             self.update_job_var_and_progressbar(check_type)
-            result = check_function()
-            print(
-                f"Check {self._active_check + 1}: {result.result}, Return code: {result.returncode}"
-            )
-            if result.returncode == -200:
-                with tempfile.NamedTemporaryFile(
-                    suffix=".pkl", delete=False
-                ) as temp_file:
-                    pickle.dump(self.done_checks, temp_file)
-                    temp_file_path = pathlib.Path(temp_file.name).absolute()
-                args_string = f'--checks_dumb "{temp_file_path}"'
-                operation.status = Status.FAILED
-                fn.get_admin(args_string)
-
-            else:
-                self.done_checks.checks[check_type] = result
+            
+            try:
+                self.logger.info(f"Calling check function for {check_type}")
+                result = check_function()
+                self.logger.info(f"Check {self._active_check + 1} ({check_type}): {result.result}, Return code: {result.returncode}")
+                
+                print(f"Check {self._active_check + 1}: {result.result}, Return code: {result.returncode}")
+                
+                if result.returncode == -200:
+                    self.logger.warning(f"Check {check_type} requires admin privileges")
+                    with tempfile.NamedTemporaryFile(
+                        suffix=".pkl", delete=False
+                    ) as temp_file:
+                        pickle.dump(self.done_checks, temp_file)
+                        temp_file_path = pathlib.Path(temp_file.name).absolute()
+                    args_string = f'--checks_dumb "{temp_file_path}"'
+                    operation.status = Status.FAILED
+                    fn.get_admin(args_string)
+                else:
+                    self.logger.info(f"Check {check_type} completed successfully")
+                    self.done_checks.checks[check_type] = result
+            except Exception as e:
+                self.logger.error(f"Error during check {check_type}: {e}")
+                raise
+        else:
+            self.logger.info(f"Check {check_type} already completed, skipping")
+        
         self._active_check += 1
+        self.logger.info(f"Moving to next check, active_check now: {self._active_check}")
 
     def on_checks_complete(self):
         if self.ip_locale_promise.status == Status.COMPLETED:
-            GV.IP_LOCALE = self.ip_locale_promise.output
+            self.state.compatibility.ip_locale = self.ip_locale_promise.output
 
         if self.spins_promise.status == Status.COMPLETED:
-            GV.ALL_SPINS = self.spins_promise.output
+            self.state.compatibility.all_spins = self.spins_promise.output
             self.finalize_and_parse_errors()
         else:
             self.update_job_var_and_progressbar("downloads")
             self.after(100, self.on_checks_complete)
 
     def finalize_and_parse_errors(self):
+        print("🔧 finalize_and_parse_errors called")
+        self.logger.info("finalize_and_parse_errors called")
+        
         if self.done_checks:
+            print("🔧 Processing done_checks")
+            self.logger.info("Processing done_checks")
             errors = []
             if not self.skip_check:
+                print("🔧 Running error checks")
+                self.logger.info("Running error checks")
+                # ... error checking code stays the same ...
                 if self.done_checks.checks[CheckType.ARCH].returncode != 0:
                     errors.append(self.LN.error_arch_9)
                 elif (
                     self.done_checks.checks[CheckType.ARCH].result
-                    not in GV.ACCEPTED_ARCHITECTURES
+                    not in self.config.ui.accepted_architectures
                 ):
                     errors.append(self.LN.error_arch_0)
                 if self.done_checks.checks[CheckType.UEFI].returncode != 0:
@@ -146,40 +227,58 @@ class PageCheck(Page):
                     errors.append(self.LN.error_totalram_9)
                 elif (
                     self.done_checks.checks[CheckType.RAM].result
-                    < GV.APP_MINIMAL_REQUIRED_RAM
+                    < self.config.app.minimal_required_ram
                 ):
                     errors.append(self.LN.error_totalram_0)
                 if self.done_checks.checks[CheckType.SPACE].returncode != 0:
                     errors.append(self.LN.error_space_9)
                 elif (
                     self.done_checks.checks[CheckType.SPACE].result
-                    < GV.APP_MINIMAL_REQUIRED_SPACE
+                    < self.config.app.minimal_required_space
                 ):
                     errors.append(self.LN.error_space_0)
                 if self.done_checks.checks[CheckType.RESIZABLE].returncode != 0:
                     errors.append(self.LN.error_resizable_9)
                 elif (
                     self.done_checks.checks[CheckType.RESIZABLE].result
-                    < GV.APP_MINIMAL_REQUIRED_SPACE
+                    < self.config.app.minimal_required_space
                 ):
                     errors.append(self.LN.error_resizable_0)
+            else:
+                print("🔧 Skipping error checks due to skip_check flag")
+                self.logger.info("Skipping error checks due to skip_check flag")
+                
             if not errors:
-                GV.DONE_CHECKS = self.done_checks
-                live_os_installer_index, GV.ACCEPTED_SPINS = prc.parse_spins(
-                    GV.ALL_SPINS
+                print("🔧 No errors found, proceeding with navigation")
+                self.logger.info("No errors found, proceeding with navigation")
+                self.state.compatibility.done_checks = self.done_checks
+                print("🔧 About to call prc.parse_spins")
+                live_os_installer_index, self.state.compatibility.accepted_spins = prc.parse_spins(
+                    self.state.compatibility.all_spins
                 )
+                print("🔧 parse_spins completed")
                 if live_os_installer_index is not None:
-                    GV.LIVE_OS_INSTALLER_SPIN = GV.ACCEPTED_SPINS[
+                    self.state.compatibility.live_os_installer_spin = self.state.compatibility.accepted_spins[
                         live_os_installer_index
                     ]
-                GV.USERNAME_WINDOWS = fn.get_windows_username()
-                self.switch_page("Page1")
+                print("🔧 About to get windows username")
+                self.state.user.windows_username = fn.get_windows_username()
+                print("🔧 About to navigate_next()")
+                self.logger.info("About to navigate_next()")
+                self._navigation_completed = True  # Mark navigation as completed
+                # Use after() to delay navigation and avoid race conditions
+                self.after(10, self._delayed_navigate_next)
+                print("🔧 Scheduled delayed navigation")
             else:
+                print(f"🔧 Found {len(errors)} errors, navigating to error page")
+                self.logger.info(f"Found {len(errors)} errors, navigating to error page")
                 self.master.pages["PageError"].set_errors(errors)
-                self.switch_page("PageError")
+                self.navigate_to("PageError")
         else:
             # All checks passed
-            self.switch_page("Page1")
+            print("🔧 No done_checks, navigating next anyway")
+            self.logger.info("No done_checks, navigating next anyway")
+            self.navigate_next()
 
     def monitor_async_operation(
         self,

@@ -4,7 +4,7 @@ from tkinter import ttk
 import customtkinter as ctk
 import ctypes
 from gui_functions import detect_darkmode_in_windows
-import globals as GV
+from config.settings import get_config
 import multilingual
 from templates import generic_page_layout
 
@@ -190,9 +190,10 @@ def add_text_label(
     :return: the CustomTkinter label "ctk.CTkLabel" object
     """
     if (not var and text) or (var and not text):
+        config = get_config()
         label = ctk.CTkLabel(
             parent,
-            wraplength=GV.MAX_WIDTH,
+            wraplength=config.ui.max_width,
             justify=multilingual.get_di_var().l,
             text=text,
             textvariable=var,
@@ -231,7 +232,6 @@ def add_progress_bar(
 
 def flush_frame(frame: ctk.CTkFrame):
     """removes all elements inside the middle frame, which contains all page-specific content"""
-    GV.MAX_WIDTH = frame.winfo_width()
     for widget in frame.winfo_children():
         widget.destroy()
 

@@ -1,16 +1,22 @@
 from templates.generic_page_layout import GenericPageLayout
 from templates.info_frame import InfoFrame
 import tkinter_templates as tkt
-import globals as GV
-from models.page_manager import Page
+from models.page import Page, PageValidationResult
 import tkinter as tk
 
 
 class PageVerify(Page):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
+    def __init__(self, parent, page_name: str, *args, **kwargs):
+        super().__init__(parent, page_name, *args, **kwargs)
+        
+        # Initialize install options if it doesn't exist
+        if not self.state.installation.install_options:
+            from models.install_options import InstallOptions
+            self.state.installation.install_options = InstallOptions()
+            
+        install_options = self.state.installation.install_options
         self.auto_restart_toggle_var = tk.BooleanVar(
-            parent, GV.INSTALL_OPTIONS.auto_restart
+            parent, install_options.auto_restart if install_options else False
         )
 
     def init_page(self):
@@ -18,37 +24,45 @@ class PageVerify(Page):
             self,
             self.LN.verify_question,
             self.LN.btn_install,
-            lambda: self.next_btn_action(),
+            lambda: self.navigate_next(),
             self.LN.btn_back,
-            lambda: self.validate_back_page(),
+            lambda: self.navigate_previous(),
         )
         page_frame = page_layout.content_frame
-        # Constructing user verification text based on user's selections  ++++++++++++++++++++++++++++++++++++++++++++++
+        
+        # Get data from state
+        selected_spin = self.state.installation.selected_spin
+        kickstart = self.state.installation.kickstart
+        install_options = self.state.installation.install_options
+        
+        if not selected_spin:
+            self.logger.error("No spin selected when showing verify page")
+            return
+            
+        # Constructing user verification text based on user's selections
         review_sel = []
-        if GV.KICKSTART.partition_method == "custom":
+        
+        if kickstart and kickstart.partition_method == "custom":
             review_sel.append(
-                self.LN.verify_text["no_autoinst"] % GV.SELECTED_SPIN.name
+                self.LN.verify_text["no_autoinst"] % selected_spin.name
             )
         else:
-            if GV.KICKSTART.partition_method == "dualboot":
+            if kickstart and kickstart.partition_method == "dualboot":
                 review_sel.append(
-                    self.LN.verify_text["autoinst_dualboot"] % GV.SELECTED_SPIN.name
+                    self.LN.verify_text["autoinst_dualboot"] % selected_spin.name
                 )
                 review_sel.append(self.LN.verify_text["autoinst_keep_data"])
-            elif GV.KICKSTART.partition_method == "replace_win":
+            elif kickstart and kickstart.partition_method == "replace_win":
                 review_sel.append(
-                    self.LN.verify_text["autoinst_replace_win"] % GV.SELECTED_SPIN.name
+                    self.LN.verify_text["autoinst_replace_win"] % selected_spin.name
                 )
                 review_sel.append(self.LN.verify_text["autoinst_rm_all"])
-            if GV.INSTALL_OPTIONS.export_wifi:
+            if install_options and install_options.export_wifi:
                 review_sel.append(
-                    self.LN.verify_text["autoinst_wifi"] % GV.SELECTED_SPIN.name
+                    self.LN.verify_text["autoinst_wifi"] % selected_spin.name
                 )
-        # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-        self.info_frame_raster = InfoFrame(
-            page_frame,
-        )
+        self.info_frame_raster = InfoFrame(page_frame)
 
         for i, text in enumerate(review_sel):
             self.info_frame_raster.add_label(f"review_{i}", text)
@@ -65,20 +79,23 @@ class PageVerify(Page):
         )
         check_restart.pack(ipady=8, side="top", anchor="w")
 
-    def validate_back_page(self, *args):
-        if GV.KICKSTART.partition_method == "custom":
-            self.switch_page("PageInstallMethod")
-        elif GV.KICKSTART.username:
-            self.switch_page("PageAutoinstAddition3")
-        else:
-            self.switch_page("PageAutoinstAddition2")
+    def validate_input(self) -> PageValidationResult:
+        """Validate the installation settings."""
+        # All verification settings are valid by default
+        return PageValidationResult(True)
 
-    def next_btn_action(self, *args):
-        GV.INSTALL_OPTIONS.auto_restart = self.auto_restart_toggle_var.get()
-        self.switch_page("PageInstalling")
+    def on_next(self):
+        """Save final installation settings and prepare for installation."""
+        install_options = self.state.installation.install_options
+        if install_options:
+            install_options.auto_restart = self.auto_restart_toggle_var.get()
+            
+        self.logger.info(f"Installation verified. Auto restart: {install_options.auto_restart if install_options else False}")
 
     def on_show(self):
-        """Called when the page is shown."""
+        """Called when the page is shown - reinitialize to show current selections."""
         if self._initiated:
             tkt.flush_frame(self)
+            self._initiated = False
             self.init_page()
+            self._initiated = True

@@ -1,31 +1,32 @@
-from models.page_manager import Page
+from models.page import Page, PageValidationResult
 import tkinter.ttk as ttk
 import autoinst
 from templates.generic_page_layout import GenericPageLayout
 from templates.list_view import ListView
 import tkinter_templates as tkt
-import globals as GV
 import libs.langtable as langtable
 
 
 class PageAutoinstAddition1(Page):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
+    def __init__(self, parent, page_name: str, *args, **kwargs):
+        super().__init__(parent, page_name, *args, **kwargs)
 
     def init_page(self):
         page_layout = GenericPageLayout(
             self,
             self.LN.title_autoinst2,
             self.LN.btn_next,
-            lambda: self.next_btn_action(),
+            lambda: self.navigate_next(),
             self.LN.btn_back,
-            lambda: self.switch_page("PageAutoinst2"),
+            lambda: self.navigate_previous(),
         )
         page_frame = page_layout.content_frame
 
-        if GV.IP_LOCALE:
+        # Get IP locale from state instead of globals
+        ip_locale = self.state.compatibility.ip_locale
+        if ip_locale:
             langs_and_locales = autoinst.get_locales_and_langs_sorted_with_names(
-                territory=GV.IP_LOCALE["country_code"]
+                territory=ip_locale["country_code"]
             )
         else:
             langs_and_locales = autoinst.get_locales_and_langs_sorted_with_names()
@@ -67,22 +68,50 @@ class PageAutoinstAddition1(Page):
 
         lang_list.bind("<<ListboxSelect>>", on_lang_click)
 
-        if not GV.KICKSTART.locale:
-            if GV.IP_LOCALE:
-                GV.KICKSTART.locale = langtable.list_locales(
-                    territoryId=GV.IP_LOCALE["country_code"]
+        # Initialize kickstart if it doesn't exist
+        if not self.state.installation.kickstart:
+            from models.kickstart import Kickstart
+            self.state.installation.kickstart = Kickstart()
+        
+        kickstart = self.state.installation.kickstart
+        
+        if not kickstart.locale:
+            if ip_locale:
+                kickstart.locale = langtable.list_locales(
+                    territoryId=ip_locale["country_code"]
                 )[0]
             else:
-                GV.KICKSTART.locale = "en_GB.UTF-8"
+                kickstart.locale = "en_GB.UTF-8"
 
-        language = autoinst.langtable.parse_locale(GV.KICKSTART.locale).language
+        language = autoinst.langtable.parse_locale(kickstart.locale).language
         lang_list.on_click(language)
         self.update()
         on_lang_click()
-        self.locale_list.on_click(GV.KICKSTART.locale)
+        self.locale_list.on_click(kickstart.locale)
 
-    def next_btn_action(self, *args):
-        locale = self.locale_list.get_selected()
-        if autoinst.langtable.parse_locale(locale).language:
-            GV.KICKSTART.locale = locale
-            self.switch_page("PageAutoinstAddition2")
+    def validate_input(self) -> PageValidationResult:
+        """Validate that a locale has been selected."""
+        if not hasattr(self, 'locale_list'):
+            return PageValidationResult(False, "Page not properly initialized")
+            
+        selected_locale = self.locale_list.get_selected()
+        if not selected_locale:
+            return PageValidationResult(False, "Please select a locale")
+            
+        # Validate that the selected locale is parseable
+        try:
+            parsed = autoinst.langtable.parse_locale(selected_locale)
+            if not parsed.language:
+                return PageValidationResult(False, "Selected locale is invalid")
+        except Exception as e:
+            return PageValidationResult(False, f"Invalid locale format: {str(e)}")
+            
+        return PageValidationResult(True)
+
+    def on_next(self):
+        """Save the selected locale to state."""
+        selected_locale = self.locale_list.get_selected()
+        kickstart = self.state.installation.kickstart
+        if kickstart:
+            kickstart.locale = selected_locale
+            self.logger.info(f"Selected locale: {selected_locale}")
