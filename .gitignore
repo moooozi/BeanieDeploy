@@ -9,3 +9,5 @@ ReleaseInfo.txt
 **/install_args.pkl
 **/.cache_*
 src/bin
+build/
+dist/
