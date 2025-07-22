@@ -1,8 +1,8 @@
 from templates.generic_page_layout import GenericPageLayout
-import tkinter_templates as tkt
 from models.page import Page, PageValidationResult
 import tkinter as tk
 import customtkinter as ctk
+from tkinter_templates import CheckButton, FONTS_smaller, color_blue
 
 
 class PageAutoinst2(Page):
@@ -56,34 +56,32 @@ class PageAutoinst2(Page):
         page_frame.grid_columnconfigure(0, weight=1)
         page_frame.grid_rowconfigure(0, weight=1)
 
-        check_wifi = tkt.add_check_btn(
+        
+        check_wifi = CheckButton(
             frame_checkboxes,
             self.LN.add_import_wifi % selected_spin.name,
             self.export_wifi_toggle_var,
-            pady=(5, 0),
-            pack=False,
         )
-        check_wifi.grid(ipady=5, row=0, column=0, sticky=self.DI_VAR.w)
+        check_wifi.grid(ipady=5, pady=(5, 0), row=0, column=0, sticky=self.DI_VAR.w)
 
-        check_encrypt = tkt.add_check_btn(
+        check_encrypt = CheckButton(
             frame_checkboxes,
             self.LN.encrypted_root,
             self.enable_encryption_toggle_var,
-            lambda: self.show_encrypt_options(self.enable_encryption_toggle_var),
-            pack=False,
+            command=lambda: self.show_encrypt_options(self.enable_encryption_toggle_var),
         )
         check_encrypt.grid(ipady=5, row=2, column=0, sticky=self.DI_VAR.w)
 
         # Get max width from config instead of global
-        max_width = self.config.ui.max_width if hasattr(self.config.ui, 'max_width') else 400
+        max_width = self.app_config.ui.max_width if hasattr(self.app_config.ui, 'max_width') else 400
         
         self.encrypt_pass_note = ctk.CTkLabel(
             frame_checkboxes,
             wraplength=max_width,
             justify=self.DI_VAR.l,
             text=self.LN.encrypt_reminder_txt,
-            font=tkt.FONTS_smaller,
-            text_color=tkt.color_blue,
+            font=FONTS_smaller,
+            text_color=color_blue,
         )
         self.encrypt_pass_note.grid(
             pady=5, padx=(0, 0), row=2, column=1, sticky=self.DI_VAR.w

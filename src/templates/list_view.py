@@ -40,15 +40,11 @@ class ListView(ctk.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
 
         if title:
-            textlabel = add_text_label(
+            textlabel = TextLabel(
                 self.scrollable_frame,
-                title,
-                anchor=multilingual.get_di_var().w,
-                pady=5,
-                padx=4,
+                text=title,
                 foreground=color_green,
                 font=FONTS_smaller,
-                pack=False,
             )
             textlabel.grid(sticky=multilingual.get_di_var().w, pady=5, padx=10)
 

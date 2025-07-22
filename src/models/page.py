@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Any
+from typing import Optional
 import multilingual
 import customtkinter as ctk
 
-from config.settings import get_config
+from config.settings import get_config, ConfigManager
 from core.state import get_state
 from utils.logging import get_logger
 
@@ -26,16 +26,17 @@ class Page(ctk.CTkFrame, ABC):
         self._initiated = False
         
         # Initialize new systems
-        self.config = get_config()
+        self.app_config: ConfigManager = get_config()
         self.state = get_state()
         self.logger = get_logger(f"pages.{page_name}")
         
-        # Navigation will be set by page manager
-        self._navigation_manager = None
+        self._page_manager = None
 
-    def set_navigation_manager(self, nav_manager):
-        """Set the navigation manager for this page."""
-        self._navigation_manager = nav_manager
+
+
+    def set_page_manager(self, page_manager):
+        """Set the page manager for this page."""
+        self._page_manager = page_manager
 
     @abstractmethod
     def init_page(self):
@@ -99,38 +100,33 @@ class Page(ctk.CTkFrame, ABC):
         """Navigate to the next page."""
         self.logger.info(f"navigate_next() called on {self.page_name}")
         
-        if not self._navigation_manager:
-            self.logger.error("No navigation manager set!")
+        if not self._page_manager:
+            self.logger.error("No page manager set!")
             return
             
         self.logger.info("Calling next_action()")
         if self.next_action():
             self.logger.info("next_action() returned True, calling navigate_forward")
-            result = self._navigation_manager.navigate_forward(
-                self.page_name, 
-                True
-            )
-            self.logger.info(f"navigate_forward result: success={result.success}, target={result.target_page}")
-            if not result.success:
-                self.logger.error(f"Navigation failed: {result.error_message}")
+            success = self._page_manager.navigate_forward(type(self))
+            self.logger.info(f"navigate_forward result: success={success}")
+            if not success:
+                self.logger.error("Navigation failed: No next page available")
             else:
-                self.logger.info(f"Navigation successful to {result.target_page}")
+                self.logger.info("Navigation successful")
         else:
             self.logger.warning("next_action() returned False, not navigating")
 
     def navigate_previous(self):
         """Navigate to the previous page."""
-        if self._navigation_manager and self.previous_action():
-            result = self._navigation_manager.navigate_backward(self.page_name)
-            if not result.success:
-                self.logger.error(f"Navigation failed: {result.error_message}")
+        if self._page_manager and self.previous_action():
+            success = self._page_manager.navigate_backward(type(self))
+            if not success:
+                self.logger.error("Navigation failed: No previous page available")
 
-    def navigate_to(self, target_page: str):
+    def navigate_to(self, target_page_class):
         """Navigate directly to a specific page."""
-        if self._navigation_manager:
-            result = self._navigation_manager.navigate_to(target_page)
-            if not result.success:
-                self.logger.error(f"Navigation failed: {result.error_message}")
+        if self._page_manager:
+            self._page_manager.show_page(target_page_class)
 
     def show_validation_error(self, message: str):
         """
@@ -143,6 +139,6 @@ class Page(ctk.CTkFrame, ABC):
 
     def get_navigation_info(self):
         """Get navigation information for this page."""
-        if self._navigation_manager:
-            return self._navigation_manager.get_navigation_info(self.page_name)
+        if self._page_manager:
+            return self._page_manager.get_navigation_info()
         return None

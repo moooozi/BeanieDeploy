@@ -3,7 +3,7 @@ Application state management.
 Replaces the global variable chaos with proper state management.
 """
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Callable
 from enum import Enum
 
 from models.install_options import InstallOptions
@@ -52,6 +52,7 @@ class UserState:
     
     windows_username: str = ""
     selected_language: str = "English"
+    tmp_partition_letter: str = ""
 
 
 @dataclass
@@ -73,13 +74,13 @@ class ApplicationState:
     error: ErrorState = field(default_factory=ErrorState)
     
     # Additional runtime state
-    _observers: List[callable] = field(default_factory=list, init=False)
+    _observers: List[Callable] = field(default_factory=list, init=False)
     
-    def add_observer(self, observer: callable) -> None:
+    def add_observer(self, observer: Callable) -> None:
         """Add an observer to be notified of state changes."""
         self._observers.append(observer)
     
-    def remove_observer(self, observer: callable) -> None:
+    def remove_observer(self, observer: Callable) -> None:
         """Remove an observer."""
         if observer in self._observers:
             self._observers.remove(observer)
@@ -151,11 +152,11 @@ class StateManager:
         """Reset the state to initial values."""
         self._state = ApplicationState()
     
-    def add_observer(self, observer: callable) -> None:
+    def add_observer(self, observer: Callable) -> None:
         """Add a state observer."""
         self._state.add_observer(observer)
     
-    def remove_observer(self, observer: callable) -> None:
+    def remove_observer(self, observer: Callable) -> None:
         """Remove a state observer."""
         self._state.remove_observer(observer)
 

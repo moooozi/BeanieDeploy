@@ -3,8 +3,7 @@ import tkinter.ttk as ttk
 import autoinst
 from templates.generic_page_layout import GenericPageLayout
 from templates.list_view import ListView
-import tkinter_templates as tkt
-import libs.langtable as langtable
+import langtable
 
 
 class PageAutoinstAddition1(Page):
@@ -112,6 +111,6 @@ class PageAutoinstAddition1(Page):
         """Save the selected locale to state."""
         selected_locale = self.locale_list.get_selected()
         kickstart = self.state.installation.kickstart
-        if kickstart:
+        if kickstart and selected_locale:
             kickstart.locale = selected_locale
             self.logger.info(f"Selected locale: {selected_locale}")

@@ -1,15 +1,15 @@
 import argparse
 import os
 import pickle
-import time
 import traceback
 import sys
 from pathlib import Path
+from typing import Optional
 
 # Handle PyInstaller bundle
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     # Running in a PyInstaller bundle
-    bundle_dir = Path(sys._MEIPASS)
+    bundle_dir = Path(sys._MEIPASS) # type: ignore
     # Add the bundle directory to Python path so translations can be found
     sys.path.insert(0, str(bundle_dir))
 else:
@@ -21,10 +21,11 @@ from config.settings import get_config
 from utils.logging import setup_logging, get_logger
 from utils.errors import get_error_handler, BeanieDeployError
 from core.state import get_state_manager
+from models.installation_context import InstallationContext
 
 # Legacy imports (to be refactored)
 import multilingual
-import functions as fn
+from services.system import cleanup_on_reboot, windows_language_code, is_admin
 from app import MainApp
 
 
@@ -39,8 +40,9 @@ def parse_arguments():
         type=argparse.FileType("rb"),
     )
     parser.add_argument(
-        "--install_args",
+        "--installation_context",
         type=argparse.FileType("rb"),
+        help="Serialized InstallationContext for elevated installation process"
     )
     parser.add_argument(
         "--app_version",
@@ -54,6 +56,7 @@ def run():
     """
     Run the application with proper error handling and logging.
     """
+    logger = None  # Initialize logger variable
     try:
         # Set up the working directory
         script_dir = Path(__file__).parent
@@ -71,6 +74,12 @@ def run():
         args = parse_arguments()
         skip_check = args.skip_check
         
+        # Auto-detect release mode for PyInstaller builds
+        is_pyinstaller_bundle = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+        if is_pyinstaller_bundle:
+            args.release = True
+            logger.info("PyInstaller bundle detected - running in release mode")
+        
         # Update version if provided
         if args.app_version:
             config.update_version(args.app_version)
@@ -80,22 +89,22 @@ def run():
         
         # Load serialized data if provided
         done_checks = None
-        install_args = None
+        installation_context: Optional[InstallationContext] = None
         
         if args.checks_dumb:
             done_checks = pickle.load(args.checks_dumb)
             state_manager.state.update_compatibility_checks(done_checks)
             
-        if args.install_args:
-            install_args = pickle.load(args.install_args)
+        if args.installation_context:
+            installation_context = pickle.load(args.installation_context)
         
         # Handle release mode cleanup
         if args.release:
-            fn.cleanup_on_reboot(script_dir)
+            cleanup_on_reboot(str(script_dir))
         else:
             # Development mode - always skip checks
-            #sys.argv.append("--skip_check")
-            #skip_check = True
+            sys.argv.append("--skip_check")
+            skip_check = True
             logger.info("Running in debug mode")
         
         # Log application startup
@@ -105,12 +114,12 @@ def run():
         config.paths.work_dir.mkdir(parents=True, exist_ok=True)
         
         # Set up language
-        lang_code = multilingual.get_lang_by_code(fn.windows_language_code())
+        lang_code = multilingual.get_lang_by_code(windows_language_code())
         multilingual.set_lang(lang_code if lang_code else "English")
         
         # Create and run the main application
-        if install_args:
-            app = MainApp(install_args=install_args)
+        if installation_context:
+            app = MainApp(installation_context=installation_context)
         elif skip_check:
             app = MainApp(skip_check=skip_check)
         elif done_checks:
@@ -121,11 +130,17 @@ def run():
         app.mainloop()
         
     except BeanieDeployError as e:
-        logger.error(f"Application error: {e}")
+        if logger:
+            logger.error(f"Application error: {e}")
+        else:
+            print(f"Error during startup: {e}")
         get_error_handler().handle_error(e, "main")
         raise
     except Exception as e:
-        logger.exception(f"Unexpected error: {e}")
+        if logger:
+            logger.exception(f"Unexpected error: {e}")
+        else:
+            print(f"Unexpected error during startup: {e}")
         get_error_handler().handle_error(e, "main")
         raise
 
@@ -137,7 +152,11 @@ if __name__ == "__main__":
     
     args = parse_arguments()
     
-    if args.release:
+    # Auto-detect release mode for PyInstaller builds
+    is_pyinstaller_bundle = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+    is_release_mode = args.release or is_pyinstaller_bundle
+    
+    if is_release_mode:
         try:
             run()
         except Exception as e:
@@ -146,7 +165,7 @@ if __name__ == "__main__":
             sys.exit(1)
     else:
         # Development mode - show errors and keep console open
-        if fn.is_admin():
+        if is_admin():
             try:
                 run()
             except Exception as e:

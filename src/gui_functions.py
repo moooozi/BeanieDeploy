@@ -1,6 +1,6 @@
 import queue
 import threading
-import functions as fn
+# import functions as fn  # Not needed anymore
 
 GLOBAL_QUEUE = queue.Queue()
 

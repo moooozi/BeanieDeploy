@@ -149,7 +149,7 @@ cleanup_question_txt = "These files are not useful anymore unless you plan to re
 finished_title = "Restart required"
 finished_text = (
     "A restart is required to continue installation, "
-    "click '%s' to restart now or '%s' to manually restart later"
+    + "click '%s' to restart now or '%s' to manually restart later"
     % (btn_restart_now, btn_restart_later)
 )
 finished_text_restarting_now = "Automatic restart in %s seconds"

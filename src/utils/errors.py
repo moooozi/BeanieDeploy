@@ -2,7 +2,7 @@
 Centralized error handling and custom exceptions for BeanieDeploy.
 Replaces the chaotic exception handling with proper error management.
 """
-from typing import Optional, Any
+from typing import Optional
 from dataclasses import dataclass
 
 

@@ -1,3 +1,5 @@
+import multiprocessing
+import queue
 from tkinter_templates import *
 from config.settings import get_config
 

@@ -1,9 +1,7 @@
-from tkinter import ttk
 import customtkinter as ctk
 from models.data_units import DataUnit
 from templates.info_frame import InfoFrame
 from templates.multi_radio_buttons import MultiRadioButtons
-import tkinter_templates as tkt
 from models.page import Page, PageValidationResult
 import tkinter as tk
 from templates.generic_page_layout import GenericPageLayout
@@ -112,24 +110,22 @@ class Page1(Page):
             accepted_spins = self.state.compatibility.accepted_spins
             selected_spin = accepted_spins[spin_index]
             
-            # Calculate sizes
-            total_size = selected_spin.size
-            live_os_size = (
-                self.state.compatibility.live_os_installer_spin.size 
-                if selected_spin.is_live_img 
-                else 0
-            )
-            total_size += live_os_size
+            # Calculate sizes (sizes are string values like "2.5 GB")
+            total_size_unit = DataUnit.from_string(selected_spin.size)
+            
+            if selected_spin.is_live_img and self.state.compatibility.live_os_installer_spin:
+                live_os_size_unit = DataUnit.from_string(self.state.compatibility.live_os_installer_spin.size)
+                total_size_unit += live_os_size_unit
 
             if selected_spin.is_base_netinstall:
                 dl_size_txt = (
                     self.LN.init_download
-                    % DataUnit.from_bytes(total_size).to_human_readable()
+                    % total_size_unit.to_human_readable()
                 )
             else:
                 dl_size_txt = (
                     self.LN.total_download
-                    % DataUnit.from_bytes(total_size).to_human_readable()
+                    % total_size_unit.to_human_readable()
                 )
             
             dl_spin_name_text = f"{self.LN.selected_dist}: {selected_spin.name} {selected_spin.version}"
@@ -185,21 +181,19 @@ class Page1(Page):
             self.state.set_selected_spin(selected_spin)
             
             # Calculate and update partition size
-            total_size = selected_spin.size
-            live_os_size = (
-                self.state.compatibility.live_os_installer_spin.size 
-                if selected_spin.is_live_img 
-                else 0
-            )
-            total_size += live_os_size
+            total_size_unit = DataUnit.from_string(selected_spin.size)
+            
+            if selected_spin.is_live_img and self.state.compatibility.live_os_installer_spin:
+                live_os_size_unit = DataUnit.from_string(self.state.compatibility.live_os_installer_spin.size)
+                total_size_unit += live_os_size_unit
             
             # Create partition if it doesn't exist and update size
             if self.state.installation.partition is None:
                 from models.partition import Partition
                 self.state.installation.partition = Partition()
             
-            partition_size = total_size + self.config.app.temp_part_failsafe_space.bytes_value
-            self.state.installation.partition.tmp_part_size = partition_size
+            partition_size_bytes = total_size_unit.bytes + self.app_config.app.temp_part_failsafe_space.bytes
+            self.state.installation.partition.tmp_part_size = int(partition_size_bytes)
             
             # Log the selection
             log = f"\\nFedora Spin has been selected, spin details:"

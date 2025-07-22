@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
+import os
+import platform
+import shutil
 import subprocess
-from typing import Any, Dict
-import functions as fn
+from typing import Any, Dict, Optional
+from services.system import is_admin
 
 
 class CheckType(Enum):
@@ -17,8 +20,8 @@ class CheckType(Enum):
 class Check:
     name: str
     result: Any
-    returncode: int
-    process: subprocess.CompletedProcess
+    returncode: Optional[int]
+    process: Optional[subprocess.CompletedProcess]
 
 
 class DoneChecks:
@@ -44,27 +47,26 @@ class Checks:
 
 def check_arch():
     print("Checking architecture...")
-    proc = subprocess.run(
-        [r"powershell.exe", r"$env:PROCESSOR_ARCHITECTURE"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-    )
+    # Use Python's platform module instead of PowerShell
+    result = platform.machine().lower()
+    
     return Check(
         CheckType.ARCH.value,
-        proc.stdout.strip().lower(),
-        proc.returncode,
-        proc,
+        result,
+        0,  # Success return code
+        None,  # No subprocess used
     )
 
 
 def check_uefi():
     print("Checking firmware type...")
+    # Use PowerShell but with hidden window
     proc = subprocess.run(
         [r"powershell.exe", r"$env:firmware_type"],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        creationflags=subprocess.CREATE_NO_WINDOW,
     )
     return Check(
         CheckType.UEFI.value,
@@ -76,6 +78,7 @@ def check_uefi():
 
 def check_ram():
     print("Checking RAM size...")
+    # Use PowerShell with hidden window for RAM check
     proc = subprocess.run(
         [
             r"powershell.exe",
@@ -84,10 +87,11 @@ def check_ram():
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        creationflags=subprocess.CREATE_NO_WINDOW,
     )
     return Check(
         CheckType.RAM.value,
-        int(proc.stdout.strip()),
+        int(proc.stdout.strip()) if proc.returncode == 0 else proc.stdout.strip(),
         proc.returncode,
         proc,
     )
@@ -95,26 +99,46 @@ def check_ram():
 
 def check_space():
     print("Checking available space...")
-    proc = subprocess.run(
-        [
-            r"powershell.exe",
-            r"(Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).SizeRemaining",
-        ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-    )
-    return Check(
-        CheckType.SPACE.value,
-        int(proc.stdout.strip()),
-        proc.returncode,
-        proc,
-    )
+    # Use shutil.disk_usage instead of PowerShell
+    try:
+        # Get the system drive (usually C:)
+        system_drive = os.environ.get('SystemDrive', 'C:')
+        if not system_drive.endswith(':'):
+            system_drive += ':'
+        
+        # Get disk usage
+        _, _, free = shutil.disk_usage(system_drive + '\\')
+        return Check(
+            CheckType.SPACE.value,
+            free,  # Available space in bytes
+            0,  # Success return code
+            None,  # No subprocess used
+        )
+    except Exception as e:
+        # Fallback to PowerShell if shutil fails
+        proc = subprocess.run(
+            [
+                r"powershell.exe",
+                r"(Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).SizeRemaining",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+        return Check(
+            CheckType.SPACE.value,
+            int(proc.stdout.strip()) if proc.returncode == 0 else str(e),
+            proc.returncode,
+            proc,
+        )
 
 
 def check_resizable():
-    if not fn.is_admin():
+    if not is_admin():
         return Check(CheckType.RESIZABLE.value, "Not an admin", -200, None)
+    
+    # Use PowerShell with hidden window for partition operations
     proc = subprocess.run(
         [
             r"powershell.exe",
@@ -123,10 +147,11 @@ def check_resizable():
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        creationflags=subprocess.CREATE_NO_WINDOW,
     )
     return Check(
         CheckType.RESIZABLE.value,
-        int(proc.stdout.strip()),
+        int(proc.stdout.strip()) if proc.returncode == 0 else proc.stdout.strip(),
         proc.returncode,
         proc,
     )

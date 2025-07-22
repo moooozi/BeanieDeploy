@@ -6,15 +6,13 @@ class InfoFrame(ctk.CTkFrame):
         super().__init__(parent)
         self.labels = {}
         if title:
-            add_text_label(
+            title_label = TextLabel(
                 self,
-                title,
-                anchor=multilingual.get_di_var().w,
-                pady=5,
-                padx=4,
+                text=title,
                 foreground=color_green,
                 font=FONTS_smaller,
             )
+            title_label.pack(anchor=multilingual.get_di_var().w, pady=5, padx=4)
 
     def add_label(self, key, text=""):
         label = ctk.CTkLabel(self, text=text, anchor=multilingual.get_di_var().w)

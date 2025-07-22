@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -7,3 +8,4 @@ class InstallOptions:
     auto_restart: bool = False
     torrent: bool = False
     export_wifi: bool = True
+    partition_method: Optional[str] = None

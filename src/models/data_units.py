@@ -83,6 +83,26 @@ class DataUnit:
 
     def to_bytes(self):
         return self.bytes_value
+    
+    @property
+    def bytes(self):
+        """Property for accessing bytes value."""
+        return self.bytes_value
+        
+    @property
+    def kilobytes(self):
+        """Property for accessing kilobytes value."""
+        return self.to_kilobytes()
+        
+    @property
+    def megabytes(self):
+        """Property for accessing megabytes value."""
+        return self.to_megabytes()
+        
+    @property
+    def gigabytes(self):
+        """Property for accessing gigabytes value."""
+        return self.to_gigabytes()
 
     def __int__(self):
         return int(self.bytes_value)
