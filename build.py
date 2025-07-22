@@ -59,6 +59,7 @@ def build_with_pyinstaller():
         pyinstaller_path,
         "--onefile",
         "--windowed",
+       # "--uac-admin",  # Request administrator privileges
         "--name", f"{app_name}-{app_version}",
         "--distpath", "dist",
         "--workpath", "build",
@@ -72,11 +73,18 @@ def build_with_pyinstaller():
         "--hidden-import", "translations.en",
         "--hidden-import", "translations.de", 
         "--hidden-import", "translations.ar",
+        # Add hidden imports for langtable and related modules
+        "--hidden-import", "langtable",
+        "--hidden-import", "babel",
+        "--hidden-import", "babel.localedata",
+        # Collect all data for langtable
+        "--collect-data", "langtable",
+        "--collect-data", "babel",
         "src/main.py"
     ]
     
     # Add icon if it exists
-    icon_path = Path("make-stanalone/winres/icon.ico")
+    icon_path = Path("icon.ico")
     if icon_path.exists():
         cmd.extend(["--icon", str(icon_path)])
     

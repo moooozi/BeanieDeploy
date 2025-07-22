@@ -28,7 +28,17 @@ def get_admin(args: str = "") -> None:
     """
     from sys import executable, argv
     
-    args_combined = " ".join(argv) + " " + args
+    # Check if running in PyInstaller bundle
+    is_pyinstaller_bundle = getattr(__import__('sys'), 'frozen', False) and hasattr(__import__('sys'), '_MEIPASS')
+    
+    if is_pyinstaller_bundle:
+        # In PyInstaller bundle: exclude argv[0] since executable is the bundled .exe
+        existing_args = " ".join(argv[1:]) if len(argv) > 1 else ""
+    else:
+        # In dev mode: include argv[0] since executable is python.exe and we need the script path
+        existing_args = " ".join(argv)
+    
+    args_combined = existing_args + (" " + args if args else "")
     if not is_admin():
         ctypes.windll.shell32.ShellExecuteW(None, "runas", executable, args_combined, None, 1)
     raise SystemExit
