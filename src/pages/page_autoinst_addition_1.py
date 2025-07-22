@@ -30,6 +30,20 @@ class PageAutoinstAddition1(Page):
         else:
             langs_and_locales = autoinst.get_locales_and_langs_sorted_with_names()
 
+        # Debug logging for PyInstaller bundle issues
+        self.logger.debug(f"Available languages: {list(langs_and_locales.keys())}")
+        if not langs_and_locales:
+            self.logger.error("No languages/locales loaded - this may be a PyInstaller bundling issue")
+            # Provide minimal fallback
+            langs_and_locales = {
+                "en": {
+                    "names": {"english": "English", "native": "English"},
+                    "locales": {
+                        "en_US.UTF-8": {"names": {"native": "English (United States)"}}
+                    }
+                }
+            }
+
         temp_frame = ttk.Frame(page_frame)
         temp_frame.pack(expand=1, fill="both")
         temp_frame.grid_rowconfigure(0, weight=1)
@@ -76,17 +90,50 @@ class PageAutoinstAddition1(Page):
         
         if not kickstart.locale:
             if ip_locale:
-                kickstart.locale = langtable.list_locales(
+                available_locales = langtable.list_locales(
                     territoryId=ip_locale["country_code"]
-                )[0]
+                )
+                if available_locales:
+                    kickstart.locale = available_locales[0]
+                else:
+                    # Fallback to default locale if no locales found for the territory
+                    kickstart.locale = "en_GB.UTF-8"
             else:
                 kickstart.locale = "en_GB.UTF-8"
 
         language = autoinst.langtable.parse_locale(kickstart.locale).language
-        lang_list.on_click(language)
-        self.update()
-        on_lang_click()
-        self.locale_list.on_click(kickstart.locale)
+        
+        # Ensure the language exists in langs_and_locales before clicking
+        if language in langs_and_locales:
+            lang_list.on_click(language)
+            self.update()
+            on_lang_click()
+            self.locale_list.on_click(kickstart.locale)
+        else:
+            # Fallback: try to find a similar language or use the first available
+            self.logger.warning(f"Language '{language}' not found in available languages")
+            available_langs = list(langs_and_locales.keys())
+            if available_langs:
+                # Try to find a language that starts with the same code
+                fallback_lang = next((lang for lang in available_langs if lang.startswith(language[:2])), None)
+                if not fallback_lang:
+                    fallback_lang = available_langs[0]
+                
+                self.logger.info(f"Using fallback language: {fallback_lang}")
+                lang_list.on_click(fallback_lang)
+                self.update()
+                on_lang_click()
+                
+                # Update kickstart locale to match the fallback language
+                if fallback_lang in langs_and_locales and langs_and_locales[fallback_lang]["locales"]:
+                    first_locale = list(langs_and_locales[fallback_lang]["locales"].keys())[0]
+                    kickstart.locale = first_locale
+                    self.locale_list.on_click(first_locale)
+                else:
+                    # Last resort fallback
+                    kickstart.locale = "en_US.UTF-8"
+            else:
+                self.logger.error("No languages available at all")
 
     def validate_input(self) -> PageValidationResult:
         """Validate that a locale has been selected."""

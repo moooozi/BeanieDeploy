@@ -11,3 +11,5 @@ ReleaseInfo.txt
 src/bin
 build/
 dist/
+*.spec
+version_info.txt
