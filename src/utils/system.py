@@ -2,22 +2,13 @@
 Utility functions for BeanieDeploy.
 Refactored to use proper configuration instead of globals.
 """
-import hashlib
-import json
 import os
-import re
 import shutil
 import subprocess
-import time
-import winreg
 import ctypes
 from pathlib import Path
-from urllib.request import urlopen
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 import webbrowser
-
-import urllib.request
-import libs.xmltodict as xmltodict
 
 from config.settings import ConfigManager
 from utils.logging import get_logger
@@ -71,10 +62,10 @@ def format_size(size: float) -> str:
         return f"{size / (1024 * 1024 * 1024):.2f} GB"
 
 
-def format_eta(eta_in_seconds: float) -> str:
+def format_eta(eta_in_seconds) -> str:
     """Format estimated time remaining."""
     if eta_in_seconds == "N/A":
-        return eta_in_seconds
+        return str(eta_in_seconds)
     
     hours, remainder = divmod(eta_in_seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
@@ -90,7 +81,7 @@ def format_eta(eta_in_seconds: float) -> str:
 @handle_exception
 def get_json(url: str) -> Dict[str, Any]:
     """
-    Fetch and parse JSON from a URL.
+    Fetch and parse JSON from a URL using requests.
     
     Args:
         url: URL to fetch JSON from
@@ -102,72 +93,18 @@ def get_json(url: str) -> Dict[str, Any]:
         NetworkError: If the request fails
     """
     try:
+        # Use requests for better reliability
+        import requests
         logger.info(f"Fetching JSON from: {url}")
-        with urlopen(url, timeout=30) as response:
-            data = json.loads(response.read().decode('utf-8'))
-            logger.debug(f"Successfully fetched JSON data from {url}")
-            return data
+        headers = {'User-Agent': 'BeanieDeploy/1.0'}
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        data = response.json()
+        logger.debug(f"Successfully fetched JSON data from {url}")
+        return data
     except Exception as e:
         raise NetworkError(f"Failed to fetch JSON from {url}") from e
-
-
-@handle_exception
-def download_with_standard_lib(
-    url: str, 
-    destination: Path, 
-    output_name: Optional[str] = None,
-    progress_callback: Optional[callable] = None
-) -> Path:
-    """
-    Download a file using urllib.
-    
-    Args:
-        url: URL to download from
-        destination: Directory to save to
-        output_name: Optional custom filename
-        progress_callback: Optional callback for progress updates
-        
-    Returns:
-        Path to downloaded file
-        
-    Raises:
-        NetworkError: If download fails
-        FileSystemError: If file operations fail
-    """
-    local_filename = output_name if output_name else url.split("/")[-1]
-    local_filepath = destination / local_filename
-    
-    # Ensure destination directory exists
-    destination.mkdir(parents=True, exist_ok=True)
-    
-    try:
-        logger.info(f"Downloading {url} to {local_filepath}")
-        
-        with urllib.request.urlopen(url) as response:
-            total_size = int(response.getheader("Content-Length", 0))
-            downloaded_size = 0
-            
-            with open(local_filepath, 'wb') as f:
-                while True:
-                    chunk = response.read(8192)
-                    if not chunk:
-                        break
-                    
-                    f.write(chunk)
-                    downloaded_size += len(chunk)
-                    
-                    if progress_callback and total_size > 0:
-                        progress = (downloaded_size / total_size) * 100
-                        progress_callback(progress, downloaded_size, total_size)
-        
-        logger.info(f"Successfully downloaded {local_filename} ({format_size(downloaded_size)})")
-        return local_filepath
-        
-    except Exception as e:
-        # Clean up partial download
-        if local_filepath.exists():
-            local_filepath.unlink()
-        raise NetworkError(f"Failed to download {url}") from e
 
 
 def windows_language_code() -> str:

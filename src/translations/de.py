@@ -155,7 +155,7 @@ cleanup_question_txt = "Diese Dateien sind nicht mehr nützlich, es sei denn, Si
 finished_title = "Neustart erforderlich"
 finished_text = (
     "Ein Neustart ist erforderlich, um die Installation fortzusetzen, "
-    "klicken Sie auf '%s', um jetzt neu zu starten oder auf '%s', um später manuell neu zu starten"
+    + "klicken Sie auf '%s', um jetzt neu zu starten oder auf '%s', um später manuell neu zu starten"
     % (btn_restart_now, btn_restart_later)
 )
 finished_text_restarting_now = "Automatischer Neustart in %s Sekunden"

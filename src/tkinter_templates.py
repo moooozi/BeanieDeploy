@@ -1,12 +1,8 @@
-import multiprocessing
-import queue
-from tkinter import ttk
 import customtkinter as ctk
 import ctypes
 from gui_functions import detect_darkmode_in_windows
 from config.settings import get_config
 import multilingual
-from templates import generic_page_layout
 
 WIDTH = 850
 HEIGHT = 580
@@ -58,14 +54,12 @@ def dark_decorations(ye_or_nah, tkinter):
 def dark_theme(ye_or_nah, tkinter):
     global tkinter_background_color, color_red, color_blue, color_green, top_background_color
     if not ye_or_nah:
-        color_mode = "light"
         tkinter_background_color = "#856ff8"
         color_red = "#e81123"
         color_blue = "#0067b8"
         color_green = "#008009"
         top_background_color = "#e6e6e6"
     else:
-        color_mode = "dark"
         tkinter_background_color = "#856ff8"
         color_red = "#ff4a4a"
         color_blue = "#3aa9ff"
@@ -75,159 +69,141 @@ def dark_theme(ye_or_nah, tkinter):
     tkinter.update()
 
 
-def add_frame_container(parent, **kwargs):
-    frame = ctk.CTkFrame(
-        parent,
-        width=MINWIDTH,
-        bg_color="transparent",
-        fg_color="transparent",
-        corner_radius=0,
-        border_width=0,
-    )
-    frame.pack(**kwargs)
-    return frame
+class FrameContainer(ctk.CTkFrame):
+    """Custom transparent frame container with predefined styling."""
+    
+    def __init__(self, parent, **kwargs):
+        super().__init__(
+            parent,
+            width=MINWIDTH,
+            bg_color="transparent",
+            fg_color="transparent",
+            corner_radius=0,
+            border_width=0,
+            **kwargs
+        )
 
 
-def open_popup(
-    parent,
-    x_size: int = None,
-    y_size: int = None,
-):
-    """
-    Pops up window to get input from user and freezes the main GUI while waiting for response
-    :param y_size: window height in pixels
-    :param x_size: window width in pixels
-    :param parent: the parent for the CustomTkinter Toplevel
-    :return:
-    """
-    pop = ctk.CTkToplevel(parent)
-    border_frame = ctk.CTkFrame(pop, fg_color="gray", corner_radius=1)
-    x_position = parent.winfo_x()
-    y_position = parent.winfo_y()
-    x_app_size = parent.winfo_width()
-    y_app_size = parent.winfo_height()
-    #  position the pop-up window at the center of its parent
-    geometry = "%dx%d+%d+%d" % (
-        x_size,
-        y_size,
-        x_position + (x_app_size - x_size) / 2 + 20,
-        y_position + (y_app_size - y_size) / 2 + 20,
-    )
-    pop.geometry(geometry)
-    dark_theme(DARK_MODE, pop)
-    # pop.protocol("WM_DELETE_WINDOW", False)
-    pop.focus_set()
-    pop.grab_set()
-    border_frame.pack(expand=1, fill="both", pady=5, padx=5)
-    pop_frame = ctk.CTkFrame(border_frame)
-    pop_frame.pack(expand=1, fill="both", padx=10, pady=(20, 10))
-
-    return pop, pop_frame
+class CheckButton(ctk.CTkCheckBox):
+    """Custom checkbox with predefined styling and behavior."""
+    
+    def __init__(self, parent, text, variable, command=None, is_disabled=None, **kwargs):
+        super().__init__(
+            parent, 
+            text=text, 
+            variable=variable, 
+            onvalue=True, 
+            offvalue=False, 
+            width=99,
+            **kwargs
+        )
+        
+        if command:
+            self.configure(command=command)
+        
+        if is_disabled:
+            self.configure(state="disabled")
 
 
-def input_pop_up(
-    parent,
-    title_txt=None,
-    msg_txt=None,
-    primary_btn_str=None,
-    secondary_btn_str=None,
-):
-    x_size = 600
-    y_size = int(len(msg_txt) / 2.8 + 180 + 13 * msg_txt.count("\n"))
-    pop, pop_frame = open_popup(parent, x_size, y_size)
-    pop_var = ctk.IntVar(pop)
-    msg_font = FONTS_smaller
-    layout_frame = generic_page_layout(
-        pop_frame,
-        title_txt,
-        primary_btn_str,
-        lambda *args: validate_pop_input(1),
-        secondary_btn_str,
-        lambda *args: validate_pop_input(0),
-        title_pady=5,
-    )
-    if msg_txt:
-        add_text_label(layout_frame, msg_txt, msg_font, pady=10)
-
-    def validate_pop_input(inputted):
-        pop_var.set(inputted)
-        pop.destroy()
-
-    pop.wait_window()
-    return pop_var.get()
-
-
-def add_check_btn(
-    parent, text, var, command=None, is_disabled=None, pady=5, pack=True, switch=False
-):
-    check = ctk.CTkCheckBox(
-        parent, text=text, variable=var, onvalue=True, offvalue=False, width=99
-    )
-    if switch:
-        check.configure(style="Switch.TCheckbutton")
-    if pack:
-        check.pack(ipady=5, pady=pady)
-    if command:
-        check.configure(command=command)
-    if is_disabled:
-        check.configure(state="disabled")
-    return check
-
-
-def add_text_label(
-    parent,
-    text=None,
-    font=FONTS_small,
-    var=None,
-    pady=20,
-    padx=0,
-    foreground=None,
-    anchor=None,
-    pack=True,
-):
-    """
-    a preset for CustomTkinter text label that packs by default
-    :return: the CustomTkinter label "ctk.CTkLabel" object
-    """
-    if (not var and text) or (var and not text):
+class TextLabel(ctk.CTkLabel):
+    """Custom text label with predefined styling and smart configuration."""
+    
+    def __init__(self, parent, text=None, font=FONTS_small, var=None, 
+                 foreground=None, **kwargs):
+        
+        # Validate that either text or var is provided, but not both
+        if not ((text is None) ^ (var is None)):
+            raise ValueError("Either 'text' or 'var' must be provided, but not both")
+        
         config = get_config()
-        label = ctk.CTkLabel(
+        
+        # Set default values for text and textvariable to avoid None issues
+        text_value = text if text is not None else ""
+        var_value = var if var is not None else None
+        
+        super().__init__(
             parent,
             wraplength=config.ui.max_width,
             justify=multilingual.get_di_var().l,
-            text=text,
-            textvariable=var,
+            text=text_value,
+            textvariable=var_value,
             text_color=foreground,
             font=font,
+            **kwargs
         )
-    else:
-        return -1
+
+
+class LanguageComboBox(ctk.CTkComboBox):
+    """Custom language selection combobox with predefined styling."""
+    
+    def __init__(self, parent, variable, languages, **kwargs):
+        super().__init__(
+            parent, 
+            name="language", 
+            textvariable=variable, 
+            fg_color=top_background_color,
+            **kwargs
+        )
+        
+        self.configure(values=tuple(languages))
+        self.configure(state="readonly")
+        self.set("English")
+
+
+class ProgressBar(ctk.CTkProgressBar):
+    """Custom progress bar with predefined styling."""
+    
+    def __init__(self, parent, **kwargs):
+        super().__init__(
+            parent,
+            orientation="horizontal",
+            mode="determinate",
+            **kwargs
+        )
+
+
+# Backward compatibility functions - these create instances of the new classes
+def add_frame_container(parent, **kwargs):
+    """Create a FrameContainer instance for backward compatibility."""
+    frame = FrameContainer(parent)
+    if kwargs:
+        frame.pack(**kwargs)
+    return frame
+
+
+def add_check_btn(parent, text, var, command=None, is_disabled=None, 
+                 pady=5, pack=True, switch=False):
+    """Create a CheckButton instance for backward compatibility."""
+    checkbox = CheckButton(parent, text, var, command, is_disabled)
     if pack:
-        label.pack(pady=pady, padx=padx, anchor=anchor)
-    return label
+        checkbox.pack(ipady=5, pady=pady)
+    return checkbox
+
+
+def add_text_label(parent, text=None, font=FONTS_small, var=None, 
+                  pady=20, padx=0, foreground=None, anchor=None, pack=True):
+    """Create a TextLabel instance for backward compatibility."""
+    try:
+        label = TextLabel(parent, text, font, var, foreground)
+        if pack:
+            label.pack(pady=pady, padx=padx, anchor=anchor)
+        return label
+    except ValueError:
+        return -1  # Maintain original behavior for invalid inputs
 
 
 def add_lang_list(parent, var, languages):
-    lang_list = ctk.CTkComboBox(
-        parent, name="language", textvariable=var, fg_color=top_background_color
-    )
-    lang_list["values"] = tuple(languages)
-    lang_list["state"] = "readonly"
-    lang_list.set("English")
-    lang_list.pack(side="left", padx=30)
-    return lang_list
+    """Create a LanguageComboBox instance for backward compatibility."""
+    combo = LanguageComboBox(parent, var, languages)
+    combo.pack(side="left", padx=30)
+    return combo
 
 
-def add_progress_bar(
-    parent,
-):
-    progressbar = ctk.CTkProgressBar(
-        parent,
-        orientation="horizontal",
-        mode="determinate",
-    )
-    progressbar.pack(pady=(0, 20), fill="both")
-    return progressbar
+def add_progress_bar(parent):
+    """Create a ProgressBar instance for backward compatibility."""
+    progress = ProgressBar(parent)
+    progress.pack(pady=(0, 20), fill="both")
+    return progress
 
 
 def flush_frame(frame: ctk.CTkFrame):

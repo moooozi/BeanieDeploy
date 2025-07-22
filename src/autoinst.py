@@ -1,5 +1,20 @@
-import libs.langtable as langtable
-import globals as GV
+import os
+
+# Fix langtable Windows bug - monkey patch before import
+if os.name == 'nt':  # Windows
+    # Patch the logging module to handle the Windows /dev/null issue
+    import logging
+    original_basicConfig = logging.basicConfig
+    
+    def patched_basicConfig(*args, **kwargs):
+        # Replace /dev/null with Windows equivalent NUL
+        if 'filename' in kwargs and kwargs['filename'] == '/dev/null':
+            kwargs['filename'] = 'NUL'
+        return original_basicConfig(*args, **kwargs)
+    
+    logging.basicConfig = patched_basicConfig
+
+import langtable
 
 COMMON_LANGUAGES = langtable.list_common_languages()
 ALL_LOCALES = langtable.list_all_locales()
@@ -28,10 +43,6 @@ def get_available_keymaps_by_description():
 def get_keymap_by_description(keymap_description):
     return ALL_KEYMAPS_BY_DESC[keymap_description]
 """
-
-
-def get_keymap_description(keymap):
-    return langtable._keyboards_db[keymap].description
 
 
 def is_valid_timezone(timezone):

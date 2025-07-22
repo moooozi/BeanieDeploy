@@ -1,30 +1,34 @@
 from templates.generic_page_layout import GenericPageLayout
 from templates.info_frame import InfoFrame
-import tkinter_templates as tkt
-import globals as GV
-import functions as fn
-from models.page_manager import Page
+from models.page import Page, PageValidationResult
+from tkinter_templates import TextLabel
 
 
 class PageError(Page):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
+    def __init__(self, parent, page_name: str, *args, **kwargs):
+        super().__init__(parent, page_name, *args, **kwargs)
         self.errors = []
 
     def init_page(self):
+        # Get app name from config
+        app_name = self.app_config.app.name if hasattr(self.app_config.app, 'name') else "BeanieDeploy"
+        
         page_layout = GenericPageLayout(
             self,
-            self.LN.error_title % GV.APP_SW_NAME,
+            self.LN.error_title % app_name,
             secondary_btn_txt=self.LN.btn_quit,
-            secondary_btn_command=lambda: fn.app_quit(),
+            secondary_btn_command=lambda: self._quit_application(),
         )
         self.page_frame = page_layout.content_frame
-        tkt.add_text_label(self.page_frame, self.LN.error_list, pady=10)
+        
+        error_label = TextLabel(self.page_frame, text=self.LN.error_list)
+        error_label.pack(pady=10)
 
         self.info_frame_raster = InfoFrame(self.page_frame)
         self.info_frame_raster.pack(fill="x", pady=5, padx=10)
 
     def set_errors(self, errors):
+        """Set the errors to display and initialize the page."""
         self.init_page()
         self._initiated = True
         self.errors = errors
@@ -32,3 +36,16 @@ class PageError(Page):
 
         for i, error in enumerate(self.errors):
             self.info_frame_raster.add_label(f"error_{i}", error)
+            
+        self.logger.error(f"Displaying {len(errors)} errors to user")
+
+    def validate_input(self) -> PageValidationResult:
+        """Error page doesn't require validation."""
+        return PageValidationResult(True)
+
+    def _quit_application(self):
+        """Quit the application."""
+        self.logger.info("User chose to quit from error page")
+        # This should integrate with your application quit function
+        import sys
+        sys.exit(1)

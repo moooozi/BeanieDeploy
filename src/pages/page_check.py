@@ -2,13 +2,15 @@ import pathlib
 import pickle
 import tempfile
 from templates.generic_page_layout import GenericPageLayout
-import tkinter_templates as tkt
-import functions as fn
-import procedure as prc
-from models.page import Page, PageValidationResult
+from services.network import get_json
+from services.system import get_admin, get_windows_username
+from services.spin_manager import parse_spins
+from models.page import Page
+from pages.page_error import PageError
 import tkinter as tk
 from compatibility_checks import Checks, DoneChecks, CheckType
 from async_operations import AsyncOperations as AO, Status
+from tkinter_templates import ProgressBar, TextLabel
 
 
 class PageCheck(Page):
@@ -66,9 +68,13 @@ class PageCheck(Page):
         print("🔧 GenericPageLayout created")
 
         page_frame = page_layout.content_frame
-        self.progressbar_check = tkt.add_progress_bar(page_frame)
+        
+        self.progressbar_check = ProgressBar(page_frame)
+        self.progressbar_check.pack(pady=(0, 20), fill="both")
         self.progressbar_check.set(0)
-        tkt.add_text_label(page_frame, var=self.job_var, pady=0, padx=10)
+        
+        job_label = TextLabel(page_frame, var=self.job_var)
+        job_label.pack(pady=0, padx=10)
         print("🔧 GUI elements created")
         
         self.update()
@@ -79,7 +85,9 @@ class PageCheck(Page):
             
             print("🔧 Skipping checks - using dummy data")
             self.logger.info("Skipping checks - using dummy data")
-            self.state.compatibility.all_spins = dummy.DUMMY_ALL_SPINS
+            # Convert dummy data to proper Spin objects
+            _, all_spins = parse_spins(dummy.DUMMY_ALL_SPINS)
+            self.state.compatibility.all_spins = all_spins
             self.state.compatibility.ip_locale = dummy.DUMMY_IP_LOCALE
             print("🔧 Set dummy data, calling finalize_and_parse_errors")
             self.logger.info("Set dummy data, calling finalize_and_parse_errors")
@@ -88,12 +96,12 @@ class PageCheck(Page):
             print("🔧 Starting real checks")
             self.logger.info("Starting real checks")
             self.spins_promise = AO.run(
-                fn.get_json,
-                args=[self.config.urls.available_spins_list],
+                get_json,
+                args=[self.app_config.urls.available_spins_list],
             )
             self.ip_locale_promise = AO.run(
-                fn.get_json,
-                args=[self.config.urls.fedora_geo_ip],
+                get_json,
+                args=[self.app_config.urls.fedora_geo_ip],
             )
             self.run_checks()
 
@@ -176,7 +184,7 @@ class PageCheck(Page):
                         temp_file_path = pathlib.Path(temp_file.name).absolute()
                     args_string = f'--checks_dumb "{temp_file_path}"'
                     operation.status = Status.FAILED
-                    fn.get_admin(args_string)
+                    get_admin(args_string)
                 else:
                     self.logger.info(f"Check {check_type} completed successfully")
                     self.done_checks.checks[check_type] = result
@@ -190,11 +198,13 @@ class PageCheck(Page):
         self.logger.info(f"Moving to next check, active_check now: {self._active_check}")
 
     def on_checks_complete(self):
-        if self.ip_locale_promise.status == Status.COMPLETED:
+        if self.ip_locale_promise.status == Status.COMPLETED and self.ip_locale_promise.output:
             self.state.compatibility.ip_locale = self.ip_locale_promise.output
 
-        if self.spins_promise.status == Status.COMPLETED:
-            self.state.compatibility.all_spins = self.spins_promise.output
+        if self.spins_promise.status == Status.COMPLETED and self.spins_promise.output:
+            # Parse the raw spin data into Spin objects
+            _, parsed_spins = parse_spins(self.spins_promise.output)
+            self.state.compatibility.all_spins = parsed_spins
             self.finalize_and_parse_errors()
         else:
             self.update_job_var_and_progressbar("downloads")
@@ -216,7 +226,7 @@ class PageCheck(Page):
                     errors.append(self.LN.error_arch_9)
                 elif (
                     self.done_checks.checks[CheckType.ARCH].result
-                    not in self.config.ui.accepted_architectures
+                    not in self.app_config.ui.accepted_architectures
                 ):
                     errors.append(self.LN.error_arch_0)
                 if self.done_checks.checks[CheckType.UEFI].returncode != 0:
@@ -227,21 +237,21 @@ class PageCheck(Page):
                     errors.append(self.LN.error_totalram_9)
                 elif (
                     self.done_checks.checks[CheckType.RAM].result
-                    < self.config.app.minimal_required_ram
+                    < self.app_config.app.minimal_required_ram
                 ):
                     errors.append(self.LN.error_totalram_0)
                 if self.done_checks.checks[CheckType.SPACE].returncode != 0:
                     errors.append(self.LN.error_space_9)
                 elif (
                     self.done_checks.checks[CheckType.SPACE].result
-                    < self.config.app.minimal_required_space
+                    < self.app_config.app.minimal_required_space
                 ):
                     errors.append(self.LN.error_space_0)
                 if self.done_checks.checks[CheckType.RESIZABLE].returncode != 0:
                     errors.append(self.LN.error_resizable_9)
                 elif (
                     self.done_checks.checks[CheckType.RESIZABLE].result
-                    < self.config.app.minimal_required_space
+                    < self.app_config.app.minimal_required_space
                 ):
                     errors.append(self.LN.error_resizable_0)
             else:
@@ -252,17 +262,33 @@ class PageCheck(Page):
                 print("🔧 No errors found, proceeding with navigation")
                 self.logger.info("No errors found, proceeding with navigation")
                 self.state.compatibility.done_checks = self.done_checks
-                print("🔧 About to call prc.parse_spins")
-                live_os_installer_index, self.state.compatibility.accepted_spins = prc.parse_spins(
-                    self.state.compatibility.all_spins
-                )
-                print("🔧 parse_spins completed")
+                print("🔧 About to filter accepted spins")
+                # Filter spins (all_spins is already parsed, just need to filter)
+                accepted_spins = []
+                live_os_installer_index = None
+                
+                for spin in self.state.compatibility.all_spins:
+                    accepted_spins.append(spin)
+                
+                # Find live OS base index
+                for index, spin in enumerate(accepted_spins):
+                    if spin.is_base_netinstall:
+                        live_os_installer_index = index
+                        break
+                
+                # Filter out live images if no base netinstall found
+                if live_os_installer_index is None:
+                    self.state.compatibility.accepted_spins = [spin for spin in accepted_spins if not spin.is_live_img]
+                else:
+                    self.state.compatibility.accepted_spins = accepted_spins
+                
+                print("🔧 Spin filtering completed")
                 if live_os_installer_index is not None:
                     self.state.compatibility.live_os_installer_spin = self.state.compatibility.accepted_spins[
                         live_os_installer_index
                     ]
                 print("🔧 About to get windows username")
-                self.state.user.windows_username = fn.get_windows_username()
+                self.state.user.windows_username = get_windows_username()
                 print("🔧 About to navigate_next()")
                 self.logger.info("About to navigate_next()")
                 self._navigation_completed = True  # Mark navigation as completed
@@ -272,8 +298,12 @@ class PageCheck(Page):
             else:
                 print(f"🔧 Found {len(errors)} errors, navigating to error page")
                 self.logger.info(f"Found {len(errors)} errors, navigating to error page")
-                self.master.pages["PageError"].set_errors(errors)
-                self.navigate_to("PageError")
+                # Set errors on the error page using type-safe method
+                from models.page_manager import PageManager
+                if self._page_manager is None or not isinstance(self._page_manager, PageManager):
+                    raise ValueError("PageManager is not set or is not an instance of PageManager")
+                self._page_manager.configure_page(PageError, lambda page: page.set_errors(errors))
+                self.navigate_to(PageError)
         else:
             # All checks passed
             print("🔧 No done_checks, navigating next anyway")

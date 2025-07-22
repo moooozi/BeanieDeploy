@@ -1,9 +1,9 @@
 from templates.generic_page_layout import GenericPageLayout
 from templates.info_frame import InfoFrame
-import tkinter_templates as tkt
 from models.page import Page, PageValidationResult
 import tkinter as tk
-
+from tkinter_templates import CheckButton
+from tkinter_templates import flush_frame
 
 class PageVerify(Page):
     def __init__(self, parent, page_name: str, *args, **kwargs):
@@ -71,11 +71,10 @@ class PageVerify(Page):
         page_frame.columnconfigure(0, weight=1)
         page_frame.grid_rowconfigure(0, weight=3)
 
-        check_restart = tkt.add_check_btn(
+        check_restart = CheckButton(
             page_frame,
             text=self.LN.add_auto_restart,
-            var=self.auto_restart_toggle_var,
-            pack=True,
+            variable=self.auto_restart_toggle_var,
         )
         check_restart.pack(ipady=8, side="top", anchor="w")
 
@@ -95,7 +94,7 @@ class PageVerify(Page):
     def on_show(self):
         """Called when the page is shown - reinitialize to show current selections."""
         if self._initiated:
-            tkt.flush_frame(self)
+            flush_frame(self)
             self._initiated = False
             self.init_page()
             self._initiated = True

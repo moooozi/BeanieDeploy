@@ -3,10 +3,10 @@ from compatibility_checks import CheckType
 from models.data_units import DataUnit
 from templates.generic_page_layout import GenericPageLayout
 from templates.multi_radio_buttons import MultiRadioButtons
-import tkinter_templates as tkt
 from models.page import Page, PageValidationResult
 import tkinter as tk
 from sys import argv
+from tkinter_templates import TextLabel, FONTS_smaller, color_red, color_blue, var_tracer
 
 
 class PageInstallMethod(Page):
@@ -35,30 +35,39 @@ class PageInstallMethod(Page):
         self.selected_spin_name = selected_spin.name
 
         # Calculate space requirements using config
+        # Get partition size, defaulting to 0 if partition is None
+        partition_size = (
+            self.state.installation.partition.tmp_part_size 
+            if self.state.installation.partition 
+            else 0
+        )
+        
         space_dualboot = (
-            self.config.app.dualboot_required_space.bytes_value
-            + self.config.app.linux_boot_partition_size.bytes_value
-            + self.config.app.additional_failsafe_space.bytes_value
-            + self.state.installation.partition.tmp_part_size * 2
+            self.app_config.app.dualboot_required_space.bytes_value
+            + self.app_config.app.linux_boot_partition_size.bytes_value
+            + self.app_config.app.additional_failsafe_space.bytes_value
+            + partition_size * 2
         )
         space_clean = (
-            self.config.app.linux_boot_partition_size.bytes_value
-            + self.config.app.additional_failsafe_space.bytes_value
-            + self.state.installation.partition.tmp_part_size * 2
+            self.app_config.app.linux_boot_partition_size.bytes_value
+            + self.app_config.app.additional_failsafe_space.bytes_value
+            + partition_size * 2
         )
 
-        if "--skip_check" not in argv:
-            done_checks = self.state.compatibility.done_checks
+        done_checks = self.state.compatibility.done_checks
+        if "--skip_check" not in argv and done_checks is not None:
             dualboot_space_available = (
                 done_checks.checks[CheckType.RESIZABLE].result > space_dualboot
             )
             replace_win_space_available = (
                 done_checks.checks[CheckType.RESIZABLE].result > space_clean
             )
+            # Convert string size to bytes for arithmetic operation
+            selected_spin_size_bytes = DataUnit.from_string(selected_spin.size).bytes
             max_size = DataUnit.from_bytes(
                 done_checks.checks[CheckType.RESIZABLE].result
-                - selected_spin.size
-                - self.config.app.additional_failsafe_space.bytes_value
+                - selected_spin_size_bytes
+                - self.app_config.app.additional_failsafe_space.bytes_value
             ).to_gigabytes()
             max_size = round(max_size, 2)
         else:
@@ -107,7 +116,7 @@ class PageInstallMethod(Page):
         )
         radio_buttons.pack(expand=1, fill="x")
 
-        min_size = DataUnit.from_bytes(self.config.app.dualboot_required_space.bytes_value).to_gigabytes()
+        min_size = DataUnit.from_bytes(self.app_config.app.dualboot_required_space.bytes_value).to_gigabytes()
         self.entry1_frame = ctk.CTkFrame(page_frame, height=300)
         self.entry1_frame.pack_propagate(False)
         self.entry1_frame.pack(
@@ -115,18 +124,17 @@ class PageInstallMethod(Page):
             side="bottom",
         )
 
-        self.warn_backup_sys_drive_files = tkt.add_text_label(
+        
+        self.warn_backup_sys_drive_files = TextLabel(
             self.entry1_frame,
             text=self.LN.warn_backup_files_txt % f"{self._get_sys_drive_letter()}:\\",
-            font=tkt.FONTS_smaller,
-            foreground=tkt.color_red,
-            pack=False,
+            font=FONTS_smaller,
+            foreground=color_red,
         )
-        self.size_dualboot_txt_pre = tkt.add_text_label(
+        self.size_dualboot_txt_pre = TextLabel(
             self.entry1_frame,
             text=self.LN.dualboot_size_txt % selected_spin.name,
-            font=tkt.FONTS_smaller,
-            pack=False,
+            font=FONTS_smaller,
         )
         self.size_dualboot_entry = ctk.CTkEntry(
             self.entry1_frame,
@@ -140,21 +148,25 @@ class PageInstallMethod(Page):
         self.size_dualboot_entry.configure(
             validate="none", validatecommand=(validation_func, "%P")
         )
-        self.size_dualboot_txt_post = tkt.add_text_label(
+        self.size_dualboot_txt_post = TextLabel(
             self.entry1_frame,
             text="(%sGB - %sGB)" % (min_size, max_size),
-            font=tkt.FONTS_smaller,
-            foreground=tkt.color_blue,
-            pack=False,
+            font=FONTS_smaller,
+            foreground=color_blue,
         )
-        tkt.var_tracer(
+        var_tracer(
             self.dualboot_size_var,
             "write",
-            lambda *args: self.size_dualboot_entry.validate(),
+            lambda *args: self._on_dualboot_size_change(),
         )
 
         self.update_idletasks()
         self.show_more_options_if_needed()  # GUI bugfix
+
+    def _on_dualboot_size_change(self):
+        """Called when dualboot size changes."""
+        # Could implement real-time validation feedback here if needed
+        pass
 
     def show_more_options_if_needed(self):
         """Show/hide additional options based on selected install method."""
@@ -187,12 +199,17 @@ class PageInstallMethod(Page):
         
         # Validate dual boot size if needed
         if method == "dualboot":
-            if not self.size_dualboot_entry.validate():
-                return PageValidationResult(False, "Invalid dual boot size")
-            
-            syntax_invalid = "invalid" in self.size_dualboot_entry.state()
-            if syntax_invalid:
-                return PageValidationResult(False, "Dual boot size is invalid")
+            try:
+                size_str = self.dualboot_size_var.get().strip()
+                if not size_str:
+                    return PageValidationResult(False, "Dual boot size is required")
+                    
+                size_value = float(size_str)
+                if size_value <= 0:
+                    return PageValidationResult(False, "Dual boot size must be positive")
+                    
+            except ValueError:
+                return PageValidationResult(False, "Dual boot size must be a valid number")
         
         return PageValidationResult(True)
 
@@ -206,6 +223,9 @@ class PageInstallMethod(Page):
         if method == "dualboot":
             # Save dual boot size
             size = DataUnit.from_gigabytes(float(self.dualboot_size_var.get()))
+            if not self.state.installation.partition:
+                from models.partition import Partition
+                self.state.installation.partition = Partition()
             self.state.installation.partition.shrink_space = size.bytes
         elif method == "custom":
             # Reset partition settings for custom install

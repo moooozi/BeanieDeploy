@@ -2,7 +2,6 @@
 Application configuration management.
 Replaces the chaotic globals.py with proper configuration handling.
 """
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -34,6 +33,14 @@ class AppConfig:
     # Paths
     default_efi_file_path: str = r"\EFI\BOOT\BOOTX64.EFI"
     live_img_path: str = "/LiveOS/squashfs.img"
+    
+    # Directory names
+    additional_rpm_dir_name: str = "ADDITIONAL_RPMs"
+    wifi_profiles_dir_name: str = "WIFI_PROFILES"
+    
+    # ISO filenames
+    live_iso_name: str = "live_os.iso"
+    install_iso_name: str = "install_media.iso"
     
     @property
     def live_img_url(self) -> str:
@@ -100,7 +107,7 @@ class PathConfig:
                     key, "{374DE290-123F-4565-9164-39C4925E467B}"
                 )[0]
                 return Path(downloads_dir)
-        except (OSError, FileNotFoundError) as e:
+        except (OSError, FileNotFoundError):
             # Fallback to user's home directory
             return Path.home() / "Downloads"
 

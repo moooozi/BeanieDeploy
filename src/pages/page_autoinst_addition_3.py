@@ -1,8 +1,8 @@
 import customtkinter as ctk
 from templates.generic_page_layout import GenericPageLayout
-import tkinter_templates as tkt
 from models.page import Page, PageValidationResult
 import tkinter as tk
+from tkinter_templates import FrameContainer, TextLabel, FONTS_smaller, color_blue, var_tracer
 
 
 class PageAutoinstAddition3(Page):
@@ -24,14 +24,6 @@ class PageAutoinstAddition3(Page):
         if not selected_spin:
             self.logger.error("No spin selected when initializing user account page")
             return
-            
-        # GNOME allows User account creation during initial start tour, so we use that and skip creating a user
-        if selected_spin.desktop == "GNOME":
-            kickstart = self.state.installation.kickstart
-            if kickstart:
-                kickstart.username = ""
-            self.navigate_to("PageVerify")
-            return
 
         page_layout = GenericPageLayout(
             self,
@@ -43,21 +35,22 @@ class PageAutoinstAddition3(Page):
         )
         page_frame = page_layout.content_frame
 
-        userinfo_frame = tkt.add_frame_container(page_frame, fill="x", expand=1)
-        fullname_pre = tkt.add_text_label(
+        
+        userinfo_frame = FrameContainer(page_frame)
+        userinfo_frame.pack(fill="x", expand=1)
+        
+        fullname_pre = TextLabel(
             userinfo_frame,
             text=self.LN.entry_fullname,
-            font=tkt.FONTS_smaller,
-            pack=False,
+            font=FONTS_smaller,
         )
         self.fullname_entry = ctk.CTkEntry(
             userinfo_frame, width=200, textvariable=self.fullname
         )
-        username_pre = tkt.add_text_label(
+        username_pre = TextLabel(
             userinfo_frame,
             text=self.LN.entry_username,
-            font=tkt.FONTS_smaller,
-            pack=False,
+            font=FONTS_smaller,
         )
         self.username_entry = ctk.CTkEntry(
             userinfo_frame, width=200, textvariable=self.username
@@ -67,28 +60,29 @@ class PageAutoinstAddition3(Page):
         self.fullname_entry.grid(pady=5, padx=5, column=1, row=0)
         username_pre.grid(pady=5, padx=(10, 0), column=0, row=1, sticky=self.DI_VAR.w)
         self.username_entry.grid(pady=5, padx=5, column=1, row=1)
-        encrypt_pass_note = tkt.add_text_label(
+        
+        encrypt_pass_note = TextLabel(
             userinfo_frame,
             text=self.LN.password_reminder_txt,
-            font=tkt.FONTS_smaller,
-            foreground=tkt.color_blue,
-            pack=False,
+            font=FONTS_smaller,
+            foreground=color_blue,
         )
         encrypt_pass_note.grid(
             pady=5, padx=(10, 0), column=0, columnspan=5, row=2, sticky=self.DI_VAR.nw
         )
 
         # Setup username validation
-        validation_func = self.register(
-            lambda var: self._validate_username_format(var)
-        )
-        self.username_entry.configure(
-            validate="none", validatecommand=(validation_func, "%P")
+        # Note: CTkEntry doesn't support built-in validation like tkinter Entry
+        # We'll validate manually in validate_input()
+
+        var_tracer(
+            self.username, "write", lambda *args: self._on_username_change()
         )
 
-        tkt.var_tracer(
-            self.username, "write", lambda *args: self.username_entry.validate()
-        )
+    def _on_username_change(self):
+        """Called when username changes."""
+        # Could implement real-time feedback here if needed
+        pass
 
     def _validate_username_format(self, username: str) -> bool:
         """Validate username format using regex."""
@@ -108,18 +102,23 @@ class PageAutoinstAddition3(Page):
 
     def validate_input(self) -> PageValidationResult:
         """Validate the user account information."""
-        # Validate username format
+        # Check if this is GNOME - no validation needed
+        selected_spin = self.state.installation.selected_spin
+        if selected_spin and selected_spin.desktop == "GNOME":
+            return PageValidationResult(True)
+            
+        # Validate username format for non-GNOME cases
         if not hasattr(self, 'username_entry'):
             return PageValidationResult(False, "Page not properly initialized")
-            
-        self.username_entry.validate()
-        syntax_invalid = "invalid" in self.username_entry.state()
-        if syntax_invalid:
-            return PageValidationResult(False, "Username format is invalid")
             
         # Username is required
         username = self.username_entry.get().strip()
         if not username:
+            return PageValidationResult(False, "Username is required")
+            
+        # Validate username format
+        if not self._validate_username_format(username):
+            return PageValidationResult(False, "Username format is invalid")
             return PageValidationResult(False, "Username is required")
             
         return PageValidationResult(True)
@@ -128,7 +127,20 @@ class PageAutoinstAddition3(Page):
         """Save the user account information to state."""
         kickstart = self.state.installation.kickstart
         if kickstart:
-            kickstart.username = self.username_entry.get().strip()
-            kickstart.fullname = self.fullname_entry.get().strip()
-            
-            self.logger.info(f"User account: username={kickstart.username}, fullname={kickstart.fullname}")
+            # Check if we have form fields (normal case) or if this is GNOME (skipped case)
+            selected_spin = self.state.installation.selected_spin
+            if selected_spin and selected_spin.desktop == "GNOME":
+                # GNOME allows user account creation during initial start tour
+                kickstart.username = ""
+                kickstart.fullname = ""
+                self.logger.info("GNOME detected: skipping user account creation")
+            elif hasattr(self, 'username_entry') and hasattr(self, 'fullname_entry'):
+                # Normal case with form fields
+                kickstart.username = self.username_entry.get().strip()
+                kickstart.fullname = self.fullname_entry.get().strip()
+                self.logger.info(f"User account: username={kickstart.username}, fullname={kickstart.fullname}")
+            else:
+                # Fallback case
+                kickstart.username = ""
+                kickstart.fullname = ""
+                self.logger.warning("User account page not properly initialized")

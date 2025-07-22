@@ -1,6 +1,5 @@
 from models.page import Page, PageValidationResult
-import autoinst
-import libs.langtable as langtable
+import langtable
 from templates.generic_page_layout import GenericPageLayout
 from templates.list_view import ListView
 import math
@@ -65,13 +64,14 @@ class PageAutoinstAddition2(Page):
         self.timezone_list.pack(side="left", fill="both", expand=1)
 
         for keymap in self.all_keymaps:
-            self.keyboard_list.add_item(keymap, autoinst.get_keymap_description(keymap))
+            self.keyboard_list.add_item(keymap, keymap)
 
         for timezone in self.all_timezones:
-            self.timezone_list.add_item(
-                timezone,
-                langtable.timezone_name(timezone, languageIdQuery=kickstart.locale),
+            timezone_name = langtable.timezone_name(
+                timezone, 
+                languageIdQuery=kickstart.locale or "en"
             )
+            self.timezone_list.add_item(timezone, timezone_name or timezone)
 
         default_timezone = (
             selected_locale_timezones[0]
@@ -107,9 +107,14 @@ class PageAutoinstAddition2(Page):
         """Save the selected timezone and keymap to state."""
         kickstart = self.state.installation.kickstart
         if kickstart:
-            kickstart.timezone = self.timezone_list.get_selected()
-            kickstart.keymap = self.keyboard_list.get_selected()
-            kickstart.keymap_type = "xlayout"
+            selected_timezone = self.timezone_list.get_selected()
+            selected_keymap = self.keyboard_list.get_selected()
+            
+            if selected_timezone:
+                kickstart.timezone = selected_timezone
+            if selected_keymap:
+                kickstart.keymap = selected_keymap
+                kickstart.keymap_type = "xlayout"
             
             self.logger.info(f"Selected timezone: {kickstart.timezone}, keymap: {kickstart.keymap}")
 

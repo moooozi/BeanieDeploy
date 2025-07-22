@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -15,7 +16,8 @@ class Kickstart:
     ostree_args: str = ""
     fullname: str = ""
     username: str = ""
-    wifi_profiles_dir_name: list = None
+
+    wifi_profiles_dir_name: Optional[list] = None
 
     def __post_init__(self):
         if self.wifi_profiles_dir_name is None:

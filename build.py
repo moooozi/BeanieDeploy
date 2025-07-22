@@ -63,6 +63,8 @@ def build_with_pyinstaller():
         "--distpath", "dist",
         "--workpath", "build",
         "--specpath", ".",
+        # Add the src directory to Python path
+        "--paths", "src",
         # Add data files
         "--add-data", "src/translations;translations",
         "--add-data", "src/resources;resources",
@@ -86,7 +88,7 @@ def build_with_pyinstaller():
     print(f"Running: {' '.join(cmd)}")
     
     try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
         print("Build successful!")
         print(f"Executable created: dist/{app_name}-{app_version}.exe")
         return True
