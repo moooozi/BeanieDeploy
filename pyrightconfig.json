@@ -25,8 +25,6 @@
     "reportMissingTypeStubs": "none",
     "reportImportCycles": "error",
     "reportUnusedImport": "warning",
-    "reportUnusedClass": "none",
-    "reportUnusedFunction": "none",
     "reportUnusedVariable": "warning",
     "reportDuplicateImport": "warning",
     "reportOptionalSubscript": "error",
@@ -63,6 +61,8 @@
     "reportImplicitStringConcatenation": "warning",
     "reportUnboundVariable": "error",
     "reportUndefinedVariable": "error",
+    "reportUnusedFunction": "warning",
+    "reportUnusedClass": "warning",
     "executionEnvironments": [
         {
             "root": "src",

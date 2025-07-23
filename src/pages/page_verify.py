@@ -39,28 +39,8 @@ class PageVerify(Page):
             self.logger.error("No spin selected when showing verify page")
             return
             
-        # Constructing user verification text based on user's selections
-        review_sel = []
-        
-        if kickstart and kickstart.partition_method == "custom":
-            review_sel.append(
-                self.LN.verify_text["no_autoinst"] % selected_spin.name
-            )
-        else:
-            if kickstart and kickstart.partition_method == "dualboot":
-                review_sel.append(
-                    self.LN.verify_text["autoinst_dualboot"] % selected_spin.name
-                )
-                review_sel.append(self.LN.verify_text["autoinst_keep_data"])
-            elif kickstart and kickstart.partition_method == "replace_win":
-                review_sel.append(
-                    self.LN.verify_text["autoinst_replace_win"] % selected_spin.name
-                )
-                review_sel.append(self.LN.verify_text["autoinst_rm_all"])
-            if install_options and install_options.export_wifi:
-                review_sel.append(
-                    self.LN.verify_text["autoinst_wifi"] % selected_spin.name
-                )
+        from core.verify_logic import build_review_text
+        review_sel = build_review_text(selected_spin, kickstart, install_options, self.LN)
 
         self.info_frame_raster = InfoFrame(page_frame)
 

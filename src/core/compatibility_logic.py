@@ -1,0 +1,56 @@
+"""
+Non-GUI logic for compatibility checks and error parsing.
+"""
+from compatibility_checks import CheckType
+
+def parse_errors(done_checks, app_config, LN, skip_check):
+    errors = []
+    if not skip_check:
+        if done_checks.checks[CheckType.ARCH].returncode != 0:
+            errors.append(LN.error_arch_9)
+        elif (
+            done_checks.checks[CheckType.ARCH].result
+            not in app_config.ui.accepted_architectures
+        ):
+            errors.append(LN.error_arch_0)
+        if done_checks.checks[CheckType.UEFI].returncode != 0:
+            errors.append(LN.error_uefi_9)
+        elif done_checks.checks[CheckType.UEFI].result != "uefi":
+            errors.append(LN.error_uefi_0)
+        if done_checks.checks[CheckType.RAM].returncode != 0:
+            errors.append(LN.error_totalram_9)
+        elif (
+            done_checks.checks[CheckType.RAM].result
+            < app_config.app.minimal_required_ram
+        ):
+            errors.append(LN.error_totalram_0)
+        if done_checks.checks[CheckType.SPACE].returncode != 0:
+            errors.append(LN.error_space_9)
+        elif (
+            done_checks.checks[CheckType.SPACE].result
+            < app_config.app.minimal_required_space
+        ):
+            errors.append(LN.error_space_0)
+        if done_checks.checks[CheckType.RESIZABLE].returncode != 0:
+            errors.append(LN.error_resizable_9)
+        elif (
+            done_checks.checks[CheckType.RESIZABLE].result
+            < app_config.app.minimal_required_space
+        ):
+            errors.append(LN.error_resizable_0)
+    return errors
+
+def filter_spins(all_spins):
+    accepted_spins = []
+    live_os_installer_index = None
+    for spin in all_spins:
+        accepted_spins.append(spin)
+    for index, spin in enumerate(accepted_spins):
+        if spin.is_base_netinstall:
+            live_os_installer_index = index
+            break
+    if live_os_installer_index is None:
+        filtered_spins = [spin for spin in accepted_spins if not spin.is_live_img]
+    else:
+        filtered_spins = accepted_spins
+    return filtered_spins, live_os_installer_index

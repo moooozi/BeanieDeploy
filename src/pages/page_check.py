@@ -1,9 +1,5 @@
-import pathlib
-import pickle
-import tempfile
 from templates.generic_page_layout import GenericPageLayout
 from services.network import get_json
-from services.system import get_admin, get_windows_username
 from services.spin_manager import parse_spins
 from models.page import Page
 from pages.page_error import PageError
@@ -11,6 +7,7 @@ import tkinter as tk
 from compatibility_checks import Checks, DoneChecks, CheckType
 from async_operations import AsyncOperations as AO, Status
 from tkinter_templates import ProgressBar, TextLabel
+from core.compatibility_logic import parse_errors, filter_spins
 
 
 class PageCheck(Page):
@@ -106,33 +103,16 @@ class PageCheck(Page):
             self.run_checks()
 
     def run_checks(self):
-        self.logger.info("run_checks() called")
-        check_types = list(CheckType)
-        self.logger.info(f"Total checks to run: {len(check_types)}, Current active check: {self._active_check}")
-        
-        if self._active_check < len(check_types):
-            check_type = check_types[self._active_check]
-            self.logger.info(f"Running check {self._active_check + 1}/{len(check_types)}: {check_type}")
-            
-            check_function = self.checks.check_functions[check_type]
-            self.logger.info(f"Got check function for {check_type}: {check_function}")
-            
-            check_operation = AO()
-            self.logger.info(f"Created async operation for {check_type}")
-            
-            check_operation.run_async_process(
-                self.check_wrapper, args=(check_type, check_function, check_operation)
-            )
-            self.logger.info(f"Started async process for {check_type}")
-            
-            self.monitor_async_operation(
-                check_operation,
-                self.run_checks,
-            )
-            self.logger.info(f"Monitoring async operation for {check_type}")
-        else:
-            self.logger.info("All checks completed, calling on_checks_complete()")
-            self.on_checks_complete()
+        from core.check_runner import run_checks
+        run_checks(
+            self.checks,
+            self.done_checks,
+            self._active_check,
+            self.on_checks_complete,
+            lambda check_type, check_function, check_operation: self.check_wrapper(check_type, check_function, check_operation),
+            self.monitor_async_operation,
+            self.logger
+        )
 
     def update_job_var_and_progressbar(self, current_task):
         self.logger.info(f"Updating progress for task: {current_task}")
@@ -163,37 +143,17 @@ class PageCheck(Page):
         self.update()  # Force GUI update
 
     def check_wrapper(self, check_type, check_function, operation):
-        self.logger.info(f"Starting check_wrapper for {check_type}")
-        if self.done_checks.checks[check_type].returncode is None:
-            self.logger.info(f"Running check for {check_type}")
-            self.update_job_var_and_progressbar(check_type)
-            
-            try:
-                self.logger.info(f"Calling check function for {check_type}")
-                result = check_function()
-                self.logger.info(f"Check {self._active_check + 1} ({check_type}): {result.result}, Return code: {result.returncode}")
-                
-                print(f"Check {self._active_check + 1}: {result.result}, Return code: {result.returncode}")
-                
-                if result.returncode == -200:
-                    self.logger.warning(f"Check {check_type} requires admin privileges")
-                    with tempfile.NamedTemporaryFile(
-                        suffix=".pkl", delete=False
-                    ) as temp_file:
-                        pickle.dump(self.done_checks, temp_file)
-                        temp_file_path = pathlib.Path(temp_file.name).absolute()
-                    args_string = f'--checks_dumb "{temp_file_path}"'
-                    operation.status = Status.FAILED
-                    get_admin(args_string)
-                else:
-                    self.logger.info(f"Check {check_type} completed successfully")
-                    self.done_checks.checks[check_type] = result
-            except Exception as e:
-                self.logger.error(f"Error during check {check_type}: {e}")
-                raise
-        else:
-            self.logger.info(f"Check {check_type} already completed, skipping")
-        
+        from core.check_runner import check_wrapper
+        check_wrapper(
+            check_type,
+            check_function,
+            operation,
+            self.done_checks,
+            self.LN,
+            self.app_config,
+            self.logger,
+            self.update_job_var_and_progressbar
+        )
         self._active_check += 1
         self.logger.info(f"Moving to next check, active_check now: {self._active_check}")
 
@@ -213,99 +173,34 @@ class PageCheck(Page):
     def finalize_and_parse_errors(self):
         print("🔧 finalize_and_parse_errors called")
         self.logger.info("finalize_and_parse_errors called")
-        
         if self.done_checks:
             print("🔧 Processing done_checks")
             self.logger.info("Processing done_checks")
-            errors = []
-            if not self.skip_check:
-                print("🔧 Running error checks")
-                self.logger.info("Running error checks")
-                # ... error checking code stays the same ...
-                if self.done_checks.checks[CheckType.ARCH].returncode != 0:
-                    errors.append(self.LN.error_arch_9)
-                elif (
-                    self.done_checks.checks[CheckType.ARCH].result
-                    not in self.app_config.ui.accepted_architectures
-                ):
-                    errors.append(self.LN.error_arch_0)
-                if self.done_checks.checks[CheckType.UEFI].returncode != 0:
-                    errors.append(self.LN.error_uefi_9)
-                elif self.done_checks.checks[CheckType.UEFI].result != "uefi":
-                    errors.append(self.LN.error_uefi_0)
-                if self.done_checks.checks[CheckType.RAM].returncode != 0:
-                    errors.append(self.LN.error_totalram_9)
-                elif (
-                    self.done_checks.checks[CheckType.RAM].result
-                    < self.app_config.app.minimal_required_ram
-                ):
-                    errors.append(self.LN.error_totalram_0)
-                if self.done_checks.checks[CheckType.SPACE].returncode != 0:
-                    errors.append(self.LN.error_space_9)
-                elif (
-                    self.done_checks.checks[CheckType.SPACE].result
-                    < self.app_config.app.minimal_required_space
-                ):
-                    errors.append(self.LN.error_space_0)
-                if self.done_checks.checks[CheckType.RESIZABLE].returncode != 0:
-                    errors.append(self.LN.error_resizable_9)
-                elif (
-                    self.done_checks.checks[CheckType.RESIZABLE].result
-                    < self.app_config.app.minimal_required_space
-                ):
-                    errors.append(self.LN.error_resizable_0)
-            else:
-                print("🔧 Skipping error checks due to skip_check flag")
-                self.logger.info("Skipping error checks due to skip_check flag")
-                
+            errors = parse_errors(self.done_checks, self.app_config, self.LN, self.skip_check)
             if not errors:
                 print("🔧 No errors found, proceeding with navigation")
                 self.logger.info("No errors found, proceeding with navigation")
                 self.state.compatibility.done_checks = self.done_checks
                 print("🔧 About to filter accepted spins")
-                # Filter spins (all_spins is already parsed, just need to filter)
-                accepted_spins = []
-                live_os_installer_index = None
-                
-                for spin in self.state.compatibility.all_spins:
-                    accepted_spins.append(spin)
-                
-                # Find live OS base index
-                for index, spin in enumerate(accepted_spins):
-                    if spin.is_base_netinstall:
-                        live_os_installer_index = index
-                        break
-                
-                # Filter out live images if no base netinstall found
-                if live_os_installer_index is None:
-                    self.state.compatibility.accepted_spins = [spin for spin in accepted_spins if not spin.is_live_img]
-                else:
-                    self.state.compatibility.accepted_spins = accepted_spins
-                
+                filtered_spins, live_os_installer_index = filter_spins(self.state.compatibility.all_spins)
+                self.state.compatibility.accepted_spins = filtered_spins
                 print("🔧 Spin filtering completed")
                 if live_os_installer_index is not None:
-                    self.state.compatibility.live_os_installer_spin = self.state.compatibility.accepted_spins[
-                        live_os_installer_index
-                    ]
-                print("🔧 About to get windows username")
-                self.state.user.windows_username = get_windows_username()
+                    self.state.compatibility.live_os_installer_spin = self.state.compatibility.accepted_spins[live_os_installer_index]
                 print("🔧 About to navigate_next()")
                 self.logger.info("About to navigate_next()")
                 self._navigation_completed = True  # Mark navigation as completed
-                # Use after() to delay navigation and avoid race conditions
                 self.after(10, self._delayed_navigate_next)
                 print("🔧 Scheduled delayed navigation")
             else:
                 print(f"🔧 Found {len(errors)} errors, navigating to error page")
                 self.logger.info(f"Found {len(errors)} errors, navigating to error page")
-                # Set errors on the error page using type-safe method
                 from models.page_manager import PageManager
                 if self._page_manager is None or not isinstance(self._page_manager, PageManager):
                     raise ValueError("PageManager is not set or is not an instance of PageManager")
                 self._page_manager.configure_page(PageError, lambda page: page.set_errors(errors))
                 self.navigate_to(PageError)
         else:
-            # All checks passed
             print("🔧 No done_checks, navigating next anyway")
             self.logger.info("No done_checks, navigating next anyway")
             self.navigate_next()

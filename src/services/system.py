@@ -3,7 +3,6 @@ System-level operations and utilities.
 Handles admin privileges, Windows registry, system information, etc.
 """
 import ctypes
-import os
 import subprocess
 import winreg
 from typing import Union
@@ -42,11 +41,6 @@ def get_admin(args: str = "") -> None:
     if not is_admin():
         ctypes.windll.shell32.ShellExecuteW(None, "runas", executable, args_combined, None, 1)
     raise SystemExit
-
-
-def get_windows_username() -> str:
-    """Get the current Windows username."""
-    return os.getlogin()
 
 
 def windows_language_code() -> str:

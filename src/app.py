@@ -1,4 +1,5 @@
 from typing import Optional
+from core.navigation_conditions import SkipCheckDisabledCondition
 from models.page_manager import PageManager
 from models.installation_context import InstallationContext
 from pages.page_autoinst2 import PageAutoinst2
@@ -9,7 +10,6 @@ from pages.page_installing import PageInstalling
 from pages.page_1 import Page1
 from pages.page_autoinst_addition_1 import PageAutoinstAddition1
 from pages.page_autoinst_addition_2 import PageAutoinstAddition2
-from pages.page_autoinst_addition_3 import PageAutoinstAddition3
 from pages.page_playground import PagePlayground
 from pages.page_verify import PageVerify
 from pages.page_restart_required import PageRestartRequired
@@ -78,13 +78,12 @@ class MainApp(Application):
         from typing import Dict, Type, Any
         from models.page import Page
         from core.navigation_conditions import (
-            UserAccountRequiredCondition, 
             AutoInstallCondition,
             CustomInstallCondition
         )
         
         navigation_flow: Dict[Type[Page], Any] = {
-            PageCheck: {},
+            PageCheck: {"conditions": [SkipCheckDisabledCondition()]},
             Page1: {},
             PageInstallMethod: {},
             PageAutoinst2: {
@@ -95,9 +94,6 @@ class MainApp(Application):
             },
             PageAutoinstAddition2: {
                 "conditions": [AutoInstallCondition()]
-            },
-            PageAutoinstAddition3: {
-                "conditions": [AutoInstallCondition(), UserAccountRequiredCondition()]
             },
             PageVerify: {
                 "conditions": [CustomInstallCondition()]
