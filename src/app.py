@@ -43,22 +43,9 @@ class MainApp(Application):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        # Configure navigation flow
+        # Configure navigation flow and automatically add pages
         self._configure_navigation_flow()
-
-        # Add all pages with their new constructor signature
-        self.page_manager.add_page(PageError)
-        self.page_manager.add_page(PageCheck)
-        self.page_manager.add_page(Page1)
-        self.page_manager.add_page(PageInstallMethod)
-        self.page_manager.add_page(PageAutoinstAddition1)
-        self.page_manager.add_page(PageAutoinstAddition2)
-        self.page_manager.add_page(PageAutoinstAddition3)
-        self.page_manager.add_page(PageAutoinst2)
-        self.page_manager.add_page(PageVerify)
-        self.page_manager.add_page(PageInstalling)
-        self.page_manager.add_page(PageRestartRequired)
-        self.page_manager.add_page(PagePlayground)
+        self._add_pages_from_navigation_flow()
 
         # Handle initialization parameters using new state system
         playground = False
@@ -129,3 +116,33 @@ class MainApp(Application):
         }
         
         self.page_manager.configure_navigation_flow(navigation_flow)
+
+    def _add_pages_from_navigation_flow(self):
+        """
+        Automatically add all pages from the navigation flow.
+        This eliminates the need to manually add each page and keeps everything in sync.
+        """
+        # Get the navigation flow that was just configured
+        navigation_flow = self.page_manager._navigation_flow
+        
+        if not navigation_flow:
+            self.logger.warning("No navigation flow configured, cannot add pages")
+            return
+        
+        # Extract all page classes from the navigation flow
+        page_classes = set(navigation_flow.keys())
+        
+        # Add special pages that might be referenced in custom navigation functions
+        # These could be referenced in "next" or "previous" callbacks
+        special_pages = {PagePlayground}  # Add any other special pages here
+        page_classes.update(special_pages)
+        
+        # Add each page to the page manager
+        for page_class in page_classes:
+            try:
+                self.page_manager.add_page(page_class)
+                self.logger.debug(f"Added page: {page_class.__name__}")
+            except Exception as e:
+                self.logger.error(f"Failed to add page {page_class.__name__}: {e}")
+        
+        self.logger.info(f"Successfully added {len(page_classes)} pages from navigation flow")
