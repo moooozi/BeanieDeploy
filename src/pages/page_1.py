@@ -81,12 +81,14 @@ class Page1(Page):
         self.distro_combolist = ctk.CTkComboBox(
             frame_distro,
             values=self.non_featured_spin_list,
+            fg_color="#565B5E", # CustomTkinter visual bugfix
             state="readonly",
             command=self.update_selection_info,
         )
 
         self.distro_combolist.grid(
             ipady=5,
+            ipadx=20,
             padx=(30, 0),
             row=len(featured_spin_desc) + 1,
             column=0,

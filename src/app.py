@@ -77,25 +77,16 @@ class MainApp(Application):
         """Configure the navigation flow for the page manager."""
         from typing import Dict, Type, Any
         from models.page import Page
-        from core.navigation_conditions import UserAccountRequiredCondition, AutoInstallCondition
-        from core.state import get_state
-        
-        def determine_install_method_next() -> Type[Page]:
-            """Dynamically determine next page based on install method."""
-            state = get_state()
-            partition_method = state.installation.install_options.partition_method
-            
-            if partition_method == "custom":
-                return PageVerify
-            else:
-                return PageAutoinst2  # Default to auto-install flow
+        from core.navigation_conditions import (
+            UserAccountRequiredCondition, 
+            AutoInstallCondition,
+            CustomInstallCondition
+        )
         
         navigation_flow: Dict[Type[Page], Any] = {
             PageCheck: {},
             Page1: {},
-            PageInstallMethod: {
-                "next": determine_install_method_next
-            },
+            PageInstallMethod: {},
             PageAutoinst2: {
                 "conditions": [AutoInstallCondition()]
             },
@@ -108,7 +99,9 @@ class MainApp(Application):
             PageAutoinstAddition3: {
                 "conditions": [AutoInstallCondition(), UserAccountRequiredCondition()]
             },
-            PageVerify: {},
+            PageVerify: {
+                "conditions": [CustomInstallCondition()]
+            },
             PageInstalling: {},
             PageRestartRequired: {},
             # Special pages not in main flow

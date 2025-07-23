@@ -1,11 +1,9 @@
 import queue
 import threading
-# import functions as fn  # Not needed anymore
-
-GLOBAL_QUEUE = queue.Queue()
 
 
-def run_async_function(function, queue=GLOBAL_QUEUE, args=(), kwargs={}):
+
+def run_async_function(function, queue: queue.Queue, args=(), kwargs={}):
     """
     run a function without blocking the GUI
     :param function: the function
@@ -23,8 +21,7 @@ def run_async_function(function, queue=GLOBAL_QUEUE, args=(), kwargs={}):
 
 
 def handle_queue_result(
-    tkinter, callback=None, wait_for_result=None, queue=GLOBAL_QUEUE
-):
+    tkinter, callback=None, wait_for_result=None, queue: queue.Queue = None): # type: ignore
     if callback and wait_for_result:
         raise AttributeError("Cannot use callback and wait_for_result simultaneously")
 
@@ -48,32 +45,3 @@ def handle_queue_result(
         tkinter.after(100, process_queue)
 
     process_queue()
-
-
-def detect_darkmode_in_windows():
-    try:
-        import winreg
-    except ImportError:
-        return False
-    registry = winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
-    reg_keypath = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize"
-    try:
-        reg_key = winreg.OpenKey(registry, reg_keypath)
-    except FileNotFoundError:
-        return False
-
-    for i in range(1024):
-        try:
-            value_name, value, _ = winreg.EnumValue(reg_key, i)
-            if value_name == "AppsUseLightTheme":
-                return value == 0
-        except OSError:
-            break
-    return False
-
-
-def get_first_tk_parent(widget):
-    parent = widget
-    while parent.master is not None:
-        parent = parent.master
-    return parent

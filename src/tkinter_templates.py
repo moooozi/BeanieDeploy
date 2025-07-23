@@ -1,6 +1,5 @@
 import customtkinter as ctk
 import ctypes
-from gui_functions import detect_darkmode_in_windows
 from config.settings import get_config
 import multilingual
 
@@ -14,7 +13,7 @@ WIDTH_OFFSET = 400
 HEIGHT_OFFSET = 400
 TOP_FRAME_HEIGHT = 80
 LEFT_FRAME_WIDTH = 0
-DARK_MODE = detect_darkmode_in_windows()
+DARK_MODE = True
 
 
 def get_dpi_scaling_factor():
