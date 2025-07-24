@@ -1,20 +1,4 @@
-import os
-
-# Fix langtable Windows bug - monkey patch before import
-if os.name == 'nt':  # Windows
-    # Patch the logging module to handle the Windows /dev/null issue
-    import logging
-    original_basicConfig = logging.basicConfig
-    
-    def patched_basicConfig(*args, **kwargs):
-        # Replace /dev/null with Windows equivalent NUL
-        if 'filename' in kwargs and kwargs['filename'] == '/dev/null':
-            kwargs['filename'] = 'NUL'
-        return original_basicConfig(*args, **kwargs)
-    
-    logging.basicConfig = patched_basicConfig
-
-import langtable
+from services.patched_langtable import langtable
 
 COMMON_LANGUAGES = langtable.list_common_languages()
 ALL_LOCALES = langtable.list_all_locales()

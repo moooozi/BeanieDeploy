@@ -2,7 +2,7 @@
 Business logic for PageAutoinstAddition1: language/locale selection and kickstart setup.
 """
 import autoinst
-import langtable
+from services.patched_langtable import langtable
 
 def get_langs_and_locales(ip_locale):
     if ip_locale:
