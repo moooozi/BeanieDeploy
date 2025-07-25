@@ -1,5 +1,5 @@
 from models.page import Page, PageValidationResult
-import langtable
+from services.patched_langtable import langtable
 from templates.generic_page_layout import GenericPageLayout
 from templates.list_view import ListView
 import math

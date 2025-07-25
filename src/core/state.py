@@ -50,7 +50,6 @@ class InstallationState:
 class UserState:
     """State related to user information and preferences."""
     
-    windows_username: str = ""
     selected_language: str = "English"
     tmp_partition_letter: str = ""
 

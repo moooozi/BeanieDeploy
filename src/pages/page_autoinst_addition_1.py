@@ -1,9 +1,7 @@
 from models.page import Page, PageValidationResult
 import tkinter.ttk as ttk
-import autoinst
 from templates.generic_page_layout import GenericPageLayout
 from templates.list_view import ListView
-import langtable
 
 
 class PageAutoinstAddition1(Page):
@@ -22,27 +20,15 @@ class PageAutoinstAddition1(Page):
         page_frame = page_layout.content_frame
 
         # Get IP locale from state instead of globals
+        from core.autoinst_addition1_logic import get_langs_and_locales, get_fallback_langs_and_locales
         ip_locale = self.state.compatibility.ip_locale
-        if ip_locale:
-            langs_and_locales = autoinst.get_locales_and_langs_sorted_with_names(
-                territory=ip_locale["country_code"]
-            )
-        else:
-            langs_and_locales = autoinst.get_locales_and_langs_sorted_with_names()
+        langs_and_locales = get_langs_and_locales(ip_locale)
 
         # Debug logging for PyInstaller bundle issues
         self.logger.debug(f"Available languages: {list(langs_and_locales.keys())}")
         if not langs_and_locales:
             self.logger.error("No languages/locales loaded - this may be a PyInstaller bundling issue")
-            # Provide minimal fallback
-            langs_and_locales = {
-                "en": {
-                    "names": {"english": "English", "native": "English"},
-                    "locales": {
-                        "en_US.UTF-8": {"names": {"native": "English (United States)"}}
-                    }
-                }
-            }
+            langs_and_locales = get_fallback_langs_and_locales()
 
         temp_frame = ttk.Frame(page_frame)
         temp_frame.pack(expand=1, fill="both")
@@ -88,49 +74,37 @@ class PageAutoinstAddition1(Page):
         
         kickstart = self.state.installation.kickstart
         
+        from core.autoinst_addition1_logic import get_available_locales
         if not kickstart.locale:
-            if ip_locale:
-                available_locales = langtable.list_locales(
-                    territoryId=ip_locale["country_code"]
-                )
-                if available_locales:
-                    kickstart.locale = available_locales[0]
-                else:
-                    # Fallback to default locale if no locales found for the territory
-                    kickstart.locale = "en_GB.UTF-8"
+            available_locales = get_available_locales(ip_locale)
+            if available_locales:
+                kickstart.locale = available_locales[0]
             else:
                 kickstart.locale = "en_GB.UTF-8"
 
-        language = autoinst.langtable.parse_locale(kickstart.locale).language
+        from core.autoinst_addition1_logic import get_language_from_locale
+        language = get_language_from_locale(kickstart.locale)
         
         # Ensure the language exists in langs_and_locales before clicking
+        from core.autoinst_addition1_logic import get_fallback_language, get_first_locale_for_language
         if language in langs_and_locales:
             lang_list.on_click(language)
             self.update()
             on_lang_click()
             self.locale_list.on_click(kickstart.locale)
         else:
-            # Fallback: try to find a similar language or use the first available
             self.logger.warning(f"Language '{language}' not found in available languages")
-            available_langs = list(langs_and_locales.keys())
-            if available_langs:
-                # Try to find a language that starts with the same code
-                fallback_lang = next((lang for lang in available_langs if lang.startswith(language[:2])), None)
-                if not fallback_lang:
-                    fallback_lang = available_langs[0]
-                
+            fallback_lang = get_fallback_language(language, langs_and_locales)
+            if fallback_lang:
                 self.logger.info(f"Using fallback language: {fallback_lang}")
                 lang_list.on_click(fallback_lang)
                 self.update()
                 on_lang_click()
-                
-                # Update kickstart locale to match the fallback language
-                if fallback_lang in langs_and_locales and langs_and_locales[fallback_lang]["locales"]:
-                    first_locale = list(langs_and_locales[fallback_lang]["locales"].keys())[0]
+                first_locale = get_first_locale_for_language(langs_and_locales, fallback_lang)
+                if first_locale:
                     kickstart.locale = first_locale
                     self.locale_list.on_click(first_locale)
                 else:
-                    # Last resort fallback
                     kickstart.locale = "en_US.UTF-8"
             else:
                 self.logger.error("No languages available at all")
@@ -145,13 +119,10 @@ class PageAutoinstAddition1(Page):
             return PageValidationResult(False, "Please select a locale")
             
         # Validate that the selected locale is parseable
-        try:
-            parsed = autoinst.langtable.parse_locale(selected_locale)
-            if not parsed.language:
-                return PageValidationResult(False, "Selected locale is invalid")
-        except Exception as e:
-            return PageValidationResult(False, f"Invalid locale format: {str(e)}")
-            
+        from core.autoinst_addition1_logic import validate_locale
+        valid, error = validate_locale(selected_locale)
+        if not valid:
+            return PageValidationResult(False, error)
         return PageValidationResult(True)
 
     def on_next(self):

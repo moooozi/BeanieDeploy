@@ -51,13 +51,9 @@ class CustomInstallCondition(PageCondition):
         return state.installation.install_options.partition_method == "custom"
 
 
-class UserAccountRequiredCondition(PageCondition):
-    """Condition for whether user account creation is required."""
-    
+
+class SkipCheckDisabledCondition(PageCondition):
+    """Condition to show PageCheck only if skip_check is False."""
     def is_enabled(self) -> bool:
         state = get_state()
-        selected_spin = state.installation.selected_spin
-        # GNOME allows user account creation during initial setup tour, so skip this page
-        if selected_spin and selected_spin.desktop == "GNOME":
-            return False
-        return True
+        return not getattr(state.compatibility, 'skip_check', False)

@@ -14,9 +14,6 @@ class Kickstart:
     keymap_type: str = ""
     keymap: str = ""
     ostree_args: str = ""
-    fullname: str = ""
-    username: str = ""
-
     wifi_profiles_dir_name: Optional[list] = None
 
     def __post_init__(self):

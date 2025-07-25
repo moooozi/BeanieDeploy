@@ -11,8 +11,6 @@ def build_autoinstall_ks_file(
     locale: Optional[str] = None,
     timezone: Optional[str] = None,
     ostree_args: Optional[str] = None,
-    username: str = "",
-    fullname: str = "",
     wifi_profiles_dir_name: Optional[str] = None,
     is_encrypted: bool = False,
     passphrase: Optional[str] = None,
@@ -33,8 +31,6 @@ def build_autoinstall_ks_file(
         locale: System locale
         timezone: System timezone
         ostree_args: OSTree arguments for immutable systems
-        username: User account name
-        fullname: Full name for user account
         wifi_profiles_dir_name: Directory containing WiFi profiles
         is_encrypted: Whether to enable disk encryption
         passphrase: Encryption passphrase
@@ -100,7 +96,7 @@ def build_autoinstall_ks_file(
         ])
 
     # System configuration
-    _add_system_configuration(kickstart_lines, keymap, keymap_type, locale, timezone, username)
+    _add_system_configuration(kickstart_lines, keymap, keymap_type, locale, timezone)
     
     # Install source configuration
     if ostree_args:
@@ -113,10 +109,6 @@ def build_autoinstall_ks_file(
         kickstart_lines, partition_method, sys_drive_uuid, sys_efi_uuid, 
         is_encrypted, passphrase
     )
-
-    # User configuration
-    if username:
-        kickstart_lines.append(f"user --name={username} --gecos='{fullname}' --groups=wheel")
     
     kickstart_lines.extend(["rootpw --lock", "reboot"])
 
@@ -129,12 +121,11 @@ def _add_system_configuration(
     keymap_type: str,
     locale: Optional[str], 
     timezone: Optional[str], 
-    username: str
 ) -> None:
     """Add system configuration to kickstart file."""
     # Determine firstboot configuration
     if keymap and locale and timezone:
-        firstboot_line = "firstboot --disable" if username else "firstboot --enable"
+        firstboot_line = "firstboot --enable"
     else:
         firstboot_line = "firstboot --reconfig"
         if not keymap:

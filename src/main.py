@@ -103,8 +103,8 @@ def run():
             cleanup_on_reboot(str(script_dir))
         else:
             # Development mode - always skip checks
-            #sys.argv.append("--skip_check")
-            #skip_check = True
+            sys.argv.append("--skip_check")
+            skip_check = True
             logger.info("Running in debug mode")
         
         # Log application startup
