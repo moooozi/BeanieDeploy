@@ -86,7 +86,6 @@ class MainApp(Application):
         from models.page import Page
         from core.navigation_conditions import (
             AutoInstallCondition,
-            CustomInstallCondition
         )
         
         navigation_flow: Dict[Type[Page], Any] = {
@@ -102,9 +101,7 @@ class MainApp(Application):
             PageAutoinstAddition2: {
                 "conditions": [AutoInstallCondition()]
             },
-            PageVerify: {
-                "conditions": [CustomInstallCondition()]
-            },
+            PageVerify: {},
             PageInstalling: {},
             PageRestartRequired: {},
             # Special pages not in main flow
