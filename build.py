@@ -80,7 +80,7 @@ def build_with_pyinstaller():
         # Collect all data for langtable
         "--collect-data", "langtable",
         "--collect-data", "babel",
-        "src/pyside6_main.py"
+        "src/main.py"
     ]
     
     # Add icon if it exists
