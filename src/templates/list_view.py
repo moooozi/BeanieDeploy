@@ -7,6 +7,7 @@ class ListView(ctk.CTkFrame):
         super().__init__(parent, *args, **kwargs)
         self.selection_callback = None
         self._configure_binding = None
+        self._last_scaling_params = None
 
         if title:
             textlabel = ctk.CTkLabel(
@@ -17,10 +18,19 @@ class ListView(ctk.CTkFrame):
             )
             textlabel.pack(anchor=multilingual.get_di_var().w, pady=5, padx=10)
 
-        self.tree = ttk.Treeview(self, show="tree")
+        # Container frame for tree and scrollbar
+        container = ctk.CTkFrame(self)
+        container.pack(fill="both", expand=True)
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+
+        self.tree = ttk.Treeview(container, show="tree")
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        self.tree_scrollbar = ctk.CTkScrollbar(container, command=self.tree.yview)
+        self.tree.configure(yscrollcommand=self.tree_scrollbar.set)
+        self.tree_scrollbar.grid(row=0, column=1, sticky="ns")
 
         self._update_scaling() # DPI Awareness
-        self.tree.pack(fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self._on_select)
 
         # Bind to root window <Configure> event for live DPI awareness workaround
@@ -41,9 +51,6 @@ class ListView(ctk.CTkFrame):
         text_color = self._apply_appearance_mode(ctk.ThemeManager.theme["CTkLabel"]["text_color"])
         selected_color = self._apply_appearance_mode(ctk.ThemeManager.theme["CTkButton"]["fg_color"])
 
-        style = ttk.Style()
-        style.theme_use('default')
-
         base_font = ctk.CTkFont(size=16)
         scaled_font = self._apply_font_scaling(base_font)
         if isinstance(scaled_font, tuple):
@@ -52,6 +59,13 @@ class ListView(ctk.CTkFrame):
             font_tuple = (scaled_font.cget("family"), scaled_font.cget("size"))
         rowheight = self._apply_widget_scaling(32)
 
+        scaling_params = (bg_color, text_color, selected_color, font_tuple, rowheight)
+        if hasattr(self, '_last_scaling_params') and self._last_scaling_params == scaling_params:
+            return  # No change, skip update
+        self._last_scaling_params = scaling_params
+
+        style = ttk.Style()
+        style.theme_use('default')
         style.configure("Custom.Treeview", 
                         background=bg_color, 
                         foreground=text_color, 
