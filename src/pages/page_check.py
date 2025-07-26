@@ -1,13 +1,11 @@
 from templates.generic_page_layout import GenericPageLayout
-from services.network import get_json
-from services.spin_manager import parse_spins
 from models.page import Page
 from pages.page_error import PageError
 import tkinter as tk
 from compatibility_checks import Checks, DoneChecks, CheckType
 from async_operations import AsyncOperations as AO, Status
 from tkinter_templates import ProgressBar, TextLabel
-from core.compatibility_logic import parse_errors, filter_spins
+from core.compatibility_logic import parse_errors
 
 
 class PageCheck(Page):
@@ -34,7 +32,6 @@ class PageCheck(Page):
         self._active_check = 0
 
         self.done_checks = DoneChecks()
-        self.skip_check = False
         self._navigation_completed = False
 
     def set_done_checks(self, done_checks):
@@ -46,9 +43,6 @@ class PageCheck(Page):
             if check.returncode is not None
         ]
         self.logger.info(f"Done checks: {done_list}")
-
-    def set_skip_check(self, skip_check):
-        self.skip_check = skip_check
 
     def _delayed_navigate_next(self):
         """Navigate to next page with a delay to avoid race conditions."""
@@ -77,14 +71,6 @@ class PageCheck(Page):
         self.update()        
         print("🔧 Starting checks")
         self.logger.info("Starting checks")
-        self.spins_promise = AO.run(
-            get_json,
-            args=[self.app_config.urls.available_spins_list],
-        )
-        self.ip_locale_promise = AO.run(
-            get_json,
-            args=[self.app_config.urls.fedora_geo_ip],
-        )
         self.run_checks()
 
     def run_checks(self):
@@ -102,27 +88,27 @@ class PageCheck(Page):
     def update_job_var_and_progressbar(self, current_task):
         self.logger.info(f"Updating progress for task: {current_task}")
         if current_task == CheckType.ARCH:
-            self.job_var.set(self.LN.check_arch if hasattr(self.LN, 'check_arch') else "Checking architecture...")
+            self.job_var.set(self.LN.check_arch)
             self.progressbar_check.set(0.10)
             self.logger.info("Progress: 10% - Architecture check")
         elif current_task == CheckType.UEFI:
-            self.job_var.set(self.LN.check_uefi if hasattr(self.LN, 'check_uefi') else "Checking UEFI...")
+            self.job_var.set(self.LN.check_uefi)
             self.progressbar_check.set(0.20)
             self.logger.info("Progress: 20% - UEFI check")
         elif current_task == CheckType.RAM:
-            self.job_var.set(self.LN.check_ram if hasattr(self.LN, 'check_ram') else "Checking RAM...")
+            self.job_var.set(self.LN.check_ram)
             self.progressbar_check.set(0.30)
             self.logger.info("Progress: 30% - RAM check")
         elif current_task == CheckType.SPACE:
-            self.job_var.set(self.LN.check_space if hasattr(self.LN, 'check_space') else "Checking disk space...")
+            self.job_var.set(self.LN.check_space)
             self.progressbar_check.set(0.50)
             self.logger.info("Progress: 50% - Disk space check")
         elif current_task == CheckType.RESIZABLE:
-            self.job_var.set(self.LN.check_resizable if hasattr(self.LN, 'check_resizable') else "Checking resizable partitions...")
+            self.job_var.set(self.LN.check_resizable)
             self.progressbar_check.set(0.80)
             self.logger.info("Progress: 80% - Resizable partition check")
         elif current_task == "downloads":
-            self.job_var.set(self.LN.check_available_downloads if hasattr(self.LN, 'check_available_downloads') else "Checking available downloads...")
+            self.job_var.set(self.LN.check_available_downloads)
             self.progressbar_check.set(0.90)
             self.logger.info("Progress: 90% - Available downloads check")
         self.update()  # Force GUI update
@@ -143,35 +129,16 @@ class PageCheck(Page):
         self.logger.info(f"Moving to next check, active_check now: {self._active_check}")
 
     def on_checks_complete(self):
-        if self.ip_locale_promise.status == Status.COMPLETED and self.ip_locale_promise.output:
-            self.state.compatibility.ip_locale = self.ip_locale_promise.output
-
-        if self.spins_promise.status == Status.COMPLETED and self.spins_promise.output:
-            # Parse the raw spin data into Spin objects
-            _, parsed_spins = parse_spins(self.spins_promise.output)
-            self.state.compatibility.all_spins = parsed_spins
-            self.finalize_and_parse_errors()
-        else:
-            self.update_job_var_and_progressbar("downloads")
-            self.after(100, self.on_checks_complete)
-
-    def finalize_and_parse_errors(self):
         print("🔧 finalize_and_parse_errors called")
         self.logger.info("finalize_and_parse_errors called")
         if self.done_checks:
             print("🔧 Processing done_checks")
             self.logger.info("Processing done_checks")
-            errors = parse_errors(self.done_checks, self.app_config, self.LN, self.skip_check)
+            errors = parse_errors(self.done_checks, self.app_config, self.LN)
             if not errors:
                 print("🔧 No errors found, proceeding with navigation")
                 self.logger.info("No errors found, proceeding with navigation")
                 self.state.compatibility.done_checks = self.done_checks
-                print("🔧 About to filter accepted spins")
-                filtered_spins, live_os_installer_index = filter_spins(self.state.compatibility.all_spins)
-                self.state.compatibility.accepted_spins = filtered_spins
-                print("🔧 Spin filtering completed")
-                if live_os_installer_index is not None:
-                    self.state.compatibility.live_os_installer_spin = self.state.compatibility.accepted_spins[live_os_installer_index]
                 print("🔧 About to navigate_next()")
                 self.logger.info("About to navigate_next()")
                 self._navigation_completed = True  # Mark navigation as completed

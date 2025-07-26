@@ -17,7 +17,8 @@ class PageValidationResult:
 
 
 class Page(ctk.CTkFrame, ABC):
-    LN = multilingual.get_lang()
+    from translations.en import Language
+    LN = Language()
     DI_VAR = multilingual.get_di_var()
 
     def __init__(self, parent, page_name: str, *args, **kwargs):

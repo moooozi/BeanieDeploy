@@ -17,7 +17,12 @@ class Status(Enum):
 
 
 class AsyncOperations:
-    def __init__(self, use_threading=True, use_queue=False):
+    def __init__(
+        self,
+        use_threading=True,
+        use_queue=False,
+        on_complete: Optional[Callable] = None,
+    ):
         self.use_threading = use_threading
         self.use_queue = use_queue
         self.queue: Optional[queue.Queue | multiprocessing.Queue] = (
@@ -27,6 +32,7 @@ class AsyncOperations:
         )
         self.status = Status.NOT_STARTED
         self.output = None
+        self.on_complete = on_complete
 
     @classmethod
     def run(
@@ -37,11 +43,22 @@ class AsyncOperations:
         kwargs=None,
         use_threading=True,
         use_queue=False,
+        on_complete: Optional[Callable] = None,
     ):
         if kwargs is None:
             kwargs = {}
-        instance = cls(use_threading=use_threading, use_queue=use_queue)
-        instance.run_async_process(function=function, cmd=cmd, args=args, kwargs=kwargs)
+        instance = cls(
+            use_threading=use_threading,
+            use_queue=use_queue,
+            on_complete=on_complete,
+        )
+        instance.run_async_process(
+            function=function,
+            cmd=cmd,
+            args=args,
+            kwargs=kwargs,
+            on_complete=on_complete,
+        )
         return instance
 
     def _read_cmd_output(self, command):
@@ -58,23 +75,35 @@ class AsyncOperations:
             while output and process.poll() is None:
                 self._handle_received_output(output)
         self.status = Status.COMPLETED
+        if self.on_complete:
+            self.on_complete(self.output)
 
     def _read_function_output(self, function, args, kwargs):
         self.status = Status.RUNNING
         result = function(*args, **kwargs)
         self._handle_received_output(result)
         self.status = Status.COMPLETED
+        if self.on_complete:
+            self.on_complete(self.output)
 
-    def run_async_process(self, function: Optional[Callable] = None, cmd: Optional[List[str]] = None, args=(), kwargs=None):
+    def run_async_process(
+        self,
+        function: Optional[Callable] = None,
+        cmd: Optional[List[str]] = None,
+        args=(),
+        kwargs=None,
+        on_complete: Optional[Callable] = None,
+    ):
         if kwargs is None:
             kwargs = {}
-            
+        if on_complete is not None:
+            self.on_complete = on_complete
+
         if not (bool(cmd) ^ bool(function)):
             raise ValueError("Either 'cmd' or 'function' must be provided")
 
         target = None
         target_args = ()
-        
         if cmd:
             if isinstance(cmd, str):
                 cmd = [cmd]

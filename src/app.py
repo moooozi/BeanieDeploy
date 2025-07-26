@@ -1,4 +1,6 @@
 from typing import Optional
+from async_operations import AsyncOperations
+from core.compatibility_logic import filter_spins
 from core.navigation_conditions import SkipCheckDisabledCondition
 from core.navigation_conditions import SkipCheckDisabledCondition
 import dummy
@@ -15,6 +17,7 @@ from pages.page_autoinst_addition_2 import PageAutoinstAddition2
 from pages.page_playground import PagePlayground
 from pages.page_verify import PageVerify
 from pages.page_restart_required import PageRestartRequired
+from services.network import get_json
 from services.spin_manager import parse_spins
 from templates.application import Application
 from config.settings import get_config
@@ -38,6 +41,19 @@ class MainApp(Application):
         self.state_manager = get_state_manager()
         self.logger = get_logger(__name__)
         
+        
+        self.spins_promise = AsyncOperations.run(
+            get_json,
+            args=[get_config().urls.available_spins_list],
+            on_complete=self._on_spin_promise_complete,
+        )
+
+        self.ip_locale_promise = AsyncOperations.run(
+            get_json,
+            args=[get_config().urls.fedora_geo_ip],
+            on_complete=lambda data: setattr(get_state().compatibility, "ip_locale", data),
+        )
+
         # Create page manager with integrated navigation
         self.page_manager = PageManager(
             self, fg_color="transparent", bg_color="transparent"
@@ -49,7 +65,6 @@ class MainApp(Application):
         # Configure navigation flow and automatically add pages
         self._configure_navigation_flow()
         self._add_pages_from_navigation_flow()
-
         # Handle initialization parameters using new state system
         playground = False
 
@@ -69,7 +84,7 @@ class MainApp(Application):
             
         elif skip_check:
             self.logger.info("Skipping checks - using dummy data")
-            _, all_spins = parse_spins(dummy.DUMMY_ALL_SPINS)
+            all_spins = parse_spins(dummy.DUMMY_ALL_SPINS)
             get_state().compatibility.accepted_spins = all_spins
             get_state().compatibility.ip_locale = dummy.DUMMY_IP_LOCALE
             print("Using dummy data for all spins")
@@ -139,3 +154,21 @@ class MainApp(Application):
                 self.logger.error(f"Failed to add page {page_class.__name__}: {e}")
         
         self.logger.info(f"Successfully added {len(page_classes)} pages from navigation flow")
+
+
+    def _on_spin_promise_complete(self, spins):
+        """
+        Callback for when the spins promise completes.
+        Sets the available spins in the state.
+        """
+        parsed_spins = parse_spins(spins)
+        state = get_state()
+        state.compatibility.all_spins = parsed_spins
+        print("🔧 About to filter accepted spins")
+        filtered_spins, live_os_installer_index = filter_spins(state.compatibility.all_spins)
+        state.compatibility.accepted_spins = filtered_spins
+        print("🔧 Spin filtering completed")
+        if live_os_installer_index is not None:
+            state.compatibility.live_os_installer_spin = state.compatibility.accepted_spins[live_os_installer_index]
+        print("🔧 About to navigate_next()")
+        self.logger.info("About to navigate_next()")

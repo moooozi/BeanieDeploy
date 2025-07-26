@@ -5,12 +5,14 @@ from templates.multi_radio_buttons import MultiRadioButtons
 from models.page import Page, PageValidationResult
 import tkinter as tk
 from templates.generic_page_layout import GenericPageLayout
+from tkinter_templates import FONTS_smaller
 
 
 class Page1(Page):
     def __init__(self, parent, page_name: str, *args, **kwargs):
         super().__init__(parent, page_name, *args, **kwargs)
         self.distro_var = tk.StringVar(self)
+        self.still_loading_label = None
 
     def init_page(self):
         print("🔧 Page1.init_page() called")
@@ -23,7 +25,7 @@ class Page1(Page):
             )
             print("🔧 Page1 GenericPageLayout created")
             page_frame = page_layout.content_frame
-
+            self.page_frame = page_frame  # Store for later use
             print("🔧 Page1 variables initialized")
         except Exception as e:
             print(f"🔧 Error in Page1.init_page(): {e}")
@@ -31,9 +33,12 @@ class Page1(Page):
             traceback.print_exc()
             raise
         
-        # Use state management instead of globals
+        self._wait_spin_loading()
+
+
+    def finish_init_page(self):
+        """Final initialization after spins are loaded."""
         accepted_spins = self.state.compatibility.accepted_spins
-        
         # Build a single dict for all spins, marking non-featured as advanced
         spin_radio_dict = {}
         for dist in accepted_spins:
@@ -56,13 +61,13 @@ class Page1(Page):
                 spin_radio_dict = {default_spin: default_entry, **spin_radio_dict}
 
         frame_distro = MultiRadioButtons(
-            page_frame,
+            self.page_frame,
             spin_radio_dict,
             self.distro_var,
             lambda: self.update_selection_info(),
         )
 
-        self.info_frame_raster = InfoFrame(page_frame, self.LN.info_about_selection)
+        self.info_frame_raster = InfoFrame(self.page_frame, self.LN.info_about_selection)
         frame_distro.grid_rowconfigure(
             len(frame_distro.children) + 1, weight=1
         )  # GUI bugfix for distro_description
@@ -173,3 +178,22 @@ class Page1(Page):
         #     message=message,
         #     type_="warning",
         # )
+
+
+    def _wait_spin_loading(self):
+        """Wait for spins to load before proceeding."""
+        if not self.state.compatibility.accepted_spins:
+            if self.still_loading_label is None:
+                self.still_loading_label = ctk.CTkLabel(
+                    self.page_frame,
+                    text="Loading spins...",
+                    font=FONTS_smaller,
+                    text_color="red",
+                )
+                self.still_loading_label.pack(expand=1, fill="both")
+            self.after(200, self._wait_spin_loading)
+        else:
+            if self.still_loading_label is not None:
+                self.still_loading_label.destroy()
+                self.still_loading_label = None
+            self.finish_init_page()
