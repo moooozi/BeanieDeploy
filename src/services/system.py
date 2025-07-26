@@ -5,8 +5,6 @@ Handles admin privileges, Windows registry, system information, etc.
 import ctypes
 import subprocess
 import winreg
-from typing import Union
-from pathlib import Path
 import locale
 
 

@@ -34,15 +34,7 @@ class DoneChecks:
         }
 
 
-class Checks:
-    def __init__(self):
-        self.check_functions = {
-            CheckType.ARCH: check_arch,
-            CheckType.UEFI: check_uefi,
-            CheckType.RAM: check_ram,
-            CheckType.SPACE: check_space,
-            CheckType.RESIZABLE: check_resizable,
-        }
+
 
 
 def check_arch():
@@ -155,3 +147,12 @@ def check_resizable():
         proc.returncode,
         proc,
     )
+
+
+check_functions = {
+    CheckType.ARCH: check_arch,
+    CheckType.UEFI: check_uefi,
+    CheckType.RAM: check_ram,
+    CheckType.SPACE: check_space,
+    CheckType.RESIZABLE: check_resizable,
+        }

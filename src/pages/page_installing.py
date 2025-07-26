@@ -16,12 +16,11 @@ from models.installation_context import (
 )
 from services.installation_service import InstallationService
 from templates.generic_page_layout import GenericPageLayout
-import gui_functions as gui
 from services.system import is_admin, get_admin
 import tkinter as tk
 from models.page import Page
 from tkinter_templates import ProgressBar, TextLabel
-from async_operations import AsyncOperations
+from async_operations import AsyncOperation
 
 class PageInstalling(Page):
     """
@@ -104,7 +103,7 @@ class PageInstalling(Page):
             install_queue = queue.Queue()
             
             # Start installation in background
-            AsyncOperations.run(
+            AsyncOperation.run(
                 function=self.installation_service.install,
                 args=(self.installation_context,),
                 use_threading=True,

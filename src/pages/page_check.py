@@ -1,9 +1,14 @@
+import pathlib
+import pickle
+import sys
+import tempfile
+from services.system import get_admin
 from templates.generic_page_layout import GenericPageLayout
 from models.page import Page
 from pages.page_error import PageError
 import tkinter as tk
-from compatibility_checks import Checks, DoneChecks, CheckType
-from async_operations import AsyncOperations as AO, Status
+from compatibility_checks import DoneChecks, CheckType
+from async_operations import AsyncOperation
 from tkinter_templates import ProgressBar, TextLabel
 from core.compatibility_logic import parse_errors
 
@@ -28,21 +33,15 @@ class PageCheck(Page):
     def __init__(self, parent, page_name, *args, **kwargs):
         super().__init__(parent, page_name, *args, **kwargs)
         self.job_var = tk.StringVar(self)
-        self.checks = Checks()
         self._active_check = 0
-
+        self._progress = 0.0
         self.done_checks = DoneChecks()
+        self._running_check_processes = 0
         self._navigation_completed = False
 
     def set_done_checks(self, done_checks):
         self.logger.info("Received done checks")
         self.done_checks = done_checks
-        done_list = [
-            check_type.value
-            for check_type, check in self.done_checks.checks.items()
-            if check.returncode is not None
-        ]
-        self.logger.info(f"Done checks: {done_list}")
 
     def _delayed_navigate_next(self):
         """Navigate to next page with a delay to avoid race conditions."""
@@ -74,59 +73,67 @@ class PageCheck(Page):
         self.run_checks()
 
     def run_checks(self):
-        from core.check_runner import run_checks
-        run_checks(
-            self.checks,
-            self.done_checks,
-            self._active_check,
-            self.on_checks_complete,
-            lambda check_type, check_function, check_operation: self.check_wrapper(check_type, check_function, check_operation),
-            self.monitor_async_operation,
-            self.logger
-        )
+        self.logger.info("Running checks")
+        from compatibility_checks import check_functions
 
-    def update_job_var_and_progressbar(self, current_task):
+        for check_type in check_functions:
+            if self.done_checks.checks[check_type].returncode is not None:
+                self.logger.info(f"Check {check_type} already completed, skipping")
+                continue
+            self.logger.info(f"Running check: {check_type}")
+            AsyncOperation().run(
+                check_functions[check_type],
+                on_complete=lambda output, check_type=check_type: self._handle_check_complete(output, check_type),
+            )
+            self._running_check_processes += 1
+
+    def _handle_check_complete(self, output, check_type):
+        """Callback for when a check completes."""
+        self._running_check_processes -= 1
+        if output.returncode == -200:
+            self.logger.warning(f"Check {check_type} requires admin privileges")
+            with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as temp_file:
+                pickle.dump(self.done_checks, temp_file)
+                temp_file_path = pathlib.Path(temp_file.name).absolute()
+            args_string = f'--checks_dumb "{temp_file_path}"'
+            self.after(200, lambda: (get_admin(args_string), sys.exit(0)))
+        else:
+            self.logger.info(f"Check {check_type} completed successfully")
+            print(f"🔧 Check {check_type} completed successfully")
+            print(f"🔧 Output: {output}")
+            self.done_checks.checks[check_type] = output
+            self.update_job_var_and_progressbar(check_type)
+        
+        if self._running_check_processes == 0:
+            self.on_checks_complete()
+
+    def update_job_var_and_progressbar(self, current_task: CheckType):
         self.logger.info(f"Updating progress for task: {current_task}")
         if current_task == CheckType.ARCH:
+            self._progress += 0.10
             self.job_var.set(self.LN.check_arch)
-            self.progressbar_check.set(0.10)
-            self.logger.info("Progress: 10% - Architecture check")
+            self.progressbar_check.set(self._progress)
+            self.logger.info(f"Progress: {self._progress * 100}% - Architecture check")
         elif current_task == CheckType.UEFI:
+            self._progress += 0.20
             self.job_var.set(self.LN.check_uefi)
-            self.progressbar_check.set(0.20)
-            self.logger.info("Progress: 20% - UEFI check")
+            self.progressbar_check.set(self._progress)
+            self.logger.info(f"Progress: {self._progress * 100}% - UEFI check")
         elif current_task == CheckType.RAM:
+            self._progress += 0.20
             self.job_var.set(self.LN.check_ram)
-            self.progressbar_check.set(0.30)
-            self.logger.info("Progress: 30% - RAM check")
+            self.progressbar_check.set(self._progress)
+            self.logger.info(f"Progress: {self._progress * 100}% - RAM check")
         elif current_task == CheckType.SPACE:
+            self._progress += 0.20
             self.job_var.set(self.LN.check_space)
-            self.progressbar_check.set(0.50)
-            self.logger.info("Progress: 50% - Disk space check")
+            self.progressbar_check.set(self._progress)
+            self.logger.info(f"Progress: {self._progress * 100}% - Disk space check")
         elif current_task == CheckType.RESIZABLE:
+            self._progress += 0.30
             self.job_var.set(self.LN.check_resizable)
-            self.progressbar_check.set(0.80)
-            self.logger.info("Progress: 80% - Resizable partition check")
-        elif current_task == "downloads":
-            self.job_var.set(self.LN.check_available_downloads)
-            self.progressbar_check.set(0.90)
-            self.logger.info("Progress: 90% - Available downloads check")
-        self.update()  # Force GUI update
-
-    def check_wrapper(self, check_type, check_function, operation):
-        from core.check_runner import check_wrapper
-        check_wrapper(
-            check_type,
-            check_function,
-            operation,
-            self.done_checks,
-            self.LN,
-            self.app_config,
-            self.logger,
-            self.update_job_var_and_progressbar
-        )
-        self._active_check += 1
-        self.logger.info(f"Moving to next check, active_check now: {self._active_check}")
+            self.progressbar_check.set(self._progress)
+            self.logger.info(f"Progress: {self._progress * 100}% - Resizable partition check")
 
     def on_checks_complete(self):
         print("🔧 finalize_and_parse_errors called")
@@ -134,6 +141,9 @@ class PageCheck(Page):
         if self.done_checks:
             print("🔧 Processing done_checks")
             self.logger.info("Processing done_checks")
+            print("🔧 Done checks:")
+            for check_type, check in self.done_checks.checks.items():
+                print(f"🔧 - {check_type.value}: {check}")
             errors = parse_errors(self.done_checks, self.app_config, self.LN)
             if not errors:
                 print("🔧 No errors found, proceeding with navigation")
@@ -156,27 +166,3 @@ class PageCheck(Page):
             print("🔧 No done_checks, navigating next anyway")
             self.logger.info("No done_checks, navigating next anyway")
             self.navigate_next()
-
-    def monitor_async_operation(
-        self,
-        operation: AO,
-        callback_function,
-        update_intervall=100,
-        *args,
-        **kwargs,
-    ):
-        if operation.status == Status.COMPLETED:
-            callback_function(*args, **kwargs)
-        elif operation.status == Status.FAILED:
-            # We exit the program in this case because it will relauch with admin rights
-            raise SystemExit
-        else:
-            self.after(
-                update_intervall,
-                self.monitor_async_operation,
-                operation,
-                callback_function,
-                update_intervall,
-                *args,
-                **kwargs,
-            )

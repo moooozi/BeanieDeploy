@@ -132,7 +132,7 @@ class Page1(Page):
         if self._get_selected_spin_index() is None:
             return PageValidationResult(
                 False, 
-                self.LN.popup_msg_no_spin_selected
+                "No spin selected."
             )
         return PageValidationResult(True)
 

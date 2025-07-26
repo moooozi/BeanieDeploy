@@ -16,7 +16,7 @@ class Status(Enum):
     FAILED = "Failed"
 
 
-class AsyncOperations:
+class AsyncOperation:
     def __init__(
         self,
         use_threading=True,

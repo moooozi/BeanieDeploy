@@ -1,5 +1,5 @@
 from typing import Optional
-from async_operations import AsyncOperations
+from async_operations import AsyncOperation
 from core.compatibility_logic import filter_spins
 from core.navigation_conditions import SkipCheckDisabledCondition
 from core.navigation_conditions import SkipCheckDisabledCondition
@@ -42,13 +42,13 @@ class MainApp(Application):
         self.logger = get_logger(__name__)
         
         
-        self.spins_promise = AsyncOperations.run(
+        self.spins_promise = AsyncOperation.run(
             get_json,
             args=[get_config().urls.available_spins_list],
             on_complete=self._on_spin_promise_complete,
         )
 
-        self.ip_locale_promise = AsyncOperations.run(
+        self.ip_locale_promise = AsyncOperation.run(
             get_json,
             args=[get_config().urls.fedora_geo_ip],
             on_complete=lambda data: setattr(get_state().compatibility, "ip_locale", data),

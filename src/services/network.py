@@ -5,8 +5,6 @@ Handles HTTP requests, downloads, WiFi profiles, etc.
 import json
 import os
 import subprocess
-import time
-import urllib.request
 import webbrowser
 from typing import Optional, List, Dict, Any
 from urllib.request import urlopen

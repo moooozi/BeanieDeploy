@@ -20,7 +20,7 @@ else:
 from config.settings import get_config
 from utils.logging import setup_logging, get_logger
 from utils.errors import get_error_handler, BeanieDeployError
-from core.state import get_state, get_state_manager
+from core.state import get_state_manager
 from models.installation_context import InstallationContext
 
 # Legacy imports (to be refactored)
@@ -81,10 +81,9 @@ def run():
             logger.info("PyInstaller bundle detected - running in release mode")
         else:
             # Development mode - always skip checks
-            skip_check = True
-            get_state().compatibility.skip_check = skip_check
+            #skip_check = True
+            # get_state().compatibility.skip_check = skip_check
             sys.argv.append("--skip_check")
-            skip_check = True
             logger.info("Running in debug mode")
 
         # Update version if provided
