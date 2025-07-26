@@ -1,8 +1,7 @@
 from models.page import Page, PageValidationResult
-import tkinter.ttk as ttk
 from templates.generic_page_layout import GenericPageLayout
 from templates.list_view import ListView
-
+import tkinter_templates 
 
 class PageAutoinstAddition1(Page):
     def __init__(self, parent, page_name: str, *args, **kwargs):
@@ -30,14 +29,14 @@ class PageAutoinstAddition1(Page):
             self.logger.error("No languages/locales loaded - this may be a PyInstaller bundling issue")
             langs_and_locales = get_fallback_langs_and_locales()
 
-        temp_frame = ttk.Frame(page_frame)
+        temp_frame = tkinter_templates.FrameContainer(page_frame)
         temp_frame.pack(expand=1, fill="both")
         temp_frame.grid_rowconfigure(0, weight=1)
         temp_frame.columnconfigure(0, weight=1)
         temp_frame.columnconfigure(1, weight=1)
-        lang_list_frame = ttk.Frame(temp_frame)
+        lang_list_frame = tkinter_templates.FrameContainer(temp_frame)
         lang_list_frame.grid(row=0, column=0, ipady=5, padx=5, sticky="news")
-        locale_list_frame = ttk.Frame(temp_frame)
+        locale_list_frame = tkinter_templates.FrameContainer(temp_frame)
         locale_list_frame.grid(row=0, column=1, ipady=5, padx=5, sticky="news")
 
         lang_list = ListView(

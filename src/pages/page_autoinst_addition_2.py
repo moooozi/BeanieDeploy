@@ -4,7 +4,7 @@ from templates.generic_page_layout import GenericPageLayout
 from templates.list_view import ListView
 import math
 import tkinter_templates as tkt
-import tkinter.ttk as ttk
+import tkinter_templates 
 
 
 class PageAutoinstAddition2(Page):
@@ -47,14 +47,14 @@ class PageAutoinstAddition2(Page):
         )
         self.all_timezones = sorted(langtable.list_all_timezones())
 
-        temp_frame = ttk.Frame(page_frame)
+        temp_frame = tkinter_templates.FrameContainer(page_frame)
         temp_frame.pack(expand=1, fill="both")
         temp_frame.grid_rowconfigure(0, weight=1)
         temp_frame.columnconfigure(0, weight=1)
         temp_frame.columnconfigure(1, weight=1)
-        keyboard_list_frame = ttk.Frame(temp_frame)
+        keyboard_list_frame = tkinter_templates.FrameContainer(temp_frame)
         keyboard_list_frame.grid(row=0, column=0, ipady=5, padx=5, sticky="news")
-        timezone_list_frame = ttk.Frame(temp_frame)
+        timezone_list_frame = tkinter_templates.FrameContainer(temp_frame)
         timezone_list_frame.grid(row=0, column=1, ipady=5, padx=5, sticky="news")
 
         self.keyboard_list = ListView(keyboard_list_frame, title=self.LN.list_keymaps)
