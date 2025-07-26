@@ -37,8 +37,10 @@ def get_admin(args: str = "") -> None:
     
     args_combined = existing_args + (" " + args if args else "")
     if not is_admin():
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", executable, args_combined, None, 1)
-    raise SystemExit
+        ctypes.windll.shell32.ShellExecuteW(
+            None, "runas", executable, args_combined, None, 1
+        )
+        raise SystemExit
 
 
 def windows_language_code() -> str:

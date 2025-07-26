@@ -97,13 +97,13 @@ class MainApp(Application):
 
     def _configure_navigation_flow(self):
         """Configure the navigation flow for the page manager."""
-        from typing import Dict, Type, Any
+        from typing import Dict, Type
         from models.page import Page
         from core.navigation_conditions import (
             AutoInstallCondition,
         )
         
-        navigation_flow: Dict[Type[Page], Any] = {
+        navigation_flow: Dict[Type[Page], Dict] = {
             PageCheck: {"conditions": [SkipCheckDisabledCondition()]},
             Page1: {},
             PageInstallMethod: {},

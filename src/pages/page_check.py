@@ -1,13 +1,13 @@
 import pathlib
 import pickle
-import sys
 import tempfile
+from turtle import up
 from services.system import get_admin
 from templates.generic_page_layout import GenericPageLayout
 from models.page import Page
 from pages.page_error import PageError
 import tkinter as tk
-from compatibility_checks import DoneChecks, CheckType
+from compatibility_checks import Check, DoneChecks, CheckType
 from async_operations import AsyncOperation
 from tkinter_templates import ProgressBar, TextLabel
 from core.compatibility_logic import parse_errors
@@ -36,7 +36,6 @@ class PageCheck(Page):
         self._active_check = 0
         self._progress = 0.0
         self.done_checks = DoneChecks()
-        self._running_check_processes = 0
         self._navigation_completed = False
 
     def set_done_checks(self, done_checks):
@@ -73,39 +72,44 @@ class PageCheck(Page):
         self.run_checks()
 
     def run_checks(self):
-        self.logger.info("Running checks")
+        self.logger.info("Running checks (sequential)")
         from compatibility_checks import check_functions
+        self._pending_check_types = list(check_functions.keys())
+        self._check_functions = check_functions
+        self._run_next_check()
 
-        for check_type in check_functions:
-            if self.done_checks.checks[check_type].returncode is not None:
-                self.logger.info(f"Check {check_type} already completed, skipping")
-                continue
-            self.logger.info(f"Running check: {check_type}")
-            AsyncOperation().run(
-                check_functions[check_type],
-                on_complete=lambda output, check_type=check_type: self._handle_check_complete(output, check_type),
-            )
-            self._running_check_processes += 1
+    def _run_next_check(self) -> None:
+        if not self._pending_check_types:
+            self.on_checks_complete()
+            return
+        check_type = self._pending_check_types.pop(0)
+        self.update()
+        if self.done_checks.checks[check_type].returncode is not None:
+            self.logger.info(f"Check {check_type} already completed, skipping")
+            self.update_job_var_and_progressbar(check_type)
+            self.after(0, self._run_next_check)
+            return
+        self.logger.info(f"Running check: {check_type}")
+        AsyncOperation().run(
+            self._check_functions[check_type],
+            on_complete=lambda output, check_type=check_type: self.after(0, self._handle_check_complete, output, check_type),
+        )
 
-    def _handle_check_complete(self, output, check_type):
+    def _handle_check_complete(self, output: Check, check_type: CheckType) -> None:
         """Callback for when a check completes."""
-        self._running_check_processes -= 1
         if output.returncode == -200:
             self.logger.warning(f"Check {check_type} requires admin privileges")
             with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as temp_file:
                 pickle.dump(self.done_checks, temp_file)
                 temp_file_path = pathlib.Path(temp_file.name).absolute()
             args_string = f'--checks_dumb "{temp_file_path}"'
-            self.after(200, lambda: (get_admin(args_string), sys.exit(0)))
+            get_admin(args_string)
         else:
-            self.logger.info(f"Check {check_type} completed successfully")
             print(f"🔧 Check {check_type} completed successfully")
-            print(f"🔧 Output: {output}")
+            self.logger.info(f"Check {check_type} completed successfully")
             self.done_checks.checks[check_type] = output
             self.update_job_var_and_progressbar(check_type)
-        
-        if self._running_check_processes == 0:
-            self.on_checks_complete()
+        self.after(0, self._run_next_check)
 
     def update_job_var_and_progressbar(self, current_task: CheckType):
         self.logger.info(f"Updating progress for task: {current_task}")
@@ -136,24 +140,18 @@ class PageCheck(Page):
             self.logger.info(f"Progress: {self._progress * 100}% - Resizable partition check")
 
     def on_checks_complete(self):
-        print("🔧 finalize_and_parse_errors called")
+        """Callback for when all checks are complete."""
         self.logger.info("finalize_and_parse_errors called")
         if self.done_checks:
             print("🔧 Processing done_checks")
             self.logger.info("Processing done_checks")
-            print("🔧 Done checks:")
-            for check_type, check in self.done_checks.checks.items():
-                print(f"🔧 - {check_type.value}: {check}")
             errors = parse_errors(self.done_checks, self.app_config, self.LN)
             if not errors:
-                print("🔧 No errors found, proceeding with navigation")
                 self.logger.info("No errors found, proceeding with navigation")
                 self.state.compatibility.done_checks = self.done_checks
-                print("🔧 About to navigate_next()")
                 self.logger.info("About to navigate_next()")
                 self._navigation_completed = True  # Mark navigation as completed
                 self.after(10, self._delayed_navigate_next)
-                print("🔧 Scheduled delayed navigation")
             else:
                 print(f"🔧 Found {len(errors)} errors, navigating to error page")
                 self.logger.info(f"Found {len(errors)} errors, navigating to error page")
