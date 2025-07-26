@@ -47,85 +47,6 @@ def get_json(url: str, queue=None, named: Optional[str] = None) -> Any:
         return return_value
 
 
-def download_with_standard_lib(
-    url: str, 
-    destination: str, 
-    output_name: Optional[str] = None, 
-    queue=None
-) -> int:
-    """
-    Download a file using Python's standard library.
-    
-    DEPRECATED: Use services.download.DownloadService instead for new code.
-    
-    Args:
-        url: URL to download from
-        destination: Destination directory
-        output_name: Optional custom filename
-        queue: Optional queue for progress updates
-        
-    Returns:
-        1 if successful
-    """
-    import warnings
-    warnings.warn(
-        "download_with_standard_lib is deprecated. Use services.download.DownloadService instead.",
-        DeprecationWarning,
-        stacklevel=2
-    )
-    
-    local_filename = output_name if output_name else url.split("/")[-1]
-    local_filepath = os.path.join(destination, local_filename)
-
-    tracker = {
-        "type": "dl_tracker",
-        "file_name": local_filename,
-        "status": "downloading",
-        "speed": "0",
-        "eta": "N/A",
-        "size": "0",
-        "%": "0",
-    }
-
-    with urllib.request.urlopen(url) as response:
-        total_size = int(response.getheader("Content-Length").strip())
-        tracker["size"] = str(total_size)
-        downloaded_size = 0
-        start_time = time.time()
-        last_update_time = start_time
-
-        with open(local_filepath, "wb") as f:
-            while True:
-                chunk = response.read(8192)
-                if not chunk:
-                    break
-                f.write(chunk)
-                downloaded_size += len(chunk)
-                elapsed_time = time.time() - start_time
-                
-                if elapsed_time > 0:
-                    speed = downloaded_size / elapsed_time
-                    eta = (total_size - downloaded_size) / speed if speed > 0 else "N/A"
-                else:
-                    speed = 0
-                    eta = "N/A"
-                
-                tracker["speed"] = f"{speed:.2f}"
-                tracker["eta"] = f"{eta:.2f}" if eta != "N/A" else "N/A"
-                tracker["%"] = str(int((downloaded_size / total_size) * 100))
-
-                current_time = time.time()
-                if current_time - last_update_time >= 0.5:
-                    if queue:
-                        queue.put(tracker)
-                    last_update_time = current_time
-
-    tracker["status"] = "complete"
-    if queue:
-        queue.put(tracker)
-    return 1
-
-
 def extract_wifi_profiles(folder_path: str) -> int:
     """
     Export Windows WiFi profiles to a folder.
@@ -144,20 +65,6 @@ def extract_wifi_profiles(folder_path: str) -> int:
         universal_newlines=True,
     )
     return result.returncode
-
-
-def parse_xml(xml: str) -> Dict[str, Any]:
-    """
-    Parse XML string into a dictionary.
-    
-    Args:
-        xml: XML string to parse
-        
-    Returns:
-        Parsed XML as dictionary
-    """
-    return xmltodict.parse(xml)
-
 
 def get_wifi_profiles(wifi_profile_dir: str) -> List[Dict[str, str]]:
     """
@@ -184,7 +91,7 @@ def get_wifi_profiles(wifi_profile_dir: str) -> List[Dict[str, str]]:
         try:
             with open(os.path.join(wifi_profile_dir, filename), "r") as f:
                 xml_content = f.read()
-                wifi_profile: dict = parse_xml(xml_content)
+                wifi_profile: dict = xmltodict.parse(xml_content)
                 
                 name = wifi_profile["WLANProfile"]["name"]
                 ssid = wifi_profile["WLANProfile"]["SSIDConfig"]["SSID"]["name"]

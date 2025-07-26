@@ -6,7 +6,7 @@ import pickle
 import tempfile
 
 from models.pyside6_page import PySide6Page, PageValidationResult
-from pyside6_templates import GenericPageLayout
+from templates.pyside6_generic_page_layout import GenericPageLayout
 from pyside6_async_operations import PySide6AsyncOperations
 from services.network import get_json
 from services.system import get_admin
@@ -60,10 +60,6 @@ class PySide6PageCheck(PySide6Page):
         ]
         self.logger.info(f"Done checks: {done_list}")
 
-    def set_skip_check(self, skip_check: bool):
-        """Set whether to skip checks and use dummy data."""
-        self.skip_check = skip_check
-
     def init_page(self):
         """Initialize the page layout and widgets."""
         self.logger.info("Initializing PageCheck (System Compatibility)")
@@ -115,41 +111,7 @@ class PySide6PageCheck(PySide6Page):
         QTimer.singleShot(100, self._start_checks)
 
     def _start_checks(self):
-        """Start the checking process."""
-        if self.skip_check:
-            self._use_dummy_data()
-        else:
-            self._start_real_checks()
-
-    def _use_dummy_data(self):
-        """Use dummy data for testing/development."""
-        try:
-            import dummy
-            
-            self.logger.info("Skipping checks - using dummy data")
-            if self.status_label:
-                self.status_label.setText("Using dummy data for testing...")
-            if self.progress_bar:
-                self.progress_bar.setValue(100)
-            
-            # Convert dummy data to proper Spin objects
-            _, all_spins = parse_spins(dummy.DUMMY_ALL_SPINS)
-            self.state.compatibility.all_spins = all_spins
-            self.state.compatibility.ip_locale = dummy.DUMMY_IP_LOCALE
-            
-            self.logger.info("Set dummy data, finalizing...")
-            
-            # Use a timer to simulate some processing time
-            QTimer.singleShot(1000, self._finalize_and_parse_errors)
-            
-        except Exception as e:
-            self.logger.error(f"Error setting up dummy data: {e}")
-            self._show_error(f"Failed to set up dummy data: {e}")
-
-    def _start_real_checks(self):
-        """Start real system checks."""
-        self.logger.info("Starting real system checks")
-        
+        """Start the checking process."""        
         # Start network operations first
         self.spins_operation = PySide6AsyncOperations(self)
         self.spins_operation.finished.connect(self._on_spins_loaded)
@@ -179,14 +141,15 @@ class PySide6PageCheck(PySide6Page):
             self.logger.info(f"Running check {self._active_check + 1}/{len(check_types)}: {check_type}")
             
             # Update progress and status
-            progress_percent = int((self._active_check / len(check_types)) * 80)  # Reserve 20% for downloads
+            progress_percent = int((self._active_check / len(check_types)) * 95)  # Reserve 5% for downloads
             self._update_check_status(check_type, progress_percent)
             
             # Skip if already done
             if self.done_checks.checks[check_type].returncode is not None:
                 self.logger.info(f"Check {check_type} already completed, skipping")
+                print(f"Check {check_type} already completed, skipping")
                 self._active_check += 1
-                QTimer.singleShot(100, self._run_next_check)
+                QTimer.singleShot(1, self._run_next_check)
                 return
             
             # Run the check
@@ -422,12 +385,7 @@ class PySide6PageCheck(PySide6Page):
             ]
         
         self.logger.info(f"Filtered to {len(self.state.compatibility.accepted_spins)} accepted spins")
-        
-        # Set windows username (like original)
-        from services.system import get_windows_username
-        self.state.user.windows_username = get_windows_username()
-        
-        # Navigate next (like original does)
+                
         self.logger.info("About to navigate_next()")
         # Use QTimer to delay navigation slightly (equivalent to self.after(10, ...))
         QTimer.singleShot(10, self._safe_navigate_next)

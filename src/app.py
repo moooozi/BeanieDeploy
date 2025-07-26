@@ -1,5 +1,7 @@
 from typing import Optional
 from core.navigation_conditions import SkipCheckDisabledCondition
+from core.navigation_conditions import SkipCheckDisabledCondition
+import dummy
 from models.page_manager import PageManager
 from models.installation_context import InstallationContext
 from pages.page_autoinst2 import PageAutoinst2
@@ -13,9 +15,10 @@ from pages.page_autoinst_addition_2 import PageAutoinstAddition2
 from pages.page_playground import PagePlayground
 from pages.page_verify import PageVerify
 from pages.page_restart_required import PageRestartRequired
+from services.spin_manager import parse_spins
 from templates.application import Application
 from config.settings import get_config
-from core.state import get_state_manager
+from core.state import get_state, get_state_manager
 from utils.logging import get_logger
 
 
@@ -53,25 +56,29 @@ class MainApp(Application):
         if playground:
             return self.page_manager.show_page(PagePlayground)
         
-        if installation_context:
+        elif installation_context:
             # Set installation context through the specific page type
             self.page_manager.configure_page(PageInstalling, 
                                            lambda page: page.set_installation_context(installation_context))
             return self.page_manager.show_page(PageInstalling)
-        
-        if skip_check:
-            # Set skip check flag through the specific page type
-            self.page_manager.configure_page(PageCheck,
-                                           lambda page: page.set_skip_check(skip_check))
-            
-        if done_checks:
+                
+        elif done_checks:
             # Set done checks through the specific page type
             self.page_manager.configure_page(PageCheck,
                                            lambda page: page.set_done_checks(done_checks))
             
-        # Start with the check page only if no page is currently shown
+        elif skip_check:
+            self.logger.info("Skipping checks - using dummy data")
+            _, all_spins = parse_spins(dummy.DUMMY_ALL_SPINS)
+            get_state().compatibility.accepted_spins = all_spins
+            get_state().compatibility.ip_locale = dummy.DUMMY_IP_LOCALE
+            print("Using dummy data for all spins")
+
+
+        # Show the first page in self._navigation_flow if no page is currently shown
         if not self.page_manager.current_page:
-            return self.page_manager.show_page(PageCheck)
+            # Show the first page in self._navigation_flow
+            return self.page_manager.start()
 
     def _configure_navigation_flow(self):
         """Configure the navigation flow for the page manager."""

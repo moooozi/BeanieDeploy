@@ -23,9 +23,18 @@ class DataUnit:
             "MiB": cls.MEBIBYTE,
             "GiB": cls.GIBIBYTE,
         }
-        value, unit = data_str.split()
+        parts = data_str.split()
+        if len(parts) == 1:
+            value = parts[0]
+            unit = "B"
+        elif len(parts) == 2:
+            value, unit = parts
+        else:
+            raise ValueError(f"Invalid data string format: '{data_str}'")
+        if unit not in units:
+            raise ValueError(f"Unknown unit: '{unit}'")
         return cls(float(value) * units[unit])
-
+    
     @classmethod
     def from_bytes(cls, bytes):
         return cls(bytes)

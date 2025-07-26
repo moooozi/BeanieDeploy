@@ -20,12 +20,12 @@ else:
 from config.settings import get_config
 from utils.logging import setup_logging, get_logger
 from utils.errors import get_error_handler, BeanieDeployError
-from core.state import get_state_manager
+from core.state import get_state, get_state_manager
 from models.installation_context import InstallationContext
 
 # Legacy imports (to be refactored)
 import multilingual
-from services.system import cleanup_on_reboot, windows_language_code, is_admin
+from services.system import windows_language_code, is_admin
 from app import MainApp
 
 
@@ -79,7 +79,14 @@ def run():
         if is_pyinstaller_bundle:
             args.release = True
             logger.info("PyInstaller bundle detected - running in release mode")
-        
+        else:
+            # Development mode - always skip checks
+            skip_check = True
+            get_state().compatibility.skip_check = skip_check
+            sys.argv.append("--skip_check")
+            skip_check = True
+            logger.info("Running in debug mode")
+
         # Update version if provided
         if args.app_version:
             config.update_version(args.app_version)
@@ -97,16 +104,7 @@ def run():
             
         if args.installation_context:
             installation_context = pickle.load(args.installation_context)
-        
-        # Handle release mode cleanup
-        if args.release:
-            cleanup_on_reboot(str(script_dir))
-        else:
-            # Development mode - always skip checks
-            sys.argv.append("--skip_check")
-            skip_check = True
-            logger.info("Running in debug mode")
-        
+                
         # Log application startup
         logger.info(f"APP STARTING: {config.app.name} v{config.app.version}")
         

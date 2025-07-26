@@ -74,26 +74,6 @@ def set_windows_time_to_utc() -> bool:
     except Exception:
         return False
 
-
-def cleanup_on_reboot(dir_to_delete: Union[str, Path]) -> None:
-    """
-    Schedule a directory to be deleted on next reboot.
-    
-    Args:
-        dir_to_delete: Path to directory that should be deleted on reboot
-    """
-    dir_path = str(dir_to_delete).replace("/", "\\")
-    cmd = f'CMD /C rmdir /s /q "{dir_path}"'
-
-    with winreg.OpenKey(
-        winreg.HKEY_CURRENT_USER,
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce",
-        0,
-        winreg.KEY_SET_VALUE,
-    ) as key:
-        winreg.SetValueEx(key, "BeanyDeploy Cleanup", 0, winreg.REG_SZ, cmd)
-
-
 def run_powershell_script(script: str) -> str:
     """
     Execute a PowerShell script and return the output.

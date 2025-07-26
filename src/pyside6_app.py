@@ -1,11 +1,14 @@
 from typing import Optional
 from PySide6.QtWidgets import QApplication, QMessageBox
 
+from core.navigation_conditions import SkipCheckDisabledCondition
+import dummy
 from models.pyside6_page_manager import PySide6PageManager
 from models.installation_context import InstallationContext
+from services.spin_manager import parse_spins
 from templates.pyside6_application import PySide6Application
 from config.settings import get_config
-from core.state import get_state_manager
+from core.state import get_state, get_state_manager
 from utils.logging import get_logger
 
 # Import PySide6 page classes
@@ -61,15 +64,13 @@ class PySide6MainApp(PySide6Application):
     def _configure_navigation_flow(self):
         """Configure the navigation flow for the page manager."""
         from core.navigation_conditions import (
-            UserAccountRequiredCondition, 
             AutoInstallCondition,
-            CustomInstallCondition
         )
         
         # Configure navigation flow with PySide6 page classes
         # As we create more PySide6 pages, we'll uncomment them here
         navigation_flow = {
-            PySide6PageCheck: {},
+            PySide6PageCheck: {"conditions": [SkipCheckDisabledCondition()]},
             PySide6Page1: {},
             PySide6PageInstallMethod: {},
             PySide6PageAutoinst2: {
@@ -146,22 +147,23 @@ class PySide6MainApp(PySide6Application):
             # self.page_manager.configure_page(PySide6PageInstalling, 
             #                                lambda page: page.set_installation_context(installation_context))
             # return self.page_manager.show_page(PySide6PageInstalling)
-        
-        if skip_check:
-            # Configure check page to skip checks
-            self.logger.info("Skip check requested")
-            self.page_manager.configure_page(PySide6PageCheck,
-                                           lambda page: page.set_skip_check(skip_check))
-            
         if done_checks:
             # Set done checks through the specific page type
             self.logger.info("Done checks provided")
             self.page_manager.configure_page(PySide6PageCheck,
                                            lambda page: page.set_done_checks(done_checks))
-        
-        # Start with PageCheck for now (like the original app)
+
+
+        if skip_check:
+            self.logger.info("Skipping checks - using dummy data")
+            _, all_spins = parse_spins(dummy.DUMMY_ALL_SPINS)
+            get_state().compatibility.accepted_spins = all_spins
+            get_state().compatibility.ip_locale = dummy.DUMMY_IP_LOCALE
+            print("Using dummy data for all spins")
+            
+        # Show the first page
         if not self.page_manager.current_page:
-            self.page_manager.show_page(PySide6PageCheck)
+            return self.page_manager.start()
 
     def _show_navigation_error(self, message: str):
         """Show navigation error to user."""

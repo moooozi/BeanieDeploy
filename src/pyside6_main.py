@@ -22,12 +22,12 @@ else:
 from config.settings import get_config
 from utils.logging import setup_logging, get_logger
 from utils.errors import BeanieDeployError
-from core.state import get_state_manager
+from core.state import get_state, get_state_manager
 from models.installation_context import InstallationContext
 
 # Legacy imports (to be refactored)
 import multilingual
-from services.system import cleanup_on_reboot, windows_language_code
+from services.system import windows_language_code
 
 # PySide6 specific imports
 from pyside6_app import PySide6MainApp, create_pyside6_app
@@ -93,8 +93,12 @@ def run_pyside6():
             args.release = True
             logger.info("PyInstaller bundle detected - running in release mode")
         else:
-            args.skip_check = True
-            logger.info("Running in development mode")
+            # Development mode - always skip checks
+            skip_check = True
+            get_state().compatibility.skip_check = skip_check
+            sys.argv.append("--skip_check")
+            skip_check = True
+            logger.info("Running in debug mode")
 
         skip_check = args.skip_check
         # Update version if provided
@@ -184,10 +188,6 @@ def run_pyside6():
         except:
             pass  # Ignore errors during cleanup
         
-        try:
-            cleanup_on_reboot("")  # Pass empty string as placeholder
-        except:
-            pass  # Ignore cleanup errors
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QMainWindow, QApplication
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QFont
 from typing import Optional
 import multiprocessing
 import queue
@@ -29,6 +29,11 @@ class PySide6Application(QMainWindow):
         """Set up the main window properties."""
         # Set window title
         self.setWindowTitle("BeanieDeploy")
+
+        # Set a slightly larger default font
+        font = QFont()
+        font.setPointSize(12)  # Change 12 to your preferred size
+        self.setFont(font)
         
         # Set window size and constraints
         self.resize(850, 580)

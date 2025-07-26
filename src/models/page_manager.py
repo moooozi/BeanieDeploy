@@ -328,4 +328,21 @@ class PageManager(ctk.CTkFrame):
             return True
         return False
 
+    def start(self):
+        """
+        Show the first enabled page in the navigation flow.
+        """
+        if not self._navigation_flow:
+            self.logger.warning("Navigation flow not configured")
+            return
+
+        page_order = list(self._navigation_flow.keys())
+        for page_class in page_order:
+            if self._is_page_enabled(page_class):
+                print(f"Page {page_class.__name__} is enabled, starting navigation")
+                self.show_page(page_class)
+                self.logger.info(f"Started navigation with page: {page_class.__name__}")
+                return
+        self.logger.warning("No enabled page found to start navigation")
+
 

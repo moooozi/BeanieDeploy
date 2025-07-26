@@ -74,33 +74,18 @@ class PageCheck(Page):
         job_label.pack(pady=0, padx=10)
         print("🔧 GUI elements created")
         
-        self.update()
-        print(f"🔧 GUI updated, skip_check = {self.skip_check}")
-        
-        if self.skip_check:
-            import dummy
-            
-            print("🔧 Skipping checks - using dummy data")
-            self.logger.info("Skipping checks - using dummy data")
-            # Convert dummy data to proper Spin objects
-            _, all_spins = parse_spins(dummy.DUMMY_ALL_SPINS)
-            self.state.compatibility.all_spins = all_spins
-            self.state.compatibility.ip_locale = dummy.DUMMY_IP_LOCALE
-            print("🔧 Set dummy data, calling finalize_and_parse_errors")
-            self.logger.info("Set dummy data, calling finalize_and_parse_errors")
-            self.finalize_and_parse_errors()
-        else:
-            print("🔧 Starting real checks")
-            self.logger.info("Starting real checks")
-            self.spins_promise = AO.run(
-                get_json,
-                args=[self.app_config.urls.available_spins_list],
-            )
-            self.ip_locale_promise = AO.run(
-                get_json,
-                args=[self.app_config.urls.fedora_geo_ip],
-            )
-            self.run_checks()
+        self.update()        
+        print("🔧 Starting checks")
+        self.logger.info("Starting checks")
+        self.spins_promise = AO.run(
+            get_json,
+            args=[self.app_config.urls.available_spins_list],
+        )
+        self.ip_locale_promise = AO.run(
+            get_json,
+            args=[self.app_config.urls.fedora_geo_ip],
+        )
+        self.run_checks()
 
     def run_checks(self):
         from core.check_runner import run_checks

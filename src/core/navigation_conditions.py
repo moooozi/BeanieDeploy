@@ -15,6 +15,10 @@ class PageCondition(ABC):
         """Check if this condition is met."""
         pass
 
+    def is_satisfied(self) -> bool:
+        """Check if the condition is satisfied."""
+        return self.is_enabled()
+
 
 class AutoInstallCondition(PageCondition):
     """Condition for auto-install related pages."""
@@ -49,7 +53,6 @@ class CustomInstallCondition(PageCondition):
     def is_enabled(self) -> bool:
         state = get_state()
         return state.installation.install_options.partition_method == "custom"
-
 
 
 class SkipCheckDisabledCondition(PageCondition):

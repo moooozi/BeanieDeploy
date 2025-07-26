@@ -292,3 +292,22 @@ class PySide6PageManager(QWidget):
         """Handle validation error from a page."""
         self.navigation_error.emit(message)
         # In a real application, you might show a message box or status message here
+    
+    def start(self):
+        """
+        Show the first enabled page in the navigation flow.
+        """
+        print("Starting navigation flow")
+        if not self._navigation_flow:
+            self.logger.warning("Navigation flow not configured")
+            return
+
+        page_order = list(self._navigation_flow.keys())
+        for page_class in page_order:
+            if self._is_page_enabled(page_class):
+                self.show_page(page_class)
+                self.logger.info(f"Started navigation with page: {page_class.__name__}")
+                return
+        self.logger.warning("No enabled page found to start navigation")
+
+

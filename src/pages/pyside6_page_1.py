@@ -3,7 +3,9 @@ from PySide6.QtCore import Qt
 from typing import Optional
 
 from models.pyside6_page import PySide6Page, PageValidationResult
-from pyside6_templates import GenericPageLayout, MultiRadioButtons
+from templates.pyside6_generic_page_layout import GenericPageLayout
+from templates.pyside6_multi_radio_buttons import MultiRadioButtons
+
 
 
 class PySide6Page1(PySide6Page):
@@ -38,6 +40,7 @@ class PySide6Page1(PySide6Page):
             
             # Set up the main layout
             main_layout = QVBoxLayout(self)
+            
             main_layout.addWidget(self.page_layout)
             
             # Get accepted spins from state
@@ -95,12 +98,6 @@ class PySide6Page1(PySide6Page):
     
     def _create_radio_button_group(self, parent_layout):
         """Create the radio button group for spin selection."""
-        # Add instructions label
-        instructions = QLabel(
-            "Select the distribution you want to install:"
-        )
-        instructions.setWordWrap(True)
-        parent_layout.content_layout.addWidget(instructions)
         
         # Create the radio button group
         self.radio_group = MultiRadioButtons(

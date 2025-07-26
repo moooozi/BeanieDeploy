@@ -3,7 +3,7 @@ from PySide6.QtCore import Qt
 from typing import Optional, List
 
 from models.pyside6_page import PySide6Page, PageValidationResult
-from pyside6_templates import GenericPageLayout
+from templates.pyside6_generic_page_layout import GenericPageLayout
 
 
 class PySide6PageError(PySide6Page):

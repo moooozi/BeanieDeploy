@@ -32,7 +32,7 @@ class CompatibilityState:
     all_spins: List[Spin] = field(default_factory=list)
     accepted_spins: List[Spin] = field(default_factory=list)
     live_os_installer_spin: Optional[Spin] = None
-
+    skip_check: bool = False
 
 @dataclass
 class InstallationState:
