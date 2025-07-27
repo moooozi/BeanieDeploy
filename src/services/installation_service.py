@@ -226,11 +226,12 @@ class InstallationService:
                 if context.is_live_image_installation():
                     live_iso_path = context.get_live_iso_path()
                     if live_iso_path:
-                        _ = disk.mount_iso(str(live_iso_path))  # Mount but don't track letter
+                        live_image_mount_letter = disk.mount_iso(str(live_iso_path))
                         try:
                             # Copy live image files as needed
-                            # Implementation depends on specific requirements
-                            pass
+                            live_image_source = f"{live_image_mount_letter}:\\LiveOS\\"
+                            destination = f"{context.tmp_part_letter}:\\LiveOS\\"
+                            file_service.copy_files(source=live_image_source, destination=destination)
                         finally:
                             disk.unmount_iso(str(live_iso_path))
                 

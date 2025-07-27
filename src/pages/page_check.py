@@ -1,7 +1,6 @@
 import pathlib
 import pickle
 import tempfile
-from turtle import up
 from services.system import get_admin
 from templates.generic_page_layout import GenericPageLayout
 from models.page import Page

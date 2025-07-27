@@ -198,10 +198,3 @@ class PageInstalling(Page):
         """Set the installation context for modern type-safe installation."""
         self.logger.info("Setting installation context for type-safe installation")
         self.installation_context = installation_context
-
-    # Keep backward compatibility methods for now
-    def set_installer_args(self, installer_args):
-        """Legacy method for backward compatibility."""
-        self.logger.warning("Using legacy set_installer_args - consider updating to use InstallationContext")
-        # Could convert legacy args to InstallationContext if needed
-
