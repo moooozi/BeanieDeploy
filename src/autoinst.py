@@ -28,6 +28,9 @@ def get_keymap_by_description(keymap_description):
     return ALL_KEYMAPS_BY_DESC[keymap_description]
 """
 
+def get_keymap_description(keymap):
+    return langtable._keyboards_db[keymap].description
+
 
 def is_valid_timezone(timezone):
     """
