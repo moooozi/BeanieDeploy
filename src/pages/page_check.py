@@ -8,23 +8,28 @@ from pages.page_error import PageError
 import tkinter as tk
 from compatibility_checks import Check, DoneChecks, CheckType
 from async_operations import AsyncOperation
-from tkinter_templates import ProgressBar, TextLabel
+from tkinter_templates import TextLabel
 from core.compatibility_logic import parse_errors
+import customtkinter as ctk
 
 
 class PageCheck(Page):
     def on_show(self):
         """Called when the page is shown."""
         if self._navigation_completed:
-            print("🔧 PageCheck.on_show() called but navigation already completed, ignoring")
+            print(
+                "🔧 PageCheck.on_show() called but navigation already completed, ignoring"
+            )
             return
         print("🔧 PageCheck.on_show() called")
         super().on_show()
 
     def tkraise(self, aboveThis=None):
         """Override tkraise to prevent PageCheck from coming to front after navigation."""
-        if hasattr(self, '_navigation_completed') and self._navigation_completed:
-            print("🔧 PageCheck.tkraise() called but navigation already completed, ignoring")
+        if hasattr(self, "_navigation_completed") and self._navigation_completed:
+            print(
+                "🔧 PageCheck.tkraise() called but navigation already completed, ignoring"
+            )
             return
         print("🔧 PageCheck.tkraise() called")
         super().tkraise(aboveThis)
@@ -51,21 +56,23 @@ class PageCheck(Page):
     def init_page(self):
         print("🔧 PageCheck.init_page() called")
         self.logger.info("PageCheck.init_page() called")
-        
+
         page_layout = GenericPageLayout(self, self.LN.check_running)
         print("🔧 GenericPageLayout created")
 
         page_frame = page_layout.content_frame
-        
-        self.progressbar_check = ProgressBar(page_frame)
+
+        self.progressbar_check = ctk.CTkProgressBar(
+            page_frame, orientation="horizontal", mode="determinate"
+        )
         self.progressbar_check.pack(pady=(0, 20), fill="both")
         self.progressbar_check.set(0)
-        
+
         job_label = TextLabel(page_frame, var=self.job_var)
         job_label.pack(pady=0, padx=10)
         print("🔧 GUI elements created")
-        
-        self.update()        
+
+        self.update()
         print("🔧 Starting checks")
         self.logger.info("Starting checks")
         self.run_checks()
@@ -73,6 +80,7 @@ class PageCheck(Page):
     def run_checks(self):
         self.logger.info("Running checks (sequential)")
         from compatibility_checks import check_functions
+
         self._pending_check_types = list(check_functions.keys())
         self._check_functions = check_functions
         self._run_next_check()
@@ -91,7 +99,9 @@ class PageCheck(Page):
         self.logger.info(f"Running check: {check_type}")
         AsyncOperation().run(
             self._check_functions[check_type],
-            on_complete=lambda output, check_type=check_type: self.after(0, self._handle_check_complete, output, check_type),
+            on_complete=lambda output, check_type=check_type: self.after(
+                0, self._handle_check_complete, output, check_type
+            ),
         )
 
     def _handle_check_complete(self, output: Check, check_type: CheckType) -> None:
@@ -136,7 +146,9 @@ class PageCheck(Page):
             self._progress += 0.30
             self.job_var.set(self.LN.check_resizable)
             self.progressbar_check.set(self._progress)
-            self.logger.info(f"Progress: {self._progress * 100}% - Resizable partition check")
+            self.logger.info(
+                f"Progress: {self._progress * 100}% - Resizable partition check"
+            )
 
     def on_checks_complete(self):
         """Callback for when all checks are complete."""
@@ -153,11 +165,20 @@ class PageCheck(Page):
                 self.after(10, self._delayed_navigate_next)
             else:
                 print(f"🔧 Found {len(errors)} errors, navigating to error page")
-                self.logger.info(f"Found {len(errors)} errors, navigating to error page")
+                self.logger.info(
+                    f"Found {len(errors)} errors, navigating to error page"
+                )
                 from models.page_manager import PageManager
-                if self._page_manager is None or not isinstance(self._page_manager, PageManager):
-                    raise ValueError("PageManager is not set or is not an instance of PageManager")
-                self._page_manager.configure_page(PageError, lambda page: page.set_errors(errors))
+
+                if self._page_manager is None or not isinstance(
+                    self._page_manager, PageManager
+                ):
+                    raise ValueError(
+                        "PageManager is not set or is not an instance of PageManager"
+                    )
+                self._page_manager.configure_page(
+                    PageError, lambda page: page.set_errors(errors)
+                )
                 self.navigate_to(PageError)
         else:
             print("🔧 No done_checks, navigating next anyway")

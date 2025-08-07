@@ -2,12 +2,13 @@
 Spin management services.
 Handles parsing and filtering of Fedora spins/variants.
 """
-from typing import List
+from typing import List,  Optional
 from config.settings import get_config
 from models.spin import Spin
+from models.types import SpinDictList
 
 
-def parse_spins(spins_list: List[dict]) -> List[Spin]:
+def parse_spins(spins_list: SpinDictList) -> List[Spin]:
     """
     Parse and filter spins list from JSON data.
     
@@ -17,8 +18,8 @@ def parse_spins(spins_list: List[dict]) -> List[Spin]:
     Returns:
         Tuple of (live_os_base_index, filtered_spins_list)
     """
-    accepted_spins_list = []
-    live_os_base_index = None
+    accepted_spins_list: List[Spin] = []
+    live_os_base_index: Optional[int] = None
     config = get_config()
 
     for index, current_spin in enumerate(spins_list):

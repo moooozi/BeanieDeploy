@@ -1,9 +1,19 @@
 class Direction:
-    def __init__(self, is_right_to_left=False):
+    def __init__(self, is_right_to_left: bool = False):
         self.is_right_to_left = is_right_to_left
+        self.w = "w"
+        self.e = "e"
+        self.ne = "ne"
+        self.nw = "nw"
+        self.se = "se"
+        self.sw = "sw"
+        self.nse = "nse"
+        self.nsw = "nsw"
+        self.l = "left"
+        self.r = "right"
         self._set_directions(is_right_to_left)
 
-    def _set_directions(self, is_right_to_left):
+    def _set_directions(self, is_right_to_left: bool) -> None:
         if is_right_to_left:
             self.w = "e"
             self.e = "w"

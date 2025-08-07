@@ -4,7 +4,7 @@ from templates.generic_page_layout import GenericPageLayout
 from templates.list_view import ListView
 import math
 import tkinter_templates as tkt
-import tkinter_templates 
+import tkinter_templates
 
 
 class PageAutoinstAddition2(Page):
@@ -34,12 +34,10 @@ class PageAutoinstAddition2(Page):
         if not kickstart:
             self.logger.error("No kickstart configuration found")
             return
-            
+
         self.selected_locale = kickstart.locale
 
-        selected_locale_keymaps = langtable.list_keyboards(
-            languageId=kickstart.locale
-        )
+        selected_locale_keymaps = langtable.list_keyboards(languageId=kickstart.locale)
         self.all_keymaps = sorted(langtable.list_all_keyboards())
 
         selected_locale_timezones = langtable.list_timezones(
@@ -68,8 +66,7 @@ class PageAutoinstAddition2(Page):
 
         for timezone in self.all_timezones:
             timezone_name = langtable.timezone_name(
-                timezone, 
-                languageIdQuery=kickstart.locale or "en"
+                timezone, languageIdQuery=kickstart.locale or "en"
             )
             self.timezone_list.add_item(timezone, timezone_name or timezone)
 
@@ -79,9 +76,7 @@ class PageAutoinstAddition2(Page):
             else kickstart.timezone
         )
         default_keymap = (
-            selected_locale_keymaps[0]
-            if not kickstart.keymap
-            else kickstart.keymap
+            selected_locale_keymaps[0] if not kickstart.keymap else kickstart.keymap
         )
 
         self.keyboard_list.on_click(default_keymap)
@@ -89,18 +84,18 @@ class PageAutoinstAddition2(Page):
 
     def validate_input(self) -> PageValidationResult:
         """Validate that both timezone and keymap are selected."""
-        if not hasattr(self, 'timezone_list') or not hasattr(self, 'keyboard_list'):
+        if not hasattr(self, "timezone_list") or not hasattr(self, "keyboard_list"):
             return PageValidationResult(False, "Page not properly initialized")
-            
+
         selected_timezone = self.timezone_list.get_selected()
         selected_keymap = self.keyboard_list.get_selected()
-        
+
         if selected_timezone not in self.all_timezones:
             return PageValidationResult(False, "Please select a valid timezone")
-            
+
         if selected_keymap not in self.all_keymaps:
             return PageValidationResult(False, "Please select a valid keyboard layout")
-            
+
         return PageValidationResult(True)
 
     def on_next(self):
@@ -109,18 +104,20 @@ class PageAutoinstAddition2(Page):
         if kickstart:
             selected_timezone = self.timezone_list.get_selected()
             selected_keymap = self.keyboard_list.get_selected()
-            
+
             if selected_timezone:
                 kickstart.timezone = selected_timezone
             if selected_keymap:
                 kickstart.keymap = selected_keymap
                 kickstart.keymap_type = "xlayout"
-            
-            self.logger.info(f"Selected timezone: {kickstart.timezone}, keymap: {kickstart.keymap}")
+
+            self.logger.info(
+                f"Selected timezone:S {kickstart.timezone}, keymap: {kickstart.keymap}"
+            )
 
     def on_show(self):
         """Called when page is shown - reinitialize if locale changed."""
-        if hasattr(self, 'selected_locale'):
+        if hasattr(self, "selected_locale"):
             kickstart = self.state.installation.kickstart
             if kickstart and self.selected_locale != kickstart.locale:
                 self.logger.info("Locale changed, reinitializing page")

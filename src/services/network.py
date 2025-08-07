@@ -2,47 +2,12 @@
 Network and download services.
 Handles HTTP requests, downloads, WiFi profiles, etc.
 """
-import json
 import os
 import subprocess
-import webbrowser
-from typing import Optional, List, Dict, Any
-from urllib.request import urlopen
+from typing import List, Dict, Any
 
 import xmltodict
 
-
-def open_url(url: str) -> None:
-    """
-    Open a URL in the default web browser.
-    
-    Args:
-        url: URL to open
-    """
-    webbrowser.open_new_tab(url)
-
-
-def get_json(url: str, queue=None, named: Optional[str] = None) -> Any:
-    """
-    Fetch and parse JSON from a URL.
-    
-    Args:
-        url: URL to fetch JSON from
-        queue: Optional queue for async operations
-        named: Optional name to return as tuple
-        
-    Returns:
-        Parsed JSON data, or tuple with name if named is provided
-    """
-    response = urlopen(url).read()
-    data = json.loads(response)
-    
-    return_value = (named, data) if named else data
-    
-    if queue:
-        queue.put(return_value)
-    else:
-        return return_value
 
 
 def extract_wifi_profiles(folder_path: str) -> int:
@@ -83,13 +48,13 @@ def get_wifi_profiles(wifi_profile_dir: str) -> List[Dict[str, str]]:
 
     # Export profiles
     extract_wifi_profiles(wifi_profile_dir)
-    wifi_profiles = []
+    wifi_profiles: List[Dict[str, str]] = []
     
     for filename in os.listdir(wifi_profile_dir):
         try:
             with open(os.path.join(wifi_profile_dir, filename), "r") as f:
                 xml_content = f.read()
-                wifi_profile: dict = xmltodict.parse(xml_content)
+                wifi_profile: Dict[str, Any] = xmltodict.parse(xml_content)
                 
                 name = wifi_profile["WLANProfile"]["name"]
                 ssid = wifi_profile["WLANProfile"]["SSIDConfig"]["SSID"]["name"]
@@ -102,7 +67,7 @@ def get_wifi_profiles(wifi_profile_dir: str) -> List[Dict[str, str]]:
                 security = wifi_profile["WLANProfile"]["MSM"]["security"]["sharedKey"]
                 password = security["keyMaterial"]
                 
-                profile = {
+                profile: Dict[str, str] = {
                     "name": name,
                     "ssid": ssid,
                     "hidden": hidden,

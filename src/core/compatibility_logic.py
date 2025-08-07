@@ -1,10 +1,19 @@
 """
 Non-GUI logic for compatibility checks and error parsing.
 """
-from compatibility_checks import CheckType
 
-def parse_errors(done_checks, app_config, LN):
-    errors = []
+from dataclasses import dataclass
+from compatibility_checks import CheckType, DoneChecks
+from typing import List, Optional
+from config.settings import ConfigManager
+from models.spin import Spin
+from translations.en import Translation
+
+
+def parse_errors(
+    done_checks: DoneChecks, app_config: ConfigManager, LN: Translation
+) -> List[str]:
+    errors: List[str] = []
     if done_checks.checks[CheckType.ARCH].returncode != 0:
         errors.append(LN.error_arch_9)
     elif (
@@ -18,10 +27,7 @@ def parse_errors(done_checks, app_config, LN):
         errors.append(LN.error_uefi_0)
     if done_checks.checks[CheckType.RAM].returncode != 0:
         errors.append(LN.error_totalram_9)
-    elif (
-        done_checks.checks[CheckType.RAM].result
-        < app_config.app.minimal_required_ram
-    ):
+    elif done_checks.checks[CheckType.RAM].result < app_config.app.minimal_required_ram:
         errors.append(LN.error_totalram_0)
     if done_checks.checks[CheckType.SPACE].returncode != 0:
         errors.append(LN.error_space_9)
@@ -39,9 +45,16 @@ def parse_errors(done_checks, app_config, LN):
         errors.append(LN.error_resizable_0)
     return errors
 
-def filter_spins(all_spins):
-    accepted_spins = []
-    live_os_installer_index = None
+
+@dataclass
+class FilteredSpinsResult:
+    spins: List[Spin]
+    live_os_installer_index: Optional[int]
+
+
+def filter_spins(all_spins: List[Spin]) -> FilteredSpinsResult:
+    accepted_spins: List[Spin] = []
+    live_os_installer_index: Optional[int] = None
     for spin in all_spins:
         accepted_spins.append(spin)
     for index, spin in enumerate(accepted_spins):
@@ -52,4 +65,6 @@ def filter_spins(all_spins):
         filtered_spins = [spin for spin in accepted_spins if not spin.is_live_img]
     else:
         filtered_spins = accepted_spins
-    return filtered_spins, live_os_installer_index
+    return FilteredSpinsResult(
+        spins=filtered_spins, live_os_installer_index=live_os_installer_index
+    )

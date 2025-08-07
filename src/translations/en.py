@@ -1,9 +1,8 @@
-
 from dataclasses import dataclass
 
 
 @dataclass
-class Language:
+class Translation:
     btn_next = "Next"
     btn_yes = "Yes"
     btn_no = "No"
@@ -109,9 +108,7 @@ class Language:
         "autoinst_wifi": "Existing Wi-Fi profiles will be added in %s.",
     }
     add_import_wifi = "Export my Wi-Fi networks to %s"
-    enable_rpm_fusion = (
-        "Enable additional repositories for extended software and multimedia codecs support"
-    )
+    enable_rpm_fusion = "Enable additional repositories for extended software and multimedia codecs support"
     add_auto_restart = "Restart automatically"
     add_torrent = "Use torrent whenever possible"
     more_options = "More options"
@@ -135,7 +132,9 @@ class Language:
 
     job_checksum = "Checking downloaded file's integrity"
     job_checksum_failed = "Integrity check failed"
-    job_checksum_failed_txt = "Failed to check downloaded file integrity, continue anyways?"
+    job_checksum_failed_txt = (
+        "Failed to check downloaded file integrity, continue anyways?"
+    )
     job_checksum_mismatch = "Checksum Mismatch"
     job_checksum_mismatch_txt = (
         "The downloaded file has an unexpected SHA256-Hash and cannot be trusted.\n"

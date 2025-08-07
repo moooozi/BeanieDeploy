@@ -2,7 +2,7 @@ from templates.generic_page_layout import GenericPageLayout
 from templates.info_frame import InfoFrame
 from models.page import Page, PageValidationResult
 import tkinter as tk
-from tkinter_templates import CheckButton
+import customtkinter as ctk
 from tkinter_templates import flush_frame
 
 class PageVerify(Page):
@@ -51,10 +51,13 @@ class PageVerify(Page):
         page_frame.columnconfigure(0, weight=1)
         page_frame.grid_rowconfigure(0, weight=3)
 
-        check_restart = CheckButton(
+        check_restart = ctk.CTkCheckBox(
             page_frame,
             text=self.LN.add_auto_restart,
             variable=self.auto_restart_toggle_var,
+            onvalue=True,
+            offvalue=False,
+            width=99,
         )
         check_restart.pack(ipady=8, side="top", anchor="w")
 

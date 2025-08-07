@@ -10,30 +10,29 @@ from utils.logging import get_logger
 
 class PageValidationResult:
     """Result of page validation."""
-    
+
     def __init__(self, is_valid: bool, error_message: Optional[str] = None):
         self.is_valid = is_valid
         self.error_message = error_message
 
 
 class Page(ctk.CTkFrame, ABC):
-    from translations.en import Language
-    LN = Language()
+    from translations.en import Translation
+
+    LN = Translation()
     DI_VAR = multilingual.get_di_var()
 
     def __init__(self, parent, page_name: str, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.page_name = page_name
         self._initiated = False
-        
+
         # Initialize new systems
         self.app_config: ConfigManager = get_config()
         self.state = get_state()
         self.logger = get_logger(f"pages.{page_name}")
-        
+
         self._page_manager = None
-
-
 
     def set_page_manager(self, page_manager):
         """Set the page manager for this page."""
@@ -69,7 +68,7 @@ class Page(ctk.CTkFrame, ABC):
             if validation_result.error_message:
                 self.show_validation_error(validation_result.error_message)
             return False
-        
+
         # Perform any page-specific next actions
         self.on_next()
         return True
@@ -100,11 +99,11 @@ class Page(ctk.CTkFrame, ABC):
     def navigate_next(self):
         """Navigate to the next page."""
         self.logger.info(f"navigate_next() called on {self.page_name}")
-        
+
         if not self._page_manager:
             self.logger.error("No page manager set!")
             return
-            
+
         self.logger.info("Calling next_action()")
         if self.next_action():
             self.logger.info("next_action() returned True, calling navigate_forward")

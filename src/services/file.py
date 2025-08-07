@@ -2,6 +2,7 @@
 File management services.
 Handles file operations, hashing, copying, etc.
 """
+
 import hashlib
 import os
 import shutil
@@ -13,10 +14,10 @@ from urllib.parse import urlparse
 def get_sha256_hash(file_path: str) -> str:
     """
     Calculate SHA256 hash of a file.
-    
+
     Args:
         file_path: Path to the file
-        
+
     Returns:
         SHA256 hash as hexadecimal string
     """
@@ -30,7 +31,7 @@ def get_sha256_hash(file_path: str) -> str:
 def set_file_readonly(filepath: str, is_readonly: bool) -> None:
     """
     Set or remove read-only attribute on a file.
-    
+
     Args:
         filepath: Path to the file
         is_readonly: True to make read-only, False to make writable
@@ -44,7 +45,7 @@ def set_file_readonly(filepath: str, is_readonly: bool) -> None:
 def copy_files(source: str, destination: str) -> None:
     """
     Copy files from source to destination, creating directories as needed.
-    
+
     Args:
         source: Source directory path
         destination: Destination directory path
@@ -52,28 +53,13 @@ def copy_files(source: str, destination: str) -> None:
     shutil.copytree(source, destination, dirs_exist_ok=True)
 
 
-def copy_and_rename_file(source: str, destination: str, queue=None) -> None:
-    """
-    Copy and rename a file to a new location.
-    
-    Args:
-        source: Source file path
-        destination: Destination file path
-        queue: Optional queue for progress notification
-    """
-    mkdir(Path(destination).parent.absolute())
-    shutil.copyfile(src=source, dst=destination)
-    if queue:
-        queue.put(1)
-
-
 def rmdir(location: str) -> Optional[None]:
     """
     Remove a directory and all its contents.
-    
+
     Args:
         location: Directory path to remove
-        
+
     Returns:
         None if successful, or result of shutil.rmtree
     """
@@ -85,10 +71,10 @@ def rmdir(location: str) -> Optional[None]:
 def mkdir(location: Path) -> Optional[None]:
     """
     Create a directory if it doesn't exist.
-    
+
     Args:
         location: Directory path to create
-        
+
     Returns:
         None if directory exists or was created successfully
     """
@@ -100,10 +86,10 @@ def mkdir(location: Path) -> Optional[None]:
 def get_file_name_from_url(url: str) -> str:
     """
     Extract filename from a URL.
-    
+
     Args:
         url: URL to extract filename from
-        
+
     Returns:
         Filename from the URL
     """
@@ -114,11 +100,11 @@ def get_file_name_from_url(url: str) -> str:
 def find_file_by_name(name: str, lookup_dir: str) -> Optional[str]:
     """
     Find a file by name in a directory tree.
-    
+
     Args:
         name: Filename to search for
         lookup_dir: Directory to search in
-        
+
     Returns:
         Full path to the file if found, None otherwise
     """
@@ -131,11 +117,11 @@ def find_file_by_name(name: str, lookup_dir: str) -> Optional[str]:
 def check_valid_existing_file(file_path: str, file_hash: str) -> Optional[bool]:
     """
     Check if a file exists and has the correct hash.
-    
+
     Args:
         file_path: Path to the file to check
         file_hash: Expected SHA256 hash
-        
+
     Returns:
         True if file exists and hash matches,
         False if file doesn't exist,
@@ -143,7 +129,7 @@ def check_valid_existing_file(file_path: str, file_hash: str) -> Optional[bool]:
     """
     if not os.path.isfile(file_path):
         return False
-    
+
     if get_sha256_hash(file_path).lower() == file_hash.lower():
         return True
     else:

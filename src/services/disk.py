@@ -5,6 +5,7 @@ Handles ISO mounting, partition operations, drive management, etc.
 import subprocess
 from typing import Optional
 
+CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW
 
 def get_sys_drive_letter() -> str:
     """Get the system drive letter (usually C)."""
@@ -13,6 +14,8 @@ def get_sys_drive_letter() -> str:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        check=True,
+        creationflags=CREATE_NO_WINDOW,
     )
     return result.stdout.strip()
 
@@ -37,6 +40,8 @@ def get_disk_number(drive_letter: str) -> int:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        check=True,
+        creationflags=CREATE_NO_WINDOW,
     )
     return int(result.stdout.strip())
 
@@ -63,6 +68,8 @@ def get_drive_size_after_resize(drive_letter: str, minus_space: int) -> int:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        check=True,
+        creationflags=CREATE_NO_WINDOW,
     )
     return int(float(result.stdout.strip().replace(",", ".")))
 
@@ -84,6 +91,8 @@ def resize_partition(drive_letter: str, new_size: int) -> subprocess.CompletedPr
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        check=True,
+        creationflags=CREATE_NO_WINDOW,
     )
 
 
@@ -105,44 +114,17 @@ def get_unused_drive_letter() -> Optional[str]:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
+            creationflags=CREATE_NO_WINDOW,
         )
         if not result.stdout.strip():
             return letter
-    
     return None
 
-
-def relabel_volume(drive_letter: str, new_label: str) -> int:
-    """
-    Change the label of a volume.
-    
-    Args:
-        drive_letter: Drive letter to relabel
-        new_label: New label for the volume
-        
-    Returns:
-        Return code (0 = success)
-    """
-    script = (
-        r'Set-Volume -DriveLetter "'
-        + drive_letter
-        + '" -NewFileSystemLabel "'
-        + new_label
-        + '"'
-    )
-    result = subprocess.run(
-        [r"powershell.exe", script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-    return result.returncode
-
-
 def new_volume(
-    disk_number: int, 
-    size: int, 
-    filesystem: str, 
-    label: str, 
+    disk_number: int,
+    size: int,
+    filesystem: str,
+    label: str,
     drive_letter: Optional[str] = None
 ) -> subprocess.CompletedProcess:
     """
@@ -171,10 +153,12 @@ def new_volume(
         [r"powershell.exe", script],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        check=True,
+        creationflags=CREATE_NO_WINDOW,
     )
 
-
-def set_partition_as_efi(drive_letter: str) -> subprocess.CompletedProcess:
+def set_partition_as_efi(drive_letter: str) -> subprocess.CompletedProcess[str]:
     """
     Set a partition as EFI system partition.
     
@@ -193,8 +177,9 @@ def set_partition_as_efi(drive_letter: str) -> subprocess.CompletedProcess:
         [r"powershell.exe", script],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        creationflags=CREATE_NO_WINDOW,
     )
-
 
 def mount_iso(iso_path: str) -> str:
     """
@@ -212,6 +197,8 @@ def mount_iso(iso_path: str) -> str:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        check=True,
+        creationflags=CREATE_NO_WINDOW,
     )
     return result.stdout.strip()
 
@@ -235,6 +222,7 @@ def unmount_iso(iso_path: str) -> str:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        creationflags=CREATE_NO_WINDOW,
     )
     return result.stdout.strip()
 
@@ -258,6 +246,7 @@ def remove_drive_letter(drive_letter: str) -> subprocess.CompletedProcess:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        creationflags=CREATE_NO_WINDOW,
     )
 
 
@@ -274,6 +263,8 @@ def get_system_efi_drive_uuid() -> str:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        check=True,
+        creationflags=CREATE_NO_WINDOW,
     )
     output = result.stdout
     start_idx = output.index("{") + 1

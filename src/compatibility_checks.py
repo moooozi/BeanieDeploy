@@ -21,7 +21,7 @@ class Check:
     name: str
     result: Any
     returncode: Optional[int]
-    process: Optional[subprocess.CompletedProcess]
+    process: Optional[subprocess.CompletedProcess[str]]
 
 
 class DoneChecks:
@@ -34,14 +34,11 @@ class DoneChecks:
         }
 
 
-
-
-
 def check_arch():
     print("Checking architecture...")
     # Use Python's platform module instead of PowerShell
     result = platform.machine().lower()
-    
+
     return Check(
         CheckType.ARCH.value,
         result,
@@ -94,12 +91,12 @@ def check_space():
     # Use shutil.disk_usage instead of PowerShell
     try:
         # Get the system drive (usually C:)
-        system_drive = os.environ.get('SystemDrive', 'C:')
-        if not system_drive.endswith(':'):
-            system_drive += ':'
-        
+        system_drive = os.environ.get("SystemDrive", "C:")
+        if not system_drive.endswith(":"):
+            system_drive += ":"
+
         # Get disk usage
-        _, _, free = shutil.disk_usage(system_drive + '\\')
+        _, _, free = shutil.disk_usage(system_drive + "\\")
         return Check(
             CheckType.SPACE.value,
             free,  # Available space in bytes
@@ -129,7 +126,7 @@ def check_space():
 def check_resizable():
     if not is_admin():
         return Check(CheckType.RESIZABLE.value, "Not an admin", -200, None)
-    
+
     # Use PowerShell with hidden window for partition operations
     proc = subprocess.run(
         [
@@ -155,4 +152,4 @@ check_functions = {
     CheckType.RAM: check_ram,
     CheckType.SPACE: check_space,
     CheckType.RESIZABLE: check_resizable,
-        }
+}

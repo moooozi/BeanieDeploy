@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Callable
 from enum import Enum
 
+from compatibility_checks import DoneChecks
 from models.install_options import InstallOptions
 from models.kickstart import Kickstart
 from models.partition import Partition
@@ -27,7 +28,7 @@ class InstallerStatus(Enum):
 class CompatibilityState:
     """State related to system compatibility checks."""
     
-    done_checks: Optional[Any] = None
+    done_checks: Optional[DoneChecks] = None
     ip_locale: Dict[str, Any] = field(default_factory=dict)
     all_spins: List[Spin] = field(default_factory=list)
     accepted_spins: List[Spin] = field(default_factory=list)

@@ -1,3 +1,4 @@
+from typing import List, Dict, Optional, Any
 from services.patched_langtable import langtable
 
 COMMON_LANGUAGES = langtable.list_common_languages()
@@ -8,7 +9,7 @@ ALL_LANGUAGES = langtable.list_all_languages()
 # ALL_KEYMAPS_BY_DESC = {langtable._keyboards_db[key].description: key for key in ALL_KEYMAPS}
 
 
-def all_timezones():
+def all_timezones() -> List[str]:
     """
     Get all timezones, but with the Etc zones reduced. Cached.
     :rtype: set
@@ -16,7 +17,7 @@ def all_timezones():
     return langtable.list_all_timezones()
 
 
-def get_available_keymaps():
+def get_available_keymaps() -> List[str]:
     return ALL_KEYMAPS
 
 
@@ -28,11 +29,12 @@ def get_keymap_by_description(keymap_description):
     return ALL_KEYMAPS_BY_DESC[keymap_description]
 """
 
-def get_keymap_description(keymap):
+
+def get_keymap_description(keymap: str) -> str:
     return langtable._keyboards_db[keymap].description
 
 
-def is_valid_timezone(timezone):
+def is_valid_timezone(timezone: str) -> bool:
     """
     Check if a given string is an existing timezone.
     :type timezone: str
@@ -42,7 +44,7 @@ def is_valid_timezone(timezone):
     return timezone in all_timezones()
 
 
-def get_timezone(timezone):
+def get_timezone(timezone: str) -> Any:
     """
     Return a tzinfo object for a given timezone name.
     :param str timezone: the timezone name
@@ -53,7 +55,7 @@ def get_timezone(timezone):
     return zoneinfo.ZoneInfo(timezone)
 
 
-def get_xlated_timezone(tz_spec_part):
+def get_xlated_timezone(tz_spec_part: str) -> str:
     """Function returning translated name of a region, city or complete timezone
     name according to the current value of the $LANG variable.
     :param tz_spec_part: a region, city or complete timezone name
@@ -64,22 +66,24 @@ def get_xlated_timezone(tz_spec_part):
     """
 
     xlated = langtable.timezone_name(tz_spec_part, languageIdQuery="en")
-    return xlated
+    return xlated if xlated is not None else tz_spec_part
 
 
-def get_locales_in_territory(territory):
+def get_locales_in_territory(territory: str) -> List[str]:
     return langtable.list_locales(concise=True, territoryId=territory)
 
 
-def get_locales_in_language(lang):
+def get_locales_in_language(lang: str) -> List[str]:
     return langtable.list_locales(concise=True, languageId=lang)
 
 
-def get_language_in_locale(locale):
+def get_language_in_locale(locale: str) -> str:
     return langtable.parse_locale(locale).language
 
 
-def get_keymaps(lang=None, territory=None):
+def get_keymaps(
+    lang: Optional[str] = None, territory: Optional[str] = None
+) -> List[str]:
     keymaps_list = langtable.list_keyboards(territoryId=territory, languageId=lang)
     new_keymap_list = []
     for keymap in keymaps_list:
@@ -88,7 +92,7 @@ def get_keymaps(lang=None, territory=None):
     return new_keymap_list
 
 
-def get_lang_or_locale_native_and_en_name(lang_or_locale):
+def get_lang_or_locale_native_and_en_name(lang_or_locale: str) -> Dict[str, str]:
     lang_or_locale_native_name = langtable.language_name(languageId=lang_or_locale)
     lang_or_locale_english_name = langtable.language_name(
         languageId=lang_or_locale, languageIdQuery="en"
@@ -99,11 +103,13 @@ def get_lang_or_locale_native_and_en_name(lang_or_locale):
     }
 
 
-def check_valid_locale(locale):
+def check_valid_locale(locale: str) -> bool:
     return locale in ALL_LOCALES
 
 
-def get_locales_and_langs_sorted_with_names(territory=None):
+def get_locales_and_langs_sorted_with_names(
+    territory: Optional[str] = None,
+) -> Dict[str, Any]:
     langs_id = []
     if territory:
         locales_in_territory = get_locales_in_territory(territory)

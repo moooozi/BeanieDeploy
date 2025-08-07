@@ -2,7 +2,7 @@ from templates.generic_page_layout import GenericPageLayout
 from models.page import Page, PageValidationResult
 import tkinter as tk
 import customtkinter as ctk
-from tkinter_templates import CheckButton, FONTS_smaller, color_blue
+from tkinter_templates import FONTS_smaller, color_blue
 
 
 class PageAutoinst2(Page):
@@ -57,18 +57,24 @@ class PageAutoinst2(Page):
         page_frame.grid_rowconfigure(0, weight=1)
 
         
-        check_wifi = CheckButton(
+        check_wifi = ctk.CTkCheckBox(
             frame_checkboxes,
-            self.LN.add_import_wifi % selected_spin.name,
-            self.export_wifi_toggle_var,
+            text=self.LN.add_import_wifi % selected_spin.name,
+            variable=self.export_wifi_toggle_var,
+            onvalue=True,
+            offvalue=False,
+            width=99,
         )
         check_wifi.grid(ipady=5, pady=(5, 0), row=0, column=0, sticky=self.DI_VAR.w)
 
-        check_encrypt = CheckButton(
+        check_encrypt = ctk.CTkCheckBox(
             frame_checkboxes,
-            self.LN.encrypted_root,
-            self.enable_encryption_toggle_var,
+            text=self.LN.encrypted_root,
+            variable=self.enable_encryption_toggle_var,
             command=lambda: self.show_encrypt_options(self.enable_encryption_toggle_var),
+            onvalue=True,
+            offvalue=False,
+            width=99,
         )
         check_encrypt.grid(ipady=5, row=2, column=0, sticky=self.DI_VAR.w)
 

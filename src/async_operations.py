@@ -4,7 +4,7 @@ import queue
 import threading
 import subprocess
 from enum import Enum
-from typing import Optional, Callable, List
+from typing import Optional, Callable, List, Any, Dict, Tuple
 
 DETACHED_PROCESS_FLAG = 0x00000008
 
@@ -19,8 +19,8 @@ class Status(Enum):
 class AsyncOperation:
     def __init__(
         self,
-        use_threading=True,
-        use_queue=False,
+        use_threading: bool = True,
+        use_queue: bool = False,
         on_complete: Optional[Callable] = None,
     ):
         self.use_threading = use_threading
@@ -31,7 +31,7 @@ class AsyncOperation:
             else queue.Queue() if use_queue else None
         )
         self.status = Status.NOT_STARTED
-        self.output = None
+        self.output: Any = None
         self.on_complete = on_complete
 
     @classmethod
@@ -39,10 +39,10 @@ class AsyncOperation:
         cls,
         function: Optional[Callable] = None,
         cmd: Optional[List[str]] = None,
-        args=(),
-        kwargs=None,
-        use_threading=True,
-        use_queue=False,
+        args: Tuple = (),
+        kwargs: Optional[Dict[str, Any]] = None,
+        use_threading: bool = True,
+        use_queue: bool = False,
         on_complete: Optional[Callable] = None,
     ):
         if kwargs is None:
@@ -61,7 +61,7 @@ class AsyncOperation:
         )
         return instance
 
-    def _read_cmd_output(self, command):
+    def _read_cmd_output(self, command: List[str]) -> None:
         self.status = Status.RUNNING
         process = subprocess.Popen(
             command,
@@ -127,7 +127,7 @@ class AsyncOperation:
 
         return self.queue if self.use_queue else self.output
 
-    def _handle_received_output(self, output):
+    def _handle_received_output(self, output: Any) -> None:
         if self.use_queue and self.queue:
             self.queue.put(output)
         self.output = output

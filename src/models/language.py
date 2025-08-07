@@ -3,7 +3,7 @@ from models.direction import Direction
 
 
 class Language:
-    def __init__(self, name, code, is_right_to_left):
+    def __init__(self, name: str, code: str, is_right_to_left: bool):
         self.name = name
         self.code = code
         self.is_right_to_left = is_right_to_left
