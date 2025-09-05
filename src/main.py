@@ -51,6 +51,11 @@ def parse_arguments():
     args = parser.parse_args()
     return args
 
+def set_skip_check(skip: bool):
+    state = get_state_manager().state
+    state.compatibility.skip_check = skip
+    if skip:
+        sys.argv.append("--skip_check")
 
 def run():
     """
@@ -72,7 +77,7 @@ def run():
         
         # Parse arguments
         args = parse_arguments()
-        skip_check = args.skip_check
+        
         
         # Auto-detect release mode for PyInstaller builds
         is_pyinstaller_bundle = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
@@ -81,9 +86,7 @@ def run():
             logger.info("PyInstaller bundle detected - running in release mode")
         else:
             # Development mode - always skip checks
-            #skip_check = True
-            # get_state().compatibility.skip_check = skip_check
-            sys.argv.append("--skip_check")
+            set_skip_check(True)
             logger.info("Running in debug mode")
 
         # Update version if provided
@@ -117,8 +120,8 @@ def run():
         # Create and run the main application
         if installation_context:
             app = MainApp(installation_context=installation_context)
-        elif skip_check:
-            app = MainApp(skip_check=skip_check)
+        elif args.skip_check:
+            app = MainApp(skip_check=args.skip_check)
         elif done_checks:
             app = MainApp(done_checks=done_checks)
         else:

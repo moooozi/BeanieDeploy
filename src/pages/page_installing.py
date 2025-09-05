@@ -7,9 +7,7 @@ This replaces the fragile kwargs/dict approach with robust type-safe classes.
 import pathlib
 import pickle
 import tempfile
-from typing import Optional
 from models.speed_unit import SpeedUnit
-from models.time_left import TimeLeft
 from models.installation_context import (
     InstallationContext,
     InstallationStage,
@@ -23,7 +21,7 @@ from models.page import Page
 from tkinter_templates import TextLabel
 from async_operations import AsyncOperation
 import customtkinter as ctk
-
+import pendulum
 
 class PageInstalling(Page):
     """
@@ -35,16 +33,14 @@ class PageInstalling(Page):
 
     def __init__(self, parent, page_name, *args, **kwargs):
         super().__init__(parent, page_name, *args, **kwargs)
-        self.installation_context: Optional[InstallationContext] = None
-        self.installation_service: Optional[InstallationService] = None
+        self.installation_context: InstallationContext = None # type: ignore
+        self.installation_service: InstallationService = None # type: ignore
         self.install_job_var = tk.StringVar(parent)
         self.current_stage = InstallationStage.INITIALIZING
 
-    def init_page(self):
-        """Initialize the installation page with proper error handling."""
-        self.update()
 
-        # Create installation context from application state if not already provided
+    def _get_installation_context(self) -> InstallationContext:
+        """Infer installation context."""
         if not self.installation_context:
             try:
                 self.installation_context = InstallationContext.from_application_state(
@@ -56,10 +52,17 @@ class PageInstalling(Page):
                 self._show_error_and_navigate(
                     f"Failed to prepare installation: {str(e)}"
                 )
-                return
         else:
             self.logger.info("Using pre-provided installation context")
 
+        return self.installation_context
+
+    def init_page(self):
+        """Initialize the installation page with proper error handling."""
+        self.update()
+
+        # Create installation context from application state if not already provided
+        self.installation_context = self._get_installation_context()
         # Set up GUI
         page_layout = GenericPageLayout(self, self.LN.install_running)
         page_frame = page_layout.content_frame
@@ -107,15 +110,9 @@ class PageInstalling(Page):
                 download_callback=self._on_download_progress,
             )
 
-            # Create a queue for async communication (using standard library queue)
-            import queue
-
-            install_queue = queue.Queue()
-
             # Start installation in background
             AsyncOperation.run(
-                function=self.installation_service.install,
-                args=(self.installation_context,),
+                function=self._run_installation,
                 use_threading=True,
             )
 
@@ -152,11 +149,65 @@ class PageInstalling(Page):
         self.after(0, self._update_gui_progress, stage, percent, message)
 
     def _on_download_progress(
-        self, file_name: str, percent: float, speed: float, eta: float
+        self, index: int, file_name: str, percent: float, speed: float, eta: float
     ) -> None:
         """Handle download-specific progress updates (called from background thread)."""
         # Schedule GUI update on main thread
-        self.after(0, self._update_download_gui, file_name, percent, speed, eta)
+        self.after(0, self._update_download_gui, index, file_name, percent, speed, eta)
+
+    def _update_download_gui(
+        self, index: int, file_name: str, percent: float, speed: float, eta: float
+    ) -> None:
+        """Update download-specific GUI (called on main thread)."""
+        try:
+            formatted_speed = SpeedUnit(speed).to_human_readable()
+            formatted_eta = pendulum.duration(seconds=eta).in_words() if eta > 0 else "N/A"
+
+            message = (
+                f"{self.LN.job_dl_install_media}\n"
+                f"File {index + 1} of {len(self.installation_context.downloadable_files)}\n"
+                f"Name: {file_name}\n"
+                f"Progress: {percent:.1f}%\n"
+                f"Speed: {formatted_speed}\n"
+                f"ETA: {formatted_eta}"
+            )
+            self.install_job_var.set(message)
+            real_progress = self._real_progress(index, percent) * 0.80 # 80% for downloads
+            self.progressbar_install.set(0.1 + real_progress)
+            self.update()
+
+        except Exception as e:
+            print(f"Failed to update download GUI: {e}")
+            self.logger.warning(f"Failed to update download GUI: {e}")
+
+    def _real_progress(self, index: int, percent: float) -> float:
+        """Calculate real progress across all files."""
+        if not self.installation_context.downloadable_files:
+            print("No downloadable files in installation context.")
+            return 0.0
+
+        total_files = len(self.installation_context.downloadable_files)
+        if index >= total_files:
+            return 1.0
+
+        downloadable_files_sizes = [df.size_bytes for df in self.installation_context.downloadable_files]
+
+        # Sum sizes of all previous files
+        if index == 0:
+            completed_size = 0
+        else:
+            completed_size = sum(
+                size for size in downloadable_files_sizes[:index] if size
+            )
+        current_file_size = downloadable_files_sizes[index] or 0
+        current_progress = (percent / 100.0) * current_file_size if current_file_size else 0
+
+        total_size = sum(size for size in downloadable_files_sizes if size)
+        if total_size == 0:
+            return 0.0
+
+        overall_progress = (completed_size + current_progress) / total_size
+        return overall_progress
 
     def _update_gui_progress(
         self, stage: InstallationStage, percent: float, message: str
@@ -167,26 +218,6 @@ class PageInstalling(Page):
         self.install_job_var.set(message)
         self.update()
 
-    def _update_download_gui(
-        self, file_name: str, percent: float, speed: float, eta: float
-    ) -> None:
-        """Update download-specific GUI (called on main thread)."""
-        try:
-            formatted_speed = SpeedUnit(speed)
-            formatted_eta = TimeLeft(eta, self.LN) if eta > 0 else "N/A"
-
-            message = (
-                f"{self.LN.job_dl_install_media}\\n"
-                f"File: {file_name}\\n"
-                f"Speed: {formatted_speed}\\n"
-                f"ETA: {formatted_eta}"
-            )
-
-            self.install_job_var.set(message)
-            self.update()
-
-        except Exception as e:
-            self.logger.warning(f"Failed to update download GUI: {e}")
 
     def _on_installation_complete(self, result: InstallationResult) -> None:
         """Handle installation completion (called on main thread)."""

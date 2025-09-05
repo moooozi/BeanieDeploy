@@ -5,8 +5,6 @@ Handles file operations, hashing, copying, etc.
 
 import hashlib
 import os
-import shutil
-from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -40,47 +38,6 @@ def set_file_readonly(filepath: str, is_readonly: bool) -> None:
         os.chmod(filepath, 0o444)  # Read-only
     else:
         os.chmod(filepath, 0o666)  # Read-write
-
-
-def copy_files(source: str, destination: str) -> None:
-    """
-    Copy files from source to destination, creating directories as needed.
-
-    Args:
-        source: Source directory path
-        destination: Destination directory path
-    """
-    shutil.copytree(source, destination, dirs_exist_ok=True)
-
-
-def rmdir(location: str) -> Optional[None]:
-    """
-    Remove a directory and all its contents.
-
-    Args:
-        location: Directory path to remove
-
-    Returns:
-        None if successful, or result of shutil.rmtree
-    """
-    if os.path.isdir(location):
-        return shutil.rmtree(location)
-    return None
-
-
-def mkdir(location: Path) -> Optional[None]:
-    """
-    Create a directory if it doesn't exist.
-
-    Args:
-        location: Directory path to create
-
-    Returns:
-        None if directory exists or was created successfully
-    """
-    if not location.exists():
-        return location.mkdir(parents=True, exist_ok=True)
-    return None
 
 
 def get_file_name_from_url(url: str) -> str:

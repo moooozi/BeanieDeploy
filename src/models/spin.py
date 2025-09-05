@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class Spin:
     name: str
-    size: str
+    size: int
     hash256: str
     dl_link: str
     is_live_img: bool = False

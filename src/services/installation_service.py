@@ -4,8 +4,10 @@ Type-safe Installation Service.
 This replaces the current kwargs-based installation.py with a robust,
 maintainable service that uses proper dependency injection and type safety.
 """
+import os
 from pathlib import Path
-from typing import Optional, Protocol
+import shutil
+from typing import Callable, Optional
 
 from config.settings import get_config
 from models.installation_context import (
@@ -19,19 +21,6 @@ from services import file as file_service
 from services.download import DownloadService, DownloadProgress
 from services.partition import partition_procedure
 
-
-class ProgressCallback(Protocol):
-    """Protocol for progress update callbacks."""
-    def __call__(self, stage: InstallationStage, percent: float, message: str) -> None:
-        """Called when installation progress updates."""
-        ...
-
-
-class DownloadProgressCallback(Protocol):
-    """Protocol for download progress callbacks."""
-    def __call__(self, file_name: str, percent: float, speed: float, eta: float) -> None:
-        """Called when download progress updates."""
-        ...
 
 
 class HashVerificationError(Exception):
@@ -53,8 +42,8 @@ class InstallationService:
     
     def __init__(
         self, 
-        progress_callback: Optional[ProgressCallback] = None,
-        download_callback: Optional[DownloadProgressCallback] = None
+        progress_callback: Optional[Callable] = None,
+        download_callback: Optional[Callable] = None,
     ):
         """
         Initialize the installation service.
@@ -67,7 +56,8 @@ class InstallationService:
         self.progress_callback = progress_callback
         self.download_callback = download_callback
         self.download_service = DownloadService(self.config)
-        
+        self._download_index: int = 0
+
     def install(self, context: InstallationContext) -> InstallationResult:
         """
         Execute the complete installation process.
@@ -82,8 +72,8 @@ class InstallationService:
             self._update_progress(context, InstallationStage.INITIALIZING, 0, "Initializing installation...")
             
             # Prepare work directory
-            file_service.mkdir(context.paths.work_dir)
-            
+            os.makedirs(context.paths.work_dir, exist_ok=True)
+
             # Download required files
             download_result = self._download_files(context)
             if not download_result.success:
@@ -120,11 +110,12 @@ class InstallationService:
                 context.current_file_index = i
                 
                 # Create destination directory
-                file_service.mkdir(file_info.destination_dir)
-                
+                os.makedirs(file_info.destination_dir, exist_ok=True)
+
                 # Check if file already exists with correct hash
                 if file_info.full_path.exists():
                     if self._verify_file_hash(file_info):
+                        self._download_index += 1
                         continue  # File is already downloaded and verified
                 
                 # Download the file
@@ -138,6 +129,7 @@ class InstallationService:
                         file_info.expected_hash, 
                         actual_hash
                     )
+                self._download_index += 1
             
             progress = 40  # Downloads complete at 40%
             self._update_progress(context, InstallationStage.VERIFYING_CHECKSUM, progress, "All files downloaded and verified")
@@ -150,15 +142,6 @@ class InstallationService:
     
     def _download_single_file(self, file_info: DownloadableFile, context: InstallationContext) -> None:
         """Download a single file with progress tracking."""
-        def progress_adapter(progress: DownloadProgress) -> None:
-            """Adapt DownloadProgress to download callback format."""
-            if self.download_callback:
-                self.download_callback(
-                    progress.filename,
-                    progress.percentage,
-                    progress.speed_bytes_per_sec,
-                    progress.eta_seconds
-                )
         
         # Use the new download service
         self.download_service.download_file(
@@ -166,9 +149,21 @@ class InstallationService:
             destination=file_info.destination_dir,
             filename=file_info.file_name,
             expected_hash=file_info.expected_hash,
-            progress_callback=progress_adapter
+            progress_callback=self.progress_adapter
         )
-    
+
+    def progress_adapter(self, progress: DownloadProgress) -> None:
+        """Adapt DownloadProgress to download callback format."""
+        if self.download_callback:
+            self.download_callback(
+                self._download_index,
+                progress.filename,
+                progress.percentage,
+                progress.speed_bytes_per_sec,
+                progress.eta_seconds
+            )
+
+
     def _verify_file_hash(self, file_info: DownloadableFile) -> bool:
         """Verify file hash matches expected value."""
         if not file_info.expected_hash:
@@ -220,7 +215,7 @@ class InstallationService:
             
             try:
                 # Copy installer files
-                file_service.copy_files(source=source_files, destination=destination)
+                shutil.copytree(source_files, destination, dirs_exist_ok=True)
                 
                 # Handle live image if needed
                 if context.is_live_image_installation():
@@ -231,7 +226,7 @@ class InstallationService:
                             # Copy live image files as needed
                             live_image_source = f"{live_image_mount_letter}:\\LiveOS\\"
                             destination = f"{context.tmp_part_letter}:\\LiveOS\\"
-                            file_service.copy_files(source=live_image_source, destination=destination)
+                            shutil.copytree(live_image_source, destination, dirs_exist_ok=True)
                         finally:
                             disk.unmount_iso(str(live_iso_path))
                 
@@ -264,18 +259,20 @@ class InstallationService:
         # Copy RPM files if specified
         if context.paths.rpm_source_dir and context.paths.rpm_dst_dir_name:
             rpm_dst_path = destination_path / context.paths.rpm_dst_dir_name
-            file_service.mkdir(rpm_dst_path)
-            file_service.copy_files(
-                source=str(context.paths.rpm_source_dir), 
-                destination=str(rpm_dst_path)
+            os.makedirs(rpm_dst_path, exist_ok=True)
+            shutil.copytree(
+                str(context.paths.rpm_source_dir),
+                str(rpm_dst_path),
+                dirs_exist_ok=True
             )
         
         # Copy WiFi profiles if specified
         if context.paths.wifi_profiles_src_dir and context.paths.wifi_profiles_dst_dir_name:
             wifi_dst_path = destination_path / context.paths.wifi_profiles_dst_dir_name
-            file_service.copy_files(
-                source=str(context.paths.wifi_profiles_src_dir),
-                destination=str(wifi_dst_path)
+            shutil.copytree(
+                str(context.paths.wifi_profiles_src_dir),
+                str(wifi_dst_path),
+                dirs_exist_ok=True
             )
     
     def _generate_config_files(self, context: InstallationContext, destination: str) -> None:
@@ -355,8 +352,8 @@ class InstallationService:
 
 # Factory function to create installation service with GUI callbacks
 def create_installation_service_for_gui(
-    progress_callback: Optional[ProgressCallback] = None,
-    download_callback: Optional[DownloadProgressCallback] = None
+    progress_callback: Optional[Callable] = None,
+    download_callback: Optional[Callable] = None
 ) -> InstallationService:
     """
     Factory function to create an installation service configured for GUI use.

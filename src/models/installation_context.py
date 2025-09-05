@@ -55,7 +55,7 @@ class DownloadableFile:
             download_url=spin.dl_link,
             destination_dir=destination_dir,
             expected_hash=spin.hash256,
-            size_bytes=int(spin.size) if spin.size.isdigit() else 0,
+            size_bytes=spin.size,
         )
 
 

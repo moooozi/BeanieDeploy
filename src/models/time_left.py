@@ -1,69 +1,52 @@
+import pendulum
+
 class TimeLeft:
-    def __init__(self, seconds, translation):
+    """
+    Replacement for the custom TimeLeft class using pendulum.Duration.
+    Supports arithmetic and human-readable formatting.
+    """
+    def __init__(self, seconds):
         if seconds < 0:
             raise ValueError("Time cannot be negative")
-        self.seconds = seconds
-        self.translation = translation
+        self.duration = pendulum.duration(seconds=seconds)
 
     @classmethod
-    def from_seconds(cls, seconds, translation):
-        return cls(seconds, translation)
+    def from_seconds(cls, seconds):
+        return cls(seconds)
 
     @classmethod
-    def from_minutes(cls, minutes, translation):
-        return cls(minutes * 60, translation)
+    def from_minutes(cls, minutes):
+        return cls(minutes * 60)
 
     @classmethod
-    def from_hours(cls, hours, translation):
-        return cls(hours * 3600, translation)
+    def from_hours(cls, hours):
+        return cls(hours * 3600)
 
     @classmethod
-    def from_days(cls, days, translation):
-        return cls(days * 86400, translation)
+    def from_days(cls, days):
+        return cls(days * 86400)
 
-    def to_human_readable(self):
-        seconds = self.seconds
-        days, seconds = divmod(seconds, 86400)
-        hours, seconds = divmod(seconds, 3600)
-        minutes, seconds = divmod(seconds, 60)
-
-        parts = []
-        if days > 0:
-            parts.append(
-                f"{days} {self.translation.day_plural if days > 1 else self.translation.day_singular}"
-            )
-        if hours > 0:
-            parts.append(
-                f"{hours} {self.translation.hour_plural if hours > 1 else self.translation.hour_singular}"
-            )
-        if minutes > 0:
-            parts.append(
-                f"{minutes} {self.translation.minute_plural if minutes > 1 else self.translation.minute_singular}"
-            )
-        if seconds > 0 or not parts:
-            parts.append(
-                f"{seconds} {self.translation.second_plural if seconds > 1 else self.translation.second_singular}"
-            )
-
-        return " ".join(parts) + f" {self.translation.left}"
+    def to_human_readable(self, locale="en"):
+        # pendulum's in_words() supports locale
+        return self.duration.in_words(locale=locale)
 
     def __int__(self):
-        return int(self.seconds)
+        return int(self.duration.total_seconds())
 
     def __float__(self):
-        return float(self.seconds)
+        return float(self.duration.total_seconds())
 
     def __repr__(self):
-        return f"TimeLeft({self.seconds} seconds)"
+        return f"TimeLeft({self.duration.total_seconds()} seconds)"
 
     def __str__(self):
         return self.to_human_readable()
 
     def __add__(self, other):
         if isinstance(other, TimeLeft):
-            return TimeLeft(self.seconds + other.seconds, self.translation)
+            return TimeLeft(self.duration.total_seconds() + other.duration.total_seconds())
         elif isinstance(other, (int, float)):
-            return TimeLeft(self.seconds + other, self.translation)
+            return TimeLeft(self.duration.total_seconds() + other)
         return NotImplemented
 
     def __radd__(self, other):
@@ -71,19 +54,19 @@ class TimeLeft:
 
     def __sub__(self, other):
         if isinstance(other, TimeLeft):
-            return TimeLeft(self.seconds - other.seconds, self.translation)
+            return TimeLeft(self.duration.total_seconds() - other.duration.total_seconds())
         elif isinstance(other, (int, float)):
-            return TimeLeft(self.seconds - other, self.translation)
+            return TimeLeft(self.duration.total_seconds() - other)
         return NotImplemented
 
     def __rsub__(self, other):
         if isinstance(other, (int, float)):
-            return TimeLeft(other - self.seconds, self.translation)
+            return TimeLeft(other - self.duration.total_seconds())
         return NotImplemented
 
     def __mul__(self, other):
         if isinstance(other, (int, float)):
-            return TimeLeft(self.seconds * other, self.translation)
+            return TimeLeft(self.duration.total_seconds() * other)
         return NotImplemented
 
     def __rmul__(self, other):
@@ -91,48 +74,48 @@ class TimeLeft:
 
     def __truediv__(self, other):
         if isinstance(other, (int, float)):
-            return TimeLeft(self.seconds / other, self.translation)
+            return TimeLeft(self.duration.total_seconds() / other)
         return NotImplemented
 
     def __rtruediv__(self, other):
         if isinstance(other, (int, float)):
-            return TimeLeft(other / self.seconds, self.translation)
+            return TimeLeft(other / self.duration.total_seconds())
         return NotImplemented
 
     def __eq__(self, other):
         if isinstance(other, TimeLeft):
-            return self.seconds == other.seconds
+            return self.duration.total_seconds() == other.duration.total_seconds()
         elif isinstance(other, (int, float)):
-            return self.seconds == other
+            return self.duration.total_seconds() == other
         return NotImplemented
 
     def __lt__(self, other):
         if isinstance(other, TimeLeft):
-            return self.seconds < other.seconds
+            return self.duration.total_seconds() < other.duration.total_seconds()
         elif isinstance(other, (int, float)):
-            return self.seconds < other
+            return self.duration.total_seconds() < other
         return NotImplemented
 
     def __le__(self, other):
         if isinstance(other, TimeLeft):
-            return self.seconds <= other.seconds
+            return self.duration.total_seconds() <= other.duration.total_seconds()
         elif isinstance(other, (int, float)):
-            return self.seconds <= other
+            return self.duration.total_seconds() <= other
         return NotImplemented
 
     def __gt__(self, other):
         if isinstance(other, TimeLeft):
-            return self.seconds > other.seconds
+            return self.duration.total_seconds() > other.duration.total_seconds()
         elif isinstance(other, (int, float)):
-            return self.seconds > other
+            return self.duration.total_seconds() > other
         return NotImplemented
 
     def __ge__(self, other):
         if isinstance(other, TimeLeft):
-            return self.seconds >= other.seconds
+            return self.duration.total_seconds() >= other.duration.total_seconds()
         elif isinstance(other, (int, float)):
-            return self.seconds >= other
+            return self.duration.total_seconds() >= other
         return NotImplemented
 
     def __round__(self, ndigits=None):
-        return TimeLeft(round(self.seconds, ndigits), self.translation)
+        return TimeLeft(round(self.duration.total_seconds(), ndigits))

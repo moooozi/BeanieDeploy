@@ -39,15 +39,10 @@ def parse_spins(spins_list: SpinDictList) -> List[Spin]:
 
         # Create Spin object
         size_value = current_spin.get("size", 0)
-        if isinstance(size_value, int):
-            from models.data_units import DataUnit
-            size_str = DataUnit.from_bytes(size_value).to_human_readable()
-        else:
-            size_str = str(size_value)
             
         spin = Spin(
             name=current_spin.get("name", ""),
-            size=size_str,
+            size=size_value,
             hash256=current_spin.get("hash256", ""),
             dl_link=current_spin.get("dl_link", ""),
             is_live_img=current_spin.get("is_live_img", False),

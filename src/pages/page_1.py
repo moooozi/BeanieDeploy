@@ -81,11 +81,10 @@ class Page1(Page):
             accepted_spins = self.state.compatibility.accepted_spins
             selected_spin = accepted_spins[spin_index]
             
-            # Calculate sizes (sizes are string values like "2.5 GB")
-            total_size_unit = DataUnit.from_string(selected_spin.size)
+            total_size_unit = DataUnit(selected_spin.size)
             
             if selected_spin.is_live_img and self.state.compatibility.live_os_installer_spin:
-                live_os_size_unit = DataUnit.from_string(self.state.compatibility.live_os_installer_spin.size)
+                live_os_size_unit = DataUnit(self.state.compatibility.live_os_installer_spin.size)
                 total_size_unit += live_os_size_unit
 
             if selected_spin.is_base_netinstall:
@@ -147,10 +146,10 @@ class Page1(Page):
             self.state.set_selected_spin(selected_spin)
             
             # Calculate and update partition size
-            total_size_unit = DataUnit.from_string(selected_spin.size)
+            total_size_unit = DataUnit(selected_spin.size)
             
             if selected_spin.is_live_img and self.state.compatibility.live_os_installer_spin:
-                live_os_size_unit = DataUnit.from_string(self.state.compatibility.live_os_installer_spin.size)
+                live_os_size_unit = DataUnit(self.state.compatibility.live_os_installer_spin.size)
                 total_size_unit += live_os_size_unit
             
             # Create partition if it doesn't exist and update size

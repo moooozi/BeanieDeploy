@@ -59,7 +59,7 @@ def build_with_pyinstaller():
         pyinstaller_path,
         "--onefile",
         "--windowed",
-       # "--uac-admin",  # Request administrator privileges
+        "--uac-admin",  
         "--name", f"{app_name}-{app_version}",
         "--distpath", "dist",
         "--workpath", "build",
@@ -119,10 +119,12 @@ def create_version_info():
                     key, value = line.strip().split(" ==> ")
                     release_info[key] = value
     
-    app_name = release_info.get("AppName", "BeanieDeploy")
-    app_version = release_info.get("AppVersion", "0.94-Beta")
-    description = release_info.get("Description", "The quickest way to switch to Fedora Linux")
-    author = release_info.get("Author", "Mohammed Zidane")
+    app_name = release_info.get("AppName", "")
+    app_version = release_info.get("AppVersion", "Snapshot")
+    description = release_info.get("Description", "")
+    author = release_info.get("Author", "")
+    company = release_info.get("Company", author)
+    copyright = release_info.get("Copyright", "")
     
     # Convert version to Windows format (1.0.0.0)
     version_parts = app_version.split("-")[0].split(".")
@@ -148,11 +150,11 @@ VSVersionInfo(
         StringTable(
           u'040904B0',
           [
-            StringStruct(u'CompanyName', u'{author}'),
+            StringStruct(u'CompanyName', u'{company}'),
             StringStruct(u'FileDescription', u'{description}'),
-            StringStruct(u'FileVersion', u'{app_version}'),
+            StringStruct(u'FileVersion', u'1.0.0.0'),
             StringStruct(u'InternalName', u'{app_name}'),
-            StringStruct(u'LegalCopyright', u'Copyright (c) {release_info.get("ReleaseYear", "2025")} {author}'),
+            StringStruct(u'LegalCopyright', u'{copyright}'),
             StringStruct(u'OriginalFilename', u'{app_name}-{app_version}.exe'),
             StringStruct(u'ProductName', u'{app_name}'),
             StringStruct(u'ProductVersion', u'{app_version}')

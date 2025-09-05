@@ -3,6 +3,7 @@ Network and download services.
 Handles HTTP requests, downloads, WiFi profiles, etc.
 """
 import os
+import shutil
 import subprocess
 from typing import List, Dict, Any
 
@@ -39,12 +40,12 @@ def get_wifi_profiles(wifi_profile_dir: str) -> List[Dict[str, str]]:
     Returns:
         List of WiFi profile dictionaries
     """
-    from services.file import rmdir, mkdir
     from pathlib import Path
     
     # Clean and recreate directory
-    rmdir(wifi_profile_dir)
-    mkdir(Path(wifi_profile_dir))
+    if Path(wifi_profile_dir).exists():
+        shutil.rmtree(wifi_profile_dir)
+    Path(wifi_profile_dir).mkdir(parents=True, exist_ok=True)
 
     # Export profiles
     extract_wifi_profiles(wifi_profile_dir)
@@ -80,8 +81,8 @@ def get_wifi_profiles(wifi_profile_dir: str) -> List[Dict[str, str]]:
             continue
 
     # Clean up
-    rmdir(wifi_profile_dir)
-    mkdir(Path(wifi_profile_dir))
+    shutil.rmtree(wifi_profile_dir)
+    Path(wifi_profile_dir).mkdir(parents=True, exist_ok=True)
     
     return wifi_profiles
 
