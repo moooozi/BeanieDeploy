@@ -317,6 +317,7 @@ class InstallationService:
             # Duplicate the entry
             new_entry = fwvars.get_parsed_boot_entry(windows_entry_id)
             new_entry.description = "Beanie Installer"
+            new_entry.optional_data = b""
 
             # Edit the duplicate entry to point to our new EFI file
             for path in new_entry.file_path_list.paths:
