@@ -225,8 +225,8 @@ class InstallationService:
                         try:
                             # Copy live image files as needed
                             live_image_source = f"{live_image_mount_letter}:\\LiveOS\\"
-                            destination = f"{context.tmp_part.letter}:\\LiveOS\\"
-                            shutil.copytree(live_image_source, destination, dirs_exist_ok=True)
+                            live_destination = f"{context.tmp_part.letter}:\\LiveOS\\"
+                            shutil.copytree(live_image_source, live_destination, dirs_exist_ok=True)
                         finally:
                             disk.unmount_iso(str(live_iso_path))
                 
@@ -306,49 +306,50 @@ class InstallationService:
 
             # Find the entry with "Windows Boot Manager" to duplicate
             windows_entry_id = None
-            for entry_id in fwvars.get_boot_order():
-                entry = fwvars.get_parsed_boot_entry(entry_id)
-                if "windows boot manager" in entry.description.lower():
-                    windows_entry_id = entry_id
-                    break
-            if windows_entry_id is None:
-                raise RuntimeError("Windows Boot Manager entry not found")
+            with fwvars.adjust_privileges():
+                for entry_id in fwvars.get_boot_order():
+                    entry = fwvars.get_parsed_boot_entry(entry_id)
+                    if "windows boot manager" in entry.description.lower():
+                        windows_entry_id = entry_id
+                        break
+                if windows_entry_id is None:
+                    raise RuntimeError("Windows Boot Manager entry not found")
 
-            # Duplicate the entry
-            new_entry = fwvars.get_parsed_boot_entry(windows_entry_id)
-            new_entry.description = "Beanie Installer"
-            new_entry.optional_data = b""
+                # Duplicate the entry
+                new_entry = fwvars.get_parsed_boot_entry(windows_entry_id)
+                new_entry.description = "Beanie Installer"
+                new_entry.optional_data = b""
 
-            # Edit the duplicate entry to point to our new EFI file
-            for path in new_entry.file_path_list.paths:
-                if path.is_file_path():
-                    path.set_file_path("\\EFI\\beanie\\bootx64.efi")
-                elif path.is_hard_drive():
-                    hd_node = path.get_hard_drive_node()
-                    if hd_node:
-                        # Set the device GUID to point to our temporary partition
-                        hd_node.partition_guid = context.tmp_part.partition_guid.lower()
-                        hd_node.partition_number = context.tmp_part.partition_number
-                        hd_node.partition_start_lba = context.tmp_part.start_lba
-                        hd_node.partition_size_lba = context.tmp_part.size_lba
-                        hd_node.partition_signature = uuid.UUID(hd_node.partition_guid).bytes_le
-                        path.set_hard_drive_node(hd_node)
+                # Edit the duplicate entry to point to our new EFI file
+                for path in new_entry.file_path_list.paths:
+                    if path.is_file_path():
+                        path.set_file_path("\\EFI\\beanie\\bootx64.efi")
+                    elif path.is_hard_drive():
+                        hd_node = path.get_hard_drive_node()
+                        if hd_node:
+                            # Set the device GUID to point to our temporary partition
+                            hd_node.partition_guid = context.tmp_part.partition_guid.lower()
+                            hd_node.partition_number = context.tmp_part.partition_number
+                            hd_node.partition_start_lba = context.tmp_part.start_lba
+                            hd_node.partition_size_lba = context.tmp_part.size_lba
+                            hd_node.partition_signature = uuid.UUID(hd_node.partition_guid).bytes_le
+                            path.set_hard_drive_node(hd_node)
 
-            # Find an unused entry_id for the new entry
-            new_entry_id = None
-            for i in range(50):
-                try:
-                    fwvars.get_boot_entry(i)
-                except OSError:
-                    new_entry_id = i
-                    break
-            if new_entry_id is None:
-                new_entry_id = 16  # fallback
+                # Find an unused entry_id for the new entry
+                new_entry_id = None
+                for i in range(50):
+                    try:
+                        fwvars.get_boot_entry(i)
+                    except OSError:
+                        new_entry_id = i
+                        break
+                if new_entry_id is None:
+                    new_entry_id = 16  # fallback
 
-            fwvars.set_parsed_boot_entry(new_entry_id, new_entry)
+                fwvars.set_parsed_boot_entry(new_entry_id, new_entry)
 
-            # Set the new entry as BootNext
-            fwvars.set_boot_next(new_entry_id)
+                # Set the new entry as BootNext
+                fwvars.set_boot_next(new_entry_id)
 
             return InstallationResult.success_result(str(new_entry_id))
         except Exception as e:

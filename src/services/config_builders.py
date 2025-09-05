@@ -14,7 +14,7 @@ def build_autoinstall_ks_file(
     wifi_profiles_dir_name: Optional[str] = None,
     is_encrypted: bool = False,
     passphrase: Optional[str] = None,
-    tmp_auto_unlock: bool = True,
+    tpm_auto_unlock: bool = True,
     live_img_url: str = "",
     additional_repos: bool = True,
     sys_drive_uuid: Optional[str] = None,
@@ -85,7 +85,7 @@ def build_autoinstall_ks_file(
         ])
 
     # TPM auto-unlock for encryption
-    if is_encrypted and passphrase and tmp_auto_unlock:
+    if is_encrypted and passphrase and tpm_auto_unlock:
         kickstart_lines.extend([
             "# Activating encryption auto-unlock using TPM2 chip",
             "%post  --logfile=/root/ks-post_tmp2_unlock.log",
