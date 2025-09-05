@@ -4,19 +4,30 @@ Handles complex partitioning procedures and disk operations.
 """
 from dataclasses import dataclass
 
-from config.settings import get_config
 from services.disk import (
-    get_sys_drive_letter, get_disk_number, get_drive_size_after_resize,
+    get_sys_drive_letter, get_disk_number, get_drive_size_after_resize, new_volume_with_metadata,
     resize_partition, new_volume, get_unused_drive_letter, get_system_efi_drive_uuid
 )
 from services.system import run_powershell_script
 
 
 @dataclass
+class TemporaryPartition:
+    """Temporary partition information."""
+    letter: str
+    partition_guid: str
+    partition_number: int
+    offset: int
+    size: int
+    logical_sector_size: int
+    start_lba: int
+    size_lba: int
+    
+
+@dataclass
 class PartitioningResult:
     """Result of partitioning procedure."""
-    tmp_part_letter: str
-    tmp_part_device_path: str
+    tmp_part: TemporaryPartition
     sys_drive_uuid: str
     sys_drive_win_uuid: str
     sys_efi_uuid: str
@@ -25,7 +36,6 @@ class PartitioningResult:
 def partition_procedure(
     tmp_part_size: int,
     temp_part_label: str,
-    queue=None,
     shrink_space: int = 0,
     boot_part_size: int = 0,
     efi_part_size: int = 0,
@@ -37,7 +47,6 @@ def partition_procedure(
     Args:
         tmp_part_size: Size of temporary partition in bytes
         temp_part_label: Label for temporary partition
-        queue: Optional queue for progress updates
         shrink_space: Amount of space to shrink from system drive
         boot_part_size: Size of boot partition in bytes
         efi_part_size: Size of EFI partition in bytes
@@ -46,11 +55,10 @@ def partition_procedure(
     Returns:
         PartitioningResult with partition information
     """
-    ps_script_path = str(get_config().paths.scripts_dir / "PartitionMappings.ps1")
 
     # Get system drive information
     sys_drive_letter = get_sys_drive_letter()
-    sys_uuid_script = f"(({ps_script_path}) | Where-Object -Property DriveLetter -EQ {sys_drive_letter}).VolumeName"
+    sys_uuid_script = f"(Get-Volume -DriveLetter {sys_drive_letter}).UniqueId"
     sys_drive_win_uuid = run_powershell_script(sys_uuid_script)
     sys_drive_uuid = _extract_uuid_from_string(sys_drive_win_uuid)
     
@@ -79,20 +87,20 @@ def partition_procedure(
     if tmp_part_letter is None:
         raise RuntimeError("No available drive letters for temporary partition")
     
-    new_volume(sys_disk_number, tmp_part_size, "FAT32", temp_part_label, tmp_part_letter)
-
-    # Get device path for temporary partition
-    tmp_part_path_script = f'(({ps_script_path}) | Where-Object -Property DriveLetter -EQ "{tmp_part_letter}").DevicePath'
-    tmp_part_device_path = run_powershell_script(tmp_part_path_script)
-    
-    print(f"tmp_part_device_path: {tmp_part_device_path}")
-    
-    if queue:
-        queue.put(tmp_part_letter)
-    
+    tmp_part = new_volume_with_metadata(sys_disk_number, tmp_part_size, "FAT32", temp_part_label, tmp_part_letter)
+        
+    tmp_part = TemporaryPartition(
+            letter=tmp_part_letter,
+            partition_guid=tmp_part["partition_guid"],
+            partition_number=tmp_part["partition_number"],
+            offset=tmp_part["offset"],
+            size=tmp_part["size"],
+            logical_sector_size=tmp_part["logical_sector_size"],
+            start_lba=tmp_part["start_lba"],
+            size_lba=tmp_part["size_lba"],
+        )
     return PartitioningResult(
-        tmp_part_letter=tmp_part_letter,
-        tmp_part_device_path=tmp_part_device_path,
+        tmp_part=tmp_part,
         sys_drive_uuid=sys_drive_uuid,
         sys_drive_win_uuid=sys_drive_win_uuid,
         sys_efi_uuid=sys_efi_uuid,

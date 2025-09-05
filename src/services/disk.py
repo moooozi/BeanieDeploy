@@ -158,6 +158,118 @@ def new_volume(
         creationflags=CREATE_NO_WINDOW,
     )
 
+
+def new_volume_with_metadata(
+    disk_number: int,
+    size: int,
+    filesystem: str,
+    label: str,
+    drive_letter: Optional[str] = None,
+) -> dict:
+    """
+    Create a new partition, format it and return reliable metadata about it.
+
+    Returns a dict with keys:
+      - partition_guid: str (GUID without braces)
+      - partition_number: int
+      - offset: int (bytes)
+      - size: int (bytes)
+      - logical_sector_size: int (bytes)
+      - start_lba: int
+      - size_lba: int
+
+    This function will raise RuntimeError if any required field cannot be obtained.
+    It does not use placeholder values.
+    Requires administrative privileges.
+    """
+    import json
+
+    drive_arg = f"-DriveLetter {drive_letter}" if drive_letter else ""
+    ps = fr"""
+    $p = New-Partition -DiskNumber {disk_number} -Size {size} -ErrorAction Stop {drive_arg}
+    # Wait for partition to be ready
+    $maxTries = 10
+    $tries = 0
+    while ($p -and $p.Guid -eq $null -and $tries -lt $maxTries) {{
+        Start-Sleep -Seconds 1
+        $p = Get-Partition -DiskNumber {disk_number} | Where-Object Size -EQ {size}
+        $tries++
+    }}
+    if ($p -eq $null) {{ throw "Partition creation failed or not found after waiting." }}
+    # Format the partition
+    $formatResult = $p | Format-Volume -FileSystem {filesystem} -NewFileSystemLabel \"{label}\" -ErrorAction Stop
+    # Wait for volume object to appear
+    $vol = $null
+    $tries = 0
+    while ($vol -eq $null -and $tries -lt $maxTries) {{
+        Start-Sleep -Seconds 1
+        $vol = Get-Volume -Partition $p -ErrorAction SilentlyContinue
+        $tries++
+    }}
+    if ($vol -eq $null) {{ throw "Volume object not found after formatting partition." }}
+    # Disable BitLocker if present
+    $bitlocker = Disable-BitLocker -MountPoint $vol.Path -ErrorAction SilentlyContinue
+    
+    $disk = Get-Disk -Number $p.DiskNumber -ErrorAction Stop
+    $obj = [PSCustomObject]@{{
+      PartitionGuid     = $p.Guid
+      PartitionNumber   = $p.PartitionNumber
+      Offset            = $p.Offset
+      Size              = $p.Size
+      LogicalSectorSize = $disk.LogicalSectorSize
+    }}
+    $obj | ConvertTo-Json -Compress
+    """
+
+    result = subprocess.run(
+        [r"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", ps],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        check=True,
+        creationflags=CREATE_NO_WINDOW,
+    )
+
+    payload = result.stdout.strip()
+    if not payload:
+        raise RuntimeError("PowerShell returned no output when creating partition")
+
+    try:
+        data = json.loads(payload)
+    except Exception as e:
+        raise RuntimeError(f"Failed to parse PowerShell JSON output: {e}\nOutput: {payload}")
+
+    # Validate required fields
+    required_fields = ["PartitionGuid", "PartitionNumber", "Offset", "Size", "LogicalSectorSize"]
+    for f in required_fields:
+        if f not in data or data[f] is None or str(data[f]).strip() == "":
+            raise RuntimeError(f"Required field '{f}' missing from PowerShell output: {data}")
+
+    # Normalize and compute LBAs
+    part_guid = str(data["PartitionGuid"]).strip()
+    if part_guid.startswith("{") and part_guid.endswith("}"):
+        part_guid = part_guid[1:-1]
+
+    offset = int(data["Offset"])
+    part_size = int(data["Size"])
+    sector = int(data["LogicalSectorSize"])
+    if sector <= 0:
+        raise RuntimeError(f"Invalid logical sector size: {sector}")
+
+    start_lba = offset // sector
+    size_lba = part_size // sector
+
+    return {
+        "partition_guid": part_guid,
+        "partition_number": int(data["PartitionNumber"]),
+        "offset": offset,
+        "size": part_size,
+        "logical_sector_size": sector,
+        "start_lba": int(start_lba),
+        "size_lba": int(size_lba),
+    }
+
+
 def set_partition_as_efi(drive_letter: str) -> subprocess.CompletedProcess[str]:
     """
     Set a partition as EFI system partition.

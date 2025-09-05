@@ -12,6 +12,7 @@ from enum import Enum
 from models.kickstart import Kickstart
 from models.partition import Partition
 from models.spin import Spin
+from services.partition import TemporaryPartition
 
 
 class InstallationStage(Enum):
@@ -87,6 +88,7 @@ class InstallationContext:
     # Core configuration
     kickstart: Kickstart
     partition: Partition
+    tmp_part: TemporaryPartition
     selected_spin: Spin
     live_os_installer_spin: Optional[Spin] = None
     
@@ -225,6 +227,7 @@ class InstallationContext:
             selected_spin=state.installation.selected_spin,
             live_os_installer_spin=state.compatibility.live_os_installer_spin,
             paths=paths,
+            tmp_part=state.installation.tmp_part,
         )
 
 

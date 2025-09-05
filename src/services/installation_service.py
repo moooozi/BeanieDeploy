@@ -16,7 +16,7 @@ from models.installation_context import (
     InstallationStage,
     DownloadableFile
 )
-from services import disk, boot, config_builders
+from services import disk, config_builders
 from services import file as file_service
 from services.download import DownloadService, DownloadProgress
 from services.partition import partition_procedure
@@ -184,8 +184,8 @@ class InstallationService:
             partitioning_results = partition_procedure(**vars(context.partition))
             
             # Store the temporary partition letter for later use
-            context.tmp_part_letter = partitioning_results.tmp_part_letter
-            
+            context.tmp_part = partitioning_results.tmp_part
+
             self._update_progress(context, InstallationStage.CREATING_TMP_PART, 60, "Temporary partition created")
             return InstallationResult.success_result()
             
@@ -301,41 +301,61 @@ class InstallationService:
         """Create boot entry for the installation."""
         try:
             self._update_progress(context, InstallationStage.ADDING_TMP_BOOT_ENTRY, 90, "Creating boot entry...")
-            
-            # Get current boot information
-            boot_entries = boot.get_boot_entries()
-            
-            # Find Windows boot entry to duplicate
-            windows_entry = None
-            for entry in boot_entries:
-                if "windows" in entry["description"].lower():
-                    windows_entry = entry["entry_id"].replace("Boot", "")
+            import firmware_variables as fwvars
+            import uuid
+
+            # Find the entry with "Windows Boot Manager" to duplicate
+            windows_entry_id = None
+            for entry_id in fwvars.get_boot_order():
+                entry = fwvars.get_parsed_boot_entry(entry_id)
+                if "windows boot manager" in entry.description.lower():
+                    windows_entry_id = entry_id
                     break
-            
-            if not windows_entry:
-                return InstallationResult.error_result(
-                    InstallationStage.ADDING_TMP_BOOT_ENTRY,
-                    "Could not find Windows boot entry to duplicate"
-                )
-            
-            # Create new boot entry
-            new_boot_entry = boot.create_boot_entry(
-                self.config.app.name,
-                context.paths.efi_file_relative_path,
-                windows_entry,
-            )
-            
-            # Set it as next boot option
-            boot.set_bootnext(new_boot_entry)
-            
-            return InstallationResult.success_result(new_boot_entry)
-            
+            if windows_entry_id is None:
+                raise RuntimeError("Windows Boot Manager entry not found")
+
+            # Duplicate the entry
+            new_entry = fwvars.get_parsed_boot_entry(windows_entry_id)
+            new_entry.description = "Beanie Installer"
+
+            # Edit the duplicate entry to point to our new EFI file
+            for path in new_entry.file_path_list.paths:
+                if path.is_file_path():
+                    path.set_file_path("\\EFI\\beanie\\bootx64.efi")
+                elif path.is_hard_drive():
+                    hd_node = path.get_hard_drive_node()
+                    if hd_node:
+                        # Set the device GUID to point to our temporary partition
+                        hd_node.partition_guid = context.tmp_part.partition_guid.lower()
+                        hd_node.partition_number = context.tmp_part.partition_number
+                        hd_node.partition_start_lba = context.tmp_part.start_lba
+                        hd_node.partition_size_lba = context.tmp_part.size_lba
+                        hd_node.partition_signature = uuid.UUID(hd_node.partition_guid).bytes_le
+                        path.set_hard_drive_node(hd_node)
+
+            # Find an unused entry_id for the new entry
+            new_entry_id = None
+            for i in range(50):
+                try:
+                    fwvars.get_boot_entry(i)
+                except OSError:
+                    new_entry_id = i
+                    break
+            if new_entry_id is None:
+                new_entry_id = 16  # fallback
+
+            fwvars.set_parsed_boot_entry(new_entry_id, new_entry)
+
+            # Set the new entry as BootNext
+            fwvars.set_boot_next(new_entry_id)
+
+            return InstallationResult.success_result(str(new_entry_id))
         except Exception as e:
             return InstallationResult.error_result(
                 InstallationStage.ADDING_TMP_BOOT_ENTRY,
                 f"Boot entry creation failed: {str(e)}"
             )
-    
+
     def _update_progress(
         self, 
         context: InstallationContext, 
