@@ -340,9 +340,11 @@ class InstallationService:
                 for i in range(50):
                     try:
                         fwvars.get_boot_entry(i)
-                    except OSError:
-                        new_entry_id = i
-                        break
+                    except OSError as e:
+                        if hasattr(e, 'winerror') and e.winerror == 203:
+                            new_entry_id = i
+                            break
+                        # else: skip unknown errors
                 if new_entry_id is None:
                     new_entry_id = 16  # fallback
 
