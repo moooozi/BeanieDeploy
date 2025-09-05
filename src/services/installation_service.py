@@ -211,7 +211,7 @@ class InstallationService:
             # Mount installer ISO
             installer_mount_letter = disk.mount_iso(str(installer_iso_path))
             source_files = f"{installer_mount_letter}:\\"
-            destination = f"{context.tmp_part_letter}:\\"
+            destination = f"{context.tmp_part.letter}:\\"
             
             try:
                 # Copy installer files
@@ -225,7 +225,7 @@ class InstallationService:
                         try:
                             # Copy live image files as needed
                             live_image_source = f"{live_image_mount_letter}:\\LiveOS\\"
-                            destination = f"{context.tmp_part_letter}:\\LiveOS\\"
+                            destination = f"{context.tmp_part.letter}:\\LiveOS\\"
                             shutil.copytree(live_image_source, destination, dirs_exist_ok=True)
                         finally:
                             disk.unmount_iso(str(live_iso_path))
@@ -240,8 +240,8 @@ class InstallationService:
                 # Always unmount the installer ISO
                 disk.unmount_iso(str(installer_iso_path))
                 # Remove temporary drive letter if it exists
-                if context.tmp_part_letter:
-                    disk.remove_drive_letter(context.tmp_part_letter)
+                if context.tmp_part.letter:
+                    disk.remove_drive_letter(context.tmp_part.letter)
             
             self._update_progress(context, InstallationStage.COPYING_TO_TMP_PART, 85, "Files copied successfully")
             return InstallationResult.success_result()

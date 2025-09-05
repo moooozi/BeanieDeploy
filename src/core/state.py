@@ -11,6 +11,7 @@ from models.install_options import InstallOptions
 from models.kickstart import Kickstart
 from models.partition import Partition
 from models.spin import Spin
+from services.partition import TemporaryPartition
 
 
 class InstallerStatus(Enum):
@@ -45,6 +46,7 @@ class InstallationState:
     partition: Optional[Partition] = None
     selected_spin: Optional[Spin] = None
     tmp_partition_letter: str = ""
+    tmp_part: Optional[TemporaryPartition] = None
 
 
 @dataclass

@@ -63,7 +63,7 @@ class PageInstallMethod(Page):
                 done_checks.checks[CheckType.RESIZABLE].result > space_clean
             )
             # Convert string size to bytes for arithmetic operation
-            selected_spin_size_bytes = DataUnit.from_string(selected_spin.size).bytes
+            selected_spin_size_bytes = DataUnit(selected_spin.size).bytes
             max_size = DataUnit.from_bytes(
                 done_checks.checks[CheckType.RESIZABLE].result
                 - selected_spin_size_bytes

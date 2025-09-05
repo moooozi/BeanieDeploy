@@ -48,6 +48,7 @@ class PageInstalling(Page):
                 )
 
             except Exception as e:
+                print("Failed to create installation context: ", e)
                 self.logger.error(f"Failed to create installation context: {e}")
                 self._show_error_and_navigate(
                     f"Failed to prepare installation: {str(e)}"
@@ -241,7 +242,6 @@ class PageInstalling(Page):
         # TODO: Set error on error page and navigate there
         # For now, just show in the install status
         self.install_job_var.set(f"ERROR: {error_message}")
-        self.progressbar_install.set(0)
 
     # Modern methods for new installation system
     def set_installation_context(self, installation_context):
