@@ -32,6 +32,63 @@ class HashVerificationError(Exception):
         super().__init__(f"Hash mismatch for {file_path}: expected {expected}, got {actual}")
 
 
+def _create_boot_entry_elevated(tmp_part) -> int:
+    """Create boot entry with elevated privileges."""
+    import firmware_variables as fwvars
+    import uuid
+
+    # Find the entry with "Windows Boot Manager" to duplicate
+    windows_entry_id = None
+    with fwvars.adjust_privileges():
+        for entry_id in fwvars.get_boot_order():
+            entry = fwvars.get_parsed_boot_entry(entry_id)
+            if "windows boot manager" in entry.description.lower():
+                windows_entry_id = entry_id
+                break
+        if windows_entry_id is None:
+            raise RuntimeError("Windows Boot Manager entry not found")
+
+        # Duplicate the entry
+        new_entry = fwvars.get_parsed_boot_entry(windows_entry_id)
+        new_entry.description = "Beanie Installer"
+        new_entry.optional_data = b""
+
+        # Edit the duplicate entry to point to our new EFI file
+        for path in new_entry.file_path_list.paths:
+            if path.is_file_path():
+                path.set_file_path("\\EFI\\beanie\\bootx64.efi")
+            elif path.is_hard_drive():
+                hd_node = path.get_hard_drive_node()
+                if hd_node:
+                    # Set the device GUID to point to our temporary partition
+                    hd_node.partition_guid = tmp_part.partition_guid.lower()
+                    hd_node.partition_number = tmp_part.partition_number
+                    hd_node.partition_start_lba = tmp_part.start_lba
+                    hd_node.partition_size_lba = tmp_part.size_lba
+                    hd_node.partition_signature = uuid.UUID(hd_node.partition_guid).bytes_le
+                    path.set_hard_drive_node(hd_node)
+
+        # Find an unused entry_id for the new entry
+        new_entry_id = None
+        for i in range(50):
+            try:
+                fwvars.get_boot_entry(i)
+            except OSError as e:
+                if hasattr(e, 'winerror') and e.winerror == 203:
+                    new_entry_id = i
+                    break
+                # else: skip unknown errors
+        if new_entry_id is None:
+            new_entry_id = 16  # fallback
+
+        fwvars.set_parsed_boot_entry(new_entry_id, new_entry)
+
+        # Set the new entry as BootNext
+        fwvars.set_boot_next(new_entry_id)
+    
+    return new_entry_id
+
+
 class InstallationService:
     """
     Type-safe installation service.
@@ -295,7 +352,7 @@ class InstallationService:
             self._update_progress(context, InstallationStage.ADDING_TMP_BOOT_ENTRY, 90, "Creating boot entry...")
             
             # Run the entire boot entry creation with elevation
-            new_entry_id = elevated.call(self._create_boot_entry_elevated, args=(context.tmp_part,))
+            new_entry_id = elevated.call(_create_boot_entry_elevated, args=(context.tmp_part,))
             
             return InstallationResult.success_result(str(new_entry_id))
         except Exception as e:
@@ -303,63 +360,6 @@ class InstallationService:
                 InstallationStage.ADDING_TMP_BOOT_ENTRY,
                 f"Boot entry creation failed: {str(e)}"
             )
-    
-    @staticmethod
-    def _create_boot_entry_elevated(tmp_part) -> int:
-        """Create boot entry with elevated privileges."""
-        import firmware_variables as fwvars
-        import uuid
-
-        # Find the entry with "Windows Boot Manager" to duplicate
-        windows_entry_id = None
-        with fwvars.adjust_privileges():
-            for entry_id in fwvars.get_boot_order():
-                entry = fwvars.get_parsed_boot_entry(entry_id)
-                if "windows boot manager" in entry.description.lower():
-                    windows_entry_id = entry_id
-                    break
-            if windows_entry_id is None:
-                raise RuntimeError("Windows Boot Manager entry not found")
-
-            # Duplicate the entry
-            new_entry = fwvars.get_parsed_boot_entry(windows_entry_id)
-            new_entry.description = "Beanie Installer"
-            new_entry.optional_data = b""
-
-            # Edit the duplicate entry to point to our new EFI file
-            for path in new_entry.file_path_list.paths:
-                if path.is_file_path():
-                    path.set_file_path("\\EFI\\beanie\\bootx64.efi")
-                elif path.is_hard_drive():
-                    hd_node = path.get_hard_drive_node()
-                    if hd_node:
-                        # Set the device GUID to point to our temporary partition
-                        hd_node.partition_guid = tmp_part.partition_guid.lower()
-                        hd_node.partition_number = tmp_part.partition_number
-                        hd_node.partition_start_lba = tmp_part.start_lba
-                        hd_node.partition_size_lba = tmp_part.size_lba
-                        hd_node.partition_signature = uuid.UUID(hd_node.partition_guid).bytes_le
-                        path.set_hard_drive_node(hd_node)
-
-            # Find an unused entry_id for the new entry
-            new_entry_id = None
-            for i in range(50):
-                try:
-                    fwvars.get_boot_entry(i)
-                except OSError as e:
-                    if hasattr(e, 'winerror') and e.winerror == 203:
-                        new_entry_id = i
-                        break
-                    # else: skip unknown errors
-            if new_entry_id is None:
-                new_entry_id = 16  # fallback
-
-            fwvars.set_parsed_boot_entry(new_entry_id, new_entry)
-
-            # Set the new entry as BootNext
-            fwvars.set_boot_next(new_entry_id)
-        
-        return new_entry_id
 
     def _cleanup_failed_installation(self, context: InstallationContext) -> None:
         """

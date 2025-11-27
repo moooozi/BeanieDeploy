@@ -408,9 +408,9 @@ def mount_volume_to_path(volume_guid: str, mount_path: str) -> None:
             volume_guid = f"\\\\?\\Volume{{{volume_guid}}}"
     
     # Mount the volume to the path
-    script = f'mountvol "{mount_path}" "{volume_guid}"'
     result = subprocess.run(
-        [r"cmd.exe", "/c", script],
+        ['mountvol', mount_path, volume_guid],
+        shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
