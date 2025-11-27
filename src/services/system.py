@@ -1,6 +1,12 @@
 """
 System-level operations and utilities.
 Handles admin privileges, Windows registry, system information, etc.
+
+For privilege escalation, use the new privilege_manager module:
+    from services.privilege_manager import run_elevated_cmd, run_elevated_function
+    
+For async privileged operations:
+    from services.async_privileged_operations import run_elevated_cmd_async
 """
 import ctypes
 import subprocess
@@ -11,36 +17,6 @@ import locale
 def is_admin() -> bool:
     """Check if the current process has administrator privileges."""
     return bool(ctypes.windll.shell32.IsUserAnAdmin())
-
-
-def get_admin(args: str = "") -> None:
-    """
-    Elevate to administrator privileges.
-    
-    Args:
-        args: Additional command line arguments to pass when restarting with admin privileges
-        
-    Raises:
-        SystemExit: Always raises SystemExit after attempting to restart with admin privileges
-    """
-    from sys import executable, argv
-    
-    # Check if running in PyInstaller bundle
-    is_pyinstaller_bundle = getattr(__import__('sys'), 'frozen', False) and hasattr(__import__('sys'), '_MEIPASS')
-    
-    if is_pyinstaller_bundle:
-        # In PyInstaller bundle: exclude argv[0] since executable is the bundled .exe
-        existing_args = " ".join(argv[1:]) if len(argv) > 1 else ""
-    else:
-        # In dev mode: include argv[0] since executable is python.exe and we need the script path
-        existing_args = " ".join(argv)
-    
-    args_combined = existing_args + (" " + args if args else "")
-    if not is_admin():
-        ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", executable, args_combined, None, 1
-        )
-        raise SystemExit
 
 
 def windows_language_code() -> str:

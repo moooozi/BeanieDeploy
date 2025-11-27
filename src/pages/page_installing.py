@@ -4,9 +4,6 @@ Modern, type-safe installation page using InstallationContext.
 This replaces the fragile kwargs/dict approach with robust type-safe classes.
 """
 
-import pathlib
-import pickle
-import tempfile
 from models.installation_context import (
     InstallationContext,
     InstallationStage,
@@ -14,7 +11,6 @@ from models.installation_context import (
 )
 from services.installation_service import InstallationService
 from templates.generic_page_layout import GenericPageLayout
-from services.system import is_admin, get_admin
 from utils.formatting import format_speed, format_eta
 import tkinter as tk
 from models.page import Page
@@ -79,28 +75,9 @@ class PageInstalling(Page):
         self.progressbar_install.set(0)
         self.update()
 
-        # Check for admin privileges
-        if not is_admin():
-            self._handle_admin_elevation()
-            return
-
         # Start installation process
         self._start_installation()
 
-    def _handle_admin_elevation(self) -> None:
-        """Handle elevation to admin privileges."""
-        try:
-            # Serialize installation context for admin process
-            with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as temp_file:
-                pickle.dump(self.installation_context, temp_file)
-                temp_file_path = pathlib.Path(temp_file.name).absolute()
-
-            args_string = f'--installation_context "{temp_file_path}"'
-            get_admin(args_string)
-
-        except Exception as e:
-            self.logger.error(f"Failed to elevate to admin: {e}")
-            self._show_error_and_navigate(f"Failed to get admin privileges: {str(e)}")
 
     def _start_installation(self) -> None:
         """Start the installation process with proper callbacks."""

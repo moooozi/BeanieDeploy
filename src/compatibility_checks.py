@@ -5,7 +5,6 @@ import platform
 import shutil
 import subprocess
 from typing import Any, Dict, Optional
-from services.system import is_admin
 
 
 class CheckType(Enum):
@@ -124,20 +123,22 @@ def check_space():
 
 
 def check_resizable():
-    if not is_admin():
-        return Check(CheckType.RESIZABLE.value, "Not an admin", -200, None)
-
-    # Use PowerShell with hidden window for partition operations
-    proc = subprocess.run(
+    """Check available resizable space on system drive (requires admin privileges)."""
+    from services.privilege_manager import elevated
+    
+    print("Checking resizable space...")
+    # API is identical to subprocess.run()
+    proc = elevated.run(
         [
             r"powershell.exe",
+            "-Command",
             r"((Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).Size - (Get-PartitionSupportedSize -DriveLetter $env:SystemDrive.Substring(0, 1)).SizeMin)",
         ],
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        creationflags=subprocess.CREATE_NO_WINDOW,
+        stderr=subprocess.PIPE,
+        text=True,
     )
+    print(f"Resizable check output: {proc.stdout.strip()}")
     return Check(
         CheckType.RESIZABLE.value,
         int(proc.stdout.strip()) if proc.returncode == 0 else proc.stdout.strip(),

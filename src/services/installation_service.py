@@ -16,7 +16,7 @@ from models.installation_context import (
     InstallationStage,
     DownloadableFile
 )
-from services import disk, config_builders
+from services import disk, config_builders, elevated
 from services import file as file_service
 from services.download import DownloadService, DownloadProgress
 from services.partition import partition_procedure
@@ -181,7 +181,7 @@ class InstallationService:
             self._update_progress(context, InstallationStage.CREATING_TMP_PART, 50, "Creating temporary partition...")
             
             # Execute partitioning using the partition context
-            partitioning_results = partition_procedure(**vars(context.partition))
+            partitioning_results = elevated.call(partition_procedure, kwargs=vars(context.partition))
             
             # Store the temporary partition letter for later use
             context.tmp_part = partitioning_results.tmp_part
@@ -209,26 +209,26 @@ class InstallationService:
                 )
             
             # Mount installer ISO
-            installer_mount_letter = disk.mount_iso(str(installer_iso_path))
+            installer_mount_letter = elevated.call(disk.mount_iso, args=(str(installer_iso_path),))
             source_files = f"{installer_mount_letter}:\\"
             destination = f"{context.tmp_part.letter}:\\"
             
             try:
                 # Copy installer files
-                shutil.copytree(source_files, destination, dirs_exist_ok=True)
+                elevated.call(shutil.copytree, args=(source_files, destination), kwargs={'dirs_exist_ok': True})
                 
                 # Handle live image if needed
                 if context.is_live_image_installation():
                     live_iso_path = context.get_live_iso_path()
                     if live_iso_path:
-                        live_image_mount_letter = disk.mount_iso(str(live_iso_path))
+                        live_image_mount_letter = elevated.call(disk.mount_iso, args=(str(live_iso_path),))
                         try:
                             # Copy live image files as needed
                             live_image_source = f"{live_image_mount_letter}:\\LiveOS\\"
                             live_destination = f"{context.tmp_part.letter}:\\LiveOS\\"
-                            shutil.copytree(live_image_source, live_destination, dirs_exist_ok=True)
+                            elevated.call(shutil.copytree, args=(live_image_source, live_destination), kwargs={'dirs_exist_ok': True})
                         finally:
-                            disk.unmount_iso(str(live_iso_path))
+                            elevated.call(disk.unmount_iso, args=(str(live_iso_path),))
                 
                 # Copy additional files
                 self._copy_additional_files(context, destination)
@@ -238,10 +238,10 @@ class InstallationService:
                 
             finally:
                 # Always unmount the installer ISO
-                disk.unmount_iso(str(installer_iso_path))
+                elevated.call(disk.unmount_iso, args=(str(installer_iso_path),))
                 # Remove temporary drive letter if it exists
                 if context.tmp_part.letter:
-                    disk.remove_drive_letter(context.tmp_part.letter)
+                    elevated.call(disk.remove_drive_letter, args=(context.tmp_part.letter,))
             
             self._update_progress(context, InstallationStage.COPYING_TO_TMP_PART, 85, "Files copied successfully")
             return InstallationResult.success_result()
@@ -260,20 +260,12 @@ class InstallationService:
         if context.paths.rpm_source_dir and context.paths.rpm_dst_dir_name:
             rpm_dst_path = destination_path / context.paths.rpm_dst_dir_name
             os.makedirs(rpm_dst_path, exist_ok=True)
-            shutil.copytree(
-                str(context.paths.rpm_source_dir),
-                str(rpm_dst_path),
-                dirs_exist_ok=True
-            )
+            elevated.call(shutil.copytree, args=(str(context.paths.rpm_source_dir), str(rpm_dst_path)), kwargs={'dirs_exist_ok': True})
         
         # Copy WiFi profiles if specified
         if context.paths.wifi_profiles_src_dir and context.paths.wifi_profiles_dst_dir_name:
             wifi_dst_path = destination_path / context.paths.wifi_profiles_dst_dir_name
-            shutil.copytree(
-                str(context.paths.wifi_profiles_src_dir),
-                str(wifi_dst_path),
-                dirs_exist_ok=True
-            )
+            elevated.call(shutil.copytree, args=(str(context.paths.wifi_profiles_src_dir), str(wifi_dst_path)), kwargs={'dirs_exist_ok': True})
     
     def _generate_config_files(self, context: InstallationContext, destination: str) -> None:
         """Generate GRUB and kickstart configuration files."""
@@ -283,13 +275,13 @@ class InstallationService:
         grub_cfg_path = destination_path / context.paths.grub_cfg_relative_path
         grub_cfg_path.parent.mkdir(parents=True, exist_ok=True)
         
-        file_service.set_file_readonly(str(grub_cfg_path), False)
+        elevated.call(file_service.set_file_readonly, args=(str(grub_cfg_path), False))
         grub_cfg_content = config_builders.build_grub_cfg_file(
             context.partition.temp_part_label,
             is_autoinst=bool(context.kickstart.partition_method != "custom")
         )
         grub_cfg_path.write_text(grub_cfg_content)
-        file_service.set_file_readonly(str(grub_cfg_path), True)
+        elevated.call(file_service.set_file_readonly, args=(str(grub_cfg_path), True))
         
         # Generate kickstart config if needed
         if context.kickstart.partition_method != "custom":
@@ -301,64 +293,73 @@ class InstallationService:
         """Create boot entry for the installation."""
         try:
             self._update_progress(context, InstallationStage.ADDING_TMP_BOOT_ENTRY, 90, "Creating boot entry...")
-            import firmware_variables as fwvars
-            import uuid
-
-            # Find the entry with "Windows Boot Manager" to duplicate
-            windows_entry_id = None
-            with fwvars.adjust_privileges():
-                for entry_id in fwvars.get_boot_order():
-                    entry = fwvars.get_parsed_boot_entry(entry_id)
-                    if "windows boot manager" in entry.description.lower():
-                        windows_entry_id = entry_id
-                        break
-                if windows_entry_id is None:
-                    raise RuntimeError("Windows Boot Manager entry not found")
-
-                # Duplicate the entry
-                new_entry = fwvars.get_parsed_boot_entry(windows_entry_id)
-                new_entry.description = "Beanie Installer"
-                new_entry.optional_data = b""
-
-                # Edit the duplicate entry to point to our new EFI file
-                for path in new_entry.file_path_list.paths:
-                    if path.is_file_path():
-                        path.set_file_path("\\EFI\\beanie\\bootx64.efi")
-                    elif path.is_hard_drive():
-                        hd_node = path.get_hard_drive_node()
-                        if hd_node:
-                            # Set the device GUID to point to our temporary partition
-                            hd_node.partition_guid = context.tmp_part.partition_guid.lower()
-                            hd_node.partition_number = context.tmp_part.partition_number
-                            hd_node.partition_start_lba = context.tmp_part.start_lba
-                            hd_node.partition_size_lba = context.tmp_part.size_lba
-                            hd_node.partition_signature = uuid.UUID(hd_node.partition_guid).bytes_le
-                            path.set_hard_drive_node(hd_node)
-
-                # Find an unused entry_id for the new entry
-                new_entry_id = None
-                for i in range(50):
-                    try:
-                        fwvars.get_boot_entry(i)
-                    except OSError as e:
-                        if hasattr(e, 'winerror') and e.winerror == 203:
-                            new_entry_id = i
-                            break
-                        # else: skip unknown errors
-                if new_entry_id is None:
-                    new_entry_id = 16  # fallback
-
-                fwvars.set_parsed_boot_entry(new_entry_id, new_entry)
-
-                # Set the new entry as BootNext
-                fwvars.set_boot_next(new_entry_id)
-
+            
+            # Run the entire boot entry creation with elevation
+            new_entry_id = elevated.call(self._create_boot_entry_elevated, args=(context.tmp_part,))
+            
             return InstallationResult.success_result(str(new_entry_id))
         except Exception as e:
             return InstallationResult.error_result(
                 InstallationStage.ADDING_TMP_BOOT_ENTRY,
                 f"Boot entry creation failed: {str(e)}"
             )
+    
+    @staticmethod
+    def _create_boot_entry_elevated(tmp_part) -> int:
+        """Create boot entry with elevated privileges."""
+        import firmware_variables as fwvars
+        import uuid
+
+        # Find the entry with "Windows Boot Manager" to duplicate
+        windows_entry_id = None
+        with fwvars.adjust_privileges():
+            for entry_id in fwvars.get_boot_order():
+                entry = fwvars.get_parsed_boot_entry(entry_id)
+                if "windows boot manager" in entry.description.lower():
+                    windows_entry_id = entry_id
+                    break
+            if windows_entry_id is None:
+                raise RuntimeError("Windows Boot Manager entry not found")
+
+            # Duplicate the entry
+            new_entry = fwvars.get_parsed_boot_entry(windows_entry_id)
+            new_entry.description = "Beanie Installer"
+            new_entry.optional_data = b""
+
+            # Edit the duplicate entry to point to our new EFI file
+            for path in new_entry.file_path_list.paths:
+                if path.is_file_path():
+                    path.set_file_path("\\EFI\\beanie\\bootx64.efi")
+                elif path.is_hard_drive():
+                    hd_node = path.get_hard_drive_node()
+                    if hd_node:
+                        # Set the device GUID to point to our temporary partition
+                        hd_node.partition_guid = tmp_part.partition_guid.lower()
+                        hd_node.partition_number = tmp_part.partition_number
+                        hd_node.partition_start_lba = tmp_part.start_lba
+                        hd_node.partition_size_lba = tmp_part.size_lba
+                        hd_node.partition_signature = uuid.UUID(hd_node.partition_guid).bytes_le
+                        path.set_hard_drive_node(hd_node)
+
+            # Find an unused entry_id for the new entry
+            new_entry_id = None
+            for i in range(50):
+                try:
+                    fwvars.get_boot_entry(i)
+                except OSError as e:
+                    if hasattr(e, 'winerror') and e.winerror == 203:
+                        new_entry_id = i
+                        break
+                    # else: skip unknown errors
+            if new_entry_id is None:
+                new_entry_id = 16  # fallback
+
+            fwvars.set_parsed_boot_entry(new_entry_id, new_entry)
+
+            # Set the new entry as BootNext
+            fwvars.set_boot_next(new_entry_id)
+        
+        return new_entry_id
 
     def _update_progress(
         self, 

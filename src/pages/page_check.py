@@ -1,9 +1,5 @@
-import pathlib
-import pickle
-import tempfile
 from typing import List
 from config.settings import ConfigManager
-from services.system import get_admin
 from templates.generic_page_layout import GenericPageLayout
 from models.page import Page
 from pages.page_error import PageError
@@ -108,18 +104,10 @@ class PageCheck(Page):
 
     def _handle_check_complete(self, output: Check, check_type: CheckType) -> None:
         """Callback for when a check completes."""
-        if output.returncode == -200:
-            self.logger.warning(f"Check {check_type} requires admin privileges")
-            with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as temp_file:
-                pickle.dump(self.done_checks, temp_file)
-                temp_file_path = pathlib.Path(temp_file.name).absolute()
-            args_string = f'--checks_dumb "{temp_file_path}"'
-            get_admin(args_string)
-        else:
-            print(f"🔧 Check {check_type} completed successfully")
-            self.logger.info(f"Check {check_type} completed successfully")
-            self.done_checks.checks[check_type] = output
-            self.update_job_var_and_progressbar(check_type)
+        print(f"🔧 Check {check_type} completed successfully")
+        self.logger.info(f"Check {check_type} completed successfully")
+        self.done_checks.checks[check_type] = output
+        self.update_job_var_and_progressbar(check_type)
         self.after(0, self._run_next_check)
 
     def update_job_var_and_progressbar(self, current_task: CheckType):
