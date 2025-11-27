@@ -35,7 +35,6 @@ class AppConfig:
     live_img_path: str = "/LiveOS/squashfs.img"
     
     # Directory names
-    additional_rpm_dir_name: str = "ADDITIONAL_RPMs"
     wifi_profiles_dir_name: str = "WIFI_PROFILES"
     
     # ISO filenames
@@ -56,12 +55,7 @@ class UrlConfig:
     fedora_torrent_download: str = "https://torrent.fedoraproject.org"
     available_spins_list: str = "https://fedoraproject.org/releases.json"
     
-    # RPM Fusion URLs (use format strings)
-    rpm_fusion_free: str = "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-%s.noarch.rpm"
-    rpm_fusion_non_free: str = "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-%s.noarch.rpm"
-    
     # Specific package URLs
-    tpm2_tools_rpm: str = "https://download.fedoraproject.org/pub/fedora/linux/releases/36/Everything/x86_64/os/Packages/t/tpm2-tools-5.2-2.fc36.x86_64.rpm"
 
 
 @dataclass
@@ -72,7 +66,6 @@ class PathConfig:
     downloads_dir: Path = field(init=False)
     work_dir: Path = field(init=False)
     wifi_profiles_dir: Path = field(init=False)
-    rpm_source_dir: Path = field(init=False)
     scripts_dir: Path = field(init=False)
     app_icon_path: Path = field(init=False)
     live_iso_path: Path = field(init=False)
@@ -86,7 +79,6 @@ class PathConfig:
         self.downloads_dir = self._get_user_downloads_folder()
         self.work_dir = self.downloads_dir / "win2linux_tmpdir"
         self.wifi_profiles_dir = self.work_dir / "WIFI_PROFILES"
-        self.rpm_source_dir = self.work_dir / "ADDITIONAL_RPMs"
         self.scripts_dir = self.current_dir / "resources" / "scripts"
         self.app_icon_path = self.current_dir / "resources" / "style" / "app-icon.ico"
         self.live_iso_path = self.work_dir / "live_os.iso"

@@ -278,9 +278,6 @@ msgstr "File %(current_file)s out of %(total_files)s"
 msgid "dualboot.size.txt"
 msgstr "Reserved space for %(distro_name)s:"
 
-msgid "enable.rpm.fusion"
-msgstr "Enable additional repositories for extended software and multimedia codecs support"
-
 msgid "encrypt.reminder.txt"
 msgstr "You will be asked to enter encryption passphase later"
 

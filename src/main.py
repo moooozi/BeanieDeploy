@@ -112,6 +112,9 @@ def run():
         
         # Create work directory
         config.paths.work_dir.mkdir(parents=True, exist_ok=True)
+        config.paths.wifi_profiles_dir.mkdir(parents=True, exist_ok=True)
+        if config.paths.wifi_profiles_dir:
+            config.paths.wifi_profiles_dir.mkdir(parents=True, exist_ok=True)
         
         # Set up language
         lang_name = multilingual.get_lang_name_by_code(windows_language_code())
