@@ -16,11 +16,9 @@ def build_autoinstall_ks_file(
     passphrase: Optional[str] = None,
     tpm_auto_unlock: bool = True,
     live_img_url: str = "",
-    additional_repos: bool = True,
     sys_drive_uuid: Optional[str] = None,
     sys_efi_uuid: Optional[str] = None,
     partition_method: Optional[str] = None,
-    additional_rpm_dir: Optional[str] = None,
 ) -> str:
     """
     Build a Kickstart file for automated Fedora installation.
@@ -36,11 +34,9 @@ def build_autoinstall_ks_file(
         passphrase: Encryption passphrase
         tpm_auto_unlock: Whether to enable TPM auto-unlock
         live_img_url: URL to live image
-        additional_repos: Whether to add additional repositories
         sys_drive_uuid: System drive UUID
         sys_efi_uuid: EFI partition UUID
         partition_method: Partitioning method ("dualboot", "replace_win", "custom")
-        additional_rpm_dir: Directory containing additional RPM packages
         
     Returns:
         Generated Kickstart file content
@@ -66,21 +62,6 @@ def build_autoinstall_ks_file(
             "%post --nochroot --logfile=/mnt/sysimage/root/ks-post_wifi.log",
             "mkdir -p /mnt/sysimage/etc/NetworkManager/system-connections",
             f"cp /run/install/repo/{wifi_profiles_dir_name}/*.* /mnt/sysimage/etc/NetworkManager/system-connections",
-            "%end"
-        ])
-
-    # Additional packages installation
-    if additional_rpm_dir:
-        install_command = "rpm-ostree install" if ostree_args else "dnf install"
-        kickstart_lines.extend([
-            "# Installing additional packages",
-            "%post --nochroot --logfile=/mnt/sysimage/root/ks-post_additional_rpm1.log",
-            "mkdir -p /mnt/sysimage/root/tmp_rpm",
-            f"cp /run/install/repo/{additional_rpm_dir}/*.rpm /mnt/sysimage/root/tmp_rpm",
-            "%end",
-            "%post --logfile=/root/ks-post_additional_rpm2.log",
-            f"{install_command} /root/tmp_rpm/*.rpm -y",
-            "rm -rf /root/tmp_rpm",
             "%end"
         ])
 

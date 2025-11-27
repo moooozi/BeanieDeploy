@@ -6,7 +6,8 @@ from dataclasses import dataclass
 
 from services.disk import (
     get_sys_drive_letter, get_disk_number, get_drive_size_after_resize, new_volume_with_metadata,
-    resize_partition, new_volume, get_unused_drive_letter, get_system_efi_drive_uuid
+    resize_partition, new_volume, get_system_efi_drive_uuid,
+    mount_volume_to_path
 )
 from services.system import run_powershell_script
 
@@ -14,7 +15,7 @@ from services.system import run_powershell_script
 @dataclass
 class TemporaryPartition:
     """Temporary partition information."""
-    letter: str
+    mount_path: str
     partition_guid: str
     partition_number: int
     offset: int
@@ -31,6 +32,9 @@ class PartitioningResult:
     sys_drive_uuid: str
     sys_drive_win_uuid: str
     sys_efi_uuid: str
+    shrink_space: int
+    sys_drive_letter: str
+    sys_disk_number: int
 
 
 def partition_procedure(
@@ -83,27 +87,39 @@ def partition_procedure(
     )
     
     # Create temporary partition
-    tmp_part_letter = get_unused_drive_letter()
-    if tmp_part_letter is None:
-        raise RuntimeError("No available drive letters for temporary partition")
+    from pathlib import Path
+    import tempfile
     
-    tmp_part = new_volume_with_metadata(sys_disk_number, tmp_part_size, "FAT32", temp_part_label, tmp_part_letter)
-        
+    # Create a temporary directory for mounting
+    temp_base = Path(tempfile.gettempdir()) / "BeanieDeploy_TempMount"
+    temp_base.mkdir(exist_ok=True)
+    tmp_mount_path = str(temp_base / f"temp_part_{temp_part_label}")
+    
+    # Create the volume without assigning a drive letter initially
+    tmp_part_metadata = new_volume_with_metadata(sys_disk_number, tmp_part_size, "FAT32", temp_part_label)
+    
+    # Get the volume GUID and mount it to the path
+    volume_guid = tmp_part_metadata["volume_guid"]
+    mount_volume_to_path(volume_guid, tmp_mount_path)
+    
     tmp_part = TemporaryPartition(
-            letter=tmp_part_letter,
-            partition_guid=tmp_part["partition_guid"],
-            partition_number=tmp_part["partition_number"],
-            offset=tmp_part["offset"],
-            size=tmp_part["size"],
-            logical_sector_size=tmp_part["logical_sector_size"],
-            start_lba=tmp_part["start_lba"],
-            size_lba=tmp_part["size_lba"],
-        )
+        mount_path=tmp_mount_path,
+        partition_guid=tmp_part_metadata["partition_guid"],
+        partition_number=tmp_part_metadata["partition_number"],
+        offset=tmp_part_metadata["offset"],
+        size=tmp_part_metadata["size"],
+        logical_sector_size=tmp_part_metadata["logical_sector_size"],
+        start_lba=tmp_part_metadata["start_lba"],
+        size_lba=tmp_part_metadata["size_lba"],
+    )
     return PartitioningResult(
         tmp_part=tmp_part,
         sys_drive_uuid=sys_drive_uuid,
         sys_drive_win_uuid=sys_drive_win_uuid,
         sys_efi_uuid=sys_efi_uuid,
+        shrink_space=shrink_space,
+        sys_drive_letter=sys_drive_letter,
+        sys_disk_number=sys_disk_number,
     )
 
 

@@ -12,7 +12,7 @@ from enum import Enum
 from models.kickstart import Kickstart
 from models.partition import Partition
 from models.spin import Spin
-from services.partition import TemporaryPartition
+from services.partition import TemporaryPartition, PartitioningResult
 
 
 class InstallationStage(Enum):
@@ -23,6 +23,7 @@ class InstallationStage(Enum):
     CREATING_TMP_PART = "creating_tmp_part"
     COPYING_TO_TMP_PART = "copying_to_tmp_part"
     ADDING_TMP_BOOT_ENTRY = "adding_tmp_boot_entry"
+    CLEANUP = "cleanup"
     INSTALL_DONE = "install_done"
 
 
@@ -64,7 +65,6 @@ class DownloadableFile:
 class InstallationPaths:
     """All file paths needed for installation."""
     work_dir: Path
-    rpm_source_dir: Optional[Path] = None
     wifi_profiles_src_dir: Optional[Path] = None
     
     # Relative paths within the installation
@@ -73,7 +73,6 @@ class InstallationPaths:
     efi_file_relative_path: str = "EFI/BOOT/bootx64.efi"
     
     # Destination directory names
-    rpm_dst_dir_name: str = "additional_rpms"
     wifi_profiles_dst_dir_name: str = "wifi_profiles"
 
 
@@ -100,7 +99,8 @@ class InstallationContext:
     current_stage: InstallationStage = InstallationStage.INITIALIZING
     progress_percent: float = 0.0
     current_file_index: int = 0
-    tmp_part_letter: Optional[str] = None  # Set during partitioning
+    tmp_part_already_created: bool = False
+    partitioning_result: Optional[PartitioningResult] = None
     
     # Progress tracking
     total_download_size: int = 0
@@ -217,7 +217,6 @@ class InstallationContext:
         # Create paths configuration
         paths = InstallationPaths(
             work_dir=config.paths.work_dir,
-            rpm_source_dir=getattr(config.paths, 'rpm_source_dir', None),
             wifi_profiles_src_dir=getattr(config.paths, 'wifi_profiles_dir', None),
         )
         

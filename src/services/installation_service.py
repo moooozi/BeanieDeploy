@@ -99,6 +99,11 @@ class InstallationService:
             
         except Exception as e:
             error_msg = f"Unexpected error during installation: {str(e)}"
+            
+            # Cleanup temporary partition if it was created
+            if context.tmp_part_already_created and context.tmp_part:
+                self._cleanup_failed_installation(context)
+            
             return InstallationResult.error_result(context.current_stage, error_msg)
     
     def _download_files(self, context: InstallationContext) -> InstallationResult:
@@ -183,8 +188,10 @@ class InstallationService:
             # Execute partitioning using the partition context
             partitioning_results = elevated.call(partition_procedure, kwargs=vars(context.partition))
             
-            # Store the temporary partition letter for later use
+            # Store the temporary partition information for later use
             context.tmp_part = partitioning_results.tmp_part
+            context.tmp_part_already_created = True
+            context.partitioning_result = partitioning_results
 
             self._update_progress(context, InstallationStage.CREATING_TMP_PART, 60, "Temporary partition created")
             return InstallationResult.success_result()
@@ -211,7 +218,7 @@ class InstallationService:
             # Mount installer ISO
             installer_mount_letter = elevated.call(disk.mount_iso, args=(str(installer_iso_path),))
             source_files = f"{installer_mount_letter}:\\"
-            destination = f"{context.tmp_part.letter}:\\"
+            destination = context.tmp_part.mount_path
             
             try:
                 # Copy installer files
@@ -225,7 +232,7 @@ class InstallationService:
                         try:
                             # Copy live image files as needed
                             live_image_source = f"{live_image_mount_letter}:\\LiveOS\\"
-                            live_destination = f"{context.tmp_part.letter}:\\LiveOS\\"
+                            live_destination = f"{context.tmp_part.mount_path}\\LiveOS"
                             elevated.call(shutil.copytree, args=(live_image_source, live_destination), kwargs={'dirs_exist_ok': True})
                         finally:
                             elevated.call(disk.unmount_iso, args=(str(live_iso_path),))
@@ -239,9 +246,8 @@ class InstallationService:
             finally:
                 # Always unmount the installer ISO
                 elevated.call(disk.unmount_iso, args=(str(installer_iso_path),))
-                # Remove temporary drive letter if it exists
-                if context.tmp_part.letter:
-                    elevated.call(disk.remove_drive_letter, args=(context.tmp_part.letter,))
+                # Unmount temporary partition from path
+                elevated.call(disk.unmount_volume_from_path, args=(context.tmp_part.mount_path,))
             
             self._update_progress(context, InstallationStage.COPYING_TO_TMP_PART, 85, "Files copied successfully")
             return InstallationResult.success_result()
@@ -253,14 +259,8 @@ class InstallationService:
             )
     
     def _copy_additional_files(self, context: InstallationContext, destination: str) -> None:
-        """Copy additional files like RPMs and WiFi profiles."""
+        """Copy additional files like WiFi profiles."""
         destination_path = Path(destination)
-        
-        # Copy RPM files if specified
-        if context.paths.rpm_source_dir and context.paths.rpm_dst_dir_name:
-            rpm_dst_path = destination_path / context.paths.rpm_dst_dir_name
-            os.makedirs(rpm_dst_path, exist_ok=True)
-            elevated.call(shutil.copytree, args=(str(context.paths.rpm_source_dir), str(rpm_dst_path)), kwargs={'dirs_exist_ok': True})
         
         # Copy WiFi profiles if specified
         if context.paths.wifi_profiles_src_dir and context.paths.wifi_profiles_dst_dir_name:
@@ -360,6 +360,69 @@ class InstallationService:
             fwvars.set_boot_next(new_entry_id)
         
         return new_entry_id
+
+    def _cleanup_failed_installation(self, context: InstallationContext) -> None:
+        """
+        Clean up after a failed installation by removing the temporary partition
+        and extending the system partition back to its original size.
+        """
+        try:
+            self._update_progress(context, InstallationStage.CLEANUP, 0, "Cleaning up failed installation...")
+            
+            # Unmount the temporary partition if it's still mounted
+            if context.tmp_part and context.tmp_part.mount_path:
+                try:
+                    elevated.call(disk.unmount_volume_from_path, args=(context.tmp_part.mount_path,))
+                except Exception:
+                    pass  # Ignore errors during cleanup
+            
+            # Delete the temporary partition and extend system partition
+            # This requires the partitioning information that was stored during creation
+            if context.partitioning_result:
+                partitioning_info = context.partitioning_result
+                
+                # Delete the temporary partition
+                try:
+                    elevated.call(
+                        self._delete_partition, 
+                        args=(partitioning_info.sys_disk_number, context.tmp_part.partition_number)
+                    )
+                except Exception:
+                    pass  # Continue with extension even if deletion fails
+                
+                # Extend the system partition
+                try:
+                    original_sys_size = disk.get_drive_size_after_resize(
+                        partitioning_info.sys_drive_letter, 
+                        partitioning_info.shrink_space
+                    )
+                    disk.resize_partition(partitioning_info.sys_drive_letter, original_sys_size)
+                except Exception:
+                    pass  # Continue even if extension fails
+            
+            self._update_progress(context, InstallationStage.CLEANUP, 100, "Cleanup completed")
+            
+        except Exception as e:
+            # Don't let cleanup errors prevent the error from being reported
+            print(f"Warning: Cleanup failed: {e}")
+
+    def _delete_partition(self, disk_number: int, partition_number: int) -> None:
+        """
+        Delete a partition by its number on the specified disk.
+        
+        Args:
+            disk_number: Disk number containing the partition
+            partition_number: Partition number to delete
+        """
+        import subprocess
+        script = f"Remove-Partition -DiskNumber {disk_number} -PartitionNumber {partition_number} -Confirm:$false"
+        subprocess.run(
+            [r"powershell.exe", "-Command", script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
 
     def _update_progress(
         self, 

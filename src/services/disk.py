@@ -217,6 +217,7 @@ def new_volume_with_metadata(
       Offset            = $p.Offset
       Size              = $p.Size
       LogicalSectorSize = $disk.LogicalSectorSize
+      VolumeGuid        = $vol.UniqueId
     }}
     $obj | ConvertTo-Json -Compress
     """
@@ -240,7 +241,7 @@ def new_volume_with_metadata(
         raise RuntimeError(f"Failed to parse PowerShell JSON output: {e}\nOutput: {payload}")
 
     # Validate required fields
-    required_fields = ["PartitionGuid", "PartitionNumber", "Offset", "Size", "LogicalSectorSize"]
+    required_fields = ["PartitionGuid", "PartitionNumber", "Offset", "Size", "LogicalSectorSize", "VolumeGuid"]
     for f in required_fields:
         if f not in data or data[f] is None or str(data[f]).strip() == "":
             raise RuntimeError(f"Required field '{f}' missing from PowerShell output: {data}")
@@ -250,6 +251,8 @@ def new_volume_with_metadata(
     if part_guid.startswith("{") and part_guid.endswith("}"):
         part_guid = part_guid[1:-1]
 
+    volume_guid = str(data["VolumeGuid"]).strip()
+    
     offset = int(data["Offset"])
     part_size = int(data["Size"])
     sector = int(data["LogicalSectorSize"])
@@ -267,6 +270,7 @@ def new_volume_with_metadata(
         "logical_sector_size": sector,
         "start_lba": int(start_lba),
         "size_lba": int(size_lba),
+        "volume_guid": volume_guid,
     }
 
 
@@ -382,3 +386,51 @@ def get_system_efi_drive_uuid() -> str:
     start_idx = output.index("{") + 1
     end_idx = output.index("}")
     return output[start_idx:end_idx]
+
+
+def mount_volume_to_path(volume_guid: str, mount_path: str) -> None:
+    """
+    Mount a volume to a specified path instead of a drive letter.
+    
+    Args:
+        volume_guid: Volume GUID (with or without braces)
+        mount_path: Path to mount the volume to
+    """
+    # Ensure the mount path exists
+    import os
+    os.makedirs(mount_path, exist_ok=True)
+    
+    # Normalize GUID format
+    if not volume_guid.startswith("\\\\?\\Volume{"):
+        if volume_guid.startswith("{") and volume_guid.endswith("}"):
+            volume_guid = f"\\\\?\\Volume{volume_guid}"
+        else:
+            volume_guid = f"\\\\?\\Volume{{{volume_guid}}}"
+    
+    # Mount the volume to the path
+    script = f'mountvol "{mount_path}" "{volume_guid}"'
+    result = subprocess.run(
+        [r"cmd.exe", "/c", script],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        check=True,
+        creationflags=CREATE_NO_WINDOW,
+    )
+
+
+def unmount_volume_from_path(mount_path: str) -> None:
+    """
+    Unmount a volume from a specified path.
+    
+    Args:
+        mount_path: Path where the volume is mounted
+    """
+    script = f'mountvol "{mount_path}" /d'
+    result = subprocess.run(
+        [r"cmd.exe", "/c", script],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        creationflags=CREATE_NO_WINDOW,
+    )
