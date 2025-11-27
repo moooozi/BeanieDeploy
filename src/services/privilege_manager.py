@@ -271,16 +271,19 @@ class elevated:
         
         manager = _PrivilegeManager.get_instance()
         
-        # Get function source code
+        # Get module and function names
         try:
-            func_code = inspect.getsource(target)
+            module = inspect.getmodule(target)
+            if module is None:
+                raise ValueError("Function must be defined in a module")
+            module_name = module.__name__
         except (TypeError, OSError) as e:
-            raise ValueError(f"Cannot serialize function: {e}")
+            raise ValueError(f"Cannot get module for function: {e}")
         
         command_data = {
             "type": "function",
+            "module_name": module_name,
             "func_name": target.__name__,
-            "func_code": func_code,
             "args": args,
             "kwargs": kwargs,
         }

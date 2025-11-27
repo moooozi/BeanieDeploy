@@ -5,12 +5,18 @@ This script is launched with elevated privileges and listens for commands on a N
 It can execute both PowerShell commands and Python functions, then returns the results.
 """
 import sys
+import os
 import pickle
 import subprocess
 import traceback
 import win32file
 import pywintypes
 from typing import Any, Dict
+
+# Add src directory to path for module imports
+src_dir = os.path.dirname(os.path.dirname(__file__))
+if src_dir not in sys.path:
+    sys.path.insert(0, src_dir)
 
 BUFFER_SIZE = 65536
 
@@ -47,23 +53,18 @@ def execute_command(command_data: Dict[str, Any]) -> Any:
             }
         
         elif cmd_type == "function":
-            # Execute a Python function
+            # Execute a Python function by importing its module
+            module_name = command_data.get("module_name")
             func_name = command_data.get("func_name")
-            func_code = command_data.get("func_code")
             args = command_data.get("args", ())
             kwargs = command_data.get("kwargs", {})
             
-            if not func_name or not func_code:
-                raise ValueError("func_name and func_code are required")
+            if not module_name or not func_name:
+                raise ValueError("module_name and func_name are required")
             
-            # Execute function in isolated namespace
-            namespace = {}
-            exec(func_code, namespace)
-            
-            if func_name not in namespace:
-                raise ValueError(f"Function '{func_name}' not found")
-            
-            func = namespace[func_name]
+            import importlib
+            module = importlib.import_module(module_name)
+            func = getattr(module, func_name)
             result = func(*args, **kwargs)
             
             return {
