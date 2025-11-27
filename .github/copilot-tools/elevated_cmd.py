@@ -18,16 +18,19 @@ from services.privilege_manager import elevated
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: elevated_shell.py <command>", file=sys.stderr)
+        print("Usage: elevated_cmd.py <command>", file=sys.stderr)
         sys.exit(1)
 
-    # Join all arguments as the command string
-    command = ' '.join(sys.argv[1:])
+    # Parse command line arguments properly
+    import re
+    # Split on spaces but preserve quoted strings
+    args = re.findall(r'(?:[^\s"]|"(?:\\.|[^"])*")+', ' '.join(sys.argv[1:]))
+    # Remove quotes from arguments
+    args = [arg.strip('"') for arg in args]
 
     try:
-        # Run the command with elevated privileges
-        # Use shell=True to allow command strings like "bcdedit /enum firmware"
-        proc = elevated.run(command, shell=True, capture_output=True, text=True)
+        # Run the command with elevated privileges as a subprocess list
+        proc = elevated.run(args, capture_output=True, text=True)
 
         # Print stdout
         if proc.stdout:
