@@ -22,12 +22,12 @@ class PageRestartRequired(Page):
         
         
         finished_label = TextLabel(
-            page_frame, text=_("finished.text"), font=FONTS_smaller
+            page_frame.content_frame, text=_("finished.text"), font=FONTS_smaller
         )
         finished_label.pack(pady=10)
         
         restarting_label = TextLabel(
-            page_frame,
+            page_frame.content_frame,
             var=self.restarting_text_var,
             font=FONTS_small,
             foreground=color_blue,
