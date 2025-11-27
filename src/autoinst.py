@@ -31,7 +31,7 @@ def get_keymap_by_description(keymap_description):
 
 
 def get_keymap_description(keymap: str) -> str:
-    return langtable._keyboards_db[keymap].description
+    return langtable._keyboards_db[keymap].description # type: ignore
 
 
 def is_valid_timezone(timezone: str) -> bool:
