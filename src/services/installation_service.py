@@ -310,6 +310,9 @@ class InstallationService:
             return InstallationResult.success_result()
             
         except Exception as e:
+            # Cleanup on failure
+            if context.tmp_part_already_created:
+                self._cleanup_failed_installation(context)
             return InstallationResult.error_result(
                 InstallationStage.COPYING_TO_TMP_PART,
                 f"File copying failed: {str(e)}"
@@ -356,6 +359,9 @@ class InstallationService:
             
             return InstallationResult.success_result(str(new_entry_id))
         except Exception as e:
+            # Cleanup on failure
+            if context.tmp_part_already_created:
+                self._cleanup_failed_installation(context)
             return InstallationResult.error_result(
                 InstallationStage.ADDING_TMP_BOOT_ENTRY,
                 f"Boot entry creation failed: {str(e)}"

@@ -95,6 +95,10 @@ def partition_procedure(
     temp_base.mkdir(exist_ok=True)
     tmp_mount_path = str(temp_base / f"temp_part_{temp_part_label}")
     
+    # Ensure the mount path is clean
+    import subprocess
+    subprocess.run(f'rmdir /s /q "{tmp_mount_path}"', shell=True, check=False)
+    
     # Create the volume without assigning a drive letter initially
     tmp_part_metadata = new_volume_with_metadata(sys_disk_number, tmp_part_size, "FAT32", temp_part_label)
     
