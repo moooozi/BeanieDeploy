@@ -1,6 +1,8 @@
 import pathlib
 import pickle
 import tempfile
+from typing import List
+from config.settings import ConfigManager
 from services.system import get_admin
 from templates.generic_page_layout import GenericPageLayout
 from models.page import Page
@@ -9,8 +11,8 @@ import tkinter as tk
 from compatibility_checks import Check, DoneChecks, CheckType
 from async_operations import AsyncOperation
 from tkinter_templates import TextLabel
-from core.compatibility_logic import parse_errors
 import customtkinter as ctk
+from multilingual import _
 
 
 class PageCheck(Page):
@@ -57,7 +59,7 @@ class PageCheck(Page):
         print("🔧 PageCheck.init_page() called")
         self.logger.info("PageCheck.init_page() called")
 
-        page_layout = GenericPageLayout(self, self.LN.check_running)
+        page_layout = GenericPageLayout(self, _("check.running"))
         print("🔧 GenericPageLayout created")
 
         page_frame = page_layout.content_frame
@@ -124,27 +126,27 @@ class PageCheck(Page):
         self.logger.info(f"Updating progress for task: {current_task}")
         if current_task == CheckType.ARCH:
             self._progress += 0.10
-            self.job_var.set(self.LN.check_arch)
+            self.job_var.set(_("check.arch"))
             self.progressbar_check.set(self._progress)
             self.logger.info(f"Progress: {self._progress * 100}% - Architecture check")
         elif current_task == CheckType.UEFI:
             self._progress += 0.20
-            self.job_var.set(self.LN.check_uefi)
+            self.job_var.set(_("check.uefi"))
             self.progressbar_check.set(self._progress)
             self.logger.info(f"Progress: {self._progress * 100}% - UEFI check")
         elif current_task == CheckType.RAM:
             self._progress += 0.20
-            self.job_var.set(self.LN.check_ram)
+            self.job_var.set(_("check.ram"))
             self.progressbar_check.set(self._progress)
             self.logger.info(f"Progress: {self._progress * 100}% - RAM check")
         elif current_task == CheckType.SPACE:
             self._progress += 0.20
-            self.job_var.set(self.LN.check_space)
+            self.job_var.set(_("check.space"))
             self.progressbar_check.set(self._progress)
             self.logger.info(f"Progress: {self._progress * 100}% - Disk space check")
         elif current_task == CheckType.RESIZABLE:
             self._progress += 0.30
-            self.job_var.set(self.LN.check_resizable)
+            self.job_var.set(_("check.resizable"))
             self.progressbar_check.set(self._progress)
             self.logger.info(
                 f"Progress: {self._progress * 100}% - Resizable partition check"
@@ -156,7 +158,7 @@ class PageCheck(Page):
         if self.done_checks:
             print("🔧 Processing done_checks")
             self.logger.info("Processing done_checks")
-            errors = parse_errors(self.done_checks, self.app_config, self.LN)
+            errors = parse_errors(self.done_checks, self.app_config)
             if not errors:
                 self.logger.info("No errors found, proceeding with navigation")
                 self.state.compatibility.done_checks = self.done_checks
@@ -184,3 +186,40 @@ class PageCheck(Page):
             print("🔧 No done_checks, navigating next anyway")
             self.logger.info("No done_checks, navigating next anyway")
             self.navigate_next()
+
+
+def parse_errors(
+    done_checks: DoneChecks, app_config: ConfigManager
+) -> List[str]:
+    errors: List[str] = []
+    if done_checks.checks[CheckType.ARCH].returncode != 0:
+        errors.append(_("error.arch.9"))
+    elif (
+        done_checks.checks[CheckType.ARCH].result
+        not in app_config.ui.accepted_architectures
+    ):
+        errors.append(_("error.arch.0"))
+    if done_checks.checks[CheckType.UEFI].returncode != 0:
+        errors.append(_("error.uefi.9"))
+    elif done_checks.checks[CheckType.UEFI].result != "uefi":
+        errors.append(_("error.uefi.0"))
+    if done_checks.checks[CheckType.RAM].returncode != 0:
+        errors.append(_("error.totalram.9"))
+    elif done_checks.checks[CheckType.RAM].result < app_config.app.minimal_required_ram:
+        errors.append(_("error.totalram.0"))
+    if done_checks.checks[CheckType.SPACE].returncode != 0:
+        errors.append(_("error.space.9"))
+    elif (
+        done_checks.checks[CheckType.SPACE].result
+        < app_config.app.minimal_required_space
+    ):
+        errors.append(_("error.space.0"))
+    if done_checks.checks[CheckType.RESIZABLE].returncode != 0:
+        errors.append(_("error.resizable.9"))
+    elif (
+        done_checks.checks[CheckType.RESIZABLE].result
+        < app_config.app.minimal_required_space
+    ):
+        errors.append(_("error.resizable.0"))
+    return errors
+

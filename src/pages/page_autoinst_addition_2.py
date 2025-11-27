@@ -5,6 +5,7 @@ from templates.list_view import ListView
 import math
 import tkinter_templates as tkt
 import tkinter_templates
+from multilingual import _
 
 
 class PageAutoinstAddition2(Page):
@@ -21,10 +22,10 @@ class PageAutoinstAddition2(Page):
     def init_page(self):
         page_layout = GenericPageLayout(
             self,
-            self.LN.title_autoinst3,
-            self.LN.btn_next,
+            _("title.autoinst3"),
+            _("btn.next"),
             lambda: self.navigate_next(),
-            self.LN.btn_back,
+            _("btn.back"),
             lambda: self.navigate_previous(),
         )
         page_frame = page_layout.content_frame
@@ -55,10 +56,10 @@ class PageAutoinstAddition2(Page):
         timezone_list_frame = tkinter_templates.FrameContainer(temp_frame)
         timezone_list_frame.grid(row=0, column=1, ipady=5, padx=5, sticky="news")
 
-        self.keyboard_list = ListView(keyboard_list_frame, title=self.LN.list_keymaps)
+        self.keyboard_list = ListView(keyboard_list_frame, title=_("list.keymaps"))
         self.keyboard_list.pack(side="left", fill="both", expand=1)
 
-        self.timezone_list = ListView(timezone_list_frame, title=self.LN.list_timezones)
+        self.timezone_list = ListView(timezone_list_frame, title=_("list.timezones"))
         self.timezone_list.pack(side="left", fill="both", expand=1)
 
         for keymap in self.all_keymaps:

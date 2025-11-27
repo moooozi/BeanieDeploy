@@ -67,12 +67,10 @@ def build_with_pyinstaller():
         # Add the src directory to Python path
         "--paths", "src",
         # Add data files
-        "--add-data", "src/translations;translations",
+        "--add-data", "src/locales;locales",
         "--add-data", "src/resources;resources",
-        # Add hidden imports for translation modules
-        "--hidden-import", "translations.en",
-        "--hidden-import", "translations.de", 
-        "--hidden-import", "translations.ar",
+        # Add hidden imports for babel translation system
+        "--hidden-import", "babel.localedata",
         # Add hidden imports for langtable and related modules
         "--hidden-import", "langtable",
         "--hidden-import", "babel",

@@ -114,8 +114,8 @@ def run():
         config.paths.work_dir.mkdir(parents=True, exist_ok=True)
         
         # Set up language
-        lang_code = multilingual.get_lang_by_code(windows_language_code())
-        multilingual.set_lang(lang_code if lang_code else "English")
+        lang_name = multilingual.get_lang_name_by_code(windows_language_code())
+        multilingual.set_lang(lang_name if lang_name else "English")
         
         # Create and run the main application
         if installation_context:

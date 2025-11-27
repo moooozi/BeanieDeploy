@@ -2,6 +2,7 @@ from templates.generic_page_layout import GenericPageLayout
 from models.page import Page, PageValidationResult
 import customtkinter as ctk
 from tkinter_templates import TextLabel
+from multilingual import _
 
 
 class PagePlayground(Page):
@@ -12,7 +13,7 @@ class PagePlayground(Page):
         page_layout = GenericPageLayout(
             self,
             "Hello, this is a playground page!",
-            secondary_btn_txt=self.LN.btn_quit,
+            secondary_btn_txt=_("btn.quit"),
             secondary_btn_command=lambda: self._quit_application(),
         )
         self.page_frame = page_layout.content_frame

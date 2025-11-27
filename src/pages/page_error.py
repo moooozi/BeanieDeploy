@@ -2,6 +2,7 @@ from templates.generic_page_layout import GenericPageLayout
 from templates.info_frame import InfoFrame
 from models.page import Page, PageValidationResult
 from tkinter_templates import TextLabel
+from multilingual import _
 
 
 class PageError(Page):
@@ -15,13 +16,13 @@ class PageError(Page):
         
         page_layout = GenericPageLayout(
             self,
-            self.LN.error_title % app_name,
-            secondary_btn_txt=self.LN.btn_quit,
+            _("error.title") % {"app_name": app_name},
+            secondary_btn_txt=_("btn.quit"),
             secondary_btn_command=lambda: self._quit_application(),
         )
         self.page_frame = page_layout.content_frame
         
-        error_label = TextLabel(self.page_frame, text=self.LN.error_list)
+        error_label = TextLabel(self.page_frame, text=_("error.list"))
         error_label.pack(pady=10)
 
         self.info_frame_raster = InfoFrame(self.page_frame)

@@ -1,0 +1,370 @@
+# English translations for BeanieDeploy.
+# Copyright (C) 2024
+# This file is distributed under the same license as the BeanieDeploy project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: BeanieDeploy 0.94\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Last-Translator: Auto-generated\n"
+"Language: en\n"
+"Language-Team: English\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# Buttons
+msgid "btn.abort"
+msgstr "Abort"
+
+msgid "btn.back"
+msgstr "Back"
+
+msgid "btn.cancel"
+msgstr "Cancel"
+
+msgid "btn.confirm"
+msgstr "Confirm"
+
+msgid "btn.continue"
+msgstr "Continue"
+
+msgid "btn.install"
+msgstr "Install"
+
+msgid "btn.next"
+msgstr "Next"
+
+msgid "btn.no"
+msgstr "No"
+
+msgid "btn.quit"
+msgstr "Quit"
+
+msgid "btn.restart.later"
+msgstr "Restart later"
+
+msgid "btn.restart.now"
+msgstr "Restart now"
+
+msgid "btn.retry"
+msgstr "Retry"
+
+msgid "btn.yes"
+msgstr "Yes"
+
+# Checks
+msgid "check.arch"
+msgstr "Checking CPU architecture"
+
+msgid "check.available.downloads"
+msgstr "Checking available downloads"
+
+msgid "check.existing.download.files"
+msgstr "Checking for existing files from previous installs"
+
+msgid "check.ram"
+msgstr "Checking available RAM capacity"
+
+msgid "check.resizable"
+msgstr "Checking system drive resizability"
+
+msgid "check.running"
+msgstr "Checking System compatibility. please wait..."
+
+msgid "check.space"
+msgstr "Checking available space"
+
+msgid "check.uefi"
+msgstr "Checking UEFI compliance"
+
+# Errors
+msgid "error.arch.0"
+msgstr "This device's CPU architecture is incompatible."
+
+msgid "error.arch.9"
+msgstr "CPU architecture could not be verified."
+
+msgid "error.list"
+msgstr "Following issues detected:"
+
+msgid "error.resizable.0"
+msgstr "Not enough shrink room on system drive."
+
+msgid "error.resizable.9"
+msgstr "Failed to check system drive resizability."
+
+msgid "error.space.0"
+msgstr "Not enough space on your system drive. Free up space and try again"
+
+msgid "error.space.9"
+msgstr "Failed to check available disk space on your system drive."
+
+msgid "error.title"
+msgstr "%(app_name)s can't run on your system"
+
+msgid "error.totalram.0"
+msgstr "Your system does not have sufficient RAM capacity."
+
+msgid "error.totalram.9"
+msgstr "Failed to check available RAM capacity."
+
+msgid "error.uefi.0"
+msgstr "Your system does not support (or is not using) UEFI boot."
+
+msgid "error.uefi.9"
+msgstr "UEFI boot support could not be verified."
+
+# Install
+msgid "install.auto"
+msgstr "Quick & guided install"
+
+msgid "install.help"
+msgstr "Help me decide"
+
+msgid "install.option.custom"
+msgstr "Custom installation and partitioning"
+
+msgid "install.option.dualboot"
+msgstr "Install alongside Windows"
+
+msgid "install.option.replace.win"
+msgstr "Install and replace Windows"
+
+msgid "install.running"
+msgstr "Installing..."
+
+msgid "title.autoinst2"
+msgstr "Choose your language and locale"
+
+msgid "title.autoinst3"
+msgstr "Choose your timezone and keyboard layout"
+
+msgid "title.autoinst4"
+msgstr "Create your local user account"
+
+# Job
+msgid "job.adding.tmp.boot.entry"
+msgstr "Adding boot entry..."
+
+msgid "job.checksum"
+msgstr "Checking downloaded file's integrity"
+
+msgid "job.checksum.failed"
+msgstr "Integrity check failed"
+
+msgid "job.checksum.failed.txt"
+msgstr "Failed to check downloaded file integrity, continue anyways?"
+
+msgid "job.checksum.mismatch"
+msgstr "Checksum Mismatch"
+
+msgid "job.checksum.mismatch.txt"
+msgstr "The downloaded file has an unexpected SHA256-Hash and cannot be trusted.\n\nFile Hash:\n%(actual_hash)s\nExpected Hash:\n%(expected_hash)s\n\nThis usually means that the file is not properly downloaded.\nTry to download again?"
+
+msgid "job.copying.to.tmp.part"
+msgstr "Copying required installer media files to temporary boot partition..."
+
+msgid "job.creating.tmp.part"
+msgstr "Creating temporary boot partition for installer media..."
+
+msgid "job.dl.install.media"
+msgstr "Downloading install media..."
+
+msgid "job.starting.download"
+msgstr "Starting download..."
+
+# Finish
+msgid "cleanup.question"
+msgstr "Clean up downloaded files?"
+
+msgid "cleanup.question.txt"
+msgstr "These files are not useful anymore unless you plan to reuse the app later.\nDelete them?"
+
+msgid "finished.text"
+msgstr "A restart is required to continue installation, click '%(restart_now_btn)s' to restart now or '%(restart_later_btn)s' to manually restart later"
+
+msgid "finished.text.restarting.now"
+msgstr "Automatic restart in %(seconds)s seconds"
+
+msgid "finished.title"
+msgstr "Restart required"
+
+# Time
+msgid "eta.hour"
+msgstr "hours"
+
+msgid "eta.left"
+msgstr "left"
+
+msgid "eta.minute"
+msgstr "minutes"
+
+msgid "eta.second"
+msgstr "seconds"
+
+# Hints
+msgid "desktop.hint.gnome"
+msgstr "GNOME desktop is Minimal and very stable, touchpad & touchscreen optimized"
+
+msgid "desktop.hint.kde.plasma"
+msgstr "KDE is very feature-rich, highly customizable, and has Windows-like layout by default"
+
+msgid "distro.hint.fedora.kde.plasma"
+msgstr "Fedora with KDE desktop environment"
+
+msgid "distro.hint.fedora.workstation"
+msgstr "The main Fedora edition with GNOME desktop environment"
+
+# Verify
+msgid "verify.autoinst.dualboot"
+msgstr "%(distro_name)s will be downloaded and installed alongside Windows."
+
+msgid "verify.autoinst.keep.data"
+msgstr "Your existing data will not be affected."
+
+msgid "verify.autoinst.replace.win"
+msgstr "%(distro_name)s will be downloaded and installed to replace Windows."
+
+msgid "verify.autoinst.rm.all"
+msgstr "Everything on this device will be erased."
+
+msgid "verify.autoinst.wifi"
+msgstr "Existing Wi-Fi profiles will be added in %(distro_name)s."
+
+msgid "verify.no.autoinst"
+msgstr "%(distro_name)s will be downloaded and will boot on the next restart to begin custom installation."
+
+# Misc
+msgid "add.auto.restart"
+msgstr "Restart automatically"
+
+msgid "add.import.wifi"
+msgstr "Export my Wi-Fi networks to %(distro_name)s"
+
+msgid "add.torrent"
+msgstr "Use torrent whenever possible"
+
+msgid "additional.setup.now"
+msgstr "Setup your locale, Timezone and keyboard layout now"
+
+msgid "adv"
+msgstr "Advanced"
+
+msgid "choose.distro"
+msgstr "Choose a distro"
+
+msgid "desktop.environment"
+msgstr "Desktop"
+
+msgid "desktop.question"
+msgstr "Select your preferred distribution."
+
+msgid "dl.file.size"
+msgstr "File size"
+
+msgid "dl.speed"
+msgstr "Speed"
+
+msgid "dl.timeleft"
+msgstr "Time left"
+
+msgid "downloads.number"
+msgstr "File %(current_file)s out of %(total_files)s"
+
+msgid "dualboot.size.txt"
+msgstr "Reserved space for %(distro_name)s:"
+
+msgid "enable.rpm.fusion"
+msgstr "Enable additional repositories for extended software and multimedia codecs support"
+
+msgid "encrypt.reminder.txt"
+msgstr "You will be asked to enter encryption passphase later"
+
+msgid "encrypted.root"
+msgstr "Encrypt the new operating system"
+
+msgid "encryption.tpm.unlock"
+msgstr "Auto-unlock with TPM2"
+
+msgid "entry.encrypt.passphrase"
+msgstr "Set encryption passphrase"
+
+msgid "entry.fullname"
+msgstr "Full name (optional)"
+
+msgid "entry.username"
+msgstr "Username"
+
+msgid "immutable.system"
+msgstr "Immutable system image"
+
+msgid "info.about.selection"
+msgstr "Info about selection:"
+
+msgid "init.download"
+msgstr "Initial download: %(size)s"
+
+msgid "keymap.tz.custom"
+msgstr "Choose timezone and keyboard layout"
+
+msgid "keymap.tz.ip.description"
+msgstr "(Your IP region)"
+
+msgid "keymap.tz.option"
+msgstr "The default timezone and keyboard layout for %(distro_name)s"
+
+msgid "keymap.tz.selected.description"
+msgstr "(Your selected locale)"
+
+msgid "lang"
+msgstr "Language"
+
+msgid "lang.question"
+msgstr "Now let's get started, select your preferred app language."
+
+msgid "list.keymaps"
+msgstr "Keyboard Layout"
+
+msgid "list.timezones"
+msgstr "Timezone"
+
+msgid "locale"
+msgstr "Locale"
+
+msgid "more.options"
+msgstr "More options"
+
+msgid "net.install"
+msgstr "Network Install"
+
+msgid "password.reminder.txt"
+msgstr "You will be able to set password for your user account after the installation"
+
+msgid "recommended"
+msgstr "Recommended"
+
+msgid "selected.dist"
+msgstr "Selected distro"
+
+msgid "something.else"
+msgstr "Something else"
+
+msgid "total.download"
+msgstr "Total download: %(size)s"
+
+msgid "warn.backup.files.txt"
+msgstr "Backup your files! Everything inside %(drive)s will be permanently deleted"
+
+msgid "warn.not.available"
+msgstr "Not available"
+
+msgid "warn.space"
+msgstr "Not enough space"
+
+msgid "windows.question"
+msgstr "Okay! How should %(distro_name)s be installed?"
+

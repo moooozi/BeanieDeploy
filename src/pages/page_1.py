@@ -1,11 +1,12 @@
 import customtkinter as ctk
-from models.data_units import DataUnit
+from utils.formatting import format_bytes
 from templates.info_frame import InfoFrame
 from templates.multi_radio_buttons import MultiRadioButtons
 from models.page import Page, PageValidationResult
 import tkinter as tk
 from templates.generic_page_layout import GenericPageLayout
 from tkinter_templates import FONTS_smaller
+from multilingual import _
 
 
 class Page1(Page):
@@ -19,8 +20,8 @@ class Page1(Page):
         try:
             page_layout = GenericPageLayout(
                 self,
-                self.LN.desktop_question,
-                self.LN.btn_next,
+                _("desktop.question"),
+                _("btn.next"),
                 lambda: self.navigate_next(),  # Use new navigation method
             )
             print("🔧 Page1 GenericPageLayout created")
@@ -44,11 +45,21 @@ class Page1(Page):
         for dist in accepted_spins:
             spin_fullname = f"{dist.name} {dist.version}"
             is_featured = dist.is_default or dist.is_featured
+            # Get distro hint based on name
+            distro_hint = ""
+            if is_featured:
+                # Try to get translation, fallback to empty string if key doesn't exist
+                try:
+                    if dist.name == "Fedora Workstation":
+                        distro_hint = _("distro.hint.fedora.workstation")
+                    elif dist.name == "Fedora KDE Plasma":
+                        distro_hint = _("distro.hint.fedora.kde.plasma")
+                except:
+                    pass
+            
             spin_radio_dict[spin_fullname] = {
                 "name": spin_fullname,
-                "description": (
-                    self.LN.distro_hint[dist.name] if is_featured and dist.name in self.LN.distro_hint else ""
-                ),
+                "description": distro_hint,
                 "advanced": not is_featured,
             }
             if dist.is_default and self.distro_var.get() == "":
@@ -67,7 +78,7 @@ class Page1(Page):
             lambda: self.update_selection_info(),
         )
 
-        self.info_frame_raster = InfoFrame(self.page_frame, self.LN.info_about_selection)
+        self.info_frame_raster = InfoFrame(self.page_frame, _("info.about.selection"))
         frame_distro.grid_rowconfigure(
             len(frame_distro.children) + 1, weight=1
         )  # GUI bugfix for distro_description
@@ -81,34 +92,35 @@ class Page1(Page):
             accepted_spins = self.state.compatibility.accepted_spins
             selected_spin = accepted_spins[spin_index]
             
-            total_size_unit = DataUnit(selected_spin.size)
+            total_size_bytes = selected_spin.size
             
             if selected_spin.is_live_img and self.state.compatibility.live_os_installer_spin:
-                live_os_size_unit = DataUnit(self.state.compatibility.live_os_installer_spin.size)
-                total_size_unit += live_os_size_unit
+                total_size_bytes += self.state.compatibility.live_os_installer_spin.size
 
             if selected_spin.is_base_netinstall:
                 dl_size_txt = (
-                    self.LN.init_download
-                    % total_size_unit.to_human_readable()
+                    _("init.download")
+                    % {"size": format_bytes(total_size_bytes)}
                 )
             else:
                 dl_size_txt = (
-                    self.LN.total_download
-                    % total_size_unit.to_human_readable()
+                    _("total.download")
+                    % {"size": format_bytes(total_size_bytes)}
                 )
             
-            dl_spin_name_text = f"{self.LN.selected_dist}: {selected_spin.name} {selected_spin.version}"
+            dl_spin_name_text = f"{_("selected.dist")}: {selected_spin.name} {selected_spin.version}"
             dl_spin_desktop = (
-                f"{self.LN.desktop_environment}: {selected_spin.desktop}"
+                f"{_("desktop.environment")}: {selected_spin.desktop}"
                 if selected_spin.desktop
                 else ""
             )
 
-            if selected_spin.desktop in self.LN.desktop_hints.keys():
-                dl_spin_desktop_desc = self.LN.desktop_hints[selected_spin.desktop]
-            else:
-                dl_spin_desktop_desc = ""
+            # Get desktop hint based on desktop environment
+            dl_spin_desktop_desc = ""
+            if selected_spin.desktop == "KDE Plasma":
+                dl_spin_desktop_desc = _("desktop.hint.kde.plasma")
+            elif selected_spin.desktop == "GNOME":
+                dl_spin_desktop_desc = _("desktop.hint.gnome")
 
             self.info_frame_raster.flush_labels()
             self.info_frame_raster.add_label("name", dl_spin_name_text)
@@ -146,18 +158,17 @@ class Page1(Page):
             self.state.set_selected_spin(selected_spin)
             
             # Calculate and update partition size
-            total_size_unit = DataUnit(selected_spin.size)
+            total_size_bytes = selected_spin.size
             
             if selected_spin.is_live_img and self.state.compatibility.live_os_installer_spin:
-                live_os_size_unit = DataUnit(self.state.compatibility.live_os_installer_spin.size)
-                total_size_unit += live_os_size_unit
+                total_size_bytes += self.state.compatibility.live_os_installer_spin.size
             
             # Create partition if it doesn't exist and update size
             if self.state.installation.partition is None:
                 from models.partition import Partition
                 self.state.installation.partition = Partition()
             
-            partition_size_bytes = total_size_unit.bytes + self.app_config.app.temp_part_failsafe_space.bytes
+            partition_size_bytes = total_size_bytes + self.app_config.app.temp_part_failsafe_space.bytes
             self.state.installation.partition.tmp_part_size = int(partition_size_bytes)
             
             # Log the selection
@@ -173,7 +184,7 @@ class Page1(Page):
         super().show_validation_error(message)
         # TODO: Implement actual popup display
         # self.show_popup(
-        #     title=self.LN.popup_title_warning,
+        #     title=_("error.validation.title"),
         #     message=message,
         #     type_="warning",
         # )

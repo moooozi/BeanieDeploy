@@ -4,6 +4,7 @@ from models.page import Page, PageValidationResult
 import tkinter as tk
 import customtkinter as ctk
 from tkinter_templates import flush_frame
+from multilingual import _
 
 class PageVerify(Page):
     def __init__(self, parent, page_name: str, *args, **kwargs):
@@ -22,10 +23,10 @@ class PageVerify(Page):
     def init_page(self):
         page_layout = GenericPageLayout(
             self,
-            self.LN.verify_question,
-            self.LN.btn_install,
+            _("verify.question"),
+            _("btn.install"),
             lambda: self.navigate_next(),
-            self.LN.btn_back,
+            _("btn.back"),
             lambda: self.navigate_previous(),
         )
         page_frame = page_layout.content_frame
@@ -39,8 +40,7 @@ class PageVerify(Page):
             self.logger.error("No spin selected when showing verify page")
             return
             
-        from core.verify_logic import build_review_text
-        review_sel = build_review_text(selected_spin, kickstart, install_options, self.LN)
+        review_sel = build_review_text(selected_spin, kickstart, install_options)
 
         self.info_frame_raster = InfoFrame(page_frame)
 
@@ -53,7 +53,7 @@ class PageVerify(Page):
 
         check_restart = ctk.CTkCheckBox(
             page_frame,
-            text=self.LN.add_auto_restart,
+            text=_("add.auto.restart"),
             variable=self.auto_restart_toggle_var,
             onvalue=True,
             offvalue=False,
@@ -81,3 +81,19 @@ class PageVerify(Page):
             self._initiated = False
             self.init_page()
             self._initiated = True
+
+
+def build_review_text(selected_spin, kickstart, install_options):
+    review_sel = []
+    if kickstart and getattr(kickstart, 'partition_method', None) == "custom":
+        review_sel.append(_("verify.no.autoinst") % {"distro_name": selected_spin.name})
+    else:
+        if kickstart and getattr(kickstart, 'partition_method', None) == "dualboot":
+            review_sel.append(_("verify.autoinst.dualboot") % {"distro_name": selected_spin.name})
+            review_sel.append(_("verify.autoinst.keep.data"))
+        elif kickstart and getattr(kickstart, 'partition_method', None) == "replace_win":
+            review_sel.append(_("verify.autoinst.replace.win") % {"distro_name": selected_spin.name})
+            review_sel.append(_("verify.autoinst.rm.all"))
+        if install_options and getattr(install_options, 'export_wifi', False):
+            review_sel.append(_("verify.autoinst.wifi") % {"distro_name": selected_spin.name})
+    return review_sel

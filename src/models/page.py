@@ -17,10 +17,17 @@ class PageValidationResult:
 
 
 class Page(ctk.CTkFrame, ABC):
-    from translations.en import Translation
-
-    LN = Translation()
-    DI_VAR = multilingual.get_di_var()
+    """
+    Base class for all application pages.
+    
+    Provides text direction (DI_VAR) as a class attribute.
+    For translations, import and use _() directly from multilingual module.
+    """
+    
+    @property
+    def DI_VAR(self):
+        """Get current text direction."""
+        return multilingual.get_di_var()
 
     def __init__(self, parent, page_name: str, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)

@@ -1,12 +1,13 @@
 import customtkinter as ctk
 from compatibility_checks import CheckType
-from models.data_units import DataUnit
 from templates.generic_page_layout import GenericPageLayout
 from templates.multi_radio_buttons import MultiRadioButtons
 from models.page import Page, PageValidationResult
+from models.data_units import DataUnit
 import tkinter as tk
 from sys import argv
 from tkinter_templates import TextLabel, FONTS_smaller, color_red, color_blue, var_tracer
+from multilingual import _
 
 
 class PageInstallMethod(Page):
@@ -24,10 +25,10 @@ class PageInstallMethod(Page):
 
         page_layout = GenericPageLayout(
             self,
-            self.LN.windows_question % selected_spin.name,
-            self.LN.btn_next,
+            _("windows.question") % {"distro_name": selected_spin.name},
+            _("btn.next"),
             lambda: self.navigate_next(),
-            self.LN.btn_back,
+            _("btn.back"),
             lambda: self.navigate_previous(),
         )
         page_frame = page_layout.content_frame
@@ -63,13 +64,14 @@ class PageInstallMethod(Page):
                 done_checks.checks[CheckType.RESIZABLE].result > space_clean
             )
             # Convert string size to bytes for arithmetic operation
-            selected_spin_size_bytes = DataUnit(selected_spin.size).bytes
-            max_size = DataUnit.from_bytes(
+            # Spin size is already in bytes
+            selected_spin_size_bytes = selected_spin.size
+            max_size_bytes = (
                 done_checks.checks[CheckType.RESIZABLE].result
                 - selected_spin_size_bytes
                 - self.app_config.app.additional_failsafe_space.bytes_value
-            ).to_gigabytes()
-            max_size = round(max_size, 2)
+            )
+            max_size = round(max_size_bytes / (1000 ** 3), 2)  # Convert to GB
         else:
             dualboot_space_available = True
             replace_win_space_available = True
@@ -83,27 +85,27 @@ class PageInstallMethod(Page):
         dualboot_error_msg = ""
         replace_win_error_msg = ""
         if not is_auto_installable:
-            dualboot_error_msg = self.LN.warn_not_available
-            replace_win_error_msg = self.LN.warn_not_available
+            dualboot_error_msg = _("warn.not.available")
+            replace_win_error_msg = _("warn.not.available")
         else:
             if not dualboot_space_available:
-                dualboot_error_msg = self.LN.warn_space
+                dualboot_error_msg = _("warn.space")
             if not replace_win_space_available:
-                replace_win_error_msg = self.LN.warn_space
+                replace_win_error_msg = _("warn.space")
 
         install_methods_dict = {
             "dualboot": {
-                "name": self.LN.windows_options["dualboot"],
+                "name": _("install.option.dualboot"),
                 "error": dualboot_error_msg,
                 "advanced": True,
             },
             "replace_win": {
-                "name": self.LN.windows_options["replace_win"],
+                "name": _("install.option.replace.win"),
                 "error": replace_win_error_msg,
                 "advanced": False,
             },
             "custom": {
-                "name": self.LN.windows_options["custom"],
+                "name": _("install.option.custom"),
                 "advanced": True,
             },
         }
@@ -116,7 +118,7 @@ class PageInstallMethod(Page):
         )
         radio_buttons.pack(expand=1, fill="x")
 
-        min_size = DataUnit.from_bytes(self.app_config.app.dualboot_required_space.bytes_value).to_gigabytes()
+        min_size = round(self.app_config.app.dualboot_required_space.bytes_value / (1000 ** 3), 2)  # Convert to GB
         self.entry1_frame = ctk.CTkFrame(page_frame, height=300)
         self.entry1_frame.pack_propagate(False)
         self.entry1_frame.pack(
@@ -127,13 +129,13 @@ class PageInstallMethod(Page):
         
         self.warn_backup_sys_drive_files = TextLabel(
             self.entry1_frame,
-            text=self.LN.warn_backup_files_txt % f"{self._get_sys_drive_letter()}:\\",
+            text=_("warn.backup.files.txt") % {"drive": f"{self._get_sys_drive_letter()}:\\"},
             font=FONTS_smaller,
             foreground=color_red,
         )
         self.size_dualboot_txt_pre = TextLabel(
             self.entry1_frame,
-            text=self.LN.dualboot_size_txt % selected_spin.name,
+            text=_("dualboot.size.txt") % {"distro_name": selected_spin.name},
             font=FONTS_smaller,
         )
         self.size_dualboot_entry = ctk.CTkEntry(

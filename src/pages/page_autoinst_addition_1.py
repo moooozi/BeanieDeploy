@@ -2,6 +2,7 @@ from models.page import Page, PageValidationResult
 from templates.generic_page_layout import GenericPageLayout
 from templates.list_view import ListView
 import tkinter_templates 
+from multilingual import _
 
 class PageAutoinstAddition1(Page):
     def __init__(self, parent, page_name: str, *args, **kwargs):
@@ -10,10 +11,10 @@ class PageAutoinstAddition1(Page):
     def init_page(self):
         page_layout = GenericPageLayout(
             self,
-            self.LN.title_autoinst2,
-            self.LN.btn_next,
+            _("title.autoinst2"),
+            _("btn.next"),
             lambda: self.navigate_next(),
-            self.LN.btn_back,
+            _("btn.back"),
             lambda: self.navigate_previous(),
         )
         page_frame = page_layout.content_frame
@@ -41,12 +42,12 @@ class PageAutoinstAddition1(Page):
 
         lang_list = ListView(
             lang_list_frame,
-            title=self.LN.lang,
+            title=_("lang"),
         )
         lang_list.selection_callback = lambda *arg: on_lang_click()
         lang_list.pack(side="left", fill="both", expand=1)
 
-        self.locale_list = ListView(locale_list_frame, title=self.LN.locale)
+        self.locale_list = ListView(locale_list_frame, title=_("locale"))
         self.locale_list.pack(side="left", fill="both", expand=1)
 
         for lang, lang_details in langs_and_locales.items():

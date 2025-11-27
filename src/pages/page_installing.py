@@ -7,7 +7,6 @@ This replaces the fragile kwargs/dict approach with robust type-safe classes.
 import pathlib
 import pickle
 import tempfile
-from models.speed_unit import SpeedUnit
 from models.installation_context import (
     InstallationContext,
     InstallationStage,
@@ -16,12 +15,13 @@ from models.installation_context import (
 from services.installation_service import InstallationService
 from templates.generic_page_layout import GenericPageLayout
 from services.system import is_admin, get_admin
+from utils.formatting import format_speed, format_eta
 import tkinter as tk
 from models.page import Page
 from tkinter_templates import TextLabel
 from async_operations import AsyncOperation
 import customtkinter as ctk
-import pendulum
+from multilingual import _
 
 class PageInstalling(Page):
     """
@@ -65,7 +65,7 @@ class PageInstalling(Page):
         # Create installation context from application state if not already provided
         self.installation_context = self._get_installation_context()
         # Set up GUI
-        page_layout = GenericPageLayout(self, self.LN.install_running)
+        page_layout = GenericPageLayout(self, _("install.running"))
         page_frame = page_layout.content_frame
 
         self.progressbar_install = ctk.CTkProgressBar(
@@ -161,11 +161,11 @@ class PageInstalling(Page):
     ) -> None:
         """Update download-specific GUI (called on main thread)."""
         try:
-            formatted_speed = SpeedUnit(speed).to_human_readable()
-            formatted_eta = pendulum.duration(seconds=eta).in_words() if eta > 0 else "N/A"
+            formatted_speed = format_speed(speed)
+            formatted_eta = format_eta(eta) if eta > 0 else "N/A"
 
             message = (
-                f"{self.LN.job_dl_install_media}\n"
+                f"{_("job.dl.install.media")}\n"
                 f"File {index + 1} of {len(self.installation_context.downloadable_files)}\n"
                 f"Name: {file_name}\n"
                 f"Progress: {percent:.1f}%\n"

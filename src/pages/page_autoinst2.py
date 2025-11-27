@@ -3,6 +3,7 @@ from models.page import Page, PageValidationResult
 import tkinter as tk
 import customtkinter as ctk
 from tkinter_templates import FONTS_smaller, color_blue
+from multilingual import _
 
 
 class PageAutoinst2(Page):
@@ -38,10 +39,10 @@ class PageAutoinst2(Page):
             
         page_layout = GenericPageLayout(
             self,
-            self.LN.windows_question % selected_spin.name,
-            self.LN.btn_next,
+            _("windows.question") % {"distro_name": selected_spin.name},
+            _("btn.next"),
             lambda: self.navigate_next(),
-            self.LN.btn_back,
+            _("btn.back"),
             lambda: self.navigate_previous(),
         )
         page_frame = page_layout.content_frame
@@ -59,7 +60,7 @@ class PageAutoinst2(Page):
         
         check_wifi = ctk.CTkCheckBox(
             frame_checkboxes,
-            text=self.LN.add_import_wifi % selected_spin.name,
+            text=_("add.import.wifi") % {"distro_name": selected_spin.name},
             variable=self.export_wifi_toggle_var,
             onvalue=True,
             offvalue=False,
@@ -69,7 +70,7 @@ class PageAutoinst2(Page):
 
         check_encrypt = ctk.CTkCheckBox(
             frame_checkboxes,
-            text=self.LN.encrypted_root,
+            text=_("encrypted.root"),
             variable=self.enable_encryption_toggle_var,
             command=lambda: self.show_encrypt_options(self.enable_encryption_toggle_var),
             onvalue=True,
@@ -85,7 +86,7 @@ class PageAutoinst2(Page):
             frame_checkboxes,
             wraplength=max_width,
             justify=self.DI_VAR.l,
-            text=self.LN.encrypt_reminder_txt,
+            text=_("encrypt.reminder.txt"),
             font=FONTS_smaller,
             text_color=color_blue,
         )

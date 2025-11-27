@@ -2,6 +2,7 @@ from templates.generic_page_layout import GenericPageLayout
 from models.page import Page, PageValidationResult
 import tkinter as tk
 from tkinter_templates import TextLabel, FONTS_smaller, FONTS_small, color_blue
+from multilingual import _
 
 
 class PageRestartRequired(Page):
@@ -12,16 +13,16 @@ class PageRestartRequired(Page):
     def init_page(self):
         page_frame = GenericPageLayout(
             self,
-            self.LN.finished_title,
-            self.LN.btn_restart_now,
+            _("finished.title"),
+            _("btn.restart.now"),
             lambda: self._restart_now(),
-            self.LN.btn_restart_later,
+            _("btn.restart.later"),
             lambda: self._quit_application(),
         )
         
         
         finished_label = TextLabel(
-            page_frame, text=self.LN.finished_text, font=FONTS_smaller
+            page_frame, text=_("finished.text"), font=FONTS_smaller
         )
         finished_label.pack(pady=10)
         
@@ -43,7 +44,7 @@ class PageRestartRequired(Page):
         time -= 1
         if time > 0:
             self.restarting_text_var.set(
-                self.LN.finished_text_restarting_now % (int(time))
+                _("finished.text.restarting.now") % {"seconds": int(time)}
             )
             self.after(1000, self.countdown_to_restart, time)
         else:
