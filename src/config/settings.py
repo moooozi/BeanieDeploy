@@ -54,7 +54,7 @@ class UrlConfig:
     fedora_geo_ip: str = "https://geoip.fedoraproject.org/city"
     fedora_base_download: str = "https://download.fedoraproject.org"
     fedora_torrent_download: str = "https://torrent.fedoraproject.org"
-    available_spins_list: str = "https://gitlab.com/win2linux/lnitest/-/raw/main/fedora_spins.json"
+    available_spins_list: str = "https://fedoraproject.org/releases.json"
     
     # RPM Fusion URLs (use format strings)
     rpm_fusion_free: str = "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-%s.noarch.rpm"
