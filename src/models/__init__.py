@@ -12,7 +12,6 @@ This package contains type-safe data models for:
 # Export main models for convenient imports
 # Note: Page is not imported here to avoid circular imports with config.settings
 from models.installation_context import InstallationContext, InstallationStage
-from models.language import Language
 from models.direction import Direction
 from models.data_units import DataUnit
 from models.spin import Spin
@@ -20,7 +19,6 @@ from models.spin import Spin
 __all__ = [
     'InstallationContext',
     'InstallationStage',
-    'Language',
     'Direction',
     'DataUnit',
     'Spin',

@@ -4,10 +4,10 @@ Formatting functions have been moved to utils.formatting module.
 """
 import json
 import re
-from typing import Union, Optional
+from typing import Optional
 
 # Re-export formatting functions from the new location for backward compatibility
-from utils.formatting import format_speed, format_bytes as format_size, format_eta
+from utils.formatting import format_speed, format_bytes as format_size, format_eta  # type: ignore
 
 
 def validate_with_regex(var: str, regex: str, mode: str = "read") -> Optional[bool]:

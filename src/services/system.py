@@ -9,7 +9,6 @@ For async privileged operations:
     from services.async_privileged_operations import run_elevated_cmd_async
 """
 import ctypes
-import subprocess
 import winreg
 import locale
 import win32com.client
