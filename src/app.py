@@ -32,8 +32,6 @@ class MainApp(Application):
     def __init__(
         self,
         skip_check: bool = False,
-        done_checks: Optional[DoneChecks] = None,
-        installation_context: Optional[InstallationContext] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -75,20 +73,6 @@ class MainApp(Application):
 
         if playground:
             return self.page_manager.show_page(PagePlayground)
-
-        elif installation_context:
-            # Set installation context through the specific page type
-            self.page_manager.configure_page(
-                PageInstalling,
-                lambda page: page.set_installation_context(installation_context),
-            )
-            return self.page_manager.show_page(PageInstalling)
-
-        elif done_checks:
-            # Set done checks through the specific page type
-            self.page_manager.configure_page(
-                PageCheck, lambda page: page.set_done_checks(done_checks)
-            )
 
         elif skip_check:
             self.logger.info("Skipping checks - using dummy data")

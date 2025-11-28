@@ -1,10 +1,8 @@
 import argparse
 import os
-import pickle
 import traceback
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Handle PyInstaller bundle
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
@@ -21,7 +19,6 @@ from config.settings import get_config
 from utils.logging import setup_logging, get_logger
 from utils.errors import get_error_handler, BeanieDeployError
 from core.state import get_state_manager
-from models.installation_context import InstallationContext
 
 # Legacy imports (to be refactored)
 import multilingual
@@ -34,15 +31,6 @@ def parse_arguments():
     parser.add_argument("--skip_check", action="store_true", help="Skip the check")
     parser.add_argument(
         "--release", action="store_true", help="The App is in release mode"
-    )
-    parser.add_argument(
-        "--checks_dumb",
-        type=argparse.FileType("rb"),
-    )
-    parser.add_argument(
-        "--installation_context",
-        type=argparse.FileType("rb"),
-        help="Serialized InstallationContext for elevated installation process"
     )
     parser.add_argument(
         "--app_version",
@@ -92,21 +80,7 @@ def run():
         # Update version if provided
         if args.app_version:
             config.update_version(args.app_version)
-        
-        # Initialize state manager
-        state_manager = get_state_manager()
-        
-        # Load serialized data if provided
-        done_checks = None
-        installation_context: Optional[InstallationContext] = None
-        
-        if args.checks_dumb:
-            done_checks = pickle.load(args.checks_dumb)
-            state_manager.state.update_compatibility_checks(done_checks)
-            
-        if args.installation_context:
-            installation_context = pickle.load(args.installation_context)
-                
+                                        
         # Log application startup
         logger.info(f"APP STARTING: {config.app.name} v{config.app.version}")
         
@@ -121,12 +95,8 @@ def run():
         multilingual.set_lang(lang_name if lang_name else "English")
         
         # Create and run the main application
-        if installation_context:
-            app = MainApp(installation_context=installation_context)
-        elif args.skip_check:
+        if args.skip_check:
             app = MainApp(skip_check=args.skip_check)
-        elif done_checks:
-            app = MainApp(done_checks=done_checks)
         else:
             app = MainApp()
         
