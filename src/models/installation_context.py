@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List, Optional
 from enum import Enum
 
-from models.kickstart import Kickstart
+from models.kickstart import KickstartConfig
 from models.partition import Partition
 from models.spin import Spin
 from services.partition import TemporaryPartition, PartitioningResult
@@ -85,7 +85,7 @@ class InstallationContext:
     type-safe data structure that's easy to validate and maintain.
     """
     # Core configuration
-    kickstart: Kickstart
+    kickstart: KickstartConfig
     partition: Partition
     tmp_part: TemporaryPartition
     selected_spin: Spin

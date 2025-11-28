@@ -2,53 +2,58 @@
 Configuration builders for Kickstart and GRUB files.
 Handles the generation of installation configuration files.
 """
-from typing import Optional, List
+from typing import List
+
+from ..models.kickstart import KickstartConfig, LocaleConfig, PartitioningConfig
 
 
-def build_autoinstall_ks_file(
-    keymap: Optional[str] = None,
-    keymap_type: str = "vc",
-    locale: Optional[str] = None,
-    timezone: Optional[str] = None,
-    ostree_args: Optional[str] = None,
-    wifi_profiles_dir_name: Optional[str] = None,
-    is_encrypted: bool = False,
-    passphrase: Optional[str] = None,
-    tpm_auto_unlock: bool = True,
-    live_img_url: str = "",
-    sys_drive_uuid: Optional[str] = None,
-    sys_efi_uuid: Optional[str] = None,
-    partition_method: Optional[str] = None,
-    root_guid: Optional[str] = None,
-    boot_guid: Optional[str] = None,
-) -> str:
+def _validate_kickstart_config(kickstart_config: KickstartConfig) -> None:
     """
-    Build a Kickstart file for automated Fedora installation.
+    Validate the kickstart configuration for required fields and consistency.
     
     Args:
-        keymap: Keyboard layout
-        keymap_type: Type of keymap ("vc" or "xlayouts")
-        locale: System locale
-        timezone: System timezone
-        ostree_args: OSTree arguments for immutable systems
-        wifi_profiles_dir_name: Directory containing WiFi profiles
-        is_encrypted: Whether to enable disk encryption
-        passphrase: Encryption passphrase
-        tpm_auto_unlock: Whether to enable TPM auto-unlock
-        live_img_url: URL to live image
-        sys_drive_uuid: System drive UUID
-        sys_efi_uuid: EFI partition UUID
-        partition_method: Partitioning method ("dualboot", "replace_win", "custom")
-        root_guid: Partition GUID for root partition
-        boot_guid: Partition GUID for boot partition
+        kickstart_config: The configuration to validate
         
-    Returns:
-        Generated Kickstart file content
+    Raises:
+        ValueError: If the configuration is invalid with details about what's wrong
     """
-    kickstart_lines = []
+    errors: List[str] = []
     
-    # Header
-    kickstart_lines.extend([
+    # Validate partitioning config
+    if not kickstart_config.partitioning.method:
+        errors.append("Partitioning method is required")
+    elif kickstart_config.partitioning.method not in ["dualboot", "replace_win", "custom"]:
+        errors.append(f"Invalid partitioning method: {kickstart_config.partitioning.method}")
+    
+    if kickstart_config.partitioning.method == "dualboot":
+        if not kickstart_config.partitioning.root_guid:
+            errors.append("root_guid is required for dualboot partition method")
+        if kickstart_config.partitioning.is_encrypted and not kickstart_config.partitioning.boot_guid:
+            errors.append("boot_guid is required for dualboot partition method with encryption")
+        if not kickstart_config.partitioning.sys_efi_uuid:
+            errors.append("sys_efi_uuid is required for dualboot partition method")
+    
+    if kickstart_config.partitioning.method == "replace_win":
+        if not kickstart_config.partitioning.sys_drive_uuid:
+            errors.append("sys_drive_uuid is required for replace_win partition method")
+        if not kickstart_config.partitioning.sys_efi_uuid:
+            errors.append("sys_efi_uuid is required for replace_win partition method")
+    
+    if kickstart_config.partitioning.is_encrypted:
+        if kickstart_config.partitioning.method == "dualboot" and not kickstart_config.partitioning.boot_guid:
+            errors.append("boot_guid is required for dualboot partition method with encryption")
+        
+    # Validate WiFi profiles directory name if specified
+    if kickstart_config.wifi_profiles_dir_name and not isinstance(kickstart_config.wifi_profiles_dir_name, str):
+        errors.append("wifi_profiles_dir_name must be a string")
+    
+    if errors:
+        raise ValueError(f"Invalid kickstart configuration: {'; '.join(errors)}")
+
+
+def _build_header() -> List[str]:
+    """Build the kickstart file header section."""
+    return [
         "# Kickstart file created by BeanieDeploy.",
         "graphical",
         "# removing kickstart files containing sensitive data and",
@@ -57,123 +62,98 @@ def build_autoinstall_ks_file(
         "rm /run/install/repo/ks.cfg",
         "cp /run/install/repo/EFI/BOOT/BOOT.cfg /run/install/repo/EFI/BOOT/grub.cfg",
         "%end"
-    ])
+    ]
 
-    # WiFi profiles import
-    if wifi_profiles_dir_name:
-        kickstart_lines.extend([
-            "# Importing Wi-Fi profiles",
-            "%post --nochroot --logfile=/mnt/sysimage/root/ks-post_wifi.log",
-            "mkdir -p /mnt/sysimage/etc/NetworkManager/system-connections",
-            f"cp /run/install/repo/{wifi_profiles_dir_name}/*.* /mnt/sysimage/etc/NetworkManager/system-connections",
-            "%end"
-        ])
 
-    # TPM auto-unlock for encryption
-    if is_encrypted and passphrase and tpm_auto_unlock:
-        kickstart_lines.extend([
-            "# Activating encryption auto-unlock using TPM2 chip",
-            "%post  --logfile=/root/ks-post_tmp2_unlock.log",
-            f"PASSWORD={passphrase} systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+8 $device",
-            "sed -ie '/^luks-/s/$/,tpm2-device=auto/' /etc/crypttab",
-            "dracut -f",
-            "%end"
-        ])
-
-    # System configuration
-    _add_system_configuration(kickstart_lines, keymap, keymap_type, locale, timezone)
+def _build_wifi_import(kickstart_config: KickstartConfig) -> List[str]:
+    """Build WiFi profiles import section."""
+    if not kickstart_config.wifi_profiles_dir_name:
+        return []
     
-    # Install source configuration
-    if ostree_args:
-        kickstart_lines.append(f"ostreesetup {ostree_args}")
-    if live_img_url:
-        kickstart_lines.append(f"liveimg --url='{live_img_url}' --noverifyssl")
+    return [
+        "# Importing Wi-Fi profiles",
+        "%post --nochroot --logfile=/mnt/sysimage/root/ks-post_wifi.log",
+        "mkdir -p /mnt/sysimage/etc/NetworkManager/system-connections",
+        f"cp /run/install/repo/{kickstart_config.wifi_profiles_dir_name}/*.* /mnt/sysimage/etc/NetworkManager/system-connections",
+        "%end"
+    ]
 
-    # Partitioning configuration
-    _add_partitioning_configuration(
-        kickstart_lines, partition_method, sys_drive_uuid, sys_efi_uuid, 
-        is_encrypted, passphrase, root_guid, boot_guid
-    )
+
+def _build_system_config(locale_config: LocaleConfig) -> List[str]:
+    """Build system configuration section."""
+    lines = []
     
-    kickstart_lines.extend(["rootpw --lock", "reboot"])
-
-    return "\n".join(kickstart_lines) + "\n"
-
-
-def _add_system_configuration(
-    kickstart_lines: List[str], 
-    keymap: Optional[str], 
-    keymap_type: str,
-    locale: Optional[str], 
-    timezone: Optional[str], 
-) -> None:
-    """Add system configuration to kickstart file."""
     # Determine firstboot configuration
-    if keymap and locale and timezone:
+    if locale_config.keymap and locale_config.locale and locale_config.timezone:
         firstboot_line = "firstboot --enable"
     else:
         firstboot_line = "firstboot --reconfig"
-        if not keymap:
-            keymap = "us"
-        if not locale:
-            locale = "en_US.UTF-8"
-        if not timezone:
-            timezone = "America/New_York"
+        if not locale_config.keymap:
+            locale_config.keymap = "us"
+        if not locale_config.locale:
+            locale_config.locale = "en_US.UTF-8"
+        if not locale_config.timezone:
+            locale_config.timezone = "America/New_York"
 
-    kickstart_lines.append(firstboot_line)
+    lines.append(firstboot_line)
 
     # Keyboard configuration
-    if keymap_type == "vc":
-        kickstart_lines.append(f"keyboard --vckeymap={keymap}")
+    if locale_config.keymap_type == "vc":
+        lines.append(f"keyboard --vckeymap={locale_config.keymap}")
     else:
-        kickstart_lines.append(f"keyboard --xlayouts='{keymap}'")
+        lines.append(f"keyboard --xlayouts='{locale_config.keymap}'")
     
-    kickstart_lines.extend([
-        f"lang {locale}",
+    lines.extend([
+        f"lang {locale_config.locale}",
         "firewall --use-system-defaults",
-        f"timezone {timezone} --utc"
+        f"timezone {locale_config.timezone} --utc"
     ])
+    
+    return lines
 
 
-def _add_partitioning_configuration(
-    kickstart_lines: List[str],
-    partition_method: Optional[str],
-    sys_drive_uuid: Optional[str],
-    sys_efi_uuid: Optional[str],
-    is_encrypted: bool,
-    passphrase: Optional[str],
-    root_guid: Optional[str],
-    boot_guid: Optional[str]
-) -> None:
-    """Add partitioning configuration to kickstart file."""
+def _build_install_source(kickstart_config: KickstartConfig) -> List[str]:
+    """Build install source configuration section."""
+    lines = []
+    if kickstart_config.ostree_args:
+        lines.append(f"ostreesetup {kickstart_config.ostree_args}")
+    if kickstart_config.live_img_url:
+        lines.append(f"liveimg --url='{kickstart_config.live_img_url}' --noverifyssl")
+    return lines
+
+
+def _build_partitioning_config(partitioning_config: PartitioningConfig) -> List[str]:
+    """Build partitioning configuration section."""
+    lines = []
+    
     # Validate required parameters for dualboot
-    if partition_method == "dualboot":
-        if not root_guid:
+    if partitioning_config.method == "dualboot":
+        if not partitioning_config.root_guid:
             raise ValueError("root_guid is required for dualboot partition method")
-        if is_encrypted and not boot_guid:
+        if partitioning_config.is_encrypted and not partitioning_config.boot_guid:
             raise ValueError("boot_guid is required for dualboot partition method with encryption")
     
     root_partition = "part btrfs.01"
     efi_partition = ""
 
-    if partition_method == "dualboot":
-        efi_partition = f"mount /dev/disk/by-partuuid/{sys_efi_uuid} /boot/efi "
-        root_partition += f" --onpart=/dev/disk/by-partuuid/{root_guid}"
-    elif partition_method == "replace_win":
-        efi_partition = f"part /boot/efi --fstype=efi --label=efi --onpart=/dev/disk/by-partuuid/{sys_efi_uuid}"
-        root_partition += f" --onpart=/dev/disk/by-partuuid/{sys_drive_uuid}"
+    if partitioning_config.method == "dualboot":
+        efi_partition = f"mount /dev/disk/by-partuuid/{partitioning_config.sys_efi_uuid} /boot/efi "
+        root_partition += f" --onpart=/dev/disk/by-partuuid/{partitioning_config.root_guid}"
+    elif partitioning_config.method == "replace_win":
+        efi_partition = f"part /boot/efi --fstype=efi --label=efi --onpart=/dev/disk/by-partuuid/{partitioning_config.sys_efi_uuid}"
+        root_partition += f" --onpart=/dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid}"
 
-    if is_encrypted:
+    if partitioning_config.is_encrypted:
         # Separate boot partition for encryption
-        boot_partition = f"part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-partuuid/{boot_guid}"
+        boot_partition = f"part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-partuuid/{partitioning_config.boot_guid}"
         root_partition += " --encrypted"
-        if passphrase:
-            root_partition += f" --passphrase={passphrase}"
+        if partitioning_config.passphrase:
+            root_partition += f" --passphrase={partitioning_config.passphrase}"
     else:
         # Boot subvolume inside root if encryption is disabled
         boot_partition = "btrfs /boot --subvol --name=boot fedora"
 
-    kickstart_lines.extend([
+    lines.extend([
         efi_partition,
         root_partition,
         "btrfs none --label=fedora btrfs.01",
@@ -182,6 +162,42 @@ def _add_partitioning_configuration(
         "btrfs /var --subvol --name=var fedora",
         boot_partition
     ])
+    
+    return lines
+
+
+def build_autoinstall_ks_file(
+    kickstart_config: KickstartConfig,
+) -> str:
+    """
+    Build a Kickstart file for automated Fedora installation.
+    
+    Args:
+        kickstart_config: Kickstart configuration object
+        
+    Returns:
+        Generated Kickstart file content
+        
+    Raises:
+        ValueError: If the configuration is invalid
+    """
+    # Validate configuration
+    _validate_kickstart_config(kickstart_config)
+    
+    kickstart_lines = []
+    
+    # Build different sections of the kickstart file
+    kickstart_lines.extend(_build_header())
+    kickstart_lines.extend(_build_wifi_import(kickstart_config))
+    kickstart_lines.extend(_build_system_config(kickstart_config.locale))
+    kickstart_lines.extend(_build_install_source(kickstart_config))
+    kickstart_lines.extend(_build_partitioning_config(kickstart_config.partitioning))
+    
+    # Final lines
+    kickstart_lines.extend(["rootpw --lock", "reboot"])
+
+    return "\n".join(kickstart_lines) + "\n"
+
 
 
 def build_grub_cfg_file(root_partition_label: str, is_autoinst: bool = False) -> str:

@@ -8,7 +8,7 @@ from enum import Enum
 
 from compatibility_checks import DoneChecks
 from models.install_options import InstallOptions
-from models.kickstart import Kickstart
+from models.kickstart import KickstartConfig
 from models.partition import Partition
 from models.spin import Spin
 from services.partition import TemporaryPartition
@@ -42,7 +42,7 @@ class InstallationState:
     
     status: InstallerStatus = InstallerStatus.NOT_STARTED
     install_options: InstallOptions = field(default_factory=InstallOptions)
-    kickstart: Optional[Kickstart] = None
+    kickstart: Optional[KickstartConfig] = None
     partition: Optional[Partition] = None
     selected_spin: Optional[Spin] = None
     tmp_partition_letter: str = ""

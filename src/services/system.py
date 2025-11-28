@@ -11,7 +11,6 @@ For async privileged operations:
 import ctypes
 import winreg
 import locale
-import win32com.client
 
 
 def is_admin() -> bool:
@@ -58,6 +57,7 @@ def detect_nvidia() -> bool:
         True if NVIDIA GPU detected, False otherwise
     """
     try:
+        import win32com.client
         wmi = win32com.client.GetObject("winmgmts:")
         video_controllers = wmi.InstancesOf("Win32_VideoController")
         for controller in video_controllers:

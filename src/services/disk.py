@@ -6,7 +6,6 @@ import os
 import posixpath
 import subprocess
 from typing import Optional
-from pycdlib.pycdlib import PyCdlib
 import contextlib
 import winreg
 CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW
@@ -302,6 +301,7 @@ def set_partition_as_efi(drive_letter: str) -> subprocess.CompletedProcess[str]:
     )
 
 def extract_iso_to_dir(iso_path: str, target_dir: str, filter_func=None) -> str:
+    from pycdlib.pycdlib import PyCdlib
     iso = PyCdlib()
     iso.open(iso_path)
     os.makedirs(target_dir, exist_ok=True)

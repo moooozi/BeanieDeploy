@@ -268,8 +268,8 @@ class InstallationService:
             context.partitioning_result = partitioning_results
             
             # Set partition GUIDs in kickstart for auto-install
-            context.kickstart.root_guid = partitioning_results.partition_guids.get('root_guid')
-            context.kickstart.boot_guid = partitioning_results.partition_guids.get('boot_guid')
+            context.kickstart.partitioning.root_guid = partitioning_results.partition_guids.get('root_guid')
+            context.kickstart.partitioning.boot_guid = partitioning_results.partition_guids.get('boot_guid')
 
             self._update_progress(context, InstallationStage.CREATING_TMP_PART, 60, "Temporary partition created")
             return InstallationResult.success_result()
@@ -352,15 +352,15 @@ class InstallationService:
         elevated.call(file_service.set_file_readonly, args=(str(grub_cfg_path), False))
         grub_cfg_content = config_builders.build_grub_cfg_file(
             context.partition.temp_part_label,
-            is_autoinst=bool(context.kickstart.partition_method != "custom")
+            is_autoinst=bool(context.kickstart.partitioning.method != "custom")
         )
         grub_cfg_path.write_text(grub_cfg_content)
         elevated.call(file_service.set_file_readonly, args=(str(grub_cfg_path), True))
         
         # Generate kickstart config if needed
-        if context.kickstart.partition_method != "custom":
+        if context.kickstart.partitioning.method != "custom":
             kickstart_path = destination_path / context.paths.kickstart_cfg_relative_path
-            kickstart_content = config_builders.build_autoinstall_ks_file(**vars(context.kickstart))
+            kickstart_content = config_builders.build_autoinstall_ks_file(context.kickstart)
             kickstart_path.write_text(kickstart_content)
     
     def _copy_efi_to_system_partition(self, context: InstallationContext, temp_destination: str) -> None:

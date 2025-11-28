@@ -12,8 +12,8 @@ class PageAutoinst2(Page):
         
         # Initialize kickstart if it doesn't exist
         if not self.state.installation.kickstart:
-            from models.kickstart import Kickstart
-            self.state.installation.kickstart = Kickstart()
+            from models.kickstart import KickstartConfig
+            self.state.installation.kickstart = KickstartConfig()
             
         # Initialize install options if it doesn't exist  
         if not self.state.installation.install_options:
@@ -24,7 +24,7 @@ class PageAutoinst2(Page):
         install_options = self.state.installation.install_options
         
         self.enable_encryption_toggle_var = tk.BooleanVar(
-            parent, kickstart.is_encrypted if kickstart else False
+            parent, kickstart.partitioning.is_encrypted if kickstart else False
         )
         self.export_wifi_toggle_var = tk.BooleanVar(
             parent, install_options.export_wifi if install_options else False
@@ -115,9 +115,9 @@ class PageAutoinst2(Page):
         install_options = self.state.installation.install_options
         
         if kickstart:
-            kickstart.is_encrypted = self.enable_encryption_toggle_var.get()
+            kickstart.partitioning.is_encrypted = self.enable_encryption_toggle_var.get()
             
         if install_options:
             install_options.export_wifi = self.export_wifi_toggle_var.get()
             
-        self.logger.info(f"Auto-install settings: encryption={kickstart.is_encrypted if kickstart else False}, wifi_export={install_options.export_wifi if install_options else False}")
+        self.logger.info(f"Auto-install settings: encryption={kickstart.partitioning.is_encrypted if kickstart else False}, wifi_export={install_options.export_wifi if install_options else False}")
