@@ -5,8 +5,8 @@ Handles complex partitioning procedures and disk operations.
 from dataclasses import dataclass
 
 from services.disk import (
-    get_sys_drive_letter, get_disk_number, get_drive_size, new_volume_with_metadata,
-    resize_partition, new_volume, get_system_efi_drive_uuid,
+    get_sys_drive_letter, get_disk_number, get_drive_size,
+    resize_partition, new_partition, get_system_efi_drive_uuid,
     mount_volume_to_path
 )
 import os
@@ -117,11 +117,11 @@ def partition_procedure(
                       check=True, capture_output=True, shell=True)
     
     # Create the volume without assigning a drive letter initially
-    tmp_part_metadata = new_volume_with_metadata(sys_disk_number, tmp_part_size, "FAT32", temp_part_label)
+    tmp_part_metadata = new_partition(sys_disk_number, tmp_part_size, "FAT32", temp_part_label)
     
     # Get the volume GUID and mount it to the path
-    volume_guid = tmp_part_metadata["volume_guid"]
-    mount_volume_to_path(volume_guid, tmp_mount_path)
+    volume_unique_id = tmp_part_metadata["vol_unique_id"]
+    mount_volume_to_path(volume_unique_id, tmp_mount_path)
     
     tmp_part = TemporaryPartition(
         mount_path=tmp_mount_path,
@@ -163,10 +163,10 @@ def _create_partitions(
     """Create the required partitions based on configuration."""
     if make_root_partition:
         root_space = shrink_space - (tmp_part_size + efi_part_size + boot_part_size + 1100000)
-        new_volume(sys_disk_number, root_space, "EXFAT", "ALLOC-ROOT")
+        new_partition(sys_disk_number, root_space, "EXFAT", "ALLOC-ROOT")
     
     if boot_part_size:
-        new_volume(sys_disk_number, boot_part_size, "EXFAT", "ALLOC-BOOT")
+        new_partition(sys_disk_number, boot_part_size, "EXFAT", "ALLOC-BOOT")
     
     if efi_part_size:
-        new_volume(sys_disk_number, efi_part_size, "EXFAT", "ALLOC-EFI")
+        new_partition(sys_disk_number, efi_part_size, "EXFAT", "ALLOC-EFI")

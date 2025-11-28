@@ -7,7 +7,49 @@ import posixpath
 import subprocess
 from typing import Optional
 from pycdlib import PyCdlib
+import contextlib
+import winreg
 CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW
+
+
+@contextlib.contextmanager
+def prevent_bitlocker_auto_encrypt():
+    """
+    Context manager that prevents Windows from automatically encrypting new volumes.
+    
+    Sets PreventDeviceEncryption registry key to 1 and restores the original value afterwards.
+    """
+    key_path = r"SYSTEM\CurrentControlSet\Control\BitLocker"
+    value_name = "PreventDeviceEncryption"
+    
+    # Get the original value
+    original_value = None
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_READ) as key:
+            original_value, _ = winreg.QueryValueEx(key, value_name)
+    except FileNotFoundError:
+        pass  # Key doesn't exist
+    
+    # Set PreventDeviceEncryption to 1
+    with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_SET_VALUE) as key:
+        winreg.SetValueEx(key, value_name, 0, winreg.REG_DWORD, 1)
+    
+    try:
+        yield
+    finally:
+        # Restore the original value
+        if original_value is None:
+            # Key didn't exist, delete it
+            try:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_SET_VALUE) as key:
+                    winreg.DeleteValue(key, value_name)
+            except FileNotFoundError:
+                pass  # Already gone
+        else:
+            # Key existed, restore original value
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_SET_VALUE) as key:
+                winreg.SetValueEx(key, value_name, 0, winreg.REG_DWORD, original_value)
+
 
 def get_sys_drive_letter() -> str:
     """Get the system drive letter (usually C)."""
@@ -102,158 +144,138 @@ def get_unused_drive_letter() -> Optional[str]:
             return letter
     return None
 
-def new_volume(
+def new_partition(
     disk_number: int,
     size: int,
-    filesystem: str,
-    label: str,
-    drive_letter: Optional[str] = None
-) -> subprocess.CompletedProcess:
-    """
-    Create a new volume on the specified disk.
-    
-    Args:
-        disk_number: Disk number to create volume on
-        size: Size of the volume in bytes
-        filesystem: Filesystem type (e.g., 'FAT32', 'NTFS', 'EXFAT')
-        label: Volume label
-        drive_letter: Optional drive letter assignment
-        
-    Returns:
-        CompletedProcess result
-    """
-    script = f"$part = New-Partition -DiskNumber {disk_number} -Size {size}"
-    
-    if drive_letter is not None:
-        script += f" -DriveLetter {drive_letter}"
-    
-    script += " | Get-Volume; "
-    script += f'$part | Format-Volume -FileSystem {filesystem} -NewFileSystemLabel "{label}"; '
-    script += "Disable-Bitlocker -MountPoint $part.Path"
-    
-    return subprocess.run(
-        [r"powershell.exe", script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        check=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
-
-
-def new_volume_with_metadata(
-    disk_number: int,
-    size: int,
-    filesystem: str,
-    label: str,
+    filesystem: Optional[str] = None,
+    label: Optional[str] = None,
     drive_letter: Optional[str] = None,
+    assign_drive_letter: bool = False
 ) -> dict:
     """
-    Create a new partition, format it and return reliable metadata about it.
-
-    Returns a dict with keys:
-      - partition_guid: str (GUID without braces)
-      - partition_number: int
-      - offset: int (bytes)
-      - size: int (bytes)
-      - logical_sector_size: int (bytes)
-      - start_lba: int
-      - size_lba: int
-
-    This function will raise RuntimeError if any required field cannot be obtained.
-    It does not use placeholder values.
-    Requires administrative privileges.
-    """
-    import json
-
-    drive_arg = f"-DriveLetter {drive_letter}" if drive_letter else ""
-    ps = fr"""
-    $p = New-Partition -DiskNumber {disk_number} -Size {size} -ErrorAction Stop {drive_arg}
-    # Wait for partition to be ready
-    $maxTries = 10
-    $tries = 0
-    while ($p -and $p.Guid -eq $null -and $tries -lt $maxTries) {{
-        Start-Sleep -Seconds 1
-        $p = Get-Partition -DiskNumber {disk_number} | Where-Object Size -EQ {size}
-        $tries++
-    }}
-    if ($p -eq $null) {{ throw "Partition creation failed or not found after waiting." }}
-    # Format the partition
-    $formatResult = $p | Format-Volume -FileSystem {filesystem} -NewFileSystemLabel \"{label}\" -ErrorAction Stop
-    # Wait for volume object to appear
-    $vol = $null
-    $tries = 0
-    while ($vol -eq $null -and $tries -lt $maxTries) {{
-        Start-Sleep -Seconds 1
-        $vol = Get-Volume -Partition $p -ErrorAction SilentlyContinue
-        $tries++
-    }}
-    if ($vol -eq $null) {{ throw "Volume object not found after formatting partition." }}
-    # Disable BitLocker if present
-    $bitlocker = Disable-BitLocker -MountPoint $vol.Path -ErrorAction SilentlyContinue
+    Create a new partition on the specified disk, optionally formatting it as a volume.
     
-    $disk = Get-Disk -Number $p.DiskNumber -ErrorAction Stop
-    $obj = [PSCustomObject]@{{
-      PartitionGuid     = $p.Guid
-      PartitionNumber   = $p.PartitionNumber
-      Offset            = $p.Offset
-      Size              = $p.Size
-      LogicalSectorSize = $disk.LogicalSectorSize
-      VolumeGuid        = $vol.UniqueId
-    }}
-    $obj | ConvertTo-Json -Compress
+    Args:
+        disk_number: Disk number to create partition on
+        size: Size of the partition in bytes
+        filesystem: Optional filesystem type (e.g., 'FAT32', 'NTFS', 'EXFAT'). If provided, the partition will be formatted.
+        label: Optional volume label (only used if filesystem is provided)
+        drive_letter: Optional drive letter assignment
+        assign_drive_letter: Whether to automatically assign a drive letter if none specified (default: False)
+        
+    Returns:
+        Dictionary with partition metadata:
+        - partition_guid: str (GUID without braces)
+        - partition_number: int
+        - offset: int (bytes)
+        - size: int (bytes)
+        - logical_sector_size: int (bytes)
+        - start_lba: int
+        - size_lba: int
+        - vol_unique_id: str (only included if formatted, volume unique ID in WMI format, typically \\\\?\\Volume{PartitionGuid})
     """
-
-    result = subprocess.run(
-        [r"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", ps],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        check=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
-
-    payload = result.stdout.strip()
-    if not payload:
-        raise RuntimeError("PowerShell returned no output when creating partition")
-
-    try:
-        data = json.loads(payload)
-    except Exception as e:
-        raise RuntimeError(f"Failed to parse PowerShell JSON output: {e}\nOutput: {payload}")
-
-    # Validate required fields
-    required_fields = ["PartitionGuid", "PartitionNumber", "Offset", "Size", "LogicalSectorSize", "VolumeGuid"]
-    for f in required_fields:
-        if f not in data or data[f] is None or str(data[f]).strip() == "":
-            raise RuntimeError(f"Required field '{f}' missing from PowerShell output: {data}")
-
-    # Normalize and compute LBAs
-    part_guid = str(data["PartitionGuid"]).strip()
-    if part_guid.startswith("{") and part_guid.endswith("}"):
-        part_guid = part_guid[1:-1]
-
-    volume_guid = str(data["VolumeGuid"]).strip()
+    import win32com.client
     
-    offset = int(data["Offset"])
-    part_size = int(data["Size"])
-    sector = int(data["LogicalSectorSize"])
+    wmi = win32com.client.GetObject("winmgmts:root/Microsoft/Windows/Storage")
+    
+    # Find the target disk
+    disks = wmi.InstancesOf("MSFT_Disk")
+    target_disk = None
+    for disk in disks:
+        if int(disk.Number) == disk_number:
+            target_disk = disk
+            break
+    if not target_disk:
+        raise ValueError(f"Disk {disk_number} not found")
+    
+    with prevent_bitlocker_auto_encrypt():
+        # Create partition
+        in_params = target_disk.Methods_("CreatePartition").InParameters.SpawnInstance_()
+        in_params.Size = size
+        in_params.UseMaximumSize = False
+        in_params.Alignment = 0
+        in_params.IsHidden = False
+        in_params.IsActive = False
+        
+        if target_disk.PartitionStyle == 1:  # MBR
+            in_params.MbrType = 6  # Huge
+            # GptType not set
+        else:  # GPT
+            in_params.GptType = "{ebd0a0a2-b9e5-4433-87c0-68b6b72699c7}"
+            # MbrType not set for GPT
+        
+        if drive_letter:
+            in_params.DriveLetter = drive_letter
+            in_params.AssignDriveLetter = False
+        elif assign_drive_letter:
+            in_params.DriveLetter = None
+            in_params.AssignDriveLetter = True
+        else:
+            in_params.DriveLetter = None
+            in_params.AssignDriveLetter = False
+        
+        out_params = target_disk.ExecMethod_("CreatePartition", in_params)
+        result = out_params.ReturnValue
+        if result != 0:
+            raise RuntimeError(f"CreatePartition failed with code {result}: {out_params.ExtendedStatus}")
+        
+        partition = out_params.CreatedPartition
+        
+        vol_unique_id = None
+        if filesystem:
+            # Find the associated volume using WMI association
+            associated_volumes = partition.Associators_("MSFT_PartitionToVolume")
+            if not associated_volumes:
+                raise RuntimeError("No volume associated with the created partition")
+            
+            target_volume = associated_volumes[0]  # Should be exactly one volume per partition
+            
+            # Map filesystem
+            fs_map = {
+                'FAT32': 'FAT32',
+                'NTFS': 'NTFS',
+                'EXFAT': 'ExFAT'
+            }
+            wmi_fs = fs_map.get(filesystem.upper(), filesystem.upper())
+        
+            # Format the volume
+            in_params_format = target_volume.Methods_("Format").InParameters.SpawnInstance_()
+            in_params_format.FileSystem = wmi_fs
+            in_params_format.FileSystemLabel = label or ""
+            in_params_format.Full = False
+            in_params_format.Force = True
+            
+            out_params_format = target_volume.ExecMethod_("Format", in_params_format)
+            result = out_params_format.ReturnValue
+            if result != 0:
+                raise RuntimeError(f"Format failed with code {result}: {out_params_format.ExtendedStatus}")
+            
+            vol_unique_id = str(target_volume.UniqueId).strip()
+    
+    # Return partition metadata
+    partition_guid = str(partition.Guid).strip('{}')
+    
+    offset = int(partition.Offset)
+    part_size = int(partition.Size)
+    sector = int(target_disk.LogicalSectorSize)
     if sector <= 0:
         raise RuntimeError(f"Invalid logical sector size: {sector}")
-
+    
     start_lba = offset // sector
     size_lba = part_size // sector
-
-    return {
-        "partition_guid": part_guid,
-        "partition_number": int(data["PartitionNumber"]),
+    
+    result = {
+        "partition_guid": partition_guid,
+        "partition_number": int(partition.PartitionNumber),
         "offset": offset,
         "size": part_size,
         "logical_sector_size": sector,
         "start_lba": int(start_lba),
         "size_lba": int(size_lba),
-        "volume_guid": volume_guid,
     }
+    if vol_unique_id:
+        result["vol_unique_id"] = vol_unique_id
+    return result
 
 
 def set_partition_as_efi(drive_letter: str) -> subprocess.CompletedProcess[str]:
@@ -330,28 +352,21 @@ def get_system_efi_drive_uuid() -> str:
     raise ValueError("EFI partition not found")
 
 
-def mount_volume_to_path(volume_guid: str, mount_path: str) -> None:
+def mount_volume_to_path(volume_unique_id: str, mount_path: str) -> None:
     """
     Mount a volume to a specified path instead of a drive letter.
     
     Args:
-        volume_guid: Volume GUID (with or without braces)
+        volume_unique_id: Volume unique ID ( \\\\?\\Volume{...}\\)
         mount_path: Path to mount the volume to
     """
     # Ensure the mount path exists
     import os
     os.makedirs(mount_path, exist_ok=True)
-    
-    # Normalize GUID format
-    if not volume_guid.startswith("\\\\?\\Volume{"):
-        if volume_guid.startswith("{") and volume_guid.endswith("}"):
-            volume_guid = f"\\\\?\\Volume{volume_guid}"
-        else:
-            volume_guid = f"\\\\?\\Volume{{{volume_guid}}}"
-    
+        
     # Mount the volume to the path
     subprocess.run(
-        ['mountvol', mount_path, volume_guid],
+        ['mountvol', mount_path, volume_unique_id],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
