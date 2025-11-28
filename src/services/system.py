@@ -51,25 +51,6 @@ def set_windows_time_to_utc() -> bool:
     except Exception:
         return False
 
-def run_powershell_script(script: str) -> str:
-    """
-    Execute a PowerShell script and return the output.
-    
-    Args:
-        script: PowerShell script to execute
-        
-    Returns:
-        Script output as string
-    """
-    result = subprocess.run(
-        [r"powershell.exe", "-ExecutionPolicy", "Unrestricted", script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-    )
-    return result.stdout
-
-
 def detect_nvidia() -> bool:
     """
     Detect if NVIDIA graphics card is present in the system.
