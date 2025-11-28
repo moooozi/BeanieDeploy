@@ -16,6 +16,14 @@ sys.path.insert(0, src_dir)
 
 from services.privilege_manager import elevated
 
+if "/PIPE" in sys.argv:
+    pipe_index = sys.argv.index("/PIPE")
+    if pipe_index + 1 < len(sys.argv):
+        pipe_name = sys.argv[pipe_index + 1]
+        from privilege_helper import main as privilege_helper_main
+        privilege_helper_main(pipe_name)
+        sys.exit(0)
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: elevated_cmd.py <command>", file=sys.stderr)
