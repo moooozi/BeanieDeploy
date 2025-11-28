@@ -3,6 +3,7 @@ Modern localization using babel's gettext.
 Provides GNU gettext-based internationalization.
 """
 import gettext as gettext_module
+import re
 from pathlib import Path
 from typing import Optional, Union
 
@@ -74,7 +75,31 @@ class TranslationManager:
         Returns:
             Translated message
         """
-        return self._translation.gettext(message)
+        translated = self._translation.gettext(message)
+        return self._resolve_references(translated)
+    
+    def _resolve_references(self, text: str) -> str:
+        """
+        Resolve custom references like %(thisfile.key)s within the translated text.
+        
+        Args:
+            text: Text that may contain references
+            
+        Returns:
+            Text with references resolved
+        """
+        def replace_match(match):
+            key = match.group(1)
+            return self.gettext(key)
+        
+        # Handle nested references by iterating until no more changes
+        max_iterations = 10  # Prevent infinite loops in case of cycles
+        for _ in range(max_iterations):
+            new_text = re.sub(r'%\(thisfile\.([^)]+)\)s', replace_match, text)
+            if new_text == text:
+                break
+            text = new_text
+        return text
     
     def ngettext(self, singular: str, plural: str, n: int) -> str:
         """

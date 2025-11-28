@@ -185,7 +185,7 @@ msgid "cleanup.question.txt"
 msgstr "These files are not useful anymore unless you plan to reuse the app later.\nDelete them?"
 
 msgid "finished.text"
-msgstr "A restart is required to continue installation, click '%(restart_now_btn)s' to restart now or '%(restart_later_btn)s' to manually restart later"
+msgstr "A restart is required to continue installation, click '%(thisfile.btn.restart.now)s' to restart now or '%(thisfile.btn.restart.later)s' to manually restart later"
 
 msgid "finished.text.restarting.now"
 msgstr "Automatic restart in %(seconds)s seconds"
