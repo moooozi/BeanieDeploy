@@ -51,6 +51,7 @@ class PartitioningResult:
     sys_drive_letter: str
     sys_disk_number: int
     sys_drive_original_size: int
+    partition_guids: dict
 
 
 def partition_procedure(
@@ -58,7 +59,6 @@ def partition_procedure(
     temp_part_label: str,
     shrink_space: int = 0,
     boot_part_size: int = 0,
-    efi_part_size: int = 0,
     make_root_partition: bool = False,
 ) -> PartitioningResult:
     """
@@ -69,7 +69,6 @@ def partition_procedure(
         temp_part_label: Label for temporary partition
         shrink_space: Amount of space to shrink from system drive
         boot_part_size: Size of boot partition in bytes
-        efi_part_size: Size of EFI partition in bytes
         make_root_partition: Whether to create a root partition
         
     Returns:
@@ -90,15 +89,15 @@ def partition_procedure(
     
     # Calculate shrink space if not provided
     if not (shrink_space and make_root_partition):
-        shrink_space = tmp_part_size + efi_part_size + boot_part_size
+        shrink_space = tmp_part_size + boot_part_size
     
     # Resize system drive
     sys_drive_new_size = sys_drive_original_size - (shrink_space + 1100000)  # Extra safety margin
     resize_partition(sys_drive_letter, sys_drive_new_size)
     
     # Create partitions as needed
-    _create_partitions(
-        sys_disk_number, shrink_space, tmp_part_size, efi_part_size, 
+    partition_guids = _create_partitions(
+        sys_disk_number, shrink_space, tmp_part_size, 
         boot_part_size, make_root_partition
     )
     
@@ -142,6 +141,7 @@ def partition_procedure(
         sys_drive_letter=sys_drive_letter,
         sys_disk_number=sys_disk_number,
         sys_drive_original_size=sys_drive_original_size,
+        partition_guids=partition_guids,
     )
 
 
@@ -156,17 +156,25 @@ def _create_partitions(
     sys_disk_number: int,
     shrink_space: int,
     tmp_part_size: int,
-    efi_part_size: int,
     boot_part_size: int,
     make_root_partition: bool
-) -> None:
-    """Create the required partitions based on configuration."""
+) -> dict:
+    """Create the required partitions based on configuration.
+    
+    Returns:
+        Dictionary with partition GUIDs for created partitions:
+        - root_guid: str or None
+        - boot_guid: str or None
+    """
+    partition_guids = {}
+    
     if make_root_partition:
-        root_space = shrink_space - (tmp_part_size + efi_part_size + boot_part_size + 1100000)
-        new_partition(sys_disk_number, root_space, "EXFAT", "ALLOC-ROOT")
+        root_space = shrink_space - (tmp_part_size + boot_part_size + 1100000)
+        metadata = new_partition(sys_disk_number, root_space)
+        partition_guids['root_guid'] = metadata['partition_guid']
     
     if boot_part_size:
-        new_partition(sys_disk_number, boot_part_size, "EXFAT", "ALLOC-BOOT")
+        metadata = new_partition(sys_disk_number, boot_part_size)
+        partition_guids['boot_guid'] = metadata['partition_guid']
     
-    if efi_part_size:
-        new_partition(sys_disk_number, efi_part_size, "EXFAT", "ALLOC-EFI")
+    return partition_guids

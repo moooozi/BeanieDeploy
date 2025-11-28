@@ -266,6 +266,10 @@ class InstallationService:
             context.tmp_part = partitioning_results.tmp_part
             context.tmp_part_already_created = True
             context.partitioning_result = partitioning_results
+            
+            # Set partition GUIDs in kickstart for auto-install
+            context.kickstart.root_guid = partitioning_results.partition_guids.get('root_guid')
+            context.kickstart.boot_guid = partitioning_results.partition_guids.get('boot_guid')
 
             self._update_progress(context, InstallationStage.CREATING_TMP_PART, 60, "Temporary partition created")
             return InstallationResult.success_result()

@@ -8,4 +8,3 @@ class Partition:
     tmp_part_size: int = 0
     temp_part_label: str = "FEDORA-INST"  # Max 12 Chars
     boot_part_size: int = 0
-    efi_part_size: int = 0

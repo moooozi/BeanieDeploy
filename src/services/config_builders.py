@@ -19,6 +19,8 @@ def build_autoinstall_ks_file(
     sys_drive_uuid: Optional[str] = None,
     sys_efi_uuid: Optional[str] = None,
     partition_method: Optional[str] = None,
+    root_guid: Optional[str] = None,
+    boot_guid: Optional[str] = None,
 ) -> str:
     """
     Build a Kickstart file for automated Fedora installation.
@@ -37,6 +39,8 @@ def build_autoinstall_ks_file(
         sys_drive_uuid: System drive UUID
         sys_efi_uuid: EFI partition UUID
         partition_method: Partitioning method ("dualboot", "replace_win", "custom")
+        root_guid: Partition GUID for root partition
+        boot_guid: Partition GUID for boot partition
         
     Returns:
         Generated Kickstart file content
@@ -88,7 +92,7 @@ def build_autoinstall_ks_file(
     # Partitioning configuration
     _add_partitioning_configuration(
         kickstart_lines, partition_method, sys_drive_uuid, sys_efi_uuid, 
-        is_encrypted, passphrase
+        is_encrypted, passphrase, root_guid, boot_guid
     )
     
     kickstart_lines.extend(["rootpw --lock", "reboot"])
@@ -137,22 +141,31 @@ def _add_partitioning_configuration(
     sys_drive_uuid: Optional[str],
     sys_efi_uuid: Optional[str],
     is_encrypted: bool,
-    passphrase: Optional[str]
+    passphrase: Optional[str],
+    root_guid: Optional[str],
+    boot_guid: Optional[str]
 ) -> None:
     """Add partitioning configuration to kickstart file."""
+    # Validate required parameters for dualboot
+    if partition_method == "dualboot":
+        if not root_guid:
+            raise ValueError("root_guid is required for dualboot partition method")
+        if is_encrypted and not boot_guid:
+            raise ValueError("boot_guid is required for dualboot partition method with encryption")
+    
     root_partition = "part btrfs.01"
     efi_partition = ""
 
     if partition_method == "dualboot":
         efi_partition = f"mount /dev/disk/by-partuuid/{sys_efi_uuid} /boot/efi "
-        root_partition += " --onpart=/dev/disk/by-label/ALLOC-ROOT"
+        root_partition += f" --onpart=/dev/disk/by-partuuid/{root_guid}"
     elif partition_method == "replace_win":
         efi_partition = f"part /boot/efi --fstype=efi --label=efi --onpart=/dev/disk/by-partuuid/{sys_efi_uuid}"
         root_partition += f" --onpart=/dev/disk/by-partuuid/{sys_drive_uuid}"
 
     if is_encrypted:
         # Separate boot partition for encryption
-        boot_partition = "part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-label/ALLOC-BOOT"
+        boot_partition = f"part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-partuuid/{boot_guid}"
         root_partition += " --encrypted"
         if passphrase:
             root_partition += f" --passphrase={passphrase}"

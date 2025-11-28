@@ -15,6 +15,8 @@ class Kickstart:
     keymap: str = ""
     ostree_args: str = ""
     wifi_profiles_dir_name: Optional[list] = None
+    root_guid: Optional[str] = None
+    boot_guid: Optional[str] = None
 
     def __post_init__(self):
         if self.wifi_profiles_dir_name is None:

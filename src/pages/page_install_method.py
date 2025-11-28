@@ -234,7 +234,6 @@ class PageInstallMethod(Page):
             if self.state.installation.partition:
                 self.state.installation.partition.shrink_space = 0
                 self.state.installation.partition.boot_part_size = 0
-                self.state.installation.partition.efi_part_size = 0
         
         self.logger.info(f"Install method selected: {method}")
 
