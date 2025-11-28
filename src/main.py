@@ -4,6 +4,12 @@ import traceback
 import sys
 from pathlib import Path
 
+# Check for elevated helper mode
+if len(sys.argv) > 1 and sys.argv[1] == "/PIPE":
+    import privilege_helper
+    privilege_helper.main()
+    sys.exit(0)
+
 # Handle PyInstaller bundle
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     # Running in a PyInstaller bundle

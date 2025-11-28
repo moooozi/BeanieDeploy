@@ -17,7 +17,6 @@ Usage:
 import atexit
 import ctypes
 import inspect
-import os
 import pickle
 import subprocess
 import sys
@@ -88,25 +87,15 @@ class _PrivilegeManager:
                 if self.pipe_handle == win32file.INVALID_HANDLE_VALUE:
                     raise RuntimeError("Failed to create named pipe")
                 
-                # Get path to privilege helper script
-                if getattr(sys, 'frozen', False):
-                    # Running as PyInstaller bundle
-                    helper_path = os.path.join(sys._MEIPASS, 'privilege_helper.py')  # type: ignore
-                    executable = sys.executable
-                else:
-                    # Running as script
-                    helper_path = os.path.join(
-                        os.path.dirname(os.path.dirname(__file__)),
-                        'privilege_helper.py'
-                    )
-                    executable = sys.executable
+                # Get path to executable
+                executable = sys.executable
                 
-                # Launch privilege helper with runas
+                # Launch elevated helper (embedded in main exe)
                 result = ctypes.windll.shell32.ShellExecuteW(
                     None,
                     "runas",
                     executable,
-                    f'"{helper_path}" /PIPE {self.pipe_name}',
+                    f'/PIPE {self.pipe_name}',
                     None,
                     0,  # SW_HIDE
                 )

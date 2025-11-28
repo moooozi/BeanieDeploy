@@ -18,12 +18,15 @@ def clean_build_artifacts():
     
     for path in paths_to_clean:
         if Path(path).exists():
-            if Path(path).is_dir():
-                shutil.rmtree(path)
-                print(f"Removed directory: {path}")
-            else:
-                Path(path).unlink()
-                print(f"Removed file: {path}")
+            try:
+                if Path(path).is_dir():
+                    shutil.rmtree(path)
+                    print(f"Removed directory: {path}")
+                else:
+                    Path(path).unlink()
+                    print(f"Removed file: {path}")
+            except (OSError, PermissionError) as e:
+                print(f"Could not remove {path}: {e}")
 
 
 def build_with_pyinstaller():
@@ -59,7 +62,6 @@ def build_with_pyinstaller():
         pyinstaller_path,
         "--onefile",
         "--windowed",
-        "--uac-admin",  
         "--name", f"{app_name}-{app_version}",
         "--distpath", "dist",
         "--workpath", "build",
@@ -78,6 +80,12 @@ def build_with_pyinstaller():
         # Collect all data for langtable
         "--collect-data", "langtable",
         "--collect-data", "babel",
+        # Add hidden imports for jaraco modules used by pkg_resources
+        "--hidden-import", "jaraco.classes",
+        "--hidden-import", "jaraco.functools",
+        "--hidden-import", "jaraco.text",
+        "--hidden-import", "jaraco.context",
+        "--hidden-import", "jaraco.collections",
         "src/main.py"
     ]
     
