@@ -9,9 +9,23 @@ from services.disk import (
     resize_partition, new_volume, get_system_efi_drive_uuid,
     mount_volume_to_path
 )
-from services.system import run_powershell_script
 import os
 import subprocess
+import win32com.client
+
+
+def get_volume_uuid(drive_letter: str) -> str:
+    """Get the UUID of a volume using WMI."""
+    wmi = win32com.client.GetObject("winmgmts:")
+    volumes = wmi.InstancesOf("Win32_Volume")
+    for volume in volumes:
+        if str(volume.DriveLetter).rstrip(':').upper() == drive_letter.upper():
+            device_id = str(volume.DeviceID).strip()
+            # DeviceID is like \\?\Volume{uuid}\
+            start = device_id.find("{")
+            end = device_id.find("}")
+            return "{" + device_id[start+1:end] + "}"
+    raise ValueError(f"Volume not found for drive {drive_letter}")
 
 @dataclass
 class TemporaryPartition:
@@ -64,8 +78,7 @@ def partition_procedure(
 
     # Get system drive information
     sys_drive_letter = get_sys_drive_letter()
-    sys_uuid_script = f"(Get-Volume -DriveLetter {sys_drive_letter}).UniqueId"
-    sys_drive_win_uuid = run_powershell_script(sys_uuid_script)
+    sys_drive_win_uuid = get_volume_uuid(sys_drive_letter)
     sys_drive_uuid = _extract_uuid_from_string(sys_drive_win_uuid)
     
     # Store original system drive size for potential rollback

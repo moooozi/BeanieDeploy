@@ -2,22 +2,16 @@
 Disk and partition management services.
 Handles ISO mounting, partition operations, drive management, etc.
 """
+import os
+import posixpath
 import subprocess
 from typing import Optional
-
+from pycdlib import PyCdlib
 CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW
 
 def get_sys_drive_letter() -> str:
     """Get the system drive letter (usually C)."""
-    result = subprocess.run(
-        [r"powershell.exe", r"$env:SystemDrive.Substring(0, 1)"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        check=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
-    return result.stdout.strip()
+    return os.environ.get('SystemDrive', 'C')[0]
 
 
 def get_disk_number(drive_letter: str) -> int:
@@ -30,20 +24,15 @@ def get_disk_number(drive_letter: str) -> int:
     Returns:
         Disk number as integer
     """
-    script = (
-        r"(Get-Partition | Where DriveLetter -eq "
-        + drive_letter
-        + r" | Get-Disk).Number"
-    )
-    result = subprocess.run(
-        [r"powershell.exe", script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        check=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
-    return int(result.stdout.strip())
+    import win32com.client
+    wmi = win32com.client.GetObject("winmgmts:")
+    partitions = wmi.InstancesOf("Win32_DiskPartition")
+    for partition in partitions:
+        # Check if this partition has the drive letter
+        for assoc in partition.Associators_("Win32_LogicalDiskToPartition"):
+            if assoc.DeviceID.upper() == drive_letter.upper() + ":":
+                return partition.DiskIndex
+    raise ValueError(f"No disk found for drive letter {drive_letter}")
 
 
 def get_drive_size(drive_letter: str) -> int:
@@ -56,16 +45,13 @@ def get_drive_size(drive_letter: str) -> int:
     Returns:
         Current size in bytes
     """
-    script = r"(Get-Volume | Where DriveLetter -eq " + drive_letter + ").Size"
-    result = subprocess.run(
-        [r"powershell.exe", script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        check=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
-    return int(float(result.stdout.strip().replace(",", ".")))
+    import win32com.client
+    wmi = win32com.client.GetObject("winmgmts:")
+    volumes = wmi.InstancesOf("Win32_Volume")
+    for volume in volumes:
+        if str(volume.DriveLetter).rstrip(':').upper() == drive_letter.upper():
+            return int(volume.Capacity)
+    raise ValueError(f"No volume found for drive letter {drive_letter}")
 
 
 def resize_partition(drive_letter: str, new_size: int) -> subprocess.CompletedProcess:
@@ -97,20 +83,22 @@ def get_unused_drive_letter() -> Optional[str]:
     Returns:
         Available drive letter or None if none available
     """
+    import win32com.client
+    wmi = win32com.client.GetObject("winmgmts:")
+    volumes = wmi.InstancesOf("Win32_Volume")
+    used_letters = set()
+    for volume in volumes:
+        letter = str(volume.DriveLetter).strip()
+        if letter:
+            used_letters.add(letter.rstrip(':').upper())
+    
     drive_letters = [
         "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", 
         "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
     ]
     
     for letter in drive_letters:
-        result = subprocess.run(
-            [r"powershell.exe", r"Get-Volume | Where-Object DriveLetter -eq " + letter],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            creationflags=CREATE_NO_WINDOW,
-        )
-        if not result.stdout.strip():
+        if letter not in used_letters:
             return letter
     return None
 
@@ -291,73 +279,35 @@ def set_partition_as_efi(drive_letter: str) -> subprocess.CompletedProcess[str]:
         creationflags=CREATE_NO_WINDOW,
     )
 
-def mount_iso(iso_path: str) -> str:
-    """
-    Mount an ISO file and return the drive letter.
-    
-    Args:
-        iso_path: Path to ISO file
-        
-    Returns:
-        Drive letter of mounted ISO
-    """
-    script = f'(Mount-DiskImage -ImagePath "{iso_path}" | Get-Volume).DriveLetter'
-    result = subprocess.run(
-        [r"powershell.exe", script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        check=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
-    return result.stdout.strip()
+def extract_iso_to_dir(iso_path: str, target_dir: str, filter_func=None) -> str:
+    iso = PyCdlib()
+    iso.open(iso_path)
+    os.makedirs(target_dir, exist_ok=True)
 
+    try:
+        for parent, dirs, files in iso.walk(joliet_path='/'):
+            rel_path = parent.lstrip('/')
+            local_dir = os.path.join(target_dir, rel_path)
 
-def unmount_iso(iso_path: str) -> str:
-    """
-    Unmount an ISO file.
-    
-    Args:
-        iso_path: Path to ISO file
-        
-    Returns:
-        Command output
-    """
-    if not iso_path:
-        return ""
-    
-    script = f'Dismount-DiskImage -ImagePath "{iso_path}"'
-    result = subprocess.run(
-        [r"powershell.exe", script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
-    return result.stdout.strip()
+            wrote_any_file = False
+            for f in files:
+                iso_file_path = posixpath.join(parent, f)
+                local_file_path = os.path.join(local_dir, f)
 
+                if filter_func and not filter_func(iso_file_path):
+                    continue
 
-def remove_drive_letter(drive_letter: str) -> subprocess.CompletedProcess:
-    """
-    Remove the drive letter assignment from a partition.
-    
-    Args:
-        drive_letter: Drive letter to remove
-        
-    Returns:
-        CompletedProcess result
-    """
-    script = (
-        f"Get-Volume -Drive {drive_letter} | Get-Partition | "
-        f"Remove-PartitionAccessPath -accesspath {drive_letter}:\\"
-    )
-    return subprocess.run(
-        ["powershell.exe", script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
+                # Create the directory only when we actually need to write a file
+                if not wrote_any_file:
+                    os.makedirs(local_dir, exist_ok=True)
+                    wrote_any_file = True
+
+                iso.get_file_from_iso(local_path=local_file_path, joliet_path=iso_file_path)
+    finally:
+        iso.close()
+
+    return target_dir
+
 
 
 def get_system_efi_drive_uuid() -> str:
@@ -367,19 +317,17 @@ def get_system_efi_drive_uuid() -> str:
     Returns:
         EFI partition UUID
     """
-    script = '(Get-Partition | Where-Object -Property "IsSystem" -EQ true).AccessPaths'
-    result = subprocess.run(
-        [r"powershell.exe", script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        check=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
-    output = result.stdout
-    start_idx = output.index("{") + 1
-    end_idx = output.index("}")
-    return output[start_idx:end_idx]
+    import win32com.client
+    wmi = win32com.client.GetObject("winmgmts:")
+    volumes = wmi.InstancesOf("Win32_Volume")
+    for volume in volumes:
+        if volume.SystemVolume:
+            device_id = str(volume.DeviceID)
+            # DeviceID is like \\?\Volume{uuid}\
+            start = device_id.find("{") + 1
+            end = device_id.find("}")
+            return device_id[start:end]
+    raise ValueError("EFI partition not found")
 
 
 def mount_volume_to_path(volume_guid: str, mount_path: str) -> None:
@@ -432,75 +380,60 @@ def unmount_volume_from_path(mount_path: str) -> None:
 
 def get_partition_info_by_guid(guid: str) -> dict:
     """
-    Get partition information by GUID (partition GUID or volume GUID).
+    Get partition information by GUID (partition GUID) using pure WMI.
+    
+    Uses MSFT_Partition.Guid to find the partition by its unique GUID.
     
     Args:
-        guid: Partition GUID or Volume GUID (with or without braces)
+        guid: Partition GUID (with or without braces)
         
     Returns:
-        Dictionary with partition information including PartitionNumber, StartLBA, SizeLBA, etc.
+        Dictionary with partition information
     """
-    import json
+    import win32com.client
     
     # Normalize GUID format - remove braces if present
     guid = guid.strip('{}')
     
-    ps = f"""
-    $ErrorActionPreference = "Stop"
+    # Connect to Storage namespace
+    wmi = win32com.client.GetObject("winmgmts:root/Microsoft/Windows/Storage")
     
-    # Find partition by GUID
-    $p = Get-Partition | Where-Object {{ $_.Guid -eq "{{{guid}}}" }} | Select-Object -First 1
-    if (-not $p) {{
-        throw "Could not find partition with GUID {guid}"
-    }}
+    # Find partition by unique GUID
+    partitions = wmi.InstancesOf("MSFT_Partition")
+    target_partition = None
+    for partition in partitions:
+        part_guid = str(partition.Guid).strip('{}')
+        if part_guid.lower() == guid.lower():
+            target_partition = partition
+            break
     
-    $disk = Get-Disk -Number $p.DiskNumber -ErrorAction Stop
-    
-    $obj = [PSCustomObject]@{{
-      PartitionGuid     = $p.Guid
-      PartitionNumber   = $p.PartitionNumber
-      Offset            = $p.Offset
-      Size              = $p.Size
-      LogicalSectorSize = $disk.LogicalSectorSize
-    }}
-    $obj | ConvertTo-Json -Compress
-    """
-
-    result = subprocess.run(
-        [r"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", ps],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        check=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
-
-    payload = result.stdout.strip()
-    if not payload:
+    if not target_partition:
         raise RuntimeError(f"No partition found with GUID {guid}")
-
-    try:
-        data = json.loads(payload)
-    except Exception as e:
-        raise RuntimeError(f"Failed to parse PowerShell JSON output: {e}\nOutput: {payload}")
-
-    # Normalize and compute LBAs
-    part_guid = str(data["PartitionGuid"]).strip()
-    if part_guid.startswith("{") and part_guid.endswith("}"):
-        part_guid = part_guid[1:-1]
-
-    offset = int(data["Offset"])
-    part_size = int(data["Size"])
-    sector = int(data["LogicalSectorSize"])
+    
+    # Get disk info
+    disks = wmi.InstancesOf("MSFT_Disk")
+    disk = None
+    for d in disks:
+        if str(d.Path) == str(target_partition.DiskId):
+            disk = d
+            break
+    
+    if not disk:
+        raise RuntimeError("Could not find disk for partition")
+    
+    # Compute LBAs
+    offset = int(target_partition.Offset)
+    part_size = int(target_partition.Size)
+    sector = int(disk.LogicalSectorSize)
     if sector <= 0:
         raise RuntimeError(f"Invalid logical sector size: {sector}")
-
+    
     start_lba = offset // sector
     size_lba = part_size // sector
-
+    
     return {
-        "partition_guid": part_guid,
-        "partition_number": int(data["PartitionNumber"]),
+        "partition_guid": guid,
+        "partition_number": int(target_partition.PartitionNumber),
         "offset": offset,
         "size": part_size,
         "logical_sector_size": sector,

@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import shutil
 from typing import Callable, Optional
+import win32com.client
 
 from config.settings import get_config
 from models.installation_context import (
@@ -288,42 +289,18 @@ class InstallationService:
                     "No installer ISO found"
                 )
             
-            # Mount installer ISO
-            installer_mount_letter = elevated.call(disk.mount_iso, args=(str(installer_iso_path),))
-            source_files = f"{installer_mount_letter}:\\"
+            # Set destination path
             destination = context.tmp_part.mount_path
             
-            try:
-                # Copy installer files
-                elevated.call(shutil.copytree, args=(source_files, destination), kwargs={'dirs_exist_ok': True})
-                
-                # Handle live image if needed
-                if context.is_live_image_installation():
-                    live_iso_path = context.get_live_iso_path()
-                    if live_iso_path:
-                        live_image_mount_letter = elevated.call(disk.mount_iso, args=(str(live_iso_path),))
-                        try:
-                            # Copy live image files as needed
-                            live_image_source = f"{live_image_mount_letter}:\\LiveOS\\"
-                            live_destination = f"{context.tmp_part.mount_path}\\LiveOS"
-                            elevated.call(shutil.copytree, args=(live_image_source, live_destination), kwargs={'dirs_exist_ok': True})
-                        finally:
-                            elevated.call(disk.unmount_iso, args=(str(live_iso_path),))
-                
-                # Copy additional files
-                self._copy_additional_files(context, destination)
-                
-                # Generate configuration files
-                self._generate_config_files(context, destination)
-                
-                # Copy EFI directory to system EFI partition
-                self._copy_efi_to_system_partition(context, destination)
-                
-            finally:
-                # Always unmount the installer ISO
-                elevated.call(disk.unmount_iso, args=(str(installer_iso_path),))
-                # Unmount temporary partition from path
-                elevated.call(disk.unmount_volume_from_path, args=(context.tmp_part.mount_path,))
+            # Extract installer ISO contents directly to temp partition
+            disk.extract_iso_to_dir(str(installer_iso_path), destination)
+            
+            # Handle live image if needed
+            if context.is_live_image_installation():
+                live_iso_path = context.get_live_iso_path()
+                if live_iso_path:
+                    # Extract only the LiveOS directory from live ISO directly to destination
+                    self._extract_liveos_from_iso(str(live_iso_path), f"{destination}\\LiveOS")
             
             self._update_progress(context, InstallationStage.COPYING_TO_TMP_PART, 85, "Files copied successfully")
             return InstallationResult.success_result()
@@ -337,9 +314,19 @@ class InstallationService:
                 except Exception as cleanup_e:
                     error_msg += f"\n\nCleanup also failed: {str(cleanup_e)}"
             return InstallationResult.error_result(
-                InstallationStage.COPYING_TO_TMP_PART,
+                InstallationStage.COPYING_TO_TMP_PART, 
                 error_msg
             )
+    
+    def _extract_liveos_from_iso(self, iso_path: str, target_dir: str) -> None:
+        """
+        Extract only the LiveOS directory from an ISO file.
+        
+        Args:
+            iso_path: Path to the ISO file
+            target_dir: Directory to extract LiveOS contents to
+        """        
+        disk.extract_iso_to_dir(iso_path, target_dir, filter_func=lambda p: p.startswith('/LiveOS/'))
     
     def _copy_additional_files(self, context: InstallationContext, destination: str) -> None:
         """Copy additional files like WiFi profiles."""
@@ -472,15 +459,12 @@ class InstallationService:
             disk_number: Disk number containing the partition
             partition_number: Partition number to delete
         """
-        import subprocess
-        script = f"Remove-Partition -DiskNumber {disk_number} -PartitionNumber {partition_number} -Confirm:$false"
-        subprocess.run(
-            [r"powershell.exe", "-Command", script],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            creationflags=subprocess.CREATE_NO_WINDOW,
-        )
+        wmi = win32com.client.GetObject("winmgmts:")
+        partitions = wmi.InstancesOf("Win32_DiskPartition")
+        for partition in partitions:
+            if partition.DiskIndex == disk_number and partition.Index == partition_number:
+                partition.Delete_()
+                break
 
     def _update_progress(
         self, 

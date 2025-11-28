@@ -12,6 +12,7 @@ import ctypes
 import subprocess
 import winreg
 import locale
+import win32com.client
 
 
 def is_admin() -> bool:
@@ -76,13 +77,15 @@ def detect_nvidia() -> bool:
     Returns:
         True if NVIDIA GPU detected, False otherwise
     """
-    result = subprocess.run(
-        [r"powershell.exe", "Get-WmiObject Win32_VideoController"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-    )
-    return "NVIDIA" in result.stdout
+    try:
+        wmi = win32com.client.GetObject("winmgmts:")
+        video_controllers = wmi.InstancesOf("Win32_VideoController")
+        for controller in video_controllers:
+            if "NVIDIA" in str(controller.Name).upper():
+                return True
+        return False
+    except Exception:
+        return False
 
 
 def app_quit() -> None:

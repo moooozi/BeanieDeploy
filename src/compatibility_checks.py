@@ -5,6 +5,7 @@ import platform
 import shutil
 import subprocess
 from typing import Any, Dict, Optional
+import win32com.client
 
 from services.privilege_manager import elevated
 
@@ -55,40 +56,38 @@ def check_arch():
 def check_uefi():
     print("Checking firmware type...")
     # Use PowerShell but with hidden window
-    proc = subprocess.run(
-        [r"powershell.exe", r"$env:firmware_type"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        creationflags=subprocess.CREATE_NO_WINDOW,
-    )
+    proc = os.environ.get('SystemDrive', 'C')[0]
+
     return Check(
         CheckType.UEFI.value,
-        proc.stdout.strip().lower(),
-        proc.returncode,
-        proc,
+        proc.lower(),
+        0,  # Success return code
+        None,  # No subprocess used
     )
 
 
 def check_ram():
     print("Checking RAM size...")
-    # Use PowerShell with hidden window for RAM check
-    proc = subprocess.run(
-        [
-            r"powershell.exe",
-            r"(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property capacity -Sum).sum",
-        ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        creationflags=subprocess.CREATE_NO_WINDOW,
-    )
-    return Check(
-        CheckType.RAM.value,
-        int(proc.stdout.strip()) if proc.returncode == 0 else proc.stdout.strip(),
-        proc.returncode,
-        proc,
-    )
+    # Use WMI instead of PowerShell
+    try:
+        wmi = win32com.client.GetObject("winmgmts:")
+        memories = wmi.InstancesOf("Win32_PhysicalMemory")
+        total_capacity = 0
+        for memory in memories:
+            total_capacity += int(memory.Capacity)
+        return Check(
+            CheckType.RAM.value,
+            total_capacity,
+            0,  # Success
+            None,
+        )
+    except Exception as e:
+        return Check(
+            CheckType.RAM.value,
+            str(e),
+            1,  # Error
+            None,
+        )
 
 
 def check_space():
@@ -109,23 +108,33 @@ def check_space():
             None,  # No subprocess used
         )
     except Exception as e:
-        # Fallback to PowerShell if shutil fails
-        proc = subprocess.run(
-            [
-                r"powershell.exe",
-                r"(Get-Volume | Where DriveLetter -eq $env:SystemDrive.Substring(0, 1)).SizeRemaining",
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            creationflags=subprocess.CREATE_NO_WINDOW,
-        )
-        return Check(
-            CheckType.SPACE.value,
-            int(proc.stdout.strip()) if proc.returncode == 0 else str(e),
-            proc.returncode,
-            proc,
-        )
+        # Fallback to WMI if shutil fails
+        try:
+            wmi = win32com.client.GetObject("winmgmts:")
+            system_drive = os.environ.get("SystemDrive", "C:")[0]
+            volumes = wmi.InstancesOf("Win32_Volume")
+            for volume in volumes:
+                if str(volume.DriveLetter).upper() == system_drive.upper():
+                    return Check(
+                        CheckType.SPACE.value,
+                        int(volume.FreeSpace),
+                        0,
+                        None,
+                    )
+            # If not found, return error
+            return Check(
+                CheckType.SPACE.value,
+                str(e),
+                1,
+                None,
+            )
+        except Exception as wmi_e:
+            return Check(
+                CheckType.SPACE.value,
+                str(e) + " | WMI error: " + str(wmi_e),
+                1,
+                None,
+            )
 
 
 def check_resizable():
@@ -152,28 +161,26 @@ def check_resizable():
     )
 
 
+def _get_efi_free_space() -> int:
+    """Get free space on EFI partition using WMI."""
+    import win32com.client
+    wmi = win32com.client.GetObject("winmgmts:")
+    volumes = wmi.InstancesOf("Win32_Volume")
+    for volume in volumes:
+        if volume.SystemVolume:
+            return int(volume.FreeSpace)
+    raise ValueError("EFI partition not found")
+
+
 def check_efi_space():
     """Check available free space on the EFI partition."""
     print("Checking EFI partition space...")
-    proc = elevated.run(
-        [
-            r"powershell.exe",
-            "-Command",
-            r"(Get-Partition | Where-Object IsSystem -eq $true | Get-Volume).SizeRemaining",
-        ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    print(f"Efi space check output: {proc.stdout.strip()}")
-    result_value = proc.stdout.strip()
-    if proc.returncode == 0 and result_value.isdigit():
-        result_value = int(result_value)
+    result_value = _get_efi_free_space()
     return Check(
         CheckType.EFI_SPACE.value,
         result_value,
-        proc.returncode,
-        proc,
+        0,
+        None,
     )
 
 
