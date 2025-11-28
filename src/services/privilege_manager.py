@@ -95,7 +95,7 @@ class _PrivilegeManager:
                     None,
                     "runas",
                     executable,
-                    f'/PIPE {self.pipe_name}',
+                    f'{" ".join(sys.argv)} /PIPE {self.pipe_name}',
                     None,
                     0,  # SW_HIDE
                 )

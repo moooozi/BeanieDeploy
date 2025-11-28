@@ -5,10 +5,13 @@ import sys
 from pathlib import Path
 
 # Check for elevated helper mode
-if len(sys.argv) > 1 and sys.argv[1] == "/PIPE":
-    import privilege_helper
-    privilege_helper.main()
-    sys.exit(0)
+if "/PIPE" in sys.argv:
+    pipe_index = sys.argv.index("/PIPE")
+    if pipe_index + 1 < len(sys.argv):
+        pipe_name = sys.argv[pipe_index + 1]
+        import privilege_helper
+        privilege_helper.main(pipe_name)
+        sys.exit(0)
 
 # Handle PyInstaller bundle
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
@@ -80,7 +83,7 @@ def run():
             logger.info("PyInstaller bundle detected - running in release mode")
         else:
             # Development mode - always skip checks
-            set_skip_check(True)
+            set_skip_check(False)
             logger.info("Running in debug mode")
 
         # Update version if provided

@@ -86,13 +86,9 @@ def execute_command(command_data: Dict[str, Any]) -> Any:
         }
 
 
-def main():
+def main(pipe_name: str):
     """Main loop - listen on Named Pipe and execute commands."""
-    if len(sys.argv) < 3 or sys.argv[1] != "/PIPE":
-        print("Usage: privilege_helper.py /PIPE <pipe_name>")
-        sys.exit(1)
-    
-    pipe_name = sys.argv[2]
+
     full_pipe_name = rf"\\.\pipe\{pipe_name}"
     pipe_handle = None
     
@@ -152,5 +148,3 @@ def main():
                 pass
 
 
-if __name__ == "__main__":
-    main()
