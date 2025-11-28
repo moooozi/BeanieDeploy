@@ -6,7 +6,7 @@ import os
 import posixpath
 import subprocess
 from typing import Optional
-from pycdlib import PyCdlib
+from pycdlib.pycdlib import PyCdlib
 import contextlib
 import winreg
 CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW
@@ -307,7 +307,7 @@ def extract_iso_to_dir(iso_path: str, target_dir: str, filter_func=None) -> str:
     os.makedirs(target_dir, exist_ok=True)
 
     try:
-        for parent, dirs, files in iso.walk(joliet_path='/'):
+        for parent, _, files in iso.walk(joliet_path='/'):
             rel_path = parent.lstrip('/')
             local_dir = os.path.join(target_dir, rel_path)
 
