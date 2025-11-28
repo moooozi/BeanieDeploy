@@ -46,23 +46,17 @@ def get_disk_number(drive_letter: str) -> int:
     return int(result.stdout.strip())
 
 
-def get_drive_size_after_resize(drive_letter: str, minus_space: int) -> int:
+def get_drive_size(drive_letter: str) -> int:
     """
-    Calculate the new drive size after shrinking by specified amount.
+    Get the current size of a drive.
     
     Args:
         drive_letter: Drive letter to check
-        minus_space: Amount of space to subtract in bytes
         
     Returns:
-        New size in bytes
+        Current size in bytes
     """
-    script = (
-        r"(Get-Volume | Where DriveLetter -eq "
-        + drive_letter
-        + ").Size -"
-        + str(minus_space)
-    )
+    script = r"(Get-Volume | Where DriveLetter -eq " + drive_letter + ").Size"
     result = subprocess.run(
         [r"powershell.exe", script],
         stdout=subprocess.PIPE,
@@ -413,6 +407,7 @@ def mount_volume_to_path(volume_guid: str, mount_path: str) -> None:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        shell=True,
         check=True,
         creationflags=CREATE_NO_WINDOW,
     )
@@ -430,6 +425,7 @@ def unmount_volume_from_path(mount_path: str) -> None:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         check=True,
+        shell=True,
         creationflags=CREATE_NO_WINDOW,
     )
 

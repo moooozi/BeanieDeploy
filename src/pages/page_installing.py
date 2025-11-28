@@ -38,17 +38,9 @@ class PageInstalling(Page):
     def _get_installation_context(self) -> InstallationContext:
         """Infer installation context."""
         if not self.installation_context:
-            try:
-                self.installation_context = InstallationContext.from_application_state(
-                    self.state
-                )
-
-            except Exception as e:
-                print("Failed to create installation context: ", e)
-                self.logger.error(f"Failed to create installation context: {e}")
-                self._show_error_and_navigate(
-                    f"Failed to prepare installation: {str(e)}"
-                )
+            self.installation_context = InstallationContext.from_application_state(
+                self.state
+            )
         else:
             self.logger.info("Using pre-provided installation context")
 
@@ -81,43 +73,30 @@ class PageInstalling(Page):
 
     def _start_installation(self) -> None:
         """Start the installation process with proper callbacks."""
-        try:
-            # Create installation service with GUI callbacks
-            self.installation_service = InstallationService(
-                progress_callback=self._on_progress_update,
-                download_callback=self._on_download_progress,
-            )
+        # Create installation service with GUI callbacks
+        self.installation_service = InstallationService(
+            progress_callback=self._on_progress_update,
+            download_callback=self._on_download_progress,
+        )
 
-            # Start installation in background
-            AsyncOperation.run(
-                function=self._run_installation,
-                use_threading=True,
-            )
-
-        except Exception as e:
-            self.logger.error(f"Failed to start installation: {e}")
-            self._show_error_and_navigate(f"Installation failed to start: {str(e)}")
+        # Start installation in background
+        AsyncOperation.run(
+            function=self._run_installation,
+            use_threading=True,
+        )
 
     def _run_installation(self) -> None:
         """Run the installation process (called in background thread)."""
-        try:
-            # Type guards to ensure we have valid objects
-            if not self.installation_service:
-                raise RuntimeError("Installation service not initialized")
-            if not self.installation_context:
-                raise RuntimeError("Installation context not initialized")
+        # Type guards to ensure we have valid objects
+        if not self.installation_service:
+            raise RuntimeError("Installation service not initialized")
+        if not self.installation_context:
+            raise RuntimeError("Installation context not initialized")
 
-            result = self.installation_service.install(self.installation_context)
+        result = self.installation_service.install(self.installation_context)
 
-            # Schedule GUI update on main thread
-            self.after(0, self._on_installation_complete, result)
-
-        except Exception as e:
-            self.logger.error(f"Installation failed with exception: {e}")
-            error_result = InstallationResult.error_result(
-                self.current_stage, f"Installation failed: {str(e)}"
-            )
-            self.after(0, self._on_installation_complete, error_result)
+        # Schedule GUI update on main thread
+        self.after(0, self._on_installation_complete, result)
 
     def _on_progress_update(
         self, stage: InstallationStage, percent: float, message: str
@@ -137,26 +116,21 @@ class PageInstalling(Page):
         self, index: int, file_name: str, percent: float, speed: float, eta: float
     ) -> None:
         """Update download-specific GUI (called on main thread)."""
-        try:
-            formatted_speed = format_speed(speed)
-            formatted_eta = format_eta(eta) if eta > 0 else "N/A"
+        formatted_speed = format_speed(speed)
+        formatted_eta = format_eta(eta) if eta > 0 else "N/A"
 
-            message = (
-                f"{_("job.dl.install.media")}\n"
-                f"File {index + 1} of {len(self.installation_context.downloadable_files)}\n"
-                f"Name: {file_name}\n"
-                f"Progress: {percent:.1f}%\n"
-                f"Speed: {formatted_speed}\n"
-                f"ETA: {formatted_eta}"
-            )
-            self.install_job_var.set(message)
-            real_progress = self._real_progress(index, percent) * 0.80 # 80% for downloads
-            self.progressbar_install.set(0.1 + real_progress)
-            self.update()
-
-        except Exception as e:
-            print(f"Failed to update download GUI: {e}")
-            self.logger.warning(f"Failed to update download GUI: {e}")
+        message = (
+            f"{_("job.dl.install.media")}\n"
+            f"File {index + 1} of {len(self.installation_context.downloadable_files)}\n"
+            f"Name: {file_name}\n"
+            f"Progress: {percent:.1f}%\n"
+            f"Speed: {formatted_speed}\n"
+            f"ETA: {formatted_eta}"
+        )
+        self.install_job_var.set(message)
+        real_progress = self._real_progress(index, percent) * 0.80 # 80% for downloads
+        self.progressbar_install.set(0.1 + real_progress)
+        self.update()
 
     def _real_progress(self, index: int, percent: float) -> float:
         """Calculate real progress across all files."""
@@ -209,16 +183,13 @@ class PageInstalling(Page):
             self.after(1000, self.navigate_next)
         else:
             self.logger.error(f"Installation failed: {result.error_message}")
-            self._show_error_and_navigate(
-                f"Installation failed: {result.error_message}"
-            )
-
-    def _show_error_and_navigate(self, error_message: str) -> None:
-        """Show error and navigate to error page."""
-        self.logger.error(error_message)
-        # TODO: Set error on error page and navigate there
-        # For now, just show in the install status
-        self.install_job_var.set(f"ERROR: {error_message}")
+            # Navigate to installation failed page
+            from pages.page_install_failed import PageInstallFailed
+            failed_page = self.navigate_to(PageInstallFailed)
+            if failed_page:
+                failed_page.set_error_message(result.error_message)
+            # Also raise the error for PyInstaller popup
+            raise RuntimeError(f"Installation failed: {result.error_message}")
 
     # Modern methods for new installation system
     def set_installation_context(self, installation_context):

@@ -122,6 +122,12 @@ msgstr "UEFI boot support could not be verified."
 msgid "install.auto"
 msgstr "Quick & guided install"
 
+msgid "install.failed.help"
+msgstr "The installation failed, and your system has been restored to its previous state."
+
+msgid "install.failed.title"
+msgstr "Installation Failed"
+
 msgid "install.help"
 msgstr "Help me decide"
 
@@ -237,6 +243,9 @@ msgstr "Existing Wi-Fi profiles will be added in %(distro_name)s."
 
 msgid "verify.no.autoinst"
 msgstr "%(distro_name)s will be downloaded and will boot on the next restart to begin custom installation."
+
+msgid "verify.question"
+msgstr "Please verify your installation settings"
 
 # Misc
 msgid "add.auto.restart"

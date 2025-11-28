@@ -47,6 +47,5 @@ class PageError(Page):
     def _quit_application(self):
         """Quit the application."""
         self.logger.info("User chose to quit from error page")
-        # This should integrate with your application quit function
         import sys
         sys.exit(1)

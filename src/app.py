@@ -1,17 +1,16 @@
-from typing import Optional, Any
+from typing import Any
 import requests
 from async_operations import AsyncOperation
-from compatibility_checks import DoneChecks
 from core.compatibility_logic import filter_spins
 from core.navigation_conditions import SkipCheckDisabledCondition
 from core.navigation_conditions import SkipCheckDisabledCondition
 import dummy
 from models.page_manager import PageManager
-from models.installation_context import InstallationContext
 from models.types import NavigationFlow, SpinDictList
 from pages.page_autoinst2 import PageAutoinst2
 from pages.page_check import PageCheck
 from pages.page_error import PageError
+from pages.page_install_failed import PageInstallFailed
 from pages.page_install_method import PageInstallMethod
 from pages.page_installing import PageInstalling
 from pages.page_1 import Page1
@@ -104,6 +103,7 @@ class MainApp(Application):
             PageRestartRequired: {},
             # Special pages not in main flow
             PageError: {"special": True},
+            PageInstallFailed: {"special": True},
         }
 
         self.page_manager.configure_navigation_flow(navigation_flow)

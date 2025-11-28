@@ -166,8 +166,16 @@ class InstallationService:
             error_msg = f"Unexpected error during installation: {str(e)}"
             
             # Cleanup temporary partition if it was created
+            cleanup_error = None
             if context.tmp_part_already_created and context.tmp_part:
-                self._cleanup_failed_installation(context)
+                try:
+                    self._cleanup_failed_installation(context)
+                except Exception as cleanup_e:
+                    cleanup_error = str(cleanup_e)
+                    print(f"Warning: Cleanup failed: {cleanup_error}")
+            
+            if cleanup_error:
+                error_msg += f"\n\nCleanup also failed: {cleanup_error}"
             
             return InstallationResult.error_result(context.current_stage, error_msg)
     
@@ -322,11 +330,15 @@ class InstallationService:
             
         except Exception as e:
             # Cleanup on failure
+            error_msg = f"File copying failed: {str(e)}"
             if context.tmp_part_already_created:
-                self._cleanup_failed_installation(context)
+                try:
+                    self._cleanup_failed_installation(context)
+                except Exception as cleanup_e:
+                    error_msg += f"\n\nCleanup also failed: {str(cleanup_e)}"
             return InstallationResult.error_result(
                 InstallationStage.COPYING_TO_TMP_PART,
-                f"File copying failed: {str(e)}"
+                error_msg
             )
     
     def _copy_additional_files(self, context: InstallationContext, destination: str) -> None:
@@ -408,57 +420,49 @@ class InstallationService:
             return InstallationResult.success_result(str(new_entry_id))
         except Exception as e:
             # Cleanup on failure
+            error_msg = f"Boot entry creation failed: {str(e)}"
             if context.tmp_part_already_created:
-                self._cleanup_failed_installation(context)
+                try:
+                    self._cleanup_failed_installation(context)
+                except Exception as cleanup_e:
+                    error_msg += f"\n\nCleanup also failed: {str(cleanup_e)}"
             return InstallationResult.error_result(
                 InstallationStage.ADDING_TMP_BOOT_ENTRY,
-                f"Boot entry creation failed: {str(e)}"
+                error_msg
             )
 
     def _cleanup_failed_installation(self, context: InstallationContext) -> None:
         """
         Clean up after a failed installation by removing the temporary partition
         and extending the system partition back to its original size.
+        
+        Raises:
+            Exception: If cleanup fails
         """
-        try:
-            self._update_progress(context, InstallationStage.CLEANUP, 0, "Cleaning up failed installation...")
+        self._update_progress(context, InstallationStage.CLEANUP, 0, "Cleaning up failed installation...")
+        
+        # Unmount the temporary partition if it's still mounted
+        if context.tmp_part and context.tmp_part.mount_path:
+            elevated.call(disk.unmount_volume_from_path, args=(context.tmp_part.mount_path,))
+        
+        # Delete the temporary partition and extend system partition
+        # This requires the partitioning information that was stored during creation
+        if context.partitioning_result:
+            partitioning_info = context.partitioning_result
             
-            # Unmount the temporary partition if it's still mounted
-            if context.tmp_part and context.tmp_part.mount_path:
-                try:
-                    elevated.call(disk.unmount_volume_from_path, args=(context.tmp_part.mount_path,))
-                except Exception:
-                    pass  # Ignore errors during cleanup
+            # Delete the temporary partition
+            elevated.call(
+                self._delete_partition, 
+                args=(partitioning_info.sys_disk_number, context.tmp_part.partition_number)
+            )
             
-            # Delete the temporary partition and extend system partition
-            # This requires the partitioning information that was stored during creation
-            if context.partitioning_result:
-                partitioning_info = context.partitioning_result
-                
-                # Delete the temporary partition
-                try:
-                    elevated.call(
-                        self._delete_partition, 
-                        args=(partitioning_info.sys_disk_number, context.tmp_part.partition_number)
-                    )
-                except Exception:
-                    pass  # Continue with extension even if deletion fails
-                
-                # Extend the system partition
-                try:
-                    original_sys_size = disk.get_drive_size_after_resize(
-                        partitioning_info.sys_drive_letter, 
-                        partitioning_info.shrink_space
-                    )
-                    disk.resize_partition(partitioning_info.sys_drive_letter, original_sys_size)
-                except Exception:
-                    pass  # Continue even if extension fails
-            
-            self._update_progress(context, InstallationStage.CLEANUP, 100, "Cleanup completed")
-            
-        except Exception as e:
-            # Don't let cleanup errors prevent the error from being reported
-            print(f"Warning: Cleanup failed: {e}")
+            # Extend the system partition back to original size
+            elevated.call(
+                disk.resize_partition,
+                args=(partitioning_info.sys_drive_letter, partitioning_info.sys_drive_original_size)
+            )
+        
+        self._update_progress(context, InstallationStage.CLEANUP, 100, "Cleanup completed")
 
     def _delete_partition(self, disk_number: int, partition_number: int) -> None:
         """

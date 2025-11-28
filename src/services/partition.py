@@ -5,12 +5,13 @@ Handles complex partitioning procedures and disk operations.
 from dataclasses import dataclass
 
 from services.disk import (
-    get_sys_drive_letter, get_disk_number, get_drive_size_after_resize, new_volume_with_metadata,
+    get_sys_drive_letter, get_disk_number, get_drive_size, new_volume_with_metadata,
     resize_partition, new_volume, get_system_efi_drive_uuid,
     mount_volume_to_path
 )
 from services.system import run_powershell_script
-
+import os
+import subprocess
 
 @dataclass
 class TemporaryPartition:
@@ -35,6 +36,7 @@ class PartitioningResult:
     shrink_space: int
     sys_drive_letter: str
     sys_disk_number: int
+    sys_drive_original_size: int
 
 
 def partition_procedure(
@@ -66,6 +68,9 @@ def partition_procedure(
     sys_drive_win_uuid = run_powershell_script(sys_uuid_script)
     sys_drive_uuid = _extract_uuid_from_string(sys_drive_win_uuid)
     
+    # Store original system drive size for potential rollback
+    sys_drive_original_size = get_drive_size(sys_drive_letter)
+    
     # Get EFI and disk information
     sys_efi_uuid = get_system_efi_drive_uuid()
     sys_disk_number = get_disk_number(sys_drive_letter)
@@ -75,9 +80,7 @@ def partition_procedure(
         shrink_space = tmp_part_size + efi_part_size + boot_part_size
     
     # Resize system drive
-    sys_drive_new_size = get_drive_size_after_resize(
-        sys_drive_letter, shrink_space + 1100000  # Extra safety margin
-    )
+    sys_drive_new_size = sys_drive_original_size - (shrink_space + 1100000)  # Extra safety margin
     resize_partition(sys_drive_letter, sys_drive_new_size)
     
     # Create partitions as needed
@@ -96,10 +99,9 @@ def partition_procedure(
     tmp_mount_path = str(temp_base / f"temp_part_{temp_part_label}")
     
     # Ensure the mount path is clean
-    import os
-    import shutil
     if os.path.exists(tmp_mount_path):
-        shutil.rmtree(tmp_mount_path)
+        subprocess.run(["rmdir", "/s", "/q", tmp_mount_path], 
+                      check=True, capture_output=True, shell=True)
     
     # Create the volume without assigning a drive letter initially
     tmp_part_metadata = new_volume_with_metadata(sys_disk_number, tmp_part_size, "FAT32", temp_part_label)
@@ -126,6 +128,7 @@ def partition_procedure(
         shrink_space=shrink_space,
         sys_drive_letter=sys_drive_letter,
         sys_disk_number=sys_disk_number,
+        sys_drive_original_size=sys_drive_original_size,
     )
 
 
