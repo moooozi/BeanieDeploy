@@ -4,6 +4,7 @@ from templates.generic_page_layout import GenericPageLayout
 from templates.multi_radio_buttons import MultiRadioButtons
 from models.page import Page, PageValidationResult
 from models.data_units import DataUnit
+from config.settings import PartitioningMethod
 import tkinter as tk
 from sys import argv
 from tkinter_templates import TextLabel, FONTS_smaller, color_red, color_blue, var_tracer
@@ -79,7 +80,7 @@ class PageInstallMethod(Page):
 
         is_auto_installable = selected_spin.is_auto_installable
 
-        default = "custom" if not is_auto_installable else "replace_win"
+        default = PartitioningMethod.CUSTOM.value if not is_auto_installable else PartitioningMethod.REPLACE_WIN.value
         self.install_method_var.set(default)
 
         dualboot_error_msg = ""
@@ -94,17 +95,17 @@ class PageInstallMethod(Page):
                 replace_win_error_msg = _("warn.space")
 
         install_methods_dict = {
-            "dualboot": {
+            PartitioningMethod.DUALBOOT.value: {
                 "name": _("install.option.dualboot"),
                 "error": dualboot_error_msg,
                 "advanced": True,
             },
-            "replace_win": {
+            PartitioningMethod.REPLACE_WIN.value: {
                 "name": _("install.option.replace.win"),
                 "error": replace_win_error_msg,
                 "advanced": False,
             },
-            "custom": {
+            PartitioningMethod.CUSTOM.value: {
                 "name": _("install.option.custom"),
                 "advanced": True,
             },
@@ -177,7 +178,7 @@ class PageInstallMethod(Page):
         self.size_dualboot_entry.grid_forget()
         self.size_dualboot_txt_post.grid_forget()
         
-        if self.install_method_var.get() == "dualboot":
+        if self.install_method_var.get() == PartitioningMethod.DUALBOOT.value:
             self.size_dualboot_txt_pre.grid(
                 pady=5, padx=(10, 0), column=0, row=0, sticky=self.DI_VAR.w
             )
@@ -185,7 +186,7 @@ class PageInstallMethod(Page):
             self.size_dualboot_txt_post.grid(
                 pady=5, padx=(0, 0), column=2, row=0, sticky=self.DI_VAR.w
             )
-        elif self.install_method_var.get() == "replace_win":
+        elif self.install_method_var.get() == PartitioningMethod.REPLACE_WIN.value:
             self.warn_backup_sys_drive_files.grid(
                 pady=5, padx=(10, 0), column=0, row=0, sticky=self.DI_VAR.w
             )
@@ -194,13 +195,8 @@ class PageInstallMethod(Page):
         """Validate the selected install method and options."""
         method = self.install_method_var.get()
         
-        # Check if method is available
-        available_methods = self._get_available_install_methods()
-        if method not in available_methods:
-            return PageValidationResult(False, "Selected install method is not available")
-        
         # Validate dual boot size if needed
-        if method == "dualboot":
+        if method == PartitioningMethod.DUALBOOT.value:
             try:
                 size_str = self.dualboot_size_var.get().strip()
                 if not size_str:
@@ -218,18 +214,17 @@ class PageInstallMethod(Page):
     def on_next(self):
         """Save the install method selection to state."""
         method = self.install_method_var.get()
-        
         # Update state with install method
-        self.state.installation.install_options.partition_method = method
+        self.state.installation.install_options.partition_method = PartitioningMethod(method)
         
-        if method == "dualboot":
+        if method == PartitioningMethod.DUALBOOT.value:
             # Save dual boot size
             size = DataUnit.from_gigabytes(float(self.dualboot_size_var.get()))
             if not self.state.installation.partition:
                 from models.partition import Partition
                 self.state.installation.partition = Partition()
             self.state.installation.partition.shrink_space = size.bytes
-        elif method == "custom":
+        elif method == PartitioningMethod.CUSTOM.value:
             # Reset partition settings for custom install
             if self.state.installation.partition:
                 self.state.installation.partition.shrink_space = 0
@@ -249,12 +244,6 @@ class PageInstallMethod(Page):
                 self._initiated = False
                 self.init_page()
                 self._initiated = True
-
-    def _get_available_install_methods(self):
-        """Get list of available install methods based on current state."""
-        # This would typically come from your compatibility checks or state
-        # For now, return a basic list
-        return ["dualboot", "replace_win", "custom"]
 
     def _get_sys_drive_letter(self):
         """Get the system drive letter."""

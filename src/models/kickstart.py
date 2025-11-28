@@ -1,10 +1,12 @@
 from dataclasses import dataclass, field
 from typing import Optional, Literal
 
+from config.settings import PartitioningMethod
+
 
 @dataclass
 class PartitioningConfig:
-    method: str = ""
+    method: Optional[PartitioningMethod] = None
     is_encrypted: bool = False
     passphrase: str = ""
     root_guid: Optional[str] = None

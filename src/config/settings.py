@@ -6,7 +6,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 import winreg
+from enum import Enum
 
+
+class PartitioningMethod(Enum):
+    """Enumeration of available partitioning methods."""
+    DUALBOOT = "dualboot"
+    REPLACE_WIN = "replace_win"
+    CUSTOM = "custom"
+
+
+# Import DataUnit after enum to avoid circular import
 from models.data_units import DataUnit
 
 
@@ -105,26 +115,57 @@ class PathConfig:
 
 
 @dataclass(frozen=True)
+class SystemRequirementsConfig:
+    """System requirements configuration."""
+    
+    # Space requirements for EFI files (measured 12.7MB for EFI directory + 5MB safety buffer)
+    required_efi_space_mb: int = 18
+
+
+@dataclass(frozen=True)
 class UIConfig:
     """UI-related configuration."""
     
+    # Window dimensions
+    width: int = 850
+    height: int = 580
+    min_width: int = 800  # width - 50
+    min_height: int = 530  # height - 50
+    max_width: int = 1450  # width + 600
+    max_height: int = 780  # height + 200
+    width_offset: int = 400
+    height_offset: int = 400
+    top_frame_height: int = 80
+    left_frame_width: int = 0
+    
+    # DPI scaling
+    dpi_scaling_factor: float = 1.35
+    
+    # Fonts (calculated based on DPI)
+    font_large: tuple[str, int] = field(init=False)
+    font_medium: tuple[str, int] = field(init=False)
+    font_small: tuple[str, int] = field(init=False)
+    font_smaller: tuple[str, int] = field(init=False)
+    font_tiny: tuple[str, int] = field(init=False)
+    
+    # Colors
+    color_background: str = "#856ff8"
+    color_red: str = "#e81123"
+    color_blue: str = "#0067b8"
+    color_green: str = "#008009"
+    
+    # Other UI settings
     max_width: int = 1000
     accepted_architectures: tuple[str, ...] = ("amd64",)
-    available_install_methods: tuple[str, ...] = ("dualboot", "replace_win", "custom")
     
-    # Direction mappings (whatever this was for)
-    direction_vars: dict[str, str] = field(default_factory=lambda: {
-        "w": "w",
-        "e": "w", 
-        "ne": "ne",
-        "nw": "nw",
-        "se": "se",
-        "sw": "sw",
-        "nse": "nse",
-        "nsw": "nsw",
-        "l": "left",
-        "r": "right",
-    })
+    def __post_init__(self):
+        # Calculate fonts based on DPI scaling
+        factor = self.dpi_scaling_factor
+        object.__setattr__(self, 'font_large', ("Arial", int(24 * factor)))
+        object.__setattr__(self, 'font_medium', ("Arial Bold", int(16 * factor)))
+        object.__setattr__(self, 'font_small', ("Arial", int(13 * factor)))
+        object.__setattr__(self, 'font_smaller', ("Arial", int(12 * factor)))
+        object.__setattr__(self, 'font_tiny', ("Arial", int(11 * factor)))
 
 
 class ConfigManager:
@@ -135,6 +176,7 @@ class ConfigManager:
         self.urls = UrlConfig()
         self.paths = PathConfig()
         self.ui = UIConfig()
+        self.system_requirements = SystemRequirementsConfig()
     
     @classmethod
     def create_default(cls) -> "ConfigManager":

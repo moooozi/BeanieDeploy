@@ -9,6 +9,7 @@ from async_operations import AsyncOperation
 from tkinter_templates import TextLabel
 import customtkinter as ctk
 from multilingual import _
+from models.data_units import DataUnit
 
 
 class PageCheck(Page):
@@ -209,5 +210,12 @@ def parse_errors(
         < app_config.app.minimal_required_space
     ):
         errors.append(_("error.resizable.0"))
+    if done_checks.checks[CheckType.EFI_SPACE].returncode != 0:
+        errors.append(_("error.efi_space.9"))
+    elif (
+        done_checks.checks[CheckType.EFI_SPACE].result
+        < DataUnit.from_mebibytes(app_config.system_requirements.required_efi_space_mb)
+    ):
+        errors.append(_("error.efi_space.0"))
     return errors
 

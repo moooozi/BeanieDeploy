@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import List, Optional
 from enum import Enum
 
-from models.kickstart import KickstartConfig
-from models.partition import Partition
-from models.spin import Spin
+from .kickstart import KickstartConfig
+from .partition import Partition
+from .spin import Spin
 from services.partition import TemporaryPartition, PartitioningResult
 
 
@@ -170,7 +170,7 @@ class InstallationContext:
         if percent is not None:
             self.progress_percent = percent
     
-    def bvalidate(self) -> List[str]:
+    def validate(self) -> List[str]:
         """
         Validate the installation context.
         
@@ -220,8 +220,13 @@ class InstallationContext:
             wifi_profiles_src_dir=getattr(config.paths, 'wifi_profiles_dir', None),
         )
         
+        # Sync partitioning method from install_options to kickstart if not set
+        kickstart = state.installation.kickstart
+        if kickstart and not kickstart.partitioning.method and state.installation.install_options:
+            kickstart.partitioning.method = state.installation.install_options.partition_method
+        
         return cls(
-            kickstart=state.installation.kickstart,
+            kickstart=kickstart,
             partition=state.installation.partition,
             selected_spin=state.installation.selected_spin,
             live_os_installer_spin=state.compatibility.live_os_installer_spin,

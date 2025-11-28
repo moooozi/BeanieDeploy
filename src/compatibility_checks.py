@@ -9,9 +9,6 @@ import win32com.client
 
 from services.privilege_manager import elevated
 
-# Required space for EFI files: measured 12.7MB for EFI directory + 5MB safety buffer
-REQUIRED_EFI_SPACE_MB = 18
-
 
 class CheckType(Enum):
     ARCH = "arch"

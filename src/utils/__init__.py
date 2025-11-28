@@ -9,7 +9,7 @@ This package contains reusable utility functions organized by purpose:
 """
 
 # Export commonly used utilities for convenient imports
-from utils.formatting import (
+from .formatting import (
     format_bytes,
     format_speed,
     format_time_delta,
@@ -17,7 +17,7 @@ from utils.formatting import (
 )
 
 
-from utils.translation_manager import (
+from .translation_manager import (
     set_language,
     get_language,
     gettext,

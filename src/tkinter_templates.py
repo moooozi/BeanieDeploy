@@ -4,16 +4,19 @@ from config.settings import get_config
 import multilingual
 from typing import Any, Optional, Callable, List
 
-WIDTH = 850
-HEIGHT = 580
-MINWIDTH = WIDTH - 50
-MINHEIGHT = HEIGHT - 50
-MAXWIDTH = WIDTH + 600
-MAXHEIGHT = HEIGHT + 200
-WIDTH_OFFSET = 400
-HEIGHT_OFFSET = 400
-TOP_FRAME_HEIGHT = 80
-LEFT_FRAME_WIDTH = 0
+# Get UI config
+_ui_config = get_config().ui
+
+WIDTH = _ui_config.width
+HEIGHT = _ui_config.height
+MINWIDTH = _ui_config.min_width
+MINHEIGHT = _ui_config.min_height
+MAXWIDTH = _ui_config.max_width
+MAXHEIGHT = _ui_config.max_height
+WIDTH_OFFSET = _ui_config.width_offset
+HEIGHT_OFFSET = _ui_config.height_offset
+TOP_FRAME_HEIGHT = _ui_config.top_frame_height
+LEFT_FRAME_WIDTH = _ui_config.left_frame_width
 DARK_MODE = True
 
 
@@ -21,19 +24,19 @@ def get_dpi_scaling_factor():
     return ctypes.windll.user32.GetDpiForSystem() / 96
 
 
-dpi_scaling_factor = 1.35
+dpi_scaling_factor = _ui_config.dpi_scaling_factor
 # print("DPI scaling factor: ", dpi_scaling_factor)
-FONTS_large = ("Ariel", int(24 * dpi_scaling_factor))
-FONTS_medium = ("Ariel Bold", int(16 * dpi_scaling_factor))
-FONTS_small = ("Ariel", int(13 * dpi_scaling_factor))
-FONTS_smaller = ("Ariel", int(12 * dpi_scaling_factor))
-FONTS_tiny = ("Ariel", int(11 * dpi_scaling_factor))
+FONTS_large = _ui_config.font_large
+FONTS_medium = _ui_config.font_medium
+FONTS_small = _ui_config.font_small
+FONTS_smaller = _ui_config.font_smaller
+FONTS_tiny = _ui_config.font_tiny
 
 # Initialize color variables with default values
-tkinter_background_color = "#856ff8"
-color_red = "#e81123"
-color_blue = "#0067b8"
-color_green = "#008009"
+tkinter_background_color = _ui_config.color_background
+color_red = _ui_config.color_red
+color_blue = _ui_config.color_blue
+color_green = _ui_config.color_green
 top_background_color = "#e6e6e6"
 
 

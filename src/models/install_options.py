@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from config.settings import PartitioningMethod
+
 
 @dataclass
 class InstallOptions:
@@ -8,4 +10,4 @@ class InstallOptions:
     auto_restart: bool = False
     torrent: bool = False
     export_wifi: bool = True
-    partition_method: Optional[str] = None
+    partition_method: Optional[PartitioningMethod] = None

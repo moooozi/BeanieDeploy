@@ -5,6 +5,7 @@ import tkinter as tk
 import customtkinter as ctk
 from tkinter_templates import flush_frame
 from multilingual import _
+from config.settings import PartitioningMethod
 
 class PageVerify(Page):
     def __init__(self, parent, page_name: str, *args, **kwargs):
@@ -85,13 +86,13 @@ class PageVerify(Page):
 
 def build_review_text(selected_spin, kickstart, install_options):
     review_sel = []
-    if kickstart and getattr(kickstart, 'partition_method', None) == "custom":
+    if kickstart and getattr(kickstart, 'partitioning', None) and kickstart.partitioning.method == PartitioningMethod.CUSTOM:
         review_sel.append(_("verify.no.autoinst") % {"distro_name": selected_spin.name})
     else:
-        if kickstart and getattr(kickstart, 'partition_method', None) == "dualboot":
+        if kickstart and getattr(kickstart, 'partitioning', None) and kickstart.partitioning.method == PartitioningMethod.DUALBOOT:
             review_sel.append(_("verify.autoinst.dualboot") % {"distro_name": selected_spin.name})
             review_sel.append(_("verify.autoinst.keep.data"))
-        elif kickstart and getattr(kickstart, 'partition_method', None) == "replace_win":
+        elif kickstart and getattr(kickstart, 'partitioning', None) and kickstart.partitioning.method == PartitioningMethod.REPLACE_WIN:
             review_sel.append(_("verify.autoinst.replace.win") % {"distro_name": selected_spin.name})
             review_sel.append(_("verify.autoinst.rm.all"))
         if install_options and getattr(install_options, 'export_wifi', False):

@@ -5,6 +5,7 @@ Simple conditions that can be used by PageManager for conditional navigation.
 from abc import ABC, abstractmethod
 
 from core.state import get_state
+from config.settings import PartitioningMethod
 
 
 class PageCondition(ABC):
@@ -27,7 +28,7 @@ class AutoInstallCondition(PageCondition):
         state = get_state()
         install_options = state.installation.install_options
         # Auto-install pages are enabled when partition method is NOT custom
-        return install_options.partition_method != "custom"
+        return install_options.partition_method != PartitioningMethod.CUSTOM
 
 
 class NetInstallCondition(PageCondition):
@@ -44,7 +45,7 @@ class DualBootCondition(PageCondition):
     
     def is_enabled(self) -> bool:
         state = get_state()
-        return state.installation.install_options.partition_method == "dualboot"
+        return state.installation.install_options.partition_method == PartitioningMethod.DUALBOOT
 
 
 class CustomInstallCondition(PageCondition):
@@ -52,7 +53,7 @@ class CustomInstallCondition(PageCondition):
     
     def is_enabled(self) -> bool:
         state = get_state()
-        return state.installation.install_options.partition_method == "custom"
+        return state.installation.install_options.partition_method == PartitioningMethod.CUSTOM
 
 
 class SkipCheckDisabledCondition(PageCondition):

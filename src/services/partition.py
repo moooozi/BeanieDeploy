@@ -3,8 +3,9 @@ Partition management operations.
 Handles complex partitioning procedures and disk operations.
 """
 from dataclasses import dataclass
+from typing import Optional
 
-from services.disk import (
+from .disk import (
     get_sys_drive_letter, get_disk_number, get_drive_size,
     resize_partition, new_partition, get_system_efi_drive_uuid,
     mount_volume_to_path
@@ -41,6 +42,13 @@ class TemporaryPartition:
     
 
 @dataclass
+class PartitionGuids:
+    """GUIDs of created partitions."""
+    root_guid: Optional[str] = None
+    boot_guid: Optional[str] = None
+    
+
+@dataclass
 class PartitioningResult:
     """Result of partitioning procedure."""
     tmp_part: TemporaryPartition
@@ -51,7 +59,7 @@ class PartitioningResult:
     sys_drive_letter: str
     sys_disk_number: int
     sys_drive_original_size: int
-    partition_guids: dict
+    partition_guids: PartitionGuids
 
 
 def partition_procedure(
@@ -158,23 +166,21 @@ def _create_partitions(
     tmp_part_size: int,
     boot_part_size: int,
     make_root_partition: bool
-) -> dict:
+) -> PartitionGuids:
     """Create the required partitions based on configuration.
     
     Returns:
-        Dictionary with partition GUIDs for created partitions:
-        - root_guid: str or None
-        - boot_guid: str or None
+        PartitionGuids with GUIDs for created partitions
     """
-    partition_guids = {}
+    partition_guids = PartitionGuids()
     
     if make_root_partition:
         root_space = shrink_space - (tmp_part_size + boot_part_size + 1100000)
         metadata = new_partition(sys_disk_number, root_space)
-        partition_guids['root_guid'] = metadata['partition_guid']
+        partition_guids.root_guid = metadata['partition_guid']
     
     if boot_part_size:
         metadata = new_partition(sys_disk_number, boot_part_size)
-        partition_guids['boot_guid'] = metadata['partition_guid']
+        partition_guids.boot_guid = metadata['partition_guid']
     
     return partition_guids

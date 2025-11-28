@@ -4,7 +4,8 @@ Handles the generation of installation configuration files.
 """
 from typing import List
 
-from ..models.kickstart import KickstartConfig, LocaleConfig, PartitioningConfig
+from models.kickstart import KickstartConfig, LocaleConfig, PartitioningConfig
+from config.settings import PartitioningMethod
 
 
 def _validate_kickstart_config(kickstart_config: KickstartConfig) -> None:
@@ -22,10 +23,10 @@ def _validate_kickstart_config(kickstart_config: KickstartConfig) -> None:
     # Validate partitioning config
     if not kickstart_config.partitioning.method:
         errors.append("Partitioning method is required")
-    elif kickstart_config.partitioning.method not in ["dualboot", "replace_win", "custom"]:
+    elif kickstart_config.partitioning.method not in [PartitioningMethod.DUALBOOT, PartitioningMethod.REPLACE_WIN, PartitioningMethod.CUSTOM]:
         errors.append(f"Invalid partitioning method: {kickstart_config.partitioning.method}")
     
-    if kickstart_config.partitioning.method == "dualboot":
+    if kickstart_config.partitioning.method == PartitioningMethod.DUALBOOT:
         if not kickstart_config.partitioning.root_guid:
             errors.append("root_guid is required for dualboot partition method")
         if kickstart_config.partitioning.is_encrypted and not kickstart_config.partitioning.boot_guid:
@@ -33,14 +34,14 @@ def _validate_kickstart_config(kickstart_config: KickstartConfig) -> None:
         if not kickstart_config.partitioning.sys_efi_uuid:
             errors.append("sys_efi_uuid is required for dualboot partition method")
     
-    if kickstart_config.partitioning.method == "replace_win":
+    if kickstart_config.partitioning.method == PartitioningMethod.REPLACE_WIN:
         if not kickstart_config.partitioning.sys_drive_uuid:
             errors.append("sys_drive_uuid is required for replace_win partition method")
         if not kickstart_config.partitioning.sys_efi_uuid:
             errors.append("sys_efi_uuid is required for replace_win partition method")
     
     if kickstart_config.partitioning.is_encrypted:
-        if kickstart_config.partitioning.method == "dualboot" and not kickstart_config.partitioning.boot_guid:
+        if kickstart_config.partitioning.method == PartitioningMethod.DUALBOOT and not kickstart_config.partitioning.boot_guid:
             errors.append("boot_guid is required for dualboot partition method with encryption")
         
     # Validate WiFi profiles directory name if specified
@@ -127,7 +128,7 @@ def _build_partitioning_config(partitioning_config: PartitioningConfig) -> List[
     lines = []
     
     # Validate required parameters for dualboot
-    if partitioning_config.method == "dualboot":
+    if partitioning_config.method == PartitioningMethod.DUALBOOT:
         if not partitioning_config.root_guid:
             raise ValueError("root_guid is required for dualboot partition method")
         if partitioning_config.is_encrypted and not partitioning_config.boot_guid:
@@ -136,10 +137,10 @@ def _build_partitioning_config(partitioning_config: PartitioningConfig) -> List[
     root_partition = "part btrfs.01"
     efi_partition = ""
 
-    if partitioning_config.method == "dualboot":
+    if partitioning_config.method == PartitioningMethod.DUALBOOT:
         efi_partition = f"mount /dev/disk/by-partuuid/{partitioning_config.sys_efi_uuid} /boot/efi "
         root_partition += f" --onpart=/dev/disk/by-partuuid/{partitioning_config.root_guid}"
-    elif partitioning_config.method == "replace_win":
+    elif partitioning_config.method == PartitioningMethod.REPLACE_WIN:
         efi_partition = f"part /boot/efi --fstype=efi --label=efi --onpart=/dev/disk/by-partuuid/{partitioning_config.sys_efi_uuid}"
         root_partition += f" --onpart=/dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid}"
 
