@@ -19,9 +19,8 @@ from models.installation_context import (
 from services import disk, config_builders, elevated
 from services import file as file_service
 from services.download import DownloadService, DownloadProgress
-from services.partition import partition_procedure
-
-
+from services.partition import partition_procedure, get_system_efi_drive_uuid
+from services.disk import get_partition_info_by_guid
 
 class HashVerificationError(Exception):
     """Raised when file hash verification fails."""
@@ -36,6 +35,15 @@ def _create_boot_entry_elevated(tmp_part) -> int:
     """Create boot entry with elevated privileges."""
     import firmware_variables as fwvars
     import uuid
+
+    # Get EFI partition details
+    efi_guid = elevated.call(get_system_efi_drive_uuid)
+    if not efi_guid:
+        raise RuntimeError("Could not find system EFI partition")
+    
+    efi_part_info = elevated.call(get_partition_info_by_guid, args=(efi_guid,))
+    if not efi_part_info:
+        raise RuntimeError("Could not get EFI partition information")
 
     # Find the entry with "Windows Boot Manager" to duplicate
     windows_entry_id = None
@@ -53,19 +61,19 @@ def _create_boot_entry_elevated(tmp_part) -> int:
         new_entry.description = "Beanie Installer"
         new_entry.optional_data = b""
 
-        # Edit the duplicate entry to point to our new EFI file
+        # Edit the duplicate entry to point to our EFI file on EFI partition
         for path in new_entry.file_path_list.paths:
             if path.is_file_path():
-                path.set_file_path("\\EFI\\beanie\\bootx64.efi")
+                path.set_file_path("\\EFI\\beanie\\BOOT\\BOOTX64.EFI")
             elif path.is_hard_drive():
                 hd_node = path.get_hard_drive_node()
                 if hd_node:
-                    # Set the device GUID to point to our temporary partition
-                    hd_node.partition_guid = tmp_part.partition_guid.lower()
-                    hd_node.partition_number = tmp_part.partition_number
-                    hd_node.partition_start_lba = tmp_part.start_lba
-                    hd_node.partition_size_lba = tmp_part.size_lba
-                    hd_node.partition_signature = uuid.UUID(hd_node.partition_guid).bytes_le
+                    # Set to EFI partition instead of temp partition
+                    hd_node.partition_guid = efi_guid.lower()
+                    hd_node.partition_number = efi_part_info['partition_number']
+                    hd_node.partition_start_lba = efi_part_info['start_lba']
+                    hd_node.partition_size_lba = efi_part_info['size_lba']
+                    hd_node.partition_signature = uuid.UUID(efi_guid).bytes_le
                     path.set_hard_drive_node(hd_node)
 
         # Find an unused entry_id for the new entry
@@ -300,6 +308,9 @@ class InstallationService:
                 # Generate configuration files
                 self._generate_config_files(context, destination)
                 
+                # Copy EFI directory to system EFI partition
+                self._copy_efi_to_system_partition(context, destination)
+                
             finally:
                 # Always unmount the installer ISO
                 elevated.call(disk.unmount_iso, args=(str(installer_iso_path),))
@@ -348,6 +359,43 @@ class InstallationService:
             kickstart_path = destination_path / context.paths.kickstart_cfg_relative_path
             kickstart_content = config_builders.build_autoinstall_ks_file(**vars(context.kickstart))
             kickstart_path.write_text(kickstart_content)
+    
+    def _copy_efi_to_system_partition(self, context: InstallationContext, temp_destination: str) -> None:
+        """Copy EFI directory to system EFI partition for proper booting."""
+        # Get EFI partition GUID
+        efi_guid = elevated.call(get_system_efi_drive_uuid)
+        if not efi_guid:
+            raise RuntimeError("Could not find system EFI partition")
+        
+        # Normalize GUID format
+        if not efi_guid.startswith("\\\\?\\Volume{"):
+            efi_guid = f"\\\\?\\Volume{{{efi_guid}}}"
+        
+        # Create temp mount path for EFI partition
+        efi_mount_path = f"{temp_destination}_efi"
+        os.makedirs(efi_mount_path, exist_ok=True)
+        
+        try:
+            # Mount EFI partition
+            elevated.call(disk.mount_volume_to_path, args=(efi_guid, efi_mount_path))
+            
+            # Check if beanie directory already exists
+            efi_dst = Path(efi_mount_path) / "EFI" / "beanie"
+            if efi_dst.exists():
+                print(f"Beanie EFI directory already exists at {efi_dst}, skipping copy")
+                return
+            
+            # Copy EFI directory to \EFI\beanie on EFI partition
+            efi_src = Path(temp_destination) / "EFI"
+            efi_dst.parent.mkdir(parents=True, exist_ok=True)
+            
+            elevated.call(shutil.copytree, args=(str(efi_src), str(efi_dst)), kwargs={'dirs_exist_ok': True})
+            
+        finally:
+            # Unmount EFI partition
+            elevated.call(disk.unmount_volume_from_path, args=(efi_mount_path,))
+            # Clean up temp mount directory
+            shutil.rmtree(efi_mount_path, ignore_errors=True)
     
     def _create_boot_entry(self, context: InstallationContext) -> InstallationResult:
         """Create boot entry for the installation."""

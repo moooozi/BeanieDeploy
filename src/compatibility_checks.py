@@ -6,6 +6,11 @@ import shutil
 import subprocess
 from typing import Any, Dict, Optional
 
+from services.privilege_manager import elevated
+
+# Required space for EFI files: measured 12.7MB for EFI directory + 5MB safety buffer
+REQUIRED_EFI_SPACE_MB = 18
+
 
 class CheckType(Enum):
     ARCH = "arch"
@@ -13,6 +18,7 @@ class CheckType(Enum):
     RAM = "ram"
     SPACE = "space"
     RESIZABLE = "resizable"
+    EFI_SPACE = "efi_space"
 
 
 @dataclass
@@ -124,7 +130,6 @@ def check_space():
 
 def check_resizable():
     """Check available resizable space on system drive (requires admin privileges)."""
-    from services.privilege_manager import elevated
     
     print("Checking resizable space...")
     # API is identical to subprocess.run()
@@ -147,10 +152,36 @@ def check_resizable():
     )
 
 
+def check_efi_space():
+    """Check available free space on the EFI partition."""
+    print("Checking EFI partition space...")
+    proc = elevated.run(
+        [
+            r"powershell.exe",
+            "-Command",
+            r"(Get-Partition | Where-Object IsSystem -eq $true | Get-Volume).SizeRemaining",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    print(f"Efi space check output: {proc.stdout.strip()}")
+    result_value = proc.stdout.strip()
+    if proc.returncode == 0 and result_value.isdigit():
+        result_value = int(result_value)
+    return Check(
+        CheckType.EFI_SPACE.value,
+        result_value,
+        proc.returncode,
+        proc,
+    )
+
+
 check_functions = {
     CheckType.ARCH: check_arch,
     CheckType.UEFI: check_uefi,
     CheckType.RAM: check_ram,
     CheckType.SPACE: check_space,
     CheckType.RESIZABLE: check_resizable,
+    CheckType.EFI_SPACE: check_efi_space,
 }

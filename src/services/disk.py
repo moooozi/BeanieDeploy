@@ -408,9 +408,8 @@ def mount_volume_to_path(volume_guid: str, mount_path: str) -> None:
             volume_guid = f"\\\\?\\Volume{{{volume_guid}}}"
     
     # Mount the volume to the path
-    result = subprocess.run(
+    subprocess.run(
         ['mountvol', mount_path, volume_guid],
-        shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
@@ -426,11 +425,89 @@ def unmount_volume_from_path(mount_path: str) -> None:
     Args:
         mount_path: Path where the volume is mounted
     """
-    script = f'mountvol "{mount_path}" /d'
+    subprocess.run(
+        [r"mountvol", mount_path, "/d"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=True,
+        creationflags=CREATE_NO_WINDOW,
+    )
+
+
+def get_partition_info_by_guid(guid: str) -> dict:
+    """
+    Get partition information by GUID (partition GUID or volume GUID).
+    
+    Args:
+        guid: Partition GUID or Volume GUID (with or without braces)
+        
+    Returns:
+        Dictionary with partition information including PartitionNumber, StartLBA, SizeLBA, etc.
+    """
+    import json
+    
+    # Normalize GUID format - remove braces if present
+    guid = guid.strip('{}')
+    
+    ps = f"""
+    $ErrorActionPreference = "Stop"
+    
+    # Find partition by GUID
+    $p = Get-Partition | Where-Object {{ $_.Guid -eq "{{{guid}}}" }} | Select-Object -First 1
+    if (-not $p) {{
+        throw "Could not find partition with GUID {guid}"
+    }}
+    
+    $disk = Get-Disk -Number $p.DiskNumber -ErrorAction Stop
+    
+    $obj = [PSCustomObject]@{{
+      PartitionGuid     = $p.Guid
+      PartitionNumber   = $p.PartitionNumber
+      Offset            = $p.Offset
+      Size              = $p.Size
+      LogicalSectorSize = $disk.LogicalSectorSize
+    }}
+    $obj | ConvertTo-Json -Compress
+    """
+
     result = subprocess.run(
-        [r"cmd.exe", "/c", script],
+        [r"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", ps],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        check=True,
         creationflags=CREATE_NO_WINDOW,
     )
+
+    payload = result.stdout.strip()
+    if not payload:
+        raise RuntimeError(f"No partition found with GUID {guid}")
+
+    try:
+        data = json.loads(payload)
+    except Exception as e:
+        raise RuntimeError(f"Failed to parse PowerShell JSON output: {e}\nOutput: {payload}")
+
+    # Normalize and compute LBAs
+    part_guid = str(data["PartitionGuid"]).strip()
+    if part_guid.startswith("{") and part_guid.endswith("}"):
+        part_guid = part_guid[1:-1]
+
+    offset = int(data["Offset"])
+    part_size = int(data["Size"])
+    sector = int(data["LogicalSectorSize"])
+    if sector <= 0:
+        raise RuntimeError(f"Invalid logical sector size: {sector}")
+
+    start_lba = offset // sector
+    size_lba = part_size // sector
+
+    return {
+        "partition_guid": part_guid,
+        "partition_number": int(data["PartitionNumber"]),
+        "offset": offset,
+        "size": part_size,
+        "logical_sector_size": sector,
+        "start_lba": int(start_lba),
+        "size_lba": int(size_lba),
+    }
