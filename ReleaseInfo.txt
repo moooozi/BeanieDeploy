@@ -1,6 +1,6 @@
 AppName ==> BeanieDeploy
-AppVersion ==> 0.94-Beta
-Description ==> The quickest way to switch to Fedora Linux
+AppVersion ==> 0.95-Beta
+Description ==> BeanieDeploy
 Author ==> M Zidane
 ReleaseYear ==> 2021-2025
 AppURL ==> https://gitlab.com/win2linux/BeanieDeploy

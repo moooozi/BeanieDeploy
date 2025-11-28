@@ -8,6 +8,7 @@ class Application(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         config = get_config()
+        self.title(config.app.name)  # Set window title to app name
         dpi_factor = get_dpi_scaling_factor()
         self.geometry(str("%sx%s+%s+%s" % (WIDTH, HEIGHT, WIDTH_OFFSET, HEIGHT_OFFSET)))
         self.minsize(MINWIDTH, MINHEIGHT)
