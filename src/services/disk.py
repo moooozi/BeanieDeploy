@@ -10,6 +10,7 @@ import contextlib
 import winreg
 import functools
 from dataclasses import dataclass
+
 CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW
 
 from utils import com_context, PartitionUuid
@@ -221,7 +222,7 @@ def new_partition(
                 vol_unique_id = str(target_volume.UniqueId).strip()
         
         # Return partition metadata as PartitionInfo
-        partition_guid = str(partition.Guid).strip('{}')
+        partition_guid = PartitionUuid.to_raw(str(partition.Guid))
         
         offset = int(partition.Offset)
         part_size = int(partition.Size)
@@ -409,6 +410,7 @@ def _get_partition_info(partition, wmi) -> PartitionInfo:
     
     # Get free space from associated volume
     free_space = None
+    volume_unique_id = None
     try:
         # Use MSFT_PartitionToVolume association to get the volume
         associated_volumes = partition.Associators_("MSFT_PartitionToVolume")
@@ -416,6 +418,7 @@ def _get_partition_info(partition, wmi) -> PartitionInfo:
             # Should be exactly one volume per partition
             volume = associated_volumes[0]
             free_space = int(volume.SizeRemaining)
+            volume_unique_id = str(volume.UniqueId).strip()
     except Exception:
         # If free space query fails, leave it as None
         print(f"MSFT_PartitionToVolume association failed for {partition.Guid}")
@@ -442,6 +445,7 @@ def _get_partition_info(partition, wmi) -> PartitionInfo:
         size_lba=int(size_lba),
         drive_letter=drive_letter,
         free_space=free_space,
+        volume_unique_id=volume_unique_id,
     )
 
 
@@ -492,7 +496,7 @@ def get_partition_info_by_guid(guid: str) -> PartitionInfo:
         partitions = wmi.InstancesOf("MSFT_Partition")
         target_partition = None
         for partition in partitions:
-            part_guid = str(partition.Guid).strip('{}')
+            part_guid = PartitionUuid.to_raw(str(partition.Guid))
             if part_guid.lower() == guid.lower():
                 target_partition = partition
                 break
@@ -546,13 +550,12 @@ def get_partition_supported_size(guid: str) -> int:
     """
     with com_context():
         import win32com.client
-        
         wmi = win32com.client.GetObject(r"winmgmts:root\Microsoft\Windows\Storage")
         partitions = wmi.InstancesOf("MSFT_Partition")
         
         for partition in partitions:
             part_guid = PartitionUuid.to_raw(str(partition.Guid))
-            if part_guid.lower() == guid.strip('{}').lower():
+            if part_guid.lower() == guid.lower():
                 method_result = wmi.ExecMethod(partition.Path_.Path, "GetSupportedSize")
                 if method_result.ReturnValue == 0:
                     size_min = int(method_result.SizeMin)
@@ -562,3 +565,34 @@ def get_partition_supported_size(guid: str) -> int:
                     raise RuntimeError(f"GetSupportedSize failed with code {method_result.ReturnValue}")
         
         raise ValueError(f"Partition with GUID {guid} not found")
+
+
+def delete_partition(guid: str) -> None:
+    """
+    Delete a partition by its GUID.
+    
+    Args:
+        guid: Partition GUID (with or without braces)
+        
+    Raises:
+        RuntimeError: If no partition is found with the given GUID
+    """
+    with com_context():
+        import win32com.client
+        
+        guid = PartitionUuid.to_raw(guid)
+        
+        wmi = win32com.client.GetObject("winmgmts:root/Microsoft/Windows/Storage")
+        partitions = wmi.InstancesOf("MSFT_Partition")
+        found = False
+        for partition in partitions:
+            part_guid = PartitionUuid.to_raw(str(partition.Guid))
+            if part_guid.lower() == guid.lower():
+                result = partition.ExecMethod_("DeleteObject")
+                if result.ReturnValue != 0:
+                    raise RuntimeError(f"DeleteObject failed with code {result.ReturnValue}")
+                found = True
+                break
+        
+        if not found:
+            raise RuntimeError(f"No partition found with GUID {guid}")

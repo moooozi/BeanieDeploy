@@ -4,7 +4,7 @@ import traceback
 import sys
 from pathlib import Path
 
-# Check for elevated helper mode
+# Check for elevated helper mode (requires to handle /PIPE here for PyInstaller bundles)
 if "/PIPE" in sys.argv:
     pipe_index = sys.argv.index("/PIPE")
     if pipe_index + 1 < len(sys.argv):

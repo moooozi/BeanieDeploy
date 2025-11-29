@@ -8,7 +8,6 @@ import os
 from pathlib import Path
 import shutil
 from typing import Callable, Optional
-import win32com.client
 
 from config.settings import get_config
 from models.installation_context import (
@@ -22,7 +21,6 @@ from services import disk, config_builders, elevated
 from services import file as file_service
 from services.download import DownloadService, DownloadProgress
 from services.partition import partition_procedure
-from utils import com_context
 from core.state import get_state
 
 class HashVerificationError(Exception):
@@ -34,13 +32,12 @@ class HashVerificationError(Exception):
         super().__init__(f"Hash mismatch for {file_path}: expected {expected}, got {actual}")
 
 
-def _create_boot_entry_elevated(tmp_part) -> int:
-    """Create boot entry with elevated privileges."""
+def _create_boot_entry(efi_partition_info) -> int:
+    """Create boot entry. Requires elevated privileges."""
     import firmware_variables as fwvars
     import uuid
 
-    efi_part_info = get_state().installation.efi_partition_info
-    if not efi_part_info:
+    if not efi_partition_info:
         raise RuntimeError("Could not get EFI partition information")
 
     # Find the entry with "Windows Boot Manager" to duplicate
@@ -67,11 +64,11 @@ def _create_boot_entry_elevated(tmp_part) -> int:
                 hd_node = path.get_hard_drive_node()
                 if hd_node:
                     # Set to EFI partition instead of temp partition
-                    hd_node.partition_guid = efi_part_info.partition_guid
-                    hd_node.partition_number = efi_part_info.partition_number
-                    hd_node.partition_start_lba = efi_part_info.start_lba
-                    hd_node.partition_size_lba = efi_part_info.size_lba
-                    hd_node.partition_signature = uuid.UUID(efi_part_info.partition_guid).bytes_le
+                    hd_node.partition_guid = efi_partition_info.partition_guid
+                    hd_node.partition_number = efi_partition_info.partition_number
+                    hd_node.partition_start_lba = efi_partition_info.start_lba
+                    hd_node.partition_size_lba = efi_partition_info.size_lba
+                    hd_node.partition_signature = uuid.UUID(efi_partition_info.partition_guid).bytes_le
                     path.set_hard_drive_node(hd_node)
 
         # Find an unused entry_id for the new entry
@@ -116,6 +113,7 @@ class InstallationService:
             download_callback: Called for download-specific progress updates
         """
         self.config = get_config()
+        self.state = get_state()
         self.progress_callback = progress_callback
         self.download_callback = download_callback
         self.download_service = DownloadService(self.config)
@@ -267,6 +265,8 @@ class InstallationService:
             # Set partition GUIDs in kickstart for auto-install
             context.kickstart.partitioning.root_guid = partitioning_results.partition_guids.root_guid
             context.kickstart.partitioning.boot_guid = partitioning_results.partition_guids.boot_guid
+            context.kickstart.partitioning.sys_drive_uuid = self.state.installation.windows_partition_info.partition_guid
+            context.kickstart.partitioning.sys_efi_uuid = self.state.installation.efi_partition_info.partition_guid
 
             self._update_progress(context, InstallationStage.CREATING_TMP_PART, 60, "Temporary partition created")
             return InstallationResult.success_result()
@@ -367,11 +367,10 @@ class InstallationService:
     
     def _copy_efi_to_system_partition(self, context: InstallationContext, temp_destination: str) -> None:
         """Copy EFI directory to system EFI partition for proper booting."""
-        # Get EFI partition GUID
-        efi_unique_id = get_state().installation.efi_partition_info.volume_unique_id
+        # Get EFI partition volume unique ID
+        efi_unique_id = self.state.installation.efi_partition_info.volume_unique_id
         if not efi_unique_id:
             raise RuntimeError("Could not find system EFI partition")
-        
         
         # Create temp mount path for EFI partition
         efi_mount_path = f"{temp_destination}_efi"
@@ -403,9 +402,9 @@ class InstallationService:
         """Create boot entry for the installation."""
         try:
             self._update_progress(context, InstallationStage.ADDING_TMP_BOOT_ENTRY, 90, "Creating boot entry...")
-            
+            efi_partition_info = self.state.installation.efi_partition_info
             # Run the entire boot entry creation with elevation
-            new_entry_id = elevated.call(_create_boot_entry_elevated, args=(context.tmp_part,))
+            new_entry_id = elevated.call(_create_boot_entry, args=(efi_partition_info,))
             
             return InstallationResult.success_result(str(new_entry_id))
         except Exception as e:
@@ -442,8 +441,8 @@ class InstallationService:
             
             # Delete the temporary partition
             elevated.call(
-                self._delete_partition, 
-                args=(partitioning_info.windows_partition.disk_number, context.tmp_part.partition_info.partition_number)
+                disk.delete_partition, 
+                args=(partitioning_info.windows_partition.partition_guid,)
             )
             
             # Extend the system partition back to original size
@@ -453,22 +452,6 @@ class InstallationService:
             )
         
         self._update_progress(context, InstallationStage.CLEANUP, 100, "Cleanup completed")
-
-    def _delete_partition(self, disk_number: int, partition_number: int) -> None:
-        """
-        Delete a partition by its number on the specified disk.
-        
-        Args:
-            disk_number: Disk number containing the partition
-            partition_number: Partition number to delete
-        """
-        with com_context():
-            wmi = win32com.client.GetObject("winmgmts:")
-            partitions = wmi.InstancesOf("Win32_DiskPartition")
-            for partition in partitions:
-                if partition.DiskIndex == disk_number and partition.Index == partition_number:
-                    partition.Delete_()
-                    break
 
     def _update_progress(
         self, 

@@ -32,6 +32,7 @@ T = TypeVar('T')
 BUFFER_SIZE = 65536
 
 
+
 class _PrivilegeManager:
     """Internal singleton for managing the privilege helper process."""
     
@@ -92,12 +93,24 @@ class _PrivilegeManager:
                 # Get path to executable
                 executable = sys.executable
                 
-                # Launch elevated helper (embedded in main exe)
+                # Build command line for elevated helper
+                if getattr(sys, 'frozen', False):
+                    # PyInstaller bundle - pass current args plus /PIPE
+                    args = sys.argv + ["/PIPE", self.pipe_name]
+                else:
+                    # Normal Python - replace script with privilege_manager.py plus /PIPE
+                    import os
+                    privilege_manager_path = os.path.abspath(__file__)
+                    args = [privilege_manager_path] + sys.argv[1:] + ["/PIPE", self.pipe_name]
+                
+                command_line = " ".join(f'"{arg}"' for arg in args)
+                
+                # Launch elevated helper
                 result = ctypes.windll.shell32.ShellExecuteW(
                     None,
                     "runas",
                     executable,
-                    f'{" ".join(sys.argv)} /PIPE {self.pipe_name}',
+                    command_line,
                     None,
                     0,  # SW_HIDE
                 )
@@ -281,3 +294,21 @@ class elevated:
         
         response = manager._send_command(command_data)
         return cast(T, response["result"])
+
+
+if __name__ == "__main__":
+    # Check for elevated helper mode when not in PyInstaller bundle
+    if "/PIPE" in sys.argv and not getattr(sys, 'frozen', False):
+        pipe_index = sys.argv.index("/PIPE")
+        if pipe_index + 1 < len(sys.argv):
+            pipe_name = sys.argv[pipe_index + 1]
+            
+            # Add src directory to path for module imports
+            import os
+            src_dir = os.path.dirname(os.path.dirname(__file__))
+            if src_dir not in sys.path:
+                sys.path.insert(0, src_dir)
+            
+            from privilege_helper import main
+            main(pipe_name)
+            sys.exit(0)
