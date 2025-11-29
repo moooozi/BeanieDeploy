@@ -138,7 +138,8 @@ def new_partition(
     filesystem: Optional[str] = None,
     label: Optional[str] = None,
     drive_letter: Optional[str] = None,
-    assign_drive_letter: bool = False
+    assign_drive_letter: bool = False,
+    force_decrypt: bool = True
 ) -> PartitionInfo:
     """
     Create a new partition on the specified disk, optionally formatting it as a volume.
@@ -150,6 +151,7 @@ def new_partition(
         label: Optional volume label (only used if filesystem is provided)
         drive_letter: Optional drive letter assignment
         assign_drive_letter: Whether to automatically assign a drive letter if none specified (default: False)
+        force_decrypt: Whether to attempt decryption on the formatted volume (default: True)
         
     Returns:
         PartitionInfo object with partition information
@@ -232,6 +234,10 @@ def new_partition(
                     raise RuntimeError(f"Format failed with code {result}: {out_params_format.ExtendedStatus}")
                 
                 vol_unique_id = str(target_volume.UniqueId).strip()
+    
+        # Attempt to decrypt the volume if requested
+        if force_decrypt and vol_unique_id:
+            decrypt_partition(vol_unique_id)
         
         # Return partition metadata as PartitionInfo
         partition_guid = PartitionUuid.to_raw(str(partition.Guid))
@@ -665,3 +671,62 @@ def delete_partition(guid: str) -> None:
         
         if not found:
             raise RuntimeError(f"No partition found with GUID {guid}")
+
+
+def _decrypt_partition(volume_unique_id: str) -> None:
+    r"""
+    Begin decryption of a fully encrypted volume or resume decryption of a partially encrypted volume.
+
+    Args:
+        volume_unique_id: Volume unique ID (e.g., \\?\Volume{guid}\)
+
+    Raises:
+        ValueError: If encryptable volume not found
+        RuntimeError: If the Decrypt operation fails
+    """
+    volume_id = volume_unique_id
+
+    with com_context():
+        import win32com.client
+
+        wmi = win32com.client.GetObject("winmgmts:root/cimv2/Security/MicrosoftVolumeEncryption")
+        volumes = wmi.InstancesOf("Win32_EncryptableVolume")
+
+        for vol in volumes:
+            if vol.DeviceID == volume_id:
+                # Clear auto-unlock keys if present
+                clear_result = vol.ExecMethod_("ClearAllAutoUnlockKeys")
+                if clear_result.ReturnValue != 0:
+                    print(f"Warning: ClearAllAutoUnlockKeys failed with code {clear_result.ReturnValue}")
+                
+                # Disable key protectors
+                disable_result = vol.ExecMethod_("DisableKeyProtectors")
+                if disable_result.ReturnValue != 0:
+                    print(f"Warning: DisableKeyProtectors failed with code {disable_result.ReturnValue}")
+                
+                # Then, initiate decryption
+                result = vol.ExecMethod_("Decrypt")
+                if result.ReturnValue != 0:
+                    raise RuntimeError(f"Decrypt failed with code {result.ReturnValue}")
+                print(f"Decryption initiated for volume {volume_id}")
+                return
+
+        raise ValueError("Encryptable volume not found")
+
+
+def decrypt_partition(volume_unique_id: str) -> bool:
+    r"""
+    Attempt to decrypt a BitLocker volume, suppressing errors.
+
+    Args:
+        volume_unique_id: Volume unique ID (e.g., \\?\Volume{guid}\)
+
+    Returns:
+        True if decryption was initiated successfully, False otherwise.
+    """
+    try:
+        _decrypt_partition(volume_unique_id)
+        return True
+    except:
+        return False
+    
