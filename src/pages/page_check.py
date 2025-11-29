@@ -2,9 +2,9 @@ from typing import List
 from config.settings import ConfigManager
 from templates.generic_page_layout import GenericPageLayout
 from models.page import Page
+from models.check import DoneChecks, Check, CheckType
 from pages.page_error import PageError
 import tkinter as tk
-from compatibility_checks import Check, DoneChecks, CheckType
 from async_operations import AsyncOperation
 from tkinter_templates import TextLabel
 import customtkinter as ctk
@@ -190,7 +190,7 @@ def parse_errors(
         errors.append(_("error.arch.0"))
     if done_checks.checks[CheckType.UEFI].returncode != 0:
         errors.append(_("error.uefi.9"))
-    elif done_checks.checks[CheckType.UEFI].result != "uefi":
+    elif done_checks.checks[CheckType.UEFI].result is not True:
         errors.append(_("error.uefi.0"))
     if done_checks.checks[CheckType.RAM].returncode != 0:
         errors.append(_("error.totalram.9"))

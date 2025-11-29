@@ -12,12 +12,9 @@ This package contains service modules for:
 
 # Export commonly used service functions
 from .system import is_admin
-from .disk import get_sys_drive_letter, get_disk_number
 from .privilege_manager import elevated
 
 __all__ = [
     'is_admin',
-    'get_sys_drive_letter',
-    'get_disk_number',
     'elevated',
 ]

@@ -36,13 +36,13 @@ class PageAutoinstAddition2(Page):
             self.logger.error("No kickstart configuration found")
             return
 
-        self.selected_locale = kickstart.locale
+        self.selected_locale = kickstart.locale_settings.locale
 
-        selected_locale_keymaps = langtable.list_keyboards(languageId=kickstart.locale)
+        selected_locale_keymaps = langtable.list_keyboards(languageId=kickstart.locale_settings.locale)
         self.all_keymaps = sorted(langtable.list_all_keyboards())
 
         selected_locale_timezones = langtable.list_timezones(
-            languageId=kickstart.locale
+            languageId=kickstart.locale_settings.locale
         )
         self.all_timezones = sorted(langtable.list_all_timezones())
 
@@ -67,17 +67,17 @@ class PageAutoinstAddition2(Page):
 
         for timezone in self.all_timezones:
             timezone_name = langtable.timezone_name(
-                timezone, languageIdQuery=kickstart.locale or "en"
+                timezone, languageIdQuery=kickstart.locale_settings.locale or "en"
             )
             self.timezone_list.add_item(timezone, timezone_name or timezone)
 
         default_timezone = (
             selected_locale_timezones[0]
-            if not kickstart.timezone
-            else kickstart.timezone
+            if not kickstart.locale_settings.timezone
+            else kickstart.locale_settings.timezone
         )
         default_keymap = (
-            selected_locale_keymaps[0] if not kickstart.keymap else kickstart.keymap
+            selected_locale_keymaps[0] if not kickstart.locale_settings.keymap else kickstart.locale_settings.keymap
         )
 
         self.keyboard_list.on_click(default_keymap)
@@ -107,20 +107,20 @@ class PageAutoinstAddition2(Page):
             selected_keymap = self.keyboard_list.get_selected()
 
             if selected_timezone:
-                kickstart.timezone = selected_timezone
+                kickstart.locale_settings.timezone = selected_timezone
             if selected_keymap:
-                kickstart.keymap = selected_keymap
-                kickstart.keymap_type = "xlayout"
+                kickstart.locale_settings.keymap = selected_keymap
+                kickstart.locale_settings.keymap_type = "xlayout"
 
             self.logger.info(
-                f"Selected timezone:S {kickstart.timezone}, keymap: {kickstart.keymap}"
+                f"Selected timezone:S {kickstart.locale_settings.timezone}, keymap: {kickstart.locale_settings.keymap}"
             )
 
     def on_show(self):
         """Called when page is shown - reinitialize if locale changed."""
         if hasattr(self, "selected_locale"):
             kickstart = self.state.installation.kickstart
-            if kickstart and self.selected_locale != kickstart.locale:
+            if kickstart and self.selected_locale != kickstart.locale_settings.locale:
                 self.logger.info("Locale changed, reinitializing page")
                 tkt.flush_frame(self)
                 self._initiated = False

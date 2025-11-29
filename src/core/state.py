@@ -6,12 +6,14 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Callable
 from enum import Enum
 
-from compatibility_checks import DoneChecks
 from models.install_options import InstallOptions
 from models.kickstart import KickstartConfig
 from models.partition import Partition
 from models.spin import Spin
+from models.check import DoneChecks
 from services.partition import TemporaryPartition
+from services.disk import PartitionInfo, get_windows_partition_info, get_efi_partition_info
+from services.privilege_manager import elevated
 
 
 class InstallerStatus(Enum):
@@ -45,8 +47,25 @@ class InstallationState:
     kickstart: Optional[KickstartConfig] = None
     partition: Optional[Partition] = None
     selected_spin: Optional[Spin] = None
-    tmp_partition_letter: str = ""
     tmp_part: Optional[TemporaryPartition] = None
+    
+    # Cached partition info
+    _windows_partition_info: Optional[PartitionInfo] = None
+    _efi_partition_info: Optional[PartitionInfo] = None
+    
+    @property
+    def windows_partition_info(self) -> PartitionInfo:
+        """Get Windows partition info, fetching and caching if needed."""
+        if self._windows_partition_info is None:
+            self._windows_partition_info = get_windows_partition_info()
+        return self._windows_partition_info
+    
+    @property
+    def efi_partition_info(self) -> PartitionInfo:
+        """Get EFI partition info, fetching and caching if needed."""
+        if self._efi_partition_info is None:
+            self._efi_partition_info = elevated.call(get_efi_partition_info)
+        return self._efi_partition_info
 
 
 @dataclass

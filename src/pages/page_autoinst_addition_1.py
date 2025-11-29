@@ -75,15 +75,15 @@ class PageAutoinstAddition1(Page):
         kickstart = self.state.installation.kickstart
         
         from core.autoinst_addition1_logic import get_available_locales
-        if not kickstart.locale.locale:
+        if not kickstart.locale_settings.locale:
             available_locales = get_available_locales(ip_locale)
             if available_locales:
-                kickstart.locale.locale = available_locales[0]
+                kickstart.locale_settings.locale = available_locales[0]
             else:
-                kickstart.locale.locale = "en_GB.UTF-8"
+                kickstart.locale_settings.locale = "en_GB.UTF-8"
 
         from core.autoinst_addition1_logic import get_language_from_locale
-        language = get_language_from_locale(kickstart.locale.locale)
+        language = get_language_from_locale(kickstart.locale_settings.locale)
         
         # Ensure the language exists in langs_and_locales before clicking
         from core.autoinst_addition1_logic import get_fallback_language, get_first_locale_for_language
@@ -91,7 +91,7 @@ class PageAutoinstAddition1(Page):
             lang_list.on_click(language)
             self.update()
             on_lang_click()
-            self.locale_list.on_click(kickstart.locale.locale)
+            self.locale_list.on_click(kickstart.locale_settings.locale)
         else:
             self.logger.warning(f"Language '{language}' not found in available languages")
             fallback_lang = get_fallback_language(language, langs_and_locales)
@@ -102,10 +102,10 @@ class PageAutoinstAddition1(Page):
                 on_lang_click()
                 first_locale = get_first_locale_for_language(langs_and_locales, fallback_lang)
                 if first_locale:
-                    kickstart.locale.locale = first_locale
+                    kickstart.locale_settings.locale = first_locale
                     self.locale_list.on_click(first_locale)
                 else:
-                    kickstart.locale.locale = "en_US.UTF-8"
+                    kickstart.locale_settings.locale = "en_US.UTF-8"
             else:
                 self.logger.error("No languages available at all")
 
@@ -130,5 +130,5 @@ class PageAutoinstAddition1(Page):
         selected_locale = self.locale_list.get_selected()
         kickstart = self.state.installation.kickstart
         if kickstart and selected_locale:
-            kickstart.locale.locale = selected_locale
+            kickstart.locale_settings.locale = selected_locale
             self.logger.info(f"Selected locale: {selected_locale}")

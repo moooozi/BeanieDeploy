@@ -190,7 +190,7 @@ def build_autoinstall_ks_file(
     # Build different sections of the kickstart file
     kickstart_lines.extend(_build_header())
     kickstart_lines.extend(_build_wifi_import(kickstart_config))
-    kickstart_lines.extend(_build_system_config(kickstart_config.locale))
+    kickstart_lines.extend(_build_system_config(kickstart_config.locale_settings))
     kickstart_lines.extend(_build_install_source(kickstart_config))
     kickstart_lines.extend(_build_partitioning_config(kickstart_config.partitioning))
     

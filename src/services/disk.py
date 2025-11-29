@@ -8,7 +8,27 @@ import subprocess
 from typing import Optional
 import contextlib
 import winreg
+import functools
+from dataclasses import dataclass
 CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW
+
+from utils import com_context, PartitionUuid
+
+
+@dataclass
+class PartitionInfo:
+    """Structured partition information."""
+    partition_guid: str
+    partition_number: int
+    disk_number: int
+    offset: int
+    size: int
+    logical_sector_size: int
+    start_lba: int
+    size_lba: int
+    drive_letter: Optional[str] = None
+    free_space: Optional[int] = None
+    volume_unique_id: Optional[str] = None
 
 
 @contextlib.contextmanager
@@ -50,51 +70,6 @@ def prevent_bitlocker_auto_encrypt():
                 winreg.SetValueEx(key, value_name, 0, winreg.REG_DWORD, original_value)
 
 
-def get_sys_drive_letter() -> str:
-    """Get the system drive letter (usually C)."""
-    return os.environ.get('SystemDrive', 'C')[0]
-
-
-def get_disk_number(drive_letter: str) -> int:
-    """
-    Get the disk number for a given drive letter.
-    
-    Args:
-        drive_letter: Drive letter (e.g., 'C')
-        
-    Returns:
-        Disk number as integer
-    """
-    import win32com.client
-    wmi = win32com.client.GetObject("winmgmts:")
-    partitions = wmi.InstancesOf("Win32_DiskPartition")
-    for partition in partitions:
-        # Check if this partition has the drive letter
-        for assoc in partition.Associators_("Win32_LogicalDiskToPartition"):
-            if assoc.DeviceID.upper() == drive_letter.upper() + ":":
-                return partition.DiskIndex
-    raise ValueError(f"No disk found for drive letter {drive_letter}")
-
-
-def get_drive_size(drive_letter: str) -> int:
-    """
-    Get the current size of a drive.
-    
-    Args:
-        drive_letter: Drive letter to check
-        
-    Returns:
-        Current size in bytes
-    """
-    import win32com.client
-    wmi = win32com.client.GetObject("winmgmts:")
-    volumes = wmi.InstancesOf("Win32_Volume")
-    for volume in volumes:
-        if str(volume.DriveLetter).rstrip(':').upper() == drive_letter.upper():
-            return int(volume.Capacity)
-    raise ValueError(f"No volume found for drive letter {drive_letter}")
-
-
 def resize_partition(drive_letter: str, new_size: int) -> subprocess.CompletedProcess:
     """
     Resize a partition to a new size.
@@ -124,24 +99,25 @@ def get_unused_drive_letter() -> Optional[str]:
     Returns:
         Available drive letter or None if none available
     """
-    import win32com.client
-    wmi = win32com.client.GetObject("winmgmts:")
-    volumes = wmi.InstancesOf("Win32_Volume")
-    used_letters = set()
-    for volume in volumes:
-        letter = str(volume.DriveLetter).strip()
-        if letter:
-            used_letters.add(letter.rstrip(':').upper())
-    
-    drive_letters = [
-        "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", 
-        "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
-    ]
-    
-    for letter in drive_letters:
-        if letter not in used_letters:
-            return letter
-    return None
+    with com_context():
+        import win32com.client
+        wmi = win32com.client.GetObject("winmgmts:")
+        volumes = wmi.InstancesOf("Win32_Volume")
+        used_letters = set()
+        for volume in volumes:
+            letter = str(volume.DriveLetter).strip()
+            if letter:
+                used_letters.add(letter.rstrip(':').upper())
+        
+        drive_letters = [
+            "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", 
+            "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
+        ]
+        
+        for letter in drive_letters:
+            if letter not in used_letters:
+                return letter
+        return None
 
 def new_partition(
     disk_number: int,
@@ -150,7 +126,7 @@ def new_partition(
     label: Optional[str] = None,
     drive_letter: Optional[str] = None,
     assign_drive_letter: bool = False
-) -> dict:
+) -> PartitionInfo:
     """
     Create a new partition on the specified disk, optionally formatting it as a volume.
     
@@ -163,142 +139,116 @@ def new_partition(
         assign_drive_letter: Whether to automatically assign a drive letter if none specified (default: False)
         
     Returns:
-        Dictionary with partition metadata:
-        - partition_guid: str (GUID without braces)
-        - partition_number: int
-        - offset: int (bytes)
-        - size: int (bytes)
-        - logical_sector_size: int (bytes)
-        - start_lba: int
-        - size_lba: int
-        - vol_unique_id: str (only included if formatted, volume unique ID in WMI format, typically \\\\?\\Volume{PartitionGuid})
+        PartitionInfo object with partition information
     """
-    import win32com.client
-    
-    wmi = win32com.client.GetObject("winmgmts:root/Microsoft/Windows/Storage")
-    
-    # Find the target disk
-    disks = wmi.InstancesOf("MSFT_Disk")
-    target_disk = None
-    for disk in disks:
-        if int(disk.Number) == disk_number:
-            target_disk = disk
-            break
-    if not target_disk:
-        raise ValueError(f"Disk {disk_number} not found")
-    
-    with prevent_bitlocker_auto_encrypt():
-        # Create partition
-        in_params = target_disk.Methods_("CreatePartition").InParameters.SpawnInstance_()
-        in_params.Size = size
-        in_params.UseMaximumSize = False
-        in_params.Alignment = 0
-        in_params.IsHidden = False
-        in_params.IsActive = False
+    with com_context():
+        import win32com.client
         
-        if target_disk.PartitionStyle == 1:  # MBR
-            in_params.MbrType = 6  # Huge
-            # GptType not set
-        else:  # GPT
-            in_params.GptType = "{ebd0a0a2-b9e5-4433-87c0-68b6b72699c7}"
-            # MbrType not set for GPT
+        wmi = win32com.client.GetObject("winmgmts:root/Microsoft/Windows/Storage")
         
-        if drive_letter:
-            in_params.DriveLetter = drive_letter
-            in_params.AssignDriveLetter = False
-        elif assign_drive_letter:
-            in_params.DriveLetter = None
-            in_params.AssignDriveLetter = True
-        else:
-            in_params.DriveLetter = None
-            in_params.AssignDriveLetter = False
+        # Find the target disk
+        disks = wmi.InstancesOf("MSFT_Disk")
+        target_disk = None
+        for disk in disks:
+            if int(disk.Number) == disk_number:
+                target_disk = disk
+                break
+        if not target_disk:
+            raise ValueError(f"Disk {disk_number} not found")
         
-        out_params = target_disk.ExecMethod_("CreatePartition", in_params)
-        result = out_params.ReturnValue
-        if result != 0:
-            raise RuntimeError(f"CreatePartition failed with code {result}: {out_params.ExtendedStatus}")
-        
-        partition = out_params.CreatedPartition
-        
-        vol_unique_id = None
-        if filesystem:
-            # Find the associated volume using WMI association
-            associated_volumes = partition.Associators_("MSFT_PartitionToVolume")
-            if not associated_volumes:
-                raise RuntimeError("No volume associated with the created partition")
+        with prevent_bitlocker_auto_encrypt():
+            # Create partition
+            in_params = target_disk.Methods_("CreatePartition").InParameters.SpawnInstance_()
+            in_params.Size = size
+            in_params.UseMaximumSize = False
+            in_params.Alignment = 0
+            in_params.IsHidden = False
+            in_params.IsActive = False
             
-            target_volume = associated_volumes[0]  # Should be exactly one volume per partition
+            if target_disk.PartitionStyle == 1:  # MBR
+                in_params.MbrType = 6  # Huge
+                # GptType not set
+            else:  # GPT
+                in_params.GptType = "{ebd0a0a2-b9e5-4433-87c0-68b6b72699c7}"
+                # MbrType not set for GPT
             
-            # Map filesystem
-            fs_map = {
-                'FAT32': 'FAT32',
-                'NTFS': 'NTFS',
-                'EXFAT': 'ExFAT'
-            }
-            wmi_fs = fs_map.get(filesystem.upper(), filesystem.upper())
-        
-            # Format the volume
-            in_params_format = target_volume.Methods_("Format").InParameters.SpawnInstance_()
-            in_params_format.FileSystem = wmi_fs
-            in_params_format.FileSystemLabel = label or ""
-            in_params_format.Full = False
-            in_params_format.Force = True
+            if drive_letter:
+                in_params.DriveLetter = drive_letter
+                in_params.AssignDriveLetter = False
+            elif assign_drive_letter:
+                in_params.DriveLetter = None
+                in_params.AssignDriveLetter = True
+            else:
+                in_params.DriveLetter = None
+                in_params.AssignDriveLetter = False
             
-            out_params_format = target_volume.ExecMethod_("Format", in_params_format)
-            result = out_params_format.ReturnValue
+            out_params = target_disk.ExecMethod_("CreatePartition", in_params)
+            result = out_params.ReturnValue
             if result != 0:
-                raise RuntimeError(f"Format failed with code {result}: {out_params_format.ExtendedStatus}")
+                raise RuntimeError(f"CreatePartition failed with code {result}: {out_params.ExtendedStatus}")
             
-            vol_unique_id = str(target_volume.UniqueId).strip()
-    
-    # Return partition metadata
-    partition_guid = str(partition.Guid).strip('{}')
-    
-    offset = int(partition.Offset)
-    part_size = int(partition.Size)
-    sector = int(target_disk.LogicalSectorSize)
-    if sector <= 0:
-        raise RuntimeError(f"Invalid logical sector size: {sector}")
-    
-    start_lba = offset // sector
-    size_lba = part_size // sector
-    
-    result = {
-        "partition_guid": partition_guid,
-        "partition_number": int(partition.PartitionNumber),
-        "offset": offset,
-        "size": part_size,
-        "logical_sector_size": sector,
-        "start_lba": int(start_lba),
-        "size_lba": int(size_lba),
-    }
-    if vol_unique_id:
-        result["vol_unique_id"] = vol_unique_id
-    return result
-
-
-def set_partition_as_efi(drive_letter: str) -> subprocess.CompletedProcess[str]:
-    """
-    Set a partition as EFI system partition.
-    
-    Args:
-        drive_letter: Drive letter of partition to convert
+            partition = out_params.CreatedPartition
+            
+            vol_unique_id = None
+            if filesystem:
+                # Find the associated volume using WMI association
+                associated_volumes = partition.Associators_("MSFT_PartitionToVolume")
+                if not associated_volumes:
+                    raise RuntimeError("No volume associated with the created partition")
+                
+                target_volume = associated_volumes[0]  # Should be exactly one volume per partition
+                
+                # Map filesystem
+                fs_map = {
+                    'FAT32': 'FAT32',
+                    'NTFS': 'NTFS',
+                    'EXFAT': 'ExFAT'
+                }
+                wmi_fs = fs_map.get(filesystem.upper(), filesystem.upper())
+            
+                # Format the volume
+                in_params_format = target_volume.Methods_("Format").InParameters.SpawnInstance_()
+                in_params_format.FileSystem = wmi_fs
+                in_params_format.FileSystemLabel = label or ""
+                in_params_format.Full = False
+                in_params_format.Force = True
+                
+                out_params_format = target_volume.ExecMethod_("Format", in_params_format)
+                result = out_params_format.ReturnValue
+                if result != 0:
+                    raise RuntimeError(f"Format failed with code {result}: {out_params_format.ExtendedStatus}")
+                
+                vol_unique_id = str(target_volume.UniqueId).strip()
         
-    Returns:
-        CompletedProcess result
-    """
-    script = (
-        "Get-Partition -DriveLetter "
-        + drive_letter
-        + ' | Set-Partition -GptType "{c12a7328-f81f-11d2-ba4b-00a0c93ec93b}"'
-    )
-    return subprocess.run(
-        [r"powershell.exe", script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
+        # Return partition metadata as PartitionInfo
+        partition_guid = str(partition.Guid).strip('{}')
+        
+        offset = int(partition.Offset)
+        part_size = int(partition.Size)
+        sector = int(target_disk.LogicalSectorSize)
+        if sector <= 0:
+            raise RuntimeError(f"Invalid logical sector size: {sector}")
+        
+        start_lba = offset // sector
+        size_lba = part_size // sector
+        
+        # For newly created partitions, free_space is initially the full size
+        free_space = part_size if filesystem else None
+        
+        return PartitionInfo(
+            partition_guid=partition_guid,
+            partition_number=int(partition.PartitionNumber),
+            disk_number=int(target_disk.Number),
+            offset=offset,
+            size=part_size,
+            logical_sector_size=sector,
+            start_lba=int(start_lba),
+            size_lba=int(size_lba),
+            drive_letter=drive_letter,
+            free_space=free_space,
+            volume_unique_id=vol_unique_id,
+        )
+
 
 def extract_iso_to_dir(iso_path: str, target_dir: str, filter_func=None) -> str:
     from pycdlib.pycdlib import PyCdlib
@@ -332,24 +282,56 @@ def extract_iso_to_dir(iso_path: str, target_dir: str, filter_func=None) -> str:
 
 
 
-def get_system_efi_drive_uuid() -> str:
+def get_efi_drive_uuid() -> str:
     """
     Get the UUID of the system EFI partition.
+    
+    First tries to get it from the BootCurrent UEFI boot entry.
+    Falls back to finding the first EFI system partition using WMI.
     
     Returns:
         EFI partition UUID
     """
-    import win32com.client
-    wmi = win32com.client.GetObject("winmgmts:")
-    volumes = wmi.InstancesOf("Win32_Volume")
-    for volume in volumes:
-        if volume.SystemVolume:
-            device_id = str(volume.DeviceID)
-            # DeviceID is like \\?\Volume{uuid}\
-            start = device_id.find("{") + 1
-            end = device_id.find("}")
-            return device_id[start:end]
-    raise ValueError("EFI partition not found")
+    # Try firmware_variables approach first
+    try:
+        from firmware_variables import adjust_privileges, get_variable, get_parsed_boot_entry
+        
+        with adjust_privileges():
+            # Get BootCurrent
+            boot_current_data, _ = get_variable("BootCurrent")
+            boot_current = int.from_bytes(boot_current_data, byteorder='little')
+            
+            # Get the boot entry
+            load_option = get_parsed_boot_entry(boot_current)
+            
+            # Get hard drive node from device path
+            if load_option.file_path_list:
+                hard_drive_node = load_option.file_path_list.get_hard_drive_node()
+                if hard_drive_node and hard_drive_node.partition_guid:
+                    return hard_drive_node.partition_guid
+                    
+    except Exception:
+        # Fall back to WMI approach if firmware_variables fails
+        pass
+    
+    # Fallback: Find EFI partition using WMI
+    with com_context():
+        import win32com.client
+        
+        # Connect to Storage namespace
+        wmi = win32com.client.GetObject("winmgmts:root/Microsoft/Windows/Storage")
+        
+        # EFI System Partition GUID
+        efi_guid = "{c12a7328-f81f-11d2-ba4b-00a0c93ec93b}"
+        
+        # Find partitions with EFI GPT type
+        partitions = wmi.InstancesOf("MSFT_Partition")
+        for partition in partitions:
+            if str(partition.GptType).lower() == efi_guid.lower():
+                # Return the partition GUID
+                return PartitionUuid.to_raw(str(partition.Guid))
+        
+        raise ValueError("EFI partition not found")
 
 
 def mount_volume_to_path(volume_unique_id: str, mount_path: str) -> None:
@@ -393,7 +375,99 @@ def unmount_volume_from_path(mount_path: str) -> None:
     )
 
 
-def get_partition_info_by_guid(guid: str) -> dict:
+def _get_partition_info(partition, wmi) -> PartitionInfo:
+    """
+    Internal helper to extract partition information from a partition object.
+    
+    Args:
+        partition: MSFT_Partition object
+        wmi: WMI connection object
+        
+    Returns:
+        PartitionInfo object with partition information
+    """
+    # Get disk info
+    disks = wmi.InstancesOf("MSFT_Disk")
+    disk = None
+    for d in disks:
+        if str(d.Path) == str(partition.DiskId):
+            disk = d
+            break
+    
+    if not disk:
+        raise RuntimeError("Could not find disk for partition")
+    
+    # Extract drive letter from AccessPaths
+    drive_letter = None
+    if partition.AccessPaths:
+        for path in partition.AccessPaths:
+            path_str = str(path)
+            # Look for drive letter pattern (e.g., "C:\")
+            if len(path_str) >= 3 and path_str[1:3] == ":\\" and path_str[0].isalpha():
+                drive_letter = path_str[0].upper()
+                break  # Use the first drive letter found
+    
+    # Get free space from associated volume
+    free_space = None
+    try:
+        # Use MSFT_PartitionToVolume association to get the volume
+        associated_volumes = partition.Associators_("MSFT_PartitionToVolume")
+        if associated_volumes:
+            # Should be exactly one volume per partition
+            volume = associated_volumes[0]
+            free_space = int(volume.SizeRemaining)
+    except Exception:
+        # If free space query fails, leave it as None
+        print(f"MSFT_PartitionToVolume association failed for {partition.Guid}")
+        pass
+    
+    # Compute LBAs
+    offset = int(partition.Offset)
+    part_size = int(partition.Size)
+    sector = int(disk.LogicalSectorSize)
+    if sector <= 0:
+        raise RuntimeError(f"Invalid logical sector size: {sector}")
+    
+    start_lba = offset // sector
+    size_lba = part_size // sector
+    
+    return PartitionInfo(
+        partition_guid=PartitionUuid.to_raw(str(partition.Guid)),
+        partition_number=int(partition.PartitionNumber),
+        disk_number=int(disk.Number),
+        offset=offset,
+        size=part_size,
+        logical_sector_size=sector,
+        start_lba=int(start_lba),
+        size_lba=int(size_lba),
+        drive_letter=drive_letter,
+        free_space=free_space,
+    )
+
+
+@functools.lru_cache(maxsize=1)
+def get_windows_partition_info() -> PartitionInfo:
+    """Get cached Windows system partition info.
+    
+    Returns:
+        PartitionInfo object for the Windows system partition
+    """
+    system_drive = os.environ.get("SystemDrive", "C:")[0]
+    return get_partition_info_by_drive_letter(system_drive)
+
+
+@functools.lru_cache(maxsize=1)
+def get_efi_partition_info() -> PartitionInfo:
+    """Get cached EFI system partition info.
+    
+    Returns:
+        PartitionInfo object for the EFI system partition
+    """
+    efi_guid = get_efi_drive_uuid()
+    return get_partition_info_by_guid(efi_guid)
+
+
+def get_partition_info_by_guid(guid: str) -> PartitionInfo:
     """
     Get partition information by GUID (partition GUID) using pure WMI.
     
@@ -403,55 +477,88 @@ def get_partition_info_by_guid(guid: str) -> dict:
         guid: Partition GUID (with or without braces)
         
     Returns:
-        Dictionary with partition information
+        PartitionInfo object with partition information
     """
-    import win32com.client
+    with com_context():
+        import win32com.client
+        
+        # Normalize GUID format - remove braces if present
+        guid = PartitionUuid.to_raw(guid)
+        
+        # Connect to Storage namespace
+        wmi = win32com.client.GetObject("winmgmts:root/Microsoft/Windows/Storage")
+        
+        # Find partition by unique GUID
+        partitions = wmi.InstancesOf("MSFT_Partition")
+        target_partition = None
+        for partition in partitions:
+            part_guid = str(partition.Guid).strip('{}')
+            if part_guid.lower() == guid.lower():
+                target_partition = partition
+                break
+        
+        if not target_partition:
+            raise RuntimeError(f"No partition found with GUID {guid}")
+        
+        return _get_partition_info(target_partition, wmi)
+
+
+def get_partition_info_by_drive_letter(drive_letter: str) -> PartitionInfo:
+    """
+    Get partition information by drive letter using pure WMI.
     
-    # Normalize GUID format - remove braces if present
-    guid = guid.strip('{}')
+    Args:
+        drive_letter: Drive letter (e.g., 'C')
+        
+    Returns:
+        PartitionInfo object with partition information
+    """
+    with com_context():
+        import win32com.client
+        
+        # Connect to Storage namespace
+        wmi = win32com.client.GetObject("winmgmts:root/Microsoft/Windows/Storage")
+        
+        # Find partition by drive letter
+        partitions = wmi.InstancesOf("MSFT_Partition")
+        target_partition = None
+        drive_path = drive_letter.upper() + ":\\"
+        for partition in partitions:
+            if partition.AccessPaths and drive_path in partition.AccessPaths:
+                target_partition = partition
+                break
+        
+        if not target_partition:
+            raise RuntimeError(f"No partition found for drive letter {drive_letter}")
+        
+        return _get_partition_info(target_partition, wmi)
+
+
+def get_partition_supported_size(guid: str) -> int:
+    """
+    Get the supported resizable size for a partition by GUID.
     
-    # Connect to Storage namespace
-    wmi = win32com.client.GetObject("winmgmts:root/Microsoft/Windows/Storage")
-    
-    # Find partition by unique GUID
-    partitions = wmi.InstancesOf("MSFT_Partition")
-    target_partition = None
-    for partition in partitions:
-        part_guid = str(partition.Guid).strip('{}')
-        if part_guid.lower() == guid.lower():
-            target_partition = partition
-            break
-    
-    if not target_partition:
-        raise RuntimeError(f"No partition found with GUID {guid}")
-    
-    # Get disk info
-    disks = wmi.InstancesOf("MSFT_Disk")
-    disk = None
-    for d in disks:
-        if str(d.Path) == str(target_partition.DiskId):
-            disk = d
-            break
-    
-    if not disk:
-        raise RuntimeError("Could not find disk for partition")
-    
-    # Compute LBAs
-    offset = int(target_partition.Offset)
-    part_size = int(target_partition.Size)
-    sector = int(disk.LogicalSectorSize)
-    if sector <= 0:
-        raise RuntimeError(f"Invalid logical sector size: {sector}")
-    
-    start_lba = offset // sector
-    size_lba = part_size // sector
-    
-    return {
-        "partition_guid": guid,
-        "partition_number": int(target_partition.PartitionNumber),
-        "offset": offset,
-        "size": part_size,
-        "logical_sector_size": sector,
-        "start_lba": int(start_lba),
-        "size_lba": int(size_lba),
-    }
+    Args:
+        guid: Partition GUID (with or without braces)
+        
+    Returns:
+        Resizable size in bytes (current size - minimum supported size)
+    """
+    with com_context():
+        import win32com.client
+        
+        wmi = win32com.client.GetObject(r"winmgmts:root\Microsoft\Windows\Storage")
+        partitions = wmi.InstancesOf("MSFT_Partition")
+        
+        for partition in partitions:
+            part_guid = PartitionUuid.to_raw(str(partition.Guid))
+            if part_guid.lower() == guid.strip('{}').lower():
+                method_result = wmi.ExecMethod(partition.Path_.Path, "GetSupportedSize")
+                if method_result.ReturnValue == 0:
+                    size_min = int(method_result.SizeMin)
+                    current_size = int(partition.Size)
+                    return current_size - size_min
+                else:
+                    raise RuntimeError(f"GetSupportedSize failed with code {method_result.ReturnValue}")
+        
+        raise ValueError(f"Partition with GUID {guid} not found")

@@ -6,39 +6,18 @@ from dataclasses import dataclass
 from typing import Optional
 
 from .disk import (
-    get_sys_drive_letter, get_disk_number, get_drive_size,
-    resize_partition, new_partition, get_system_efi_drive_uuid,
-    mount_volume_to_path
+    PartitionInfo, get_efi_partition_info, get_windows_partition_info,
+    resize_partition, new_partition, mount_volume_to_path
 )
 import os
 import subprocess
-import win32com.client
 
-
-def get_volume_uuid(drive_letter: str) -> str:
-    """Get the UUID of a volume using WMI."""
-    wmi = win32com.client.GetObject("winmgmts:")
-    volumes = wmi.InstancesOf("Win32_Volume")
-    for volume in volumes:
-        if str(volume.DriveLetter).rstrip(':').upper() == drive_letter.upper():
-            device_id = str(volume.DeviceID).strip()
-            # DeviceID is like \\?\Volume{uuid}\
-            start = device_id.find("{")
-            end = device_id.find("}")
-            return "{" + device_id[start+1:end] + "}"
-    raise ValueError(f"Volume not found for drive {drive_letter}")
 
 @dataclass
 class TemporaryPartition:
     """Temporary partition information."""
     mount_path: str
-    partition_guid: str
-    partition_number: int
-    offset: int
-    size: int
-    logical_sector_size: int
-    start_lba: int
-    size_lba: int
+    partition_info: PartitionInfo
     
 
 @dataclass
@@ -52,12 +31,9 @@ class PartitionGuids:
 class PartitioningResult:
     """Result of partitioning procedure."""
     tmp_part: TemporaryPartition
-    sys_drive_uuid: str
-    sys_drive_win_uuid: str
-    sys_efi_uuid: str
+    windows_partition: PartitionInfo
+    efi_partition: PartitionInfo
     shrink_space: int
-    sys_drive_letter: str
-    sys_disk_number: int
     sys_drive_original_size: int
     partition_guids: PartitionGuids
 
@@ -83,29 +59,24 @@ def partition_procedure(
         PartitioningResult with partition information
     """
 
-    # Get system drive information
-    sys_drive_letter = get_sys_drive_letter()
-    sys_drive_win_uuid = get_volume_uuid(sys_drive_letter)
-    sys_drive_uuid = _extract_uuid_from_string(sys_drive_win_uuid)
     
     # Store original system drive size for potential rollback
-    sys_drive_original_size = get_drive_size(sys_drive_letter)
-    
-    # Get EFI and disk information
-    sys_efi_uuid = get_system_efi_drive_uuid()
-    sys_disk_number = get_disk_number(sys_drive_letter)
-    
+    windows_partition = get_windows_partition_info()
+    efi_partition = get_efi_partition_info()
+    sys_drive_original_size = windows_partition.size
+    if windows_partition.drive_letter is None:
+        raise RuntimeError("System drive letter could not be determined.")
     # Calculate shrink space if not provided
     if not (shrink_space and make_root_partition):
         shrink_space = tmp_part_size + boot_part_size
     
     # Resize system drive
     sys_drive_new_size = sys_drive_original_size - (shrink_space + 1100000)  # Extra safety margin
-    resize_partition(sys_drive_letter, sys_drive_new_size)
+    resize_partition(windows_partition.drive_letter, sys_drive_new_size)
     
     # Create partitions as needed
     partition_guids = _create_partitions(
-        sys_disk_number, shrink_space, tmp_part_size, 
+        windows_partition.disk_number, shrink_space, tmp_part_size, 
         boot_part_size, make_root_partition
     )
     
@@ -124,40 +95,26 @@ def partition_procedure(
                       check=True, capture_output=True, shell=True)
     
     # Create the volume without assigning a drive letter initially
-    tmp_part_metadata = new_partition(sys_disk_number, tmp_part_size, "FAT32", temp_part_label)
+    tmp_part_metadata = new_partition(windows_partition.disk_number, tmp_part_size, "FAT32", temp_part_label)
     
     # Get the volume GUID and mount it to the path
-    volume_unique_id = tmp_part_metadata["vol_unique_id"]
+    volume_unique_id = tmp_part_metadata.volume_unique_id
+    if volume_unique_id is None:
+        raise RuntimeError("Temporary partition volume unique ID could not be determined.")
     mount_volume_to_path(volume_unique_id, tmp_mount_path)
     
     tmp_part = TemporaryPartition(
         mount_path=tmp_mount_path,
-        partition_guid=tmp_part_metadata["partition_guid"],
-        partition_number=tmp_part_metadata["partition_number"],
-        offset=tmp_part_metadata["offset"],
-        size=tmp_part_metadata["size"],
-        logical_sector_size=tmp_part_metadata["logical_sector_size"],
-        start_lba=tmp_part_metadata["start_lba"],
-        size_lba=tmp_part_metadata["size_lba"],
+        partition_info = tmp_part_metadata,
     )
     return PartitioningResult(
         tmp_part=tmp_part,
-        sys_drive_uuid=sys_drive_uuid,
-        sys_drive_win_uuid=sys_drive_win_uuid,
-        sys_efi_uuid=sys_efi_uuid,
-        shrink_space=shrink_space,
-        sys_drive_letter=sys_drive_letter,
-        sys_disk_number=sys_disk_number,
+        windows_partition = windows_partition,
+        efi_partition = efi_partition,
         sys_drive_original_size=sys_drive_original_size,
+        shrink_space=shrink_space,
         partition_guids=partition_guids,
     )
-
-
-def _extract_uuid_from_string(uuid_string: str) -> str:
-    """Extract UUID from a string containing braces."""
-    start_idx = uuid_string.index("{") + 1
-    end_idx = uuid_string.index("}")
-    return uuid_string[start_idx:end_idx]
 
 
 def _create_partitions(
@@ -177,10 +134,10 @@ def _create_partitions(
     if make_root_partition:
         root_space = shrink_space - (tmp_part_size + boot_part_size + 1100000)
         metadata = new_partition(sys_disk_number, root_space)
-        partition_guids.root_guid = metadata['partition_guid']
+        partition_guids.root_guid = metadata.partition_guid
     
     if boot_part_size:
         metadata = new_partition(sys_disk_number, boot_part_size)
-        partition_guids.boot_guid = metadata['partition_guid']
+        partition_guids.boot_guid = metadata.partition_guid
     
     return partition_guids

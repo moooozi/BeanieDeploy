@@ -21,8 +21,9 @@ from config.settings import PartitioningMethod
 from services import disk, config_builders, elevated
 from services import file as file_service
 from services.download import DownloadService, DownloadProgress
-from services.partition import partition_procedure, get_system_efi_drive_uuid
-from services.disk import get_partition_info_by_guid
+from services.partition import partition_procedure
+from utils import com_context
+from core.state import get_state
 
 class HashVerificationError(Exception):
     """Raised when file hash verification fails."""
@@ -38,12 +39,7 @@ def _create_boot_entry_elevated(tmp_part) -> int:
     import firmware_variables as fwvars
     import uuid
 
-    # Get EFI partition details
-    efi_guid = elevated.call(get_system_efi_drive_uuid)
-    if not efi_guid:
-        raise RuntimeError("Could not find system EFI partition")
-    
-    efi_part_info = elevated.call(get_partition_info_by_guid, args=(efi_guid,))
+    efi_part_info = get_state().installation.efi_partition_info
     if not efi_part_info:
         raise RuntimeError("Could not get EFI partition information")
 
@@ -71,11 +67,11 @@ def _create_boot_entry_elevated(tmp_part) -> int:
                 hd_node = path.get_hard_drive_node()
                 if hd_node:
                     # Set to EFI partition instead of temp partition
-                    hd_node.partition_guid = efi_guid.lower()
-                    hd_node.partition_number = efi_part_info['partition_number']
-                    hd_node.partition_start_lba = efi_part_info['start_lba']
-                    hd_node.partition_size_lba = efi_part_info['size_lba']
-                    hd_node.partition_signature = uuid.UUID(efi_guid).bytes_le
+                    hd_node.partition_guid = efi_part_info.partition_guid
+                    hd_node.partition_number = efi_part_info.partition_number
+                    hd_node.partition_start_lba = efi_part_info.start_lba
+                    hd_node.partition_size_lba = efi_part_info.size_lba
+                    hd_node.partition_signature = uuid.UUID(efi_part_info.partition_guid).bytes_le
                     path.set_hard_drive_node(hd_node)
 
         # Find an unused entry_id for the new entry
@@ -305,7 +301,12 @@ class InstallationService:
                 live_iso_path = context.get_live_iso_path()
                 if live_iso_path:
                     # Extract only the LiveOS directory from live ISO directly to destination
-                    self._extract_liveos_from_iso(str(live_iso_path), f"{destination}\\LiveOS")
+                    self._extract_liveos_from_iso(str(live_iso_path), destination)
+            
+            # Copy additional files and generate configurations
+            self._copy_additional_files(context, destination)
+            self._generate_config_files(context, destination)
+            self._copy_efi_to_system_partition(context, destination)
             
             self._update_progress(context, InstallationStage.COPYING_TO_TMP_PART, 85, "Files copied successfully")
             return InstallationResult.success_result()
@@ -367,13 +368,10 @@ class InstallationService:
     def _copy_efi_to_system_partition(self, context: InstallationContext, temp_destination: str) -> None:
         """Copy EFI directory to system EFI partition for proper booting."""
         # Get EFI partition GUID
-        efi_guid = elevated.call(get_system_efi_drive_uuid)
-        if not efi_guid:
+        efi_unique_id = get_state().installation.efi_partition_info.volume_unique_id
+        if not efi_unique_id:
             raise RuntimeError("Could not find system EFI partition")
         
-        # Normalize GUID format
-        if not efi_guid.startswith("\\\\?\\Volume{"):
-            efi_guid = f"\\\\?\\Volume{{{efi_guid}}}"
         
         # Create temp mount path for EFI partition
         efi_mount_path = f"{temp_destination}_efi"
@@ -381,7 +379,7 @@ class InstallationService:
         
         try:
             # Mount EFI partition
-            elevated.call(disk.mount_volume_to_path, args=(efi_guid, efi_mount_path))
+            elevated.call(disk.mount_volume_to_path, args=(efi_unique_id, efi_mount_path))
             
             # Check if beanie directory already exists
             efi_dst = Path(efi_mount_path) / "EFI" / "beanie"
@@ -445,13 +443,13 @@ class InstallationService:
             # Delete the temporary partition
             elevated.call(
                 self._delete_partition, 
-                args=(partitioning_info.sys_disk_number, context.tmp_part.partition_number)
+                args=(partitioning_info.windows_partition.disk_number, context.tmp_part.partition_info.partition_number)
             )
             
             # Extend the system partition back to original size
             elevated.call(
                 disk.resize_partition,
-                args=(partitioning_info.sys_drive_letter, partitioning_info.sys_drive_original_size)
+                args=(partitioning_info.windows_partition.drive_letter, partitioning_info.windows_partition.size)
             )
         
         self._update_progress(context, InstallationStage.CLEANUP, 100, "Cleanup completed")
@@ -464,12 +462,13 @@ class InstallationService:
             disk_number: Disk number containing the partition
             partition_number: Partition number to delete
         """
-        wmi = win32com.client.GetObject("winmgmts:")
-        partitions = wmi.InstancesOf("Win32_DiskPartition")
-        for partition in partitions:
-            if partition.DiskIndex == disk_number and partition.Index == partition_number:
-                partition.Delete_()
-                break
+        with com_context():
+            wmi = win32com.client.GetObject("winmgmts:")
+            partitions = wmi.InstancesOf("Win32_DiskPartition")
+            for partition in partitions:
+                if partition.DiskIndex == disk_number and partition.Index == partition_number:
+                    partition.Delete_()
+                    break
 
     def _update_progress(
         self, 

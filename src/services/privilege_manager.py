@@ -25,7 +25,9 @@ import uuid
 import win32file
 import win32pipe
 import pywintypes
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, cast
+
+T = TypeVar('T')
 
 BUFFER_SIZE = 65536
 
@@ -236,7 +238,7 @@ class elevated:
         return proc
     
     @staticmethod
-    def call(target: Callable, args: Tuple = (), kwargs: Optional[Dict] = None) -> Any:
+    def call(target: Callable[..., T], args: Tuple = (), kwargs: Optional[Dict] = None) -> T:
         """
         Call a function with elevated privileges. API similar to threading.Thread.
         
@@ -278,4 +280,4 @@ class elevated:
         }
         
         response = manager._send_command(command_data)
-        return response["result"]
+        return cast(T, response["result"])

@@ -12,6 +12,8 @@ import ctypes
 import winreg
 import locale
 
+from utils import com_context
+
 
 def is_admin() -> bool:
     """Check if the current process has administrator privileges."""
@@ -57,13 +59,14 @@ def detect_nvidia() -> bool:
         True if NVIDIA GPU detected, False otherwise
     """
     try:
-        import win32com.client
-        wmi = win32com.client.GetObject("winmgmts:")
-        video_controllers = wmi.InstancesOf("Win32_VideoController")
-        for controller in video_controllers:
-            if "NVIDIA" in str(controller.Name).upper():
-                return True
-        return False
+        with com_context():
+            import win32com.client
+            wmi = win32com.client.GetObject("winmgmts:")
+            video_controllers = wmi.InstancesOf("Win32_VideoController")
+            for controller in video_controllers:
+                if "NVIDIA" in str(controller.Name).upper():
+                    return True
+            return False
     except Exception:
         return False
 

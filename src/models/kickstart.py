@@ -26,7 +26,7 @@ class LocaleConfig:
 @dataclass
 class KickstartConfig:
     partitioning: PartitioningConfig = field(default_factory=PartitioningConfig)
-    locale: LocaleConfig = field(default_factory=LocaleConfig)
+    locale_settings: LocaleConfig = field(default_factory=LocaleConfig)
     live_img_url: str = ""
     ostree_args: str = ""
     wifi_profiles_dir_name: Optional[str] = None
