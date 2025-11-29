@@ -27,7 +27,7 @@ def parse_spins(spins_list: SpinDictList) -> List[Spin]:
             latest_version = version
 
     # Filter for x86_64, ISO files, desired variants, and latest version only
-    desired_variants = {'Workstation', 'KDE', 'Everything'}
+    desired_variants = {'Workstation', 'KDE', 'Silverblue', 'Kinoite', 'Everything'}
 
     for release in spins_list:
         # Filter criteria
@@ -41,8 +41,9 @@ def parse_spins(spins_list: SpinDictList) -> List[Spin]:
         variant = release.get('variant', '')
         desktop_map = {
             'Workstation': 'GNOME',
-            'KDE': 'KDE',
-            'Everything': ''  # No desktop for Everything
+            'KDE': 'KDE Plasma',
+            'Silverblue': 'GNOME',
+            'Kinoite': 'KDE Plasma',
         }
         desktop = desktop_map.get(variant, '')
 
@@ -68,18 +69,17 @@ def parse_spins(spins_list: SpinDictList) -> List[Spin]:
             is_live_img=is_live,
             version=release.get('version', ''),
             desktop=desktop,
-            is_auto_installable=variant in ['Workstation', 'KDE'],  # These have live installers
+            is_auto_installable=variant in ['Workstation', 'KDE', 'Silverblue', 'Kinoite'],  # These have live installers
             is_advanced=variant == 'Everything',  # Everything is more advanced
-            torrent_link='',  # Official API doesn't provide torrent links
             ostree_args='',  # Not applicable for these variants
             is_base_netinstall=is_base_netinstall,
-            is_default=variant == 'Workstation',  # Workstation is the default
+            is_default=variant == 'KDE',  # Workstation is the default
             is_featured=variant in ['Workstation', 'KDE']  # Feature the main desktop variants
         )
         accepted_spins_list.append(spin)
 
     # Sort by variant priority (Workstation first, then KDE, then Everything)
-    variant_priority = {'Workstation': 0, 'KDE': 1, 'Everything': 2}
-    accepted_spins_list.sort(key=lambda s: variant_priority.get(s.name.split()[1], 3))
+    variant_priority = {'KDE': -2, "Workstation": -1, 'Everything': 10}
+    accepted_spins_list.sort(key=lambda s: variant_priority.get(s.name.split()[1], 0))
 
     return accepted_spins_list

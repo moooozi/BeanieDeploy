@@ -61,7 +61,6 @@ class UrlConfig:
     """External URLs and endpoints."""
     
     fedora_geo_ip: str = "https://geoip.fedoraproject.org/city"
-    fedora_base_download: str = "https://download.fedoraproject.org"
     fedora_torrent_download: str = "https://torrent.fedoraproject.org"
     available_spins_list: str = "https://fedoraproject.org/releases.json"
     
