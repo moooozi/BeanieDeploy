@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import List, Optional
 from enum import Enum
 
+from .downloadable_file import DownloadableFile
 from .kickstart import KickstartConfig
 from .partition import Partition
 from .spin import Spin
@@ -25,40 +26,6 @@ class InstallationStage(Enum):
     ADDING_TMP_BOOT_ENTRY = "adding_tmp_boot_entry"
     CLEANUP = "cleanup"
     INSTALL_DONE = "install_done"
-
-
-@dataclass
-class DownloadableFile:
-    """Represents a file that needs to be downloaded for installation."""
-    file_name: str
-    file_hint: str  # Purpose: "installer_iso", "live_img_iso", etc.
-    download_url: str
-    destination_dir: Path
-    expected_hash: str
-    size_bytes: int
-    
-    @property
-    def full_path(self) -> Path:
-        """Get the full path where this file will be saved."""
-        return self.destination_dir / self.file_name
-    
-    @classmethod
-    def from_spin(
-        cls,
-        spin: Spin,
-        file_hint: str,
-        destination_dir: Path,
-        file_name: Optional[str] = None,
-    ) -> "DownloadableFile":
-        """Create a DownloadableFile from a Spin object."""
-        return cls(
-            file_name=file_name or f"{spin.name.replace(' ', '_')}.iso",
-            file_hint=file_hint,
-            download_url=spin.dl_link,
-            destination_dir=destination_dir,
-            expected_hash=spin.hash256,
-            size_bytes=spin.size,
-        )
 
 
 @dataclass
@@ -121,7 +88,6 @@ class InstallationContext:
                 self.live_os_installer_spin,
                 file_hint="installer_iso",
                 destination_dir=self.paths.work_dir,
-                file_name="install.iso"
             )
             self.downloadable_files.append(installer_file)
             
@@ -129,7 +95,6 @@ class InstallationContext:
                 self.selected_spin,
                 file_hint="live_img_iso", 
                 destination_dir=self.paths.work_dir,
-                file_name="live.iso"
             )
             self.downloadable_files.append(live_file)
         else:
@@ -138,7 +103,6 @@ class InstallationContext:
                 self.selected_spin,
                 file_hint="installer_iso",
                 destination_dir=self.paths.work_dir,
-                file_name="install.iso"
             )
             self.downloadable_files.append(installer_file)
     

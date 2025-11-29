@@ -72,7 +72,7 @@ def partition_procedure(
     
     # Resize system drive
     sys_drive_new_size = sys_drive_original_size - (shrink_space + 1100000)  # Extra safety margin
-    resize_partition(windows_partition.drive_letter, sys_drive_new_size)
+    resize_partition(windows_partition.partition_guid, sys_drive_new_size)
     
     # Create partitions as needed
     partition_guids = _create_partitions(

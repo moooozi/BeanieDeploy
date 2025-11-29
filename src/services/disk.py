@@ -71,26 +71,38 @@ def prevent_bitlocker_auto_encrypt():
                 winreg.SetValueEx(key, value_name, 0, winreg.REG_DWORD, original_value)
 
 
-def resize_partition(drive_letter: str, new_size: int) -> subprocess.CompletedProcess:
+def resize_partition(guid: str, new_size: int) -> None:
     """
-    Resize a partition to a new size.
+    Resize a partition to a new size using MSFT_Partition.Resize method.
     
     Args:
-        drive_letter: Drive letter to resize
+        guid: Partition GUID (with or without braces)
         new_size: New size in bytes
         
-    Returns:
-        CompletedProcess result
+    Raises:
+        RuntimeError: If resize operation fails or partition not found
     """
-    script = r"Resize-Partition -DriveLetter " + drive_letter + r" -Size " + str(new_size)
-    return subprocess.run(
-        [r"powershell.exe", script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        check=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
+    with com_context():
+        import win32com.client
+        
+        guid = PartitionUuid.to_raw(guid)
+        
+        wmi = win32com.client.GetObject("winmgmts:root/Microsoft/Windows/Storage")
+        partitions = wmi.InstancesOf("MSFT_Partition")
+        
+        for partition in partitions:
+            part_guid = PartitionUuid.to_raw(str(partition.Guid))
+            if part_guid.lower() == guid.lower():
+                # Prepare resize parameters
+                in_params = partition.Methods_("Resize").InParameters.SpawnInstance_()
+                in_params.Size = new_size
+                
+                result = partition.ExecMethod_("Resize", in_params)
+                if result.ReturnValue != 0:
+                    raise RuntimeError(f"Resize failed with code {result.ReturnValue}: {result.ExtendedStatus}")
+                return
+        
+        raise RuntimeError(f"No partition found with GUID {guid}")
 
 
 def get_unused_drive_letter() -> Optional[str]:
@@ -280,6 +292,63 @@ def extract_iso_to_dir(iso_path: str, target_dir: str, filter_func=None) -> str:
         iso.close()
 
     return target_dir
+
+
+def get_iso_contents_size(iso_path: str, filter_func=None) -> int:
+    """
+    Get the total size of all files in an ISO image.
+    
+    Args:
+        iso_path: Path to the ISO file
+        filter_func: Optional function to filter which files to include
+        
+    Returns:
+        Total size in bytes
+    """
+    from pycdlib.pycdlib import PyCdlib
+    iso = PyCdlib()
+    iso.open(iso_path)
+    
+    total_size = 0
+    try:
+        for parent, _, files in iso.walk(joliet_path='/'):
+            for f in files:
+                iso_file_path = posixpath.join(parent, f)
+                
+                if filter_func and not filter_func(iso_file_path):
+                    continue
+                
+                # Get file size from ISO
+                file_entry = iso.get_record(joliet_path=iso_file_path)
+                total_size += file_entry.get_data_length()
+    finally:
+        iso.close()
+    
+    return total_size
+
+
+def get_file_size_in_iso(iso_path: str, file_path: str) -> int:
+    """
+    Get the size of a specific file in an ISO image.
+    
+    Args:
+        iso_path: Path to the ISO file
+        file_path: Path to the file within the ISO (starting with /)
+        
+    Returns:
+        File size in bytes, or 0 if file not found
+    """
+    from pycdlib.pycdlib import PyCdlib
+    iso = PyCdlib()
+    iso.open(iso_path)
+    
+    try:
+        file_entry = iso.get_record(joliet_path=file_path)
+        return file_entry.get_data_length()
+    except Exception:
+        return 0
+    finally:
+        iso.close()
 
 
 

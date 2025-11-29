@@ -10,11 +10,11 @@ import shutil
 from typing import Callable, Optional
 
 from config.settings import get_config
+from models.downloadable_file import DownloadableFile
 from models.installation_context import (
     InstallationContext, 
     InstallationResult, 
-    InstallationStage,
-    DownloadableFile
+    InstallationStage
 )
 from config.settings import PartitioningMethod
 from services import disk, config_builders, elevated
@@ -140,6 +140,9 @@ class InstallationService:
             if not download_result.success:
                 return download_result
             
+            # Recalculate partition size if live image installation
+            self._update_tmp_partition_size(context)
+            
             # Execute partitioning
             partition_result = self._setup_partitioning(context)
             if not partition_result.success:
@@ -213,6 +216,24 @@ class InstallationService:
             return InstallationResult.error_result(InstallationStage.VERIFYING_CHECKSUM, str(e))
         except Exception as e:
             return InstallationResult.error_result(InstallationStage.DOWNLOADING, f"Download failed: {str(e)}")
+    
+    def _update_tmp_partition_size(self, context: InstallationContext) -> None:
+        """Recalculate partition size for live image installations using accurate content sizes."""
+        if not context.is_live_image_installation():
+            return
+            
+        installer_iso_path = context.get_installer_iso_path()
+        live_iso_path = context.get_live_iso_path()
+        if not installer_iso_path or not live_iso_path:
+            return
+            
+        installer_size = disk.get_iso_contents_size(str(installer_iso_path))
+        squashfs_size = disk.get_file_size_in_iso(str(live_iso_path), '/LiveOS/squashfs.img')
+        total_size = installer_size + squashfs_size
+        # Add 50MB fixed buffer
+        buffer = 50 * 1024 * 1024  # 50MB in bytes
+        new_tmp_part_size = total_size + buffer
+        context.partition.tmp_part_size = new_tmp_part_size
     
     def _download_single_file(self, file_info: DownloadableFile, context: InstallationContext) -> None:
         """Download a single file with progress tracking."""
@@ -448,7 +469,7 @@ class InstallationService:
             # Extend the system partition back to original size
             elevated.call(
                 disk.resize_partition,
-                args=(partitioning_info.windows_partition.drive_letter, partitioning_info.windows_partition.size)
+                args=(partitioning_info.windows_partition.partition_guid, partitioning_info.windows_partition.size)
             )
         
         self._update_progress(context, InstallationStage.CLEANUP, 100, "Cleanup completed")
