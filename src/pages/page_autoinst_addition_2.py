@@ -1,11 +1,13 @@
+import logging
+import math
+
+import tkinter_templates
+import tkinter_templates as tkt
 from models.page import Page, PageValidationResult
+from multilingual import _
 from services.patched_langtable import langtable
 from templates.generic_page_layout import GenericPageLayout
 from templates.list_view import ListView
-import math
-import tkinter_templates as tkt
-import tkinter_templates
-from multilingual import _
 
 
 class PageAutoinstAddition2(Page):
@@ -33,12 +35,14 @@ class PageAutoinstAddition2(Page):
         # Get locale from state instead of globals
         kickstart = self.state.installation.kickstart
         if not kickstart:
-            self.logger.error("No kickstart configuration found")
+            logging.error("No kickstart configuration found")
             return
 
         self.selected_locale = kickstart.locale_settings.locale
 
-        selected_locale_keymaps = langtable.list_keyboards(languageId=kickstart.locale_settings.locale)
+        selected_locale_keymaps = langtable.list_keyboards(
+            languageId=kickstart.locale_settings.locale
+        )
         self.all_keymaps = sorted(langtable.list_all_keyboards())
 
         selected_locale_timezones = langtable.list_timezones(
@@ -77,7 +81,9 @@ class PageAutoinstAddition2(Page):
             else kickstart.locale_settings.timezone
         )
         default_keymap = (
-            selected_locale_keymaps[0] if not kickstart.locale_settings.keymap else kickstart.locale_settings.keymap
+            selected_locale_keymaps[0]
+            if not kickstart.locale_settings.keymap
+            else kickstart.locale_settings.keymap
         )
 
         self.keyboard_list.on_click(default_keymap)
@@ -112,7 +118,7 @@ class PageAutoinstAddition2(Page):
                 kickstart.locale_settings.keymap = selected_keymap
                 kickstart.locale_settings.keymap_type = "xlayout"
 
-            self.logger.info(
+            logging.info(
                 f"Selected timezone:S {kickstart.locale_settings.timezone}, keymap: {kickstart.locale_settings.keymap}"
             )
 
@@ -121,7 +127,7 @@ class PageAutoinstAddition2(Page):
         if hasattr(self, "selected_locale"):
             kickstart = self.state.installation.kickstart
             if kickstart and self.selected_locale != kickstart.locale_settings.locale:
-                self.logger.info("Locale changed, reinitializing page")
+                logging.info("Locale changed, reinitializing page")
                 tkt.flush_frame(self)
                 self._initiated = False
                 self.init_page()

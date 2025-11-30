@@ -1,15 +1,17 @@
-import platform
 import ctypes
+import logging
+import platform
+
 import win32com.client
+
 from core.state import get_state
-from models.check import CheckType, Check
+from models.check import Check, CheckType
+from services.disk import get_partition_supported_size
 from services.privilege_manager import elevated
 from utils import com_context
-from services.disk import  get_partition_supported_size
 
 
 def check_arch():
-    print("Checking architecture...")
     result = platform.machine().lower()
 
     return Check(
@@ -20,31 +22,31 @@ def check_arch():
     )
 
 
-
 def check_uefi():
     try:
         # Load kernel32.dll
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
 
-        GetFirmwareType = kernel32.GetFirmwareType
-        GetFirmwareType.argtypes = [ctypes.POINTER(ctypes.c_uint)]
-        GetFirmwareType.restype = ctypes.c_bool
+        get_fw_type = kernel32.GetFirmwareType
+        get_fw_type.argtypes = [ctypes.POINTER(ctypes.c_uint)]
+        get_fw_type.restype = ctypes.c_bool
 
         fw_type = ctypes.c_uint()
-        success = GetFirmwareType(ctypes.byref(fw_type))
+        success = get_fw_type(ctypes.byref(fw_type))
 
         if not success:
             raise ctypes.WinError(ctypes.get_last_error())
 
-        if fw_type.value == 2:   # UEFI
+        if fw_type.value == 2:  # UEFI
             proc = True
-        elif fw_type.value == 1: # BIOS
+        elif fw_type.value == 1:  # BIOS
             proc = False
         else:
             proc = None
 
     except Exception as e:
-        print(f"Error: {e}")
+        msg = "Error determining firmware type: " + str(e)
+        logging.exception(msg)
         proc = None
 
     return Check(
@@ -56,7 +58,6 @@ def check_uefi():
 
 
 def check_ram():
-    print("Checking RAM size...")
     # Use WMI instead of PowerShell
     try:
         with com_context():
@@ -65,24 +66,24 @@ def check_ram():
             total_capacity = 0
             for memory in memories:
                 total_capacity += int(memory.Capacity)
-            print(f"Total RAM: {total_capacity} bytes")
+            logging.info(f"RAM capacity: {total_capacity} bytes")
             return Check(
                 CheckType.RAM.value,
                 total_capacity,
                 0,  # Success
                 None,
             )
-    except Exception as _:
+    except Exception as e:
+        logging.exception("Error checking RAM: " + str(e))
         return Check(
             CheckType.RAM.value,
-            None,
+            str(e),
             1,  # Error
             None,
         )
 
 
 def check_space():
-    print("Checking available space...")
     # Use shutil.disk_usage instead of PowerShell
     try:
         # Get the system drive info
@@ -114,13 +115,15 @@ def check_resizable():
     """Check available resizable space on system drive."""
     try:
         partition_info = get_state().installation.windows_partition_info
-        
+
         # Extract GUID
         partition_guid = partition_info.partition_guid
-        
+
         # Get supported resizable size
-        resizable_size = elevated.call(get_partition_supported_size, args=(partition_guid,))
-        
+        resizable_size = elevated.call(
+            get_partition_supported_size, args=(partition_guid,)
+        )
+
         return Check(
             CheckType.RESIZABLE.value,
             resizable_size,
@@ -140,13 +143,13 @@ def _get_efi_free_space() -> int:
     """Get free space on EFI partition."""
     efi_partition_info = get_state().installation.efi_partition_info
     if efi_partition_info.free_space is None:
-        raise ValueError("EFI partition free space information not available")
+        msg = "EFI partition free space information not available"
+        raise ValueError(msg)
     return efi_partition_info.free_space
 
 
 def check_efi_space():
     """Check available free space on the EFI partition."""
-    print("Checking EFI partition space...")
     result_value = _get_efi_free_space()
     return Check(
         CheckType.EFI_SPACE.value,

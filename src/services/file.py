@@ -5,7 +5,7 @@ Handles file operations, hashing, copying, etc.
 
 import hashlib
 import os
-from typing import Optional
+from pathlib import Path
 from urllib.parse import urlparse
 
 
@@ -20,7 +20,7 @@ def get_sha256_hash(file_path: str) -> str:
         SHA256 hash as hexadecimal string
     """
     sha256 = hashlib.sha256()
-    with open(file_path, "rb") as f:
+    with Path(file_path).open("rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
             sha256.update(chunk)
     return sha256.hexdigest()
@@ -35,9 +35,9 @@ def set_file_readonly(filepath: str, is_readonly: bool) -> None:
         is_readonly: True to make read-only, False to make writable
     """
     if is_readonly:
-        os.chmod(filepath, 0o444)  # Read-only
+        Path(filepath).chmod(0o444)  # Read-only
     else:
-        os.chmod(filepath, 0o666)  # Read-write
+        Path(filepath).chmod(0o666)  # Read-write
 
 
 def get_file_name_from_url(url: str) -> str:
@@ -51,10 +51,10 @@ def get_file_name_from_url(url: str) -> str:
         Filename from the URL
     """
     parsed_url = urlparse(url)
-    return os.path.basename(parsed_url.path)
+    return Path(parsed_url.path).name
 
 
-def find_file_by_name(name: str, lookup_dir: str) -> Optional[str]:
+def find_file_by_name(name: str, lookup_dir: str) -> str | None:
     """
     Find a file by name in a directory tree.
 
@@ -67,11 +67,11 @@ def find_file_by_name(name: str, lookup_dir: str) -> Optional[str]:
     """
     for root, _, files in os.walk(lookup_dir):
         if name in files:
-            return os.path.join(root, name)
+            return str(Path(root) / name)
     return None
 
 
-def check_valid_existing_file(file_path: str, file_hash: str) -> Optional[bool]:
+def check_valid_existing_file(file_path: str, file_hash: str) -> bool | None:
     """
     Check if a file exists and has the correct hash.
 
@@ -84,11 +84,10 @@ def check_valid_existing_file(file_path: str, file_hash: str) -> Optional[bool]:
         False if file doesn't exist,
         None if file exists but hash doesn't match (file is removed)
     """
-    if not os.path.isfile(file_path):
+    if not Path(file_path).is_file():
         return False
 
     if get_sha256_hash(file_path).lower() == file_hash.lower():
         return True
-    else:
-        os.remove(file_path)
-        return None
+    Path(file_path).unlink()
+    return None

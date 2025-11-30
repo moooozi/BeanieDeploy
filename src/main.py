@@ -1,6 +1,6 @@
 import argparse
+import logging
 import os
-import traceback
 import sys
 from pathlib import Path
 
@@ -10,13 +10,14 @@ if "/PIPE" in sys.argv:
     if pipe_index + 1 < len(sys.argv):
         pipe_name = sys.argv[pipe_index + 1]
         import privilege_helper
+
         privilege_helper.main(pipe_name)
         sys.exit(0)
 
 # Handle PyInstaller bundle
-if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-    # Running in a PyInstaller bundle
-    bundle_dir = Path(sys._MEIPASS) # type: ignore
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    # # PyInstaller sets _MEIPASS for bundles
+    bundle_dir = Path(getattr(sys, "_MEIPASS", ""))
     # Add the bundle directory to Python path so translations can be found
     sys.path.insert(0, str(bundle_dir))
 else:
@@ -24,15 +25,13 @@ else:
     bundle_dir = Path(__file__).parent
 
 # Import our new systems
-from config.settings import get_config
-from utils.logging import setup_logging, get_logger
-from utils.errors import get_error_handler, BeanieDeployError
-from core.state import get_state_manager
-
 # Legacy imports (to be refactored)
 import multilingual
-from services.system import windows_language_code, is_admin
 from app import MainApp
+from config.settings import get_config
+from core.state import get_state_manager
+from services.system import is_admin, windows_language_code
+from utils.logging import setup_file_logging
 
 
 def parse_arguments():
@@ -45,8 +44,8 @@ def parse_arguments():
         "--app_version",
         type=str,
     )
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
+
 
 def set_skip_check(skip: bool):
     state = get_state_manager().state
@@ -54,112 +53,88 @@ def set_skip_check(skip: bool):
     if skip:
         sys.argv.append("--skip_check")
 
+
 def run():
     """
     Run the application with proper error handling and logging.
     """
-    logger = None  # Initialize logger variable
     try:
         # Set up the working directory
         script_dir = Path(__file__).parent
         os.chdir(script_dir)
-        
+
         # Initialize configuration and logging
         config = get_config()
-        logger = setup_logging(
-            level="DEBUG",  # Will be configurable later
-            log_file=config.paths.work_dir / "beaniedeploy.log",
-            console_output=True
-        )
-        
+        setup_file_logging(config.paths.work_dir / "beaniedeploy.log")
+
         # Parse arguments
         args = parse_arguments()
-        
-        
+
         # Auto-detect release mode for PyInstaller builds
-        is_pyinstaller_bundle = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+        is_pyinstaller_bundle = getattr(sys, "frozen", False) and hasattr(
+            sys, "_MEIPASS"
+        )
         if is_pyinstaller_bundle:
             args.release = True
-            logger.info("PyInstaller bundle detected - running in release mode")
+            logging.info("PyInstaller bundle detected - running in release mode")
         else:
             # Development mode - always skip checks
-            set_skip_check(False)
-            logger.info("Running in debug mode")
+            set_skip_check(skip=False)
+            logging.info("Running in debug mode")
 
         # Update version if provided
         if args.app_version:
             config.update_version(args.app_version)
-                                        
+
         # Log application startup
-        logger.info(f"APP STARTING: {config.app.name} v{config.app.version}")
-        
+        logging.info(f"APP STARTING: {config.app.name} v{config.app.version}")
+
         # Create work directory
         config.paths.work_dir.mkdir(parents=True, exist_ok=True)
         config.paths.wifi_profiles_dir.mkdir(parents=True, exist_ok=True)
         if config.paths.wifi_profiles_dir:
             config.paths.wifi_profiles_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Set up language
         lang_name = multilingual.get_lang_name_by_code(windows_language_code())
         multilingual.set_lang(lang_name if lang_name else "English")
-        
+
         # Create and run the main application
-        if args.skip_check:
-            app = MainApp(skip_check=args.skip_check)
-        else:
-            app = MainApp()
-        
+        app = MainApp(skip_check=args.skip_check) if args.skip_check else MainApp()
+
         app.mainloop()
-        
-    except BeanieDeployError as e:
-        if logger:
-            logger.error(f"Application error: {e}")
-        else:
-            print(f"Error during startup: {e}")
-        get_error_handler().handle_error(e, "main")
-        raise
+
     except Exception as e:
-        if logger:
-            logger.exception(f"Unexpected error: {e}")
-        else:
-            print(f"Unexpected error during startup: {e}")
-        get_error_handler().handle_error(e, "main")
+        logging.exception(f"Application error: {e}")
         raise
 
 
 if __name__ == "__main__":
-    # Initialize error handling
-    error_handler = get_error_handler()
-    logger = get_logger()
-    
     args = parse_arguments()
-    
+
     # Auto-detect release mode for PyInstaller builds
-    is_pyinstaller_bundle = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+    is_pyinstaller_bundle = getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
     is_release_mode = args.release or is_pyinstaller_bundle
-    
+
     if is_release_mode:
         try:
             run()
         except Exception as e:
-            logger.error(f"Application failed in release mode: {e}")
-            # In release mode, fail silently to avoid showing errors to end users
+            logging.error(f"Application failed in release mode: {e}")
+            # Fail silently in release mode to avoid showing errors to users
             sys.exit(1)
     else:
         # Development mode - show errors and keep console open
         if is_admin():
             try:
                 run()
-            except Exception as e:
-                logger.exception("Application failed in debug mode")
-                print(f"\nError: {e}")
-                print(traceback.format_exc())
+            except Exception:
+                logging.exception("Application failed in debug mode")
             finally:
                 input("Press Enter to exit...")
         else:
             try:
                 run()
-            except Exception as e:
-                logger.exception("Application failed without admin privileges")
-                print(f"\nError: {e}")
+            except Exception:
+                logging.exception("Application failed without admin privileges")
                 input("Press Enter to exit...")

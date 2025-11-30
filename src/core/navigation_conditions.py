@@ -2,19 +2,19 @@
 Page conditions for navigation logic.
 Simple conditions that can be used by PageManager for conditional navigation.
 """
+
 from abc import ABC, abstractmethod
 
-from core.state import get_state
 from config.settings import PartitioningMethod
+from core.state import get_state
 
 
 class PageCondition(ABC):
     """Abstract base class for page visibility/navigation conditions."""
-    
+
     @abstractmethod
     def is_enabled(self) -> bool:
         """Check if this condition is met."""
-        pass
 
     def is_satisfied(self) -> bool:
         """Check if the condition is satisfied."""
@@ -23,7 +23,7 @@ class PageCondition(ABC):
 
 class AutoInstallCondition(PageCondition):
     """Condition for auto-install related pages."""
-    
+
     def is_enabled(self) -> bool:
         state = get_state()
         install_options = state.installation.install_options
@@ -33,7 +33,7 @@ class AutoInstallCondition(PageCondition):
 
 class NetInstallCondition(PageCondition):
     """Condition for net install detection."""
-    
+
     def is_enabled(self) -> bool:
         state = get_state()
         selected_spin = state.installation.selected_spin
@@ -42,22 +42,29 @@ class NetInstallCondition(PageCondition):
 
 class DualBootCondition(PageCondition):
     """Condition for dual boot specific pages."""
-    
+
     def is_enabled(self) -> bool:
         state = get_state()
-        return state.installation.install_options.partition_method == PartitioningMethod.DUALBOOT
+        return (
+            state.installation.install_options.partition_method
+            == PartitioningMethod.DUALBOOT
+        )
 
 
 class CustomInstallCondition(PageCondition):
     """Condition for custom install method."""
-    
+
     def is_enabled(self) -> bool:
         state = get_state()
-        return state.installation.install_options.partition_method == PartitioningMethod.CUSTOM
+        return (
+            state.installation.install_options.partition_method
+            == PartitioningMethod.CUSTOM
+        )
 
 
 class SkipCheckDisabledCondition(PageCondition):
     """Condition to show PageCheck only if skip_check is False."""
+
     def is_enabled(self) -> bool:
         state = get_state()
-        return not getattr(state.compatibility, 'skip_check', False)
+        return not getattr(state.compatibility, "skip_check", False)

@@ -1,19 +1,25 @@
+import logging
+
+from models.page import Page, PageValidationResult
+from multilingual import _
 from templates.generic_page_layout import GenericPageLayout
 from templates.info_frame import InfoFrame
-from models.page import Page, PageValidationResult
 from tkinter_templates import TextLabel
-from multilingual import _
 
 
 class PageError(Page):
     def __init__(self, parent, page_name: str, *args, **kwargs):
         super().__init__(parent, page_name, *args, **kwargs)
-        self.errors = []
+        self.errors: list[str] = []
 
     def init_page(self):
         # Get app name from config
-        app_name = self.app_config.app.name if hasattr(self.app_config.app, 'name') else "BeanieDeploy"
-        
+        app_name = (
+            self.app_config.app.name
+            if hasattr(self.app_config.app, "name")
+            else "BeanieDeploy"
+        )
+
         page_layout = GenericPageLayout(
             self,
             _("error.title") % {"app_name": app_name},
@@ -21,7 +27,7 @@ class PageError(Page):
             secondary_btn_command=lambda: self._quit_application(),
         )
         self.page_frame = page_layout.content_frame
-        
+
         error_label = TextLabel(self.page_frame, text=_("error.list"))
         error_label.pack(pady=10)
 
@@ -37,8 +43,8 @@ class PageError(Page):
 
         for i, error in enumerate(self.errors):
             self.info_frame_raster.add_label(f"error_{i}", error)
-            
-        self.logger.error(f"Displaying {len(errors)} errors to user")
+
+        logging.error(f"Displaying {len(errors)} errors to user")
 
     def validate_input(self) -> PageValidationResult:
         """Error page doesn't require validation."""
@@ -46,6 +52,7 @@ class PageError(Page):
 
     def _quit_application(self):
         """Quit the application."""
-        self.logger.info("User chose to quit from error page")
+        logging.info("User chose to quit from error page")
         import sys
+
         sys.exit(1)

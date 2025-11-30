@@ -1,16 +1,18 @@
 import os
 
-if os.name == 'nt':
+if os.name == "nt":
     import logging
-    original_basicConfig = logging.basicConfig
 
-    def patched_basicConfig(*args, **kwargs):
-        if 'filename' in kwargs and kwargs['filename'] == '/dev/null':
-            kwargs['filename'] = 'NUL'
-        return original_basicConfig(*args, **kwargs)
+    original_basic_config = logging.basicConfig
 
-    logging.basicConfig = patched_basicConfig
+    def patched_basic_config(*args, **kwargs):
+        if "filename" in kwargs and kwargs["filename"] == "/dev/null":
+            kwargs["filename"] = "NUL"
+        return original_basic_config(*args, **kwargs)
 
-import langtable
+    logging.basicConfig = patched_basic_config
+
+import langtable  # type: ignore
+
 # Expose langtable's API
-__all__ = ['langtable']
+__all__ = ["langtable"]

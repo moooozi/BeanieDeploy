@@ -1,18 +1,18 @@
 from dataclasses import dataclass, field
-from typing import Optional, Literal
+from typing import Literal
 
 from config.settings import PartitioningMethod
 
 
 @dataclass
 class PartitioningConfig:
-    method: Optional[PartitioningMethod] = None
+    method: PartitioningMethod | None = None
     is_encrypted: bool = False
     passphrase: str = ""
-    root_guid: Optional[str] = None
-    boot_guid: Optional[str] = None
-    sys_drive_uuid: Optional[str] = None
-    sys_efi_uuid: Optional[str] = None
+    root_guid: str | None = None
+    boot_guid: str | None = None
+    sys_drive_uuid: str | None = None
+    sys_efi_uuid: str | None = None
 
 
 @dataclass
@@ -29,4 +29,4 @@ class KickstartConfig:
     locale_settings: LocaleConfig = field(default_factory=LocaleConfig)
     live_img_url: str = ""
     ostree_args: str = ""
-    wifi_profiles_dir_name: Optional[str] = None
+    wifi_profiles_dir_name: str | None = None

@@ -1,28 +1,33 @@
-from templates.generic_page_layout import GenericPageLayout
-from models.page import Page, PageValidationResult
+import logging
 import tkinter as tk
+
 import customtkinter as ctk
-from tkinter_templates import FONTS_smaller, color_blue
+
+from models.page import Page, PageValidationResult
 from multilingual import _
+from templates.generic_page_layout import GenericPageLayout
+from tkinter_templates import FONTS_smaller, color_blue
 
 
 class PageAutoinst2(Page):
     def __init__(self, parent, page_name: str, *args, **kwargs):
         super().__init__(parent, page_name, *args, **kwargs)
-        
+
         # Initialize kickstart if it doesn't exist
         if not self.state.installation.kickstart:
             from models.kickstart import KickstartConfig
+
             self.state.installation.kickstart = KickstartConfig()
-            
-        # Initialize install options if it doesn't exist  
+
+        # Initialize install options if it doesn't exist
         if not self.state.installation.install_options:
             from models.install_options import InstallOptions
+
             self.state.installation.install_options = InstallOptions()
-        
+
         kickstart = self.state.installation.kickstart
         install_options = self.state.installation.install_options
-        
+
         self.enable_encryption_toggle_var = tk.BooleanVar(
             parent, kickstart.partitioning.is_encrypted if kickstart else False
         )
@@ -34,9 +39,9 @@ class PageAutoinst2(Page):
         # Get selected spin from state
         selected_spin = self.state.installation.selected_spin
         if not selected_spin:
-            self.logger.error("No spin selected when initializing auto-install page")
+            logging.error("No spin selected when initializing auto-install page")
             return
-            
+
         page_layout = GenericPageLayout(
             self,
             _("windows.question") % {"distro_name": selected_spin.name},
@@ -57,7 +62,6 @@ class PageAutoinst2(Page):
         page_frame.grid_columnconfigure(0, weight=1)
         page_frame.grid_rowconfigure(0, weight=1)
 
-        
         check_wifi = ctk.CTkCheckBox(
             frame_checkboxes,
             text=_("add.import.wifi") % {"distro_name": selected_spin.name},
@@ -66,32 +70,38 @@ class PageAutoinst2(Page):
             offvalue=False,
             width=99,
         )
-        check_wifi.grid(ipady=5, pady=(5, 0), row=0, column=0, sticky=self.DI_VAR.w)
+        check_wifi.grid(ipady=5, pady=(5, 0), row=0, column=0, sticky=self.di_var.w)
 
         check_encrypt = ctk.CTkCheckBox(
             frame_checkboxes,
             text=_("encrypted.root"),
             variable=self.enable_encryption_toggle_var,
-            command=lambda: self.show_encrypt_options(self.enable_encryption_toggle_var),
+            command=lambda: self.show_encrypt_options(
+                self.enable_encryption_toggle_var
+            ),
             onvalue=True,
             offvalue=False,
             width=99,
         )
-        check_encrypt.grid(ipady=5, row=2, column=0, sticky=self.DI_VAR.w)
+        check_encrypt.grid(ipady=5, row=2, column=0, sticky=self.di_var.w)
 
         # Get max width from config instead of global
-        max_width = self.app_config.ui.max_width if hasattr(self.app_config.ui, 'max_width') else 400
-        
+        max_width = (
+            self.app_config.ui.max_width
+            if hasattr(self.app_config.ui, "max_width")
+            else 400
+        )
+
         self.encrypt_pass_note = ctk.CTkLabel(
             frame_checkboxes,
             wraplength=max_width,
-            justify=self.DI_VAR.l,
+            justify=self.di_var.l,
             text=_("encrypt.reminder.txt"),
             font=FONTS_smaller,
             text_color=color_blue,
         )
         self.encrypt_pass_note.grid(
-            pady=5, padx=(0, 0), row=2, column=1, sticky=self.DI_VAR.w
+            pady=5, padx=(0, 0), row=2, column=1, sticky=self.di_var.w
         )
         self.encrypt_pass_note.grid_remove()
 
@@ -113,11 +123,15 @@ class PageAutoinst2(Page):
         """Save the auto-install settings to state."""
         kickstart = self.state.installation.kickstart
         install_options = self.state.installation.install_options
-        
+
         if kickstart:
-            kickstart.partitioning.is_encrypted = self.enable_encryption_toggle_var.get()
-            
+            kickstart.partitioning.is_encrypted = (
+                self.enable_encryption_toggle_var.get()
+            )
+
         if install_options:
             install_options.export_wifi = self.export_wifi_toggle_var.get()
-            
-        self.logger.info(f"Auto-install settings: encryption={kickstart.partitioning.is_encrypted if kickstart else False}, wifi_export={install_options.export_wifi if install_options else False}")
+
+        logging.info(
+            f"Auto-install settings: encryption={kickstart.partitioning.is_encrypted if kickstart else False}, wifi_export={install_options.export_wifi if install_options else False}"
+        )

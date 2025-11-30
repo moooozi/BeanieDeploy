@@ -2,57 +2,68 @@
 Configuration builders for Kickstart and GRUB files.
 Handles the generation of installation configuration files.
 """
-from typing import List
 
-from models.kickstart import KickstartConfig, LocaleConfig, PartitioningConfig
 from config.settings import PartitioningMethod
+from models.kickstart import KickstartConfig, LocaleConfig, PartitioningConfig
 
 
 def _validate_kickstart_config(kickstart_config: KickstartConfig) -> None:
     """
     Validate the kickstart configuration for required fields and consistency.
-    
+
     Args:
         kickstart_config: The configuration to validate
-        
+
     Raises:
         ValueError: If the configuration is invalid with details about what's wrong
     """
-    errors: List[str] = []
-    
+    errors: list[str] = []
+
     # Validate partitioning config
     if not kickstart_config.partitioning.method:
         errors.append("Partitioning method is required")
-    elif kickstart_config.partitioning.method not in [PartitioningMethod.DUALBOOT, PartitioningMethod.REPLACE_WIN, PartitioningMethod.CUSTOM]:
-        errors.append(f"Invalid partitioning method: {kickstart_config.partitioning.method}")
-    
+    elif kickstart_config.partitioning.method not in [
+        PartitioningMethod.DUALBOOT,
+        PartitioningMethod.REPLACE_WIN,
+        PartitioningMethod.CUSTOM,
+    ]:
+        errors.append(
+            f"Invalid partitioning method: {kickstart_config.partitioning.method}"
+        )
+
     if kickstart_config.partitioning.method == PartitioningMethod.DUALBOOT:
         if not kickstart_config.partitioning.root_guid:
             errors.append("root_guid is required for dualboot partition method")
-        if kickstart_config.partitioning.is_encrypted and not kickstart_config.partitioning.boot_guid:
-            errors.append("boot_guid is required for dualboot partition method with encryption")
+        if (
+            kickstart_config.partitioning.is_encrypted
+            and not kickstart_config.partitioning.boot_guid
+        ):
+            errors.append(
+                "boot_guid is required for dualboot partition method with encryption"
+            )
         if not kickstart_config.partitioning.sys_efi_uuid:
             errors.append("sys_efi_uuid is required for dualboot partition method")
-    
+
     if kickstart_config.partitioning.method == PartitioningMethod.REPLACE_WIN:
         if not kickstart_config.partitioning.sys_drive_uuid:
             errors.append("sys_drive_uuid is required for replace_win partition method")
         if not kickstart_config.partitioning.sys_efi_uuid:
             errors.append("sys_efi_uuid is required for replace_win partition method")
-    
-    if kickstart_config.partitioning.is_encrypted:
-        if kickstart_config.partitioning.method == PartitioningMethod.DUALBOOT and not kickstart_config.partitioning.boot_guid:
-            errors.append("boot_guid is required for dualboot partition method with encryption")
-        
-    # Validate WiFi profiles directory name if specified
-    if kickstart_config.wifi_profiles_dir_name and not isinstance(kickstart_config.wifi_profiles_dir_name, str):
-        errors.append("wifi_profiles_dir_name must be a string")
-    
+
+    if kickstart_config.partitioning.is_encrypted and (
+        kickstart_config.partitioning.method == PartitioningMethod.DUALBOOT
+        and not kickstart_config.partitioning.boot_guid
+    ):
+        errors.append(
+            "boot_guid is required for dualboot partition method with encryption"
+        )
+
     if errors:
-        raise ValueError(f"Invalid kickstart configuration: {'; '.join(errors)}")
+        msg = f"Invalid kickstart configuration: {'; '.join(errors)}"
+        raise ValueError(msg)
 
 
-def _build_header() -> List[str]:
+def _build_header() -> list[str]:
     """Build the kickstart file header section."""
     return [
         "# Kickstart file created by BeanieDeploy.",
@@ -62,28 +73,28 @@ def _build_header() -> List[str]:
         "%post --nochroot --logfile=/mnt/sysimage/root/ks-post.log",
         "rm /run/install/repo/ks.cfg",
         "cp /run/install/repo/EFI/BOOT/BOOT.cfg /run/install/repo/EFI/BOOT/grub.cfg",
-        "%end"
+        "%end",
     ]
 
 
-def _build_wifi_import(kickstart_config: KickstartConfig) -> List[str]:
+def _build_wifi_import(kickstart_config: KickstartConfig) -> list[str]:
     """Build WiFi profiles import section."""
     if not kickstart_config.wifi_profiles_dir_name:
         return []
-    
+
     return [
         "# Importing Wi-Fi profiles",
         "%post --nochroot --logfile=/mnt/sysimage/root/ks-post_wifi.log",
         "mkdir -p /mnt/sysimage/etc/NetworkManager/system-connections",
         f"cp /run/install/repo/{kickstart_config.wifi_profiles_dir_name}/*.* /mnt/sysimage/etc/NetworkManager/system-connections",
-        "%end"
+        "%end",
     ]
 
 
-def _build_system_config(locale_config: LocaleConfig) -> List[str]:
+def _build_system_config(locale_config: LocaleConfig) -> list[str]:
     """Build system configuration section."""
     lines = []
-    
+
     # Determine firstboot configuration
     if locale_config.keymap and locale_config.locale and locale_config.timezone:
         firstboot_line = "firstboot --enable"
@@ -103,17 +114,19 @@ def _build_system_config(locale_config: LocaleConfig) -> List[str]:
         lines.append(f"keyboard --vckeymap={locale_config.keymap}")
     else:
         lines.append(f"keyboard --xlayouts='{locale_config.keymap}'")
-    
-    lines.extend([
-        f"lang {locale_config.locale}",
-        "firewall --use-system-defaults",
-        f"timezone {locale_config.timezone} --utc"
-    ])
-    
+
+    lines.extend(
+        [
+            f"lang {locale_config.locale}",
+            "firewall --use-system-defaults",
+            f"timezone {locale_config.timezone} --utc",
+        ]
+    )
+
     return lines
 
 
-def _build_install_source(kickstart_config: KickstartConfig) -> List[str]:
+def _build_install_source(kickstart_config: KickstartConfig) -> list[str]:
     """Build install source configuration section."""
     lines = []
     if kickstart_config.ostree_args:
@@ -123,26 +136,34 @@ def _build_install_source(kickstart_config: KickstartConfig) -> List[str]:
     return lines
 
 
-def _build_partitioning_config(partitioning_config: PartitioningConfig) -> List[str]:
+def _build_partitioning_config(partitioning_config: PartitioningConfig) -> list[str]:
     """Build partitioning configuration section."""
     lines = []
-    
+
     # Validate required parameters for dualboot
     if partitioning_config.method == PartitioningMethod.DUALBOOT:
         if not partitioning_config.root_guid:
-            raise ValueError("root_guid is required for dualboot partition method")
+            msg = "root_guid is required for dualboot partition method"
+            raise ValueError(msg)
         if partitioning_config.is_encrypted and not partitioning_config.boot_guid:
-            raise ValueError("boot_guid is required for dualboot partition method with encryption")
-    
+            msg = "boot_guid is required for dualboot partition method with encryption"
+            raise ValueError(msg)
+
     root_partition = "part btrfs.01"
     efi_partition = ""
 
     if partitioning_config.method == PartitioningMethod.DUALBOOT:
-        efi_partition = f"mount /dev/disk/by-partuuid/{partitioning_config.sys_efi_uuid} /boot/efi "
-        root_partition += f" --onpart=/dev/disk/by-partuuid/{partitioning_config.root_guid}"
+        efi_partition = (
+            f"mount /dev/disk/by-partuuid/{partitioning_config.sys_efi_uuid} /boot/efi "
+        )
+        root_partition += (
+            f" --onpart=/dev/disk/by-partuuid/{partitioning_config.root_guid}"
+        )
     elif partitioning_config.method == PartitioningMethod.REPLACE_WIN:
         efi_partition = f"part /boot/efi --fstype=efi --label=efi --onpart=/dev/disk/by-partuuid/{partitioning_config.sys_efi_uuid}"
-        root_partition += f" --onpart=/dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid}"
+        root_partition += (
+            f" --onpart=/dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid}"
+        )
 
     if partitioning_config.is_encrypted:
         # Separate boot partition for encryption
@@ -154,16 +175,18 @@ def _build_partitioning_config(partitioning_config: PartitioningConfig) -> List[
         # Boot subvolume inside root if encryption is disabled
         boot_partition = "btrfs /boot --subvol --name=boot fedora"
 
-    lines.extend([
-        efi_partition,
-        root_partition,
-        "btrfs none --label=fedora btrfs.01",
-        "btrfs / --subvol --name=root fedora",
-        "btrfs /home --subvol --name=home fedora",
-        "btrfs /var --subvol --name=var fedora",
-        boot_partition
-    ])
-    
+    lines.extend(
+        [
+            efi_partition,
+            root_partition,
+            "btrfs none --label=fedora btrfs.01",
+            "btrfs / --subvol --name=root fedora",
+            "btrfs /home --subvol --name=home fedora",
+            "btrfs /var --subvol --name=var fedora",
+            boot_partition,
+        ]
+    )
+
     return lines
 
 
@@ -172,43 +195,42 @@ def build_autoinstall_ks_file(
 ) -> str:
     """
     Build a Kickstart file for automated Fedora installation.
-    
+
     Args:
         kickstart_config: Kickstart configuration object
-        
+
     Returns:
         Generated Kickstart file content
-        
+
     Raises:
         ValueError: If the configuration is invalid
     """
     # Validate configuration
     _validate_kickstart_config(kickstart_config)
-    
+
     kickstart_lines = []
-    
+
     # Build different sections of the kickstart file
     kickstart_lines.extend(_build_header())
     kickstart_lines.extend(_build_wifi_import(kickstart_config))
     kickstart_lines.extend(_build_system_config(kickstart_config.locale_settings))
     kickstart_lines.extend(_build_install_source(kickstart_config))
     kickstart_lines.extend(_build_partitioning_config(kickstart_config.partitioning))
-    
+
     # Final lines
     kickstart_lines.extend(["rootpw --lock", "reboot"])
 
     return "\n".join(kickstart_lines) + "\n"
 
 
-
 def build_grub_cfg_file(root_partition_label: str, is_autoinst: bool = False) -> str:
     """
     Build a GRUB configuration file for the installer.
-    
+
     Args:
         root_partition_label: Label of the root partition
         is_autoinst: Whether to include auto-install menu entry
-        
+
     Returns:
         Generated GRUB configuration file content
     """

@@ -1,8 +1,11 @@
-from templates.generic_page_layout import GenericPageLayout
-from models.page import Page, PageValidationResult
+import logging
+
 import customtkinter as ctk
-from tkinter_templates import TextLabel
+
+from models.page import Page, PageValidationResult
 from multilingual import _
+from templates.generic_page_layout import GenericPageLayout
+from tkinter_templates import TextLabel
 
 
 class PagePlayground(Page):
@@ -24,7 +27,7 @@ class PagePlayground(Page):
         self.progressbar = ctk.CTkProgressBar(self.page_frame, mode="determinate")
         self.progressbar.pack(pady=10)
         self.progressbar.set(0)
-        
+
         # Start the progress animation
         self.start_progress_animation()
 
@@ -51,6 +54,7 @@ class PagePlayground(Page):
 
     def _quit_application(self):
         """Quit the application."""
-        self.logger.info("User quit from playground page")
+        logging.info("User quit from playground page")
         import sys
+
         sys.exit(0)

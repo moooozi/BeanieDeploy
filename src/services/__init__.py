@@ -11,10 +11,10 @@ This package contains service modules for:
 """
 
 # Export commonly used service functions
-from .system import is_admin
 from .privilege_manager import elevated
+from .system import is_admin
 
 __all__ = [
-    'is_admin',
-    'elevated',
+    "elevated",
+    "is_admin",
 ]

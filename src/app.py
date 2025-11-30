@@ -1,30 +1,30 @@
+import logging
 from typing import Any
+
 import requests
+
+import dummy
 from async_operations import AsyncOperation
+from config.settings import get_config
 from core.compatibility_logic import filter_spins
 from core.navigation_conditions import SkipCheckDisabledCondition
-from core.navigation_conditions import SkipCheckDisabledCondition
-import dummy
+from core.state import get_state, get_state_manager
 from models.page_manager import PageManager
 from models.types import NavigationFlow, SpinDictList
+from pages.page_1 import Page1
 from pages.page_autoinst2 import PageAutoinst2
+from pages.page_autoinst_addition_1 import PageAutoinstAddition1
+from pages.page_autoinst_addition_2 import PageAutoinstAddition2
 from pages.page_check import PageCheck
 from pages.page_error import PageError
 from pages.page_install_failed import PageInstallFailed
 from pages.page_install_method import PageInstallMethod
 from pages.page_installing import PageInstalling
-from pages.page_1 import Page1
-from pages.page_autoinst_addition_1 import PageAutoinstAddition1
-from pages.page_autoinst_addition_2 import PageAutoinstAddition2
 from pages.page_playground import PagePlayground
-from pages.page_verify import PageVerify
 from pages.page_restart_required import PageRestartRequired
+from pages.page_verify import PageVerify
 from services.spin_manager import parse_spins
 from templates.application import Application
-from config.settings import get_config
-from core.state import get_state, get_state_manager
-from utils.logging import get_logger
-from typing import Any
 
 
 class MainApp(Application):
@@ -35,13 +35,11 @@ class MainApp(Application):
         **kwargs: Any,
     ):
         super().__init__(*args, **kwargs)
-        
+
         # Get system components
         self.config = get_config()
         self.state_manager = get_state_manager()
-        self.logger = get_logger(__name__)
-        
-        
+
         self.spins_promise = AsyncOperation.run(
             lambda url: requests.get(url).json(),
             args=(get_config().urls.available_spins_list,),
@@ -73,17 +71,18 @@ class MainApp(Application):
         if playground:
             return self.page_manager.show_page(PagePlayground)
 
-        elif skip_check:
-            self.logger.info("Skipping checks - using dummy data")
+        if skip_check:
+            logging.info("Skipping checks - using dummy data")
             all_spins = parse_spins(dummy.DUMMY_ALL_SPINS)
             get_state().compatibility.accepted_spins = all_spins
             get_state().compatibility.ip_locale = dummy.DUMMY_IP_LOCALE
-            print("Using dummy data for all spins")
+            logging.info("Using dummy data")
 
         # Show the first page in self._navigation_flow if no page is currently shown
         if not self.page_manager.current_page:
             # Show the first page in self._navigation_flow
             return self.page_manager.start()
+        return None
 
     def _configure_navigation_flow(self):
         """Configure the navigation flow for the page manager."""
@@ -114,10 +113,10 @@ class MainApp(Application):
         This eliminates the need to manually add each page and keeps everything in sync.
         """
         # Get the navigation flow that was just configured
-        navigation_flow = self.page_manager._navigation_flow
+        navigation_flow = self.page_manager.get_navigation_flow()
 
         if not navigation_flow:
-            self.logger.warning("No navigation flow configured, cannot add pages")
+            logging.warning("No navigation flow configured, cannot add pages")
             return
 
         # Extract all page classes from the navigation flow
@@ -132,11 +131,11 @@ class MainApp(Application):
         for page_class in page_classes:
             try:
                 self.page_manager.add_page(page_class)
-                self.logger.debug(f"Added page: {page_class.__name__}")
+                logging.debug(f"Added page: {page_class.__name__}")
             except Exception as e:
-                self.logger.error(f"Failed to add page {page_class.__name__}: {e}")
+                logging.error(f"Failed to add page {page_class.__name__}: {e}")
 
-        self.logger.info(
+        logging.info(
             f"Successfully added {len(page_classes)} pages from navigation flow"
         )
 
@@ -148,15 +147,12 @@ class MainApp(Application):
         parsed_spins = parse_spins(spins)
         state = get_state()
         state.compatibility.all_spins = parsed_spins
-        print("🔧 About to filter accepted spins")
         filtered_result = filter_spins(state.compatibility.all_spins)
         state.compatibility.accepted_spins = filtered_result.spins
-        print("🔧 Spin filtering completed")
         if filtered_result.live_os_installer_index is not None:
             state.compatibility.live_os_installer_spin = (
                 state.compatibility.accepted_spins[
                     filtered_result.live_os_installer_index
                 ]
             )
-        print("🔧 About to navigate_next()")
-        self.logger.info("About to navigate_next()")
+        logging.info("About to navigate_next()")

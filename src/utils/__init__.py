@@ -13,18 +13,15 @@ import contextlib
 # Export commonly used utilities for convenient imports
 from .formatting import (
     format_bytes,
+    format_eta,
     format_speed,
     format_time_delta,
-    format_eta,
 )
-
-
 from .translation_manager import (
-    set_language,
     get_language,
     gettext,
+    set_language,
 )
-
 from .uuid_utils import PartitionUuid
 
 
@@ -32,26 +29,27 @@ from .uuid_utils import PartitionUuid
 def com_context():
     """
     Context manager for thread-safe COM operations.
-    
+
     Initializes COM in the current thread and cleans up afterwards.
     Safe for nesting - only initializes once per thread and uninitializes
     when the outermost context exits.
     """
-    import pythoncom
     import threading
-    
+
+    import pythoncom
+
     # Thread-local storage for COM initialization count
     local = threading.local()
-    if not hasattr(local, 'com_init_count'):
+    if not hasattr(local, "com_init_count"):
         local.com_init_count = 0
-    
+
     initialized_here = False
     if local.com_init_count == 0:
         pythoncom.CoInitialize()
         initialized_here = True
-    
+
     local.com_init_count += 1
-    
+
     try:
         yield
     finally:
@@ -61,18 +59,17 @@ def com_context():
 
 
 __all__ = [
-    # Formatting
-    'format_bytes',
-    'format_speed',
-    'format_time_delta',
-    'format_eta',
-    # Translation
-    'set_language',
-    'get_language',
-    'gettext',
-    # COM utilities
-    'com_context',
     # UUID utilities
-    'PartitionUuid',
+    "PartitionUuid",
+    # COM utilities
+    "com_context",
+    # Formatting
+    "format_bytes",
+    "format_eta",
+    "format_speed",
+    "format_time_delta",
+    "get_language",
+    "gettext",
+    # Translation
+    "set_language",
 ]
-

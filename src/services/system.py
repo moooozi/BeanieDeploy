@@ -4,13 +4,14 @@ Handles admin privileges, Windows registry, system information, etc.
 
 For privilege escalation, use the new privilege_manager module:
     from services.privilege_manager import run_elevated_cmd, run_elevated_function
-    
+
 For async privileged operations:
     from services.async_privileged_operations import run_elevated_cmd_async
 """
+
 import ctypes
-import winreg
 import locale
+import winreg
 
 from utils import com_context
 
@@ -36,7 +37,7 @@ def quit_and_restart_windows() -> None:
 def set_windows_time_to_utc() -> bool:
     """
     Configure Windows to use UTC time instead of local time.
-    
+
     Returns:
         True if successful, False otherwise
     """
@@ -51,16 +52,18 @@ def set_windows_time_to_utc() -> bool:
     except Exception:
         return False
 
+
 def detect_nvidia() -> bool:
     """
     Detect if NVIDIA graphics card is present in the system.
-    
+
     Returns:
         True if NVIDIA GPU detected, False otherwise
     """
     try:
         with com_context():
             import win32com.client
+
             wmi = win32com.client.GetObject("winmgmts:")
             video_controllers = wmi.InstancesOf("Win32_VideoController")
             for controller in video_controllers:

@@ -4,14 +4,15 @@ Follows standard gettext best practices with dotted key names.
 
 Usage:
     from multilingual import _
-    
+
     # Direct translation with IDE preview support
     title = _("btn.next")  # Hover shows: "Next"
     message = _("error.arch.0")  # Hover shows: "This device's CPU architecture is incompatible."
-    
+
     # Named placeholders (babel best practice)
     text = _("total.download") % {"size": format_bytes(size)}
 """
+
 from models.direction import Direction
 from utils import translation_manager
 
@@ -64,19 +65,19 @@ def is_rtl_language(code: str) -> bool:
 def set_lang(language_name: str) -> tuple[Direction, None]:
     """
     Change the application language.
-    
+
     Args:
         language_name: Display name (e.g., "English", "Deutsch")
-        
+
     Returns:
         Tuple of (Direction, None) for backward compatibility
     """
     code = get_lang_code_by_name(language_name)
     translation_manager.set_language(code)
-    
+
     is_rtl = is_rtl_language(code)
     direction = Direction(is_rtl)
-    
+
     return direction, None
 
 

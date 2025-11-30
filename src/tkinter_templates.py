@@ -1,8 +1,11 @@
-import customtkinter as ctk
 import ctypes
-from config.settings import get_config
+from collections.abc import Callable
+from typing import Any
+
+import customtkinter as ctk
+
 import multilingual
-from typing import Any, Optional, Callable, List
+from config.settings import get_config
 
 # Get UI config
 _ui_config = get_config().ui
@@ -47,15 +50,19 @@ def dark_decorations(ye_or_nah: bool, tkinter: ctk.CTk) -> None:
     get_parent = ctypes.windll.user32.GetParent
     hwnd = get_parent(tkinter.winfo_id())
     rendering_policy = 20 if ye_or_nah else 0
-    value = 2
-    value = ctypes.c_int(value)
+    value = ctypes.c_int(2)
     set_window_attribute(
         hwnd, rendering_policy, ctypes.byref(value), ctypes.sizeof(value)
     )
 
 
 def dark_theme(ye_or_nah: bool, tkinter: ctk.CTk) -> None:
-    global tkinter_background_color, color_red, color_blue, color_green, top_background_color
+    global \
+        tkinter_background_color, \
+        color_red, \
+        color_blue, \
+        color_green, \
+        top_background_color
     if not ye_or_nah:
         tkinter_background_color = "#856ff8"
         color_red = "#e81123"
@@ -83,7 +90,7 @@ class FrameContainer(ctk.CTkFrame):
             fg_color="transparent",
             corner_radius=0,
             border_width=0,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -93,16 +100,16 @@ class TextLabel(ctk.CTkLabel):
     def __init__(
         self,
         parent: Any,
-        text: Optional[str] = None,
+        text: str | None = None,
         font: Any = FONTS_small,
-        var: Optional[Any] = None,
-        foreground: Optional[str] = None,
-        **kwargs: Any
+        var: Any | None = None,
+        foreground: str | None = None,
+        **kwargs: Any,
     ) -> None:
-
         # Validate that either text or var is provided, but not both
         if not ((text is None) ^ (var is None)):
-            raise ValueError("Either 'text' or 'var' must be provided, but not both")
+            msg = "Either 'text' or 'var' must be provided, but not both"
+            raise ValueError(msg)
 
         config = get_config()
 
@@ -118,7 +125,7 @@ class TextLabel(ctk.CTkLabel):
             textvariable=var_value,
             text_color=foreground,
             font=font,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -126,14 +133,14 @@ class LanguageComboBox(ctk.CTkComboBox):
     """Custom language selection combobox with predefined styling."""
 
     def __init__(
-        self, parent: Any, variable: Any, languages: List[str], **kwargs: Any
+        self, parent: Any, variable: Any, languages: list[str], **kwargs: Any
     ) -> None:
         super().__init__(
             parent,
             name="language",
             textvariable=variable,
             fg_color=top_background_color,
-            **kwargs
+            **kwargs,
         )
 
         self.configure(values=tuple(languages))

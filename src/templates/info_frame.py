@@ -1,11 +1,12 @@
+from typing import Any
+
 from tkinter_templates import *
-from typing import Dict, Any
 
 
 class InfoFrame(ctk.CTkFrame):
     def __init__(self, parent, title=""):
         super().__init__(parent)
-        self.labels: Dict[str, ctk.CTkLabel] = {}
+        self.labels: dict[str, ctk.CTkLabel] = {}
         if title:
             title_label = TextLabel(
                 self,
@@ -24,7 +25,8 @@ class InfoFrame(ctk.CTkFrame):
         if key in self.labels:
             self.labels[key].configure(text=text)
         else:
-            raise KeyError(f"Label with key '{key}' does not exist.")
+            msg = f"Label with key '{key}' does not exist."
+            raise KeyError(msg)
 
     def flush_labels(self) -> None:
         for label in self.labels.values():

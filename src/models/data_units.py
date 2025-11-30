@@ -2,6 +2,7 @@
 Modern data unit wrapper using humanize library.
 Provides a thin compatibility layer over humanize for byte size handling.
 """
+
 import humanize
 
 
@@ -10,7 +11,7 @@ class DataUnit:
     Modern byte size wrapper using humanize library.
     All formatting is delegated to humanize - zero manual implementation.
     """
-    
+
     # Constants for backward compatibility only
     BYTE = 1
     KILOBYTE = 1000
@@ -23,7 +24,8 @@ class DataUnit:
     def __init__(self, bytes_value):
         """Initialize with byte value."""
         if bytes_value < 0:
-            raise ValueError("Data size cannot be negative")
+            msg = "Data size cannot be negative"
+            raise ValueError(msg)
         self.bytes_value = int(bytes_value)
 
     @classmethod
@@ -32,30 +34,38 @@ class DataUnit:
         # This is for parsing ISO-like formats: "1.5 GB", "500 MB", etc.
         parts = data_str.strip().split()
         if not parts:
-            raise ValueError(f"Invalid data string: '{data_str}'")
-        
+            msg = f"Invalid data string: '{data_str}'"
+            raise ValueError(msg)
+
         if len(parts) == 1:
             # Just a number, assume bytes
             return cls(float(parts[0]))
-        
+
         value = float(parts[0])
         unit = parts[1].upper()
-        
+
         # Mapping for common units
         multipliers = {
-            'B': 1, 'BYTES': 1, 'BYTE': 1,
-            'KB': 1000, 'KIB': 1024,
-            'MB': 1_000_000, 'MIB': 1_048_576,
-            'GB': 1_000_000_000, 'GIB': 1_073_741_824,
-            'TB': 1_000_000_000_000, 'TIB': 1_099_511_627_776,
+            "B": 1,
+            "BYTES": 1,
+            "BYTE": 1,
+            "KB": 1000,
+            "KIB": 1024,
+            "MB": 1_000_000,
+            "MIB": 1_048_576,
+            "GB": 1_000_000_000,
+            "GIB": 1_073_741_824,
+            "TB": 1_000_000_000_000,
+            "TIB": 1_099_511_627_776,
         }
-        
+
         multiplier = multipliers.get(unit)
         if multiplier is None:
-            raise ValueError(f"Unknown unit: '{unit}'")
-        
+            msg = f"Unknown unit: '{unit}'"
+            raise ValueError(msg)
+
         return cls(int(value * multiplier))
-    
+
     @classmethod
     def from_bytes(cls, bytes_val):
         """Create from byte value."""
@@ -118,10 +128,10 @@ class DataUnit:
     def to_human_readable(self, binary=False):
         """
         Format using humanize library.
-        
+
         Args:
             binary: Use binary units (KiB, MiB) instead of decimal (KB, MB)
-            
+
         Returns:
             Human-readable string via humanize
         """
@@ -130,22 +140,22 @@ class DataUnit:
     def to_bytes(self):
         """Get raw byte value."""
         return self.bytes_value
-    
+
     @property
     def bytes(self):
         """Property for accessing bytes value."""
         return self.bytes_value
-        
+
     @property
     def kilobytes(self):
         """Property for accessing kilobytes value."""
         return self.to_kilobytes()
-        
+
     @property
     def megabytes(self):
         """Property for accessing megabytes value."""
         return self.to_megabytes()
-        
+
     @property
     def gigabytes(self):
         """Property for accessing gigabytes value."""
@@ -166,7 +176,7 @@ class DataUnit:
     def __add__(self, other):
         if isinstance(other, DataUnit):
             return DataUnit(self.bytes_value + other.bytes_value)
-        elif isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):
             return DataUnit(self.bytes_value + other)
         return NotImplemented
 
@@ -176,7 +186,7 @@ class DataUnit:
     def __sub__(self, other):
         if isinstance(other, DataUnit):
             return DataUnit(self.bytes_value - other.bytes_value)
-        elif isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):
             return DataUnit(self.bytes_value - other)
         return NotImplemented
 
@@ -206,35 +216,35 @@ class DataUnit:
     def __eq__(self, other):
         if isinstance(other, DataUnit):
             return self.bytes_value == other.bytes_value
-        elif isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):
             return self.bytes_value == other
         return NotImplemented
 
     def __lt__(self, other):
         if isinstance(other, DataUnit):
             return self.bytes_value < other.bytes_value
-        elif isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):
             return self.bytes_value < other
         return NotImplemented
 
     def __le__(self, other):
         if isinstance(other, DataUnit):
             return self.bytes_value <= other.bytes_value
-        elif isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):
             return self.bytes_value <= other
         return NotImplemented
 
     def __gt__(self, other):
         if isinstance(other, DataUnit):
             return self.bytes_value > other.bytes_value
-        elif isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):
             return self.bytes_value > other
         return NotImplemented
 
     def __ge__(self, other):
         if isinstance(other, DataUnit):
             return self.bytes_value >= other.bytes_value
-        elif isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):
             return self.bytes_value >= other
         return NotImplemented
 

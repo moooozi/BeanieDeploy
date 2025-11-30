@@ -7,20 +7,20 @@ Provides mapping of directional terms that flip for right-to-left languages.
 class Direction:
     """
     Manages text direction mappings for UI layouts.
-    
+
     For RTL languages, directional properties are automatically flipped.
     For example, 'west' becomes 'east', 'left' becomes 'right', etc.
     """
-    
+
     def __init__(self, is_right_to_left: bool = False):
         """
         Initialize direction handler.
-        
+
         Args:
             is_right_to_left: Whether this is an RTL language
         """
         self.is_right_to_left = is_right_to_left
-        
+
         # Initialize direction mappings
         if is_right_to_left:
             # RTL: flip all horizontal directions

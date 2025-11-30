@@ -1,12 +1,15 @@
+import logging
+import tkinter as tk
+
 import customtkinter as ctk
-from utils.formatting import format_bytes
+
+from models.page import Page, PageValidationResult
+from multilingual import _
+from templates.generic_page_layout import GenericPageLayout
 from templates.info_frame import InfoFrame
 from templates.multi_radio_buttons import MultiRadioButtons
-from models.page import Page, PageValidationResult
-import tkinter as tk
-from templates.generic_page_layout import GenericPageLayout
 from tkinter_templates import FONTS_smaller
-from multilingual import _
+from utils import format_bytes
 
 
 class Page1(Page):
@@ -16,26 +19,16 @@ class Page1(Page):
         self.still_loading_label = None
 
     def init_page(self):
-        print("🔧 Page1.init_page() called")
-        try:
-            page_layout = GenericPageLayout(
-                self,
-                _("desktop.question"),
-                _("btn.next"),
-                lambda: self.navigate_next(),  # Use new navigation method
-            )
-            print("🔧 Page1 GenericPageLayout created")
-            page_frame = page_layout.content_frame
-            self.page_frame = page_frame  # Store for later use
-            print("🔧 Page1 variables initialized")
-        except Exception as e:
-            print(f"🔧 Error in Page1.init_page(): {e}")
-            import traceback
-            traceback.print_exc()
-            raise
-        
-        self._wait_spin_loading()
+        page_layout = GenericPageLayout(
+            self,
+            _("desktop.question"),
+            _("btn.next"),
+            lambda: self.navigate_next(),  # Use new navigation method
+        )
+        page_frame = page_layout.content_frame
+        self.page_frame = page_frame  # Store for later use
 
+        self._wait_spin_loading()
 
     def finish_init_page(self):
         """Final initialization after spins are loaded."""
@@ -48,15 +41,11 @@ class Page1(Page):
             # Get distro hint based on name
             distro_hint = ""
             if is_featured:
-                # Try to get translation, fallback to empty string if key doesn't exist
-                try:
-                    if dist.name == "Fedora Workstation":
-                        distro_hint = _("distro.hint.fedora.workstation")
-                    elif dist.name == "Fedora KDE Plasma":
-                        distro_hint = _("distro.hint.fedora.kde.plasma")
-                except:
-                    pass
-            
+                if dist.name == "Fedora Workstation":
+                    distro_hint = _("distro.hint.fedora.workstation")
+                elif dist.name == "Fedora KDE Plasma":
+                    distro_hint = _("distro.hint.fedora.kde.plasma")
+
             spin_radio_dict[spin_fullname] = {
                 "name": spin_fullname,
                 "description": distro_hint,
@@ -66,7 +55,14 @@ class Page1(Page):
                 self.distro_var.set(spin_fullname)
         # Move default spin to top if present
         if any(dist.is_default for dist in accepted_spins):
-            default_spin = next((f"{dist.name} {dist.version}" for dist in accepted_spins if dist.is_default), None)
+            default_spin = next(
+                (
+                    f"{dist.name} {dist.version}"
+                    for dist in accepted_spins
+                    if dist.is_default
+                ),
+                None,
+            )
             if default_spin:
                 default_entry = spin_radio_dict.pop(default_spin)
                 spin_radio_dict = {default_spin: default_entry, **spin_radio_dict}
@@ -85,32 +81,35 @@ class Page1(Page):
         frame_distro.pack(expand=1, fill="x")
         self.update_selection_info()
 
-    def update_selection_info(self, *args):
+    def update_selection_info(self):
         """Update the information display based on current selection."""
         spin_index = self._get_selected_spin_index()
         if spin_index is not None:
             accepted_spins = self.state.compatibility.accepted_spins
             selected_spin = accepted_spins[spin_index]
-            
+
             total_size_bytes = selected_spin.size
-            
-            if selected_spin.is_live_img and self.state.compatibility.live_os_installer_spin:
+
+            if (
+                selected_spin.is_live_img
+                and self.state.compatibility.live_os_installer_spin
+            ):
                 total_size_bytes += self.state.compatibility.live_os_installer_spin.size
 
             if selected_spin.is_base_netinstall:
-                dl_size_txt = (
-                    _("init.download")
-                    % {"size": format_bytes(total_size_bytes)}
-                )
+                dl_size_txt = _("init.download") % {
+                    "size": format_bytes(total_size_bytes)
+                }
             else:
-                dl_size_txt = (
-                    _("total.download")
-                    % {"size": format_bytes(total_size_bytes)}
-                )
-            
-            dl_spin_name_text = f"{_("selected.dist")}: {selected_spin.name} {selected_spin.version}"
+                dl_size_txt = _("total.download") % {
+                    "size": format_bytes(total_size_bytes)
+                }
+
+            dl_spin_name_text = (
+                f"{_('selected.dist')}: {selected_spin.name} {selected_spin.version}"
+            )
             dl_spin_desktop = (
-                f"{_("desktop.environment")}: {selected_spin.desktop}"
+                f"{_('desktop.environment')}: {selected_spin.desktop}"
                 if selected_spin.desktop
                 else ""
             )
@@ -137,14 +136,11 @@ class Page1(Page):
             if distro == f"{dist.name} {dist.version}":
                 return idx
         return None
-    
+
     def validate_input(self) -> PageValidationResult:
         """Validate that a spin has been selected."""
         if self._get_selected_spin_index() is None:
-            return PageValidationResult(
-                False, 
-                "No spin selected."
-            )
+            return PageValidationResult(False, "No spin selected.")
         return PageValidationResult(True)
 
     def on_next(self):
@@ -153,29 +149,35 @@ class Page1(Page):
         if spin_index is not None:
             accepted_spins = self.state.compatibility.accepted_spins
             selected_spin = accepted_spins[spin_index]
-            
+
             # Update state with selected spin
             self.state.set_selected_spin(selected_spin)
-            
+
             # Calculate and update partition size
             total_size_bytes = selected_spin.size
-            
-            if selected_spin.is_live_img and self.state.compatibility.live_os_installer_spin:
+
+            if (
+                selected_spin.is_live_img
+                and self.state.compatibility.live_os_installer_spin
+            ):
                 total_size_bytes += self.state.compatibility.live_os_installer_spin.size
-            
+
             # Create partition if it doesn't exist and update size
             if self.state.installation.partition is None:
                 from models.partition import Partition
+
                 self.state.installation.partition = Partition()
-            
-            partition_size_bytes = total_size_bytes + self.app_config.app.temp_part_failsafe_space.bytes
+
+            partition_size_bytes = (
+                total_size_bytes + self.app_config.app.temp_part_failsafe_space.bytes
+            )
             self.state.installation.partition.tmp_part_size = int(partition_size_bytes)
-            
+
             # Log the selection
-            log = f"\\nFedora Spin has been selected, spin details:"
+            log = "\\nFedora Spin has been selected, spin details:"
             for key, value in vars(selected_spin).items():
                 log += f"\\n --> {key}: {value}"
-            self.logger.info(log)
+            logging.info(log)
 
     def show_validation_error(self, message: str):
         """Show validation error using popup."""
@@ -188,7 +190,6 @@ class Page1(Page):
         #     message=message,
         #     type_="warning",
         # )
-
 
     def _wait_spin_loading(self):
         """Wait for spins to load before proceeding."""

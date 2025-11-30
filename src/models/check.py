@@ -1,9 +1,10 @@
 """
 Compatibility check types and data structures.
 """
+
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class CheckType(Enum):
@@ -19,13 +20,13 @@ class CheckType(Enum):
 class Check:
     name: str
     result: Any
-    returncode: Optional[int]
-    process: Optional[Any]
+    returncode: int | None
+    process: Any | None
 
 
 class DoneChecks:
     def __init__(self):
-        self.checks: Dict[CheckType, Check] = {
+        self.checks: dict[CheckType, Check] = {
             check_type: Check(
                 name=check_type.value, result=None, returncode=None, process=None
             )

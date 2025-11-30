@@ -1,7 +1,8 @@
 import multiprocessing
 import queue
-from tkinter_templates import *
+
 from config.settings import get_config
+from tkinter_templates import *
 
 
 class Application(ctk.CTk):
@@ -10,7 +11,7 @@ class Application(ctk.CTk):
         config = get_config()
         self.title(config.app.name)  # Set window title to app name
         dpi_factor = get_dpi_scaling_factor()
-        self.geometry(str("%sx%s+%s+%s" % (WIDTH, HEIGHT, WIDTH_OFFSET, HEIGHT_OFFSET)))
+        self.geometry(str(f"{WIDTH}x{HEIGHT}+{WIDTH_OFFSET}+{HEIGHT_OFFSET}"))
         self.minsize(MINWIDTH, MINHEIGHT)
         self.maxsize(int(MAXWIDTH * dpi_factor), int(MAXHEIGHT * dpi_factor))
         self.iconbitmap(config.paths.app_icon_path)

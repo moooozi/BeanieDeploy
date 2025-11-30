@@ -3,20 +3,19 @@ Non-GUI logic for compatibility checks and error parsing.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional
-from models.spin import Spin
 
+from models.spin import Spin
 
 
 @dataclass
 class FilteredSpinsResult:
-    spins: List[Spin]
-    live_os_installer_index: Optional[int]
+    spins: list[Spin]
+    live_os_installer_index: int | None
 
 
-def filter_spins(all_spins: List[Spin]) -> FilteredSpinsResult:
-    accepted_spins: List[Spin] = []
-    live_os_installer_index: Optional[int] = None
+def filter_spins(all_spins: list[Spin]) -> FilteredSpinsResult:
+    accepted_spins: list[Spin] = []
+    live_os_installer_index: int | None = None
     for spin in all_spins:
         accepted_spins.append(spin)
     for index, spin in enumerate(accepted_spins):

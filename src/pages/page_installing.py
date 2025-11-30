@@ -1,39 +1,29 @@
-"""
-Modern, type-safe installation page using InstallationContext.
+import logging
+import tkinter as tk
 
-This replaces the fragile kwargs/dict approach with robust type-safe classes.
-"""
+import customtkinter as ctk
 
+from async_operations import AsyncOperation
 from models.installation_context import (
     InstallationContext,
-    InstallationStage,
     InstallationResult,
+    InstallationStage,
 )
+from models.page import Page
+from multilingual import _
 from services.installation_service import InstallationService
 from templates.generic_page_layout import GenericPageLayout
-from utils.formatting import format_speed, format_eta
-import tkinter as tk
-from models.page import Page
 from tkinter_templates import TextLabel
-from async_operations import AsyncOperation
-import customtkinter as ctk
-from multilingual import _
+from utils import format_eta, format_speed
+
 
 class PageInstalling(Page):
-    """
-    Modern installation page using type-safe InstallationContext.
-
-    This replaces the old fragile approach with proper dependency injection
-    and type safety.
-    """
-
     def __init__(self, parent, page_name, *args, **kwargs):
         super().__init__(parent, page_name, *args, **kwargs)
-        self.installation_context: InstallationContext = None # type: ignore
-        self.installation_service: InstallationService = None # type: ignore
+        self.installation_context: InstallationContext = None  # type: ignore
+        self.installation_service: InstallationService = None  # type: ignore
         self.install_job_var = tk.StringVar(parent)
         self.current_stage = InstallationStage.INITIALIZING
-
 
     def _get_installation_context(self) -> InstallationContext:
         """Infer installation context."""
@@ -42,7 +32,7 @@ class PageInstalling(Page):
                 self.state
             )
         else:
-            self.logger.info("Using pre-provided installation context")
+            logging.info("Using pre-provided installation context")
 
         return self.installation_context
 
@@ -70,7 +60,6 @@ class PageInstalling(Page):
         # Start installation process
         self._start_installation()
 
-
     def _start_installation(self) -> None:
         """Start the installation process with proper callbacks."""
         # Create installation service with GUI callbacks
@@ -89,9 +78,11 @@ class PageInstalling(Page):
         """Run the installation process (called in background thread)."""
         # Type guards to ensure we have valid objects
         if not self.installation_service:
-            raise RuntimeError("Installation service not initialized")
+            msg = "Installation service not initialized"
+            raise RuntimeError(msg)
         if not self.installation_context:
-            raise RuntimeError("Installation context not initialized")
+            msg = "Installation context not initialized"
+            raise RuntimeError(msg)
 
         result = self.installation_service.install(self.installation_context)
 
@@ -120,7 +111,7 @@ class PageInstalling(Page):
         formatted_eta = format_eta(eta) if eta > 0 else "N/A"
 
         message = (
-            f"{_("job.dl.install.media")}\n"
+            f"{_('job.dl.install.media')}\n"
             f"File {index + 1} of {len(self.installation_context.downloadable_files)}\n"
             f"Name: {file_name}\n"
             f"Progress: {percent:.1f}%\n"
@@ -128,21 +119,22 @@ class PageInstalling(Page):
             f"ETA: {formatted_eta}"
         )
         self.install_job_var.set(message)
-        real_progress = self._real_progress(index, percent) * 0.80 # 80% for downloads
+        real_progress = self._real_progress(index, percent) * 0.80  # 80% for downloads
         self.progressbar_install.set(0.1 + real_progress)
         self.update()
 
     def _real_progress(self, index: int, percent: float) -> float:
         """Calculate real progress across all files."""
         if not self.installation_context.downloadable_files:
-            print("No downloadable files in installation context.")
             return 0.0
 
         total_files = len(self.installation_context.downloadable_files)
         if index >= total_files:
             return 1.0
 
-        downloadable_files_sizes = [df.size_bytes for df in self.installation_context.downloadable_files]
+        downloadable_files_sizes = [
+            df.size_bytes for df in self.installation_context.downloadable_files
+        ]
 
         # Sum sizes of all previous files
         if index == 0:
@@ -152,14 +144,15 @@ class PageInstalling(Page):
                 size for size in downloadable_files_sizes[:index] if size
             )
         current_file_size = downloadable_files_sizes[index] or 0
-        current_progress = (percent / 100.0) * current_file_size if current_file_size else 0
+        current_progress = (
+            (percent / 100.0) * current_file_size if current_file_size else 0
+        )
 
         total_size = sum(size for size in downloadable_files_sizes if size)
         if total_size == 0:
             return 0.0
 
-        overall_progress = (completed_size + current_progress) / total_size
-        return overall_progress
+        return (completed_size + current_progress) / total_size
 
     def _update_gui_progress(
         self, stage: InstallationStage, percent: float, message: str
@@ -170,11 +163,10 @@ class PageInstalling(Page):
         self.install_job_var.set(message)
         self.update()
 
-
     def _on_installation_complete(self, result: InstallationResult) -> None:
         """Handle installation completion (called on main thread)."""
         if result.success:
-            self.logger.info("Installation completed successfully")
+            logging.info("Installation completed successfully")
             self.progressbar_install.set(1.0)
             self.install_job_var.set("Installation completed successfully!")
             self.update()
@@ -182,17 +174,19 @@ class PageInstalling(Page):
             # Navigate to next page after short delay
             self.after(1000, self.navigate_next)
         else:
-            self.logger.error(f"Installation failed: {result.error_message}")
+            logging.error(f"Installation failed: {result.error_message}")
             # Navigate to installation failed page
             from pages.page_install_failed import PageInstallFailed
+
             failed_page = self.navigate_to(PageInstallFailed)
             if failed_page:
                 failed_page.set_error_message(result.error_message)
             # Also raise the error for PyInstaller popup
-            raise RuntimeError(f"Installation failed: {result.error_message}")
+            msg = f"Installation failed: {result.error_message}"
+            raise RuntimeError(msg)
 
     # Modern methods for new installation system
     def set_installation_context(self, installation_context):
         """Set the installation context for modern type-safe installation."""
-        self.logger.info("Setting installation context for type-safe installation")
+        logging.info("Setting installation context for type-safe installation")
         self.installation_context = installation_context

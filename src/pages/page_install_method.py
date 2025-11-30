@@ -1,14 +1,24 @@
-import customtkinter as ctk
-from compatibility_checks import CheckType
-from templates.generic_page_layout import GenericPageLayout
-from templates.multi_radio_buttons import MultiRadioButtons
-from models.page import Page, PageValidationResult
-from models.data_units import DataUnit
-from config.settings import PartitioningMethod
+import logging
 import tkinter as tk
 from sys import argv
-from tkinter_templates import TextLabel, FONTS_smaller, color_red, color_blue, var_tracer
+
+import customtkinter as ctk
+
+from compatibility_checks import CheckType
+from config.settings import PartitioningMethod
+from models.data_units import DataUnit
+from models.page import Page, PageValidationResult
 from multilingual import _
+from templates.generic_page_layout import GenericPageLayout
+from templates.multi_radio_buttons import MultiRadioButtons
+from tkinter_templates import (
+    FONTS_smaller,
+    TextLabel,
+    color_blue,
+    color_red,
+    var_tracer,
+)
+from utils.formatting import format_bytes
 
 
 class PageInstallMethod(Page):
@@ -21,7 +31,7 @@ class PageInstallMethod(Page):
         # Get selected spin from state
         selected_spin = self.state.installation.selected_spin
         if not selected_spin:
-            self.logger.error("No spin selected when initializing install method page")
+            logging.error("No spin selected when initializing install method page")
             return
 
         page_layout = GenericPageLayout(
@@ -39,11 +49,11 @@ class PageInstallMethod(Page):
         # Calculate space requirements using config
         # Get partition size, defaulting to 0 if partition is None
         partition_size = (
-            self.state.installation.partition.tmp_part_size 
-            if self.state.installation.partition 
+            self.state.installation.partition.tmp_part_size
+            if self.state.installation.partition
             else 0
         )
-        
+
         space_dualboot = (
             self.app_config.app.dualboot_required_space.bytes_value
             + self.app_config.app.linux_boot_partition_size.bytes_value
@@ -72,15 +82,20 @@ class PageInstallMethod(Page):
                 - selected_spin_size_bytes
                 - self.app_config.app.additional_failsafe_space.bytes_value
             )
-            max_size = round(max_size_bytes / (1000 ** 3), 2)  # Convert to GB
         else:
             dualboot_space_available = True
             replace_win_space_available = True
-            max_size = 9999
+            max_size_bytes = DataUnit.from_gibibytes(9999).bytes
+
+        max_size_gb = DataUnit(max_size_bytes).gigabytes
 
         is_auto_installable = selected_spin.is_auto_installable
 
-        default = PartitioningMethod.CUSTOM.value if not is_auto_installable else PartitioningMethod.REPLACE_WIN.value
+        default = (
+            PartitioningMethod.CUSTOM.value
+            if not is_auto_installable
+            else PartitioningMethod.REPLACE_WIN.value
+        )
         self.install_method_var.set(default)
 
         dualboot_error_msg = ""
@@ -119,7 +134,9 @@ class PageInstallMethod(Page):
         )
         radio_buttons.pack(expand=1, fill="x")
 
-        min_size = round(self.app_config.app.dualboot_required_space.bytes_value / (1000 ** 3), 2)  # Convert to GB
+        min_size_gb = DataUnit(
+            self.app_config.app.dualboot_required_space.bytes_value
+        ).gigabytes
         self.entry1_frame = ctk.CTkFrame(page_frame, height=300)
         self.entry1_frame.pack_propagate(False)
         self.entry1_frame.pack(
@@ -127,10 +144,10 @@ class PageInstallMethod(Page):
             side="bottom",
         )
 
-        
         self.warn_backup_sys_drive_files = TextLabel(
             self.entry1_frame,
-            text=_("warn.backup.files.txt") % {"drive": f"{self._get_sys_drive_letter()}:\\"},
+            text=_("warn.backup.files.txt")
+            % {"drive": f"{self._get_sys_drive_letter()}:\\"},
             font=FONTS_smaller,
             foreground=color_red,
         )
@@ -146,21 +163,27 @@ class PageInstallMethod(Page):
         )
         validation_func = self.register(
             lambda x: x.replace(".", "", 1).isdigit()
-            and min_size <= float(x) <= max_size
+            and min_size_gb <= float(x) <= max_size_gb
         )
         self.size_dualboot_entry.configure(
             validate="none", validatecommand=(validation_func, "%P")
         )
+        # Format size range using humanize for clarity
+        min_size_txt = format_bytes(
+            self.app_config.app.dualboot_required_space.bytes_value
+        )
+        max_size_txt = format_bytes(max_size_bytes)
+        size_range_text = f"({min_size_txt} - {max_size_txt})"
         self.size_dualboot_txt_post = TextLabel(
             self.entry1_frame,
-            text="(%sGB - %sGB)" % (min_size, max_size),
+            text=size_range_text,
             font=FONTS_smaller,
             foreground=color_blue,
         )
         var_tracer(
             self.dualboot_size_var,
             "write",
-            lambda *args: self._on_dualboot_size_change(),
+            lambda *_: self._on_dualboot_size_change(),
         )
 
         self.update_idletasks()
@@ -169,7 +192,6 @@ class PageInstallMethod(Page):
     def _on_dualboot_size_change(self):
         """Called when dualboot size changes."""
         # Could implement real-time validation feedback here if needed
-        pass
 
     def show_more_options_if_needed(self):
         """Show/hide additional options based on selected install method."""
@@ -177,51 +199,58 @@ class PageInstallMethod(Page):
         self.size_dualboot_txt_pre.grid_forget()
         self.size_dualboot_entry.grid_forget()
         self.size_dualboot_txt_post.grid_forget()
-        
+
         if self.install_method_var.get() == PartitioningMethod.DUALBOOT.value:
             self.size_dualboot_txt_pre.grid(
-                pady=5, padx=(10, 0), column=0, row=0, sticky=self.DI_VAR.w
+                pady=5, padx=(10, 0), column=0, row=0, sticky=self.di_var.w
             )
             self.size_dualboot_entry.grid(pady=5, padx=5, column=1, row=0)
             self.size_dualboot_txt_post.grid(
-                pady=5, padx=(0, 0), column=2, row=0, sticky=self.DI_VAR.w
+                pady=5, padx=(0, 0), column=2, row=0, sticky=self.di_var.w
             )
         elif self.install_method_var.get() == PartitioningMethod.REPLACE_WIN.value:
             self.warn_backup_sys_drive_files.grid(
-                pady=5, padx=(10, 0), column=0, row=0, sticky=self.DI_VAR.w
+                pady=5, padx=(10, 0), column=0, row=0, sticky=self.di_var.w
             )
 
     def validate_input(self) -> PageValidationResult:
         """Validate the selected install method and options."""
         method = self.install_method_var.get()
-        
+
         # Validate dual boot size if needed
         if method == PartitioningMethod.DUALBOOT.value:
             try:
                 size_str = self.dualboot_size_var.get().strip()
                 if not size_str:
                     return PageValidationResult(False, "Dual boot size is required")
-                    
+
                 size_value = float(size_str)
                 if size_value <= 0:
-                    return PageValidationResult(False, "Dual boot size must be positive")
-                    
+                    return PageValidationResult(
+                        False, "Dual boot size must be positive"
+                    )
+
             except ValueError:
-                return PageValidationResult(False, "Dual boot size must be a valid number")
-        
+                return PageValidationResult(
+                    False, "Dual boot size must be a valid number"
+                )
+
         return PageValidationResult(True)
 
     def on_next(self):
         """Save the install method selection to state."""
         method = self.install_method_var.get()
         # Update state with install method
-        self.state.installation.install_options.partition_method = PartitioningMethod(method)
-        
+        self.state.installation.install_options.partition_method = PartitioningMethod(
+            method
+        )
+
         if method == PartitioningMethod.DUALBOOT.value:
             # Save dual boot size
             size = DataUnit.from_gigabytes(float(self.dualboot_size_var.get()))
             if not self.state.installation.partition:
                 from models.partition import Partition
+
                 self.state.installation.partition = Partition()
             self.state.installation.partition.shrink_space = size.bytes
         elif method == PartitioningMethod.CUSTOM.value:
@@ -229,15 +258,15 @@ class PageInstallMethod(Page):
             if self.state.installation.partition:
                 self.state.installation.partition.shrink_space = 0
                 self.state.installation.partition.boot_part_size = 0
-        
-        self.logger.info(f"Install method selected: {method}")
+
+        logging.info(f"Install method selected: {method}")
 
     def on_show(self):
         """Called when page is shown - reinitialize if spin changed."""
-        if hasattr(self, 'selected_spin_name'):
+        if hasattr(self, "selected_spin_name"):
             current_spin = self.state.installation.selected_spin
             if current_spin and self.selected_spin_name != current_spin.name:
-                self.logger.info("Spin changed, reinitializing page")
+                logging.info("Spin changed, reinitializing page")
                 # Clear the frame and reinitialize
                 for widget in self.winfo_children():
                     widget.destroy()
@@ -249,4 +278,5 @@ class PageInstallMethod(Page):
         """Get the system drive letter."""
         # This should be moved to a utility function
         import os
-        return os.environ.get('SYSTEMDRIVE', 'C:').replace(':', '')
+
+        return os.environ.get("SYSTEMDRIVE", "C:").replace(":", "")

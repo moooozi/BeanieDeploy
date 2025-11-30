@@ -1,8 +1,10 @@
-from templates.generic_page_layout import GenericPageLayout
-from models.page import Page, PageValidationResult
+import logging
 import tkinter as tk
-from tkinter_templates import TextLabel, FONTS_smaller, FONTS_small, color_blue
+
+from models.page import Page, PageValidationResult
 from multilingual import _
+from templates.generic_page_layout import GenericPageLayout
+from tkinter_templates import FONTS_small, FONTS_smaller, TextLabel, color_blue
 
 
 class PageRestartRequired(Page):
@@ -19,13 +21,12 @@ class PageRestartRequired(Page):
             _("btn.restart.later"),
             lambda: self._quit_application(),
         )
-        
-        
+
         finished_label = TextLabel(
             page_frame.content_frame, text=_("finished.text"), font=FONTS_smaller
         )
         finished_label.pack(pady=10)
-        
+
         restarting_label = TextLabel(
             page_frame.content_frame,
             var=self.restarting_text_var,
@@ -56,24 +57,26 @@ class PageRestartRequired(Page):
 
     def _restart_now(self):
         """Restart the system now."""
-        self.logger.info("User chose to restart now")
+        logging.info("User chose to restart now")
         # This should integrate with your system restart function
         # For now, just quit the application
         self._quit_and_restart()
 
     def _quit_application(self):
         """Quit the application without restarting."""
-        self.logger.info("User chose to restart later")
+        logging.info("User chose to restart later")
         import sys
+
         sys.exit(0)
 
     def _quit_and_restart(self):
         """Quit application and restart Windows."""
         import subprocess
         import sys
+
         try:
             # Restart Windows
             subprocess.run(["shutdown", "/r", "/t", "0"], check=True)
         except Exception as e:
-            self.logger.error(f"Failed to restart system: {e}")
+            logging.error(f"Failed to restart system: {e}")
             sys.exit(0)

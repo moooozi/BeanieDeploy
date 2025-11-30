@@ -2,6 +2,8 @@
 Modern build system using PyInstaller.
 Replaces the custom bundling system with standard tooling.
 """
+# ruff: noqa: T201  # Allow print statements in build script
+
 import shutil
 import subprocess
 import sys
@@ -12,10 +14,10 @@ def clean_build_artifacts():
     """Remove old build artifacts."""
     paths_to_clean = [
         "build",
-        "dist", 
+        "dist",
         "*.spec",
     ]
-    
+
     for path in paths_to_clean:
         if Path(path).exists():
             try:
@@ -31,21 +33,21 @@ def clean_build_artifacts():
 
 def build_with_pyinstaller():
     """Build the application using PyInstaller."""
-    
+
     print("Building BeanieDeploy with PyInstaller...")
-    
+
     # Read version from ReleaseInfo.txt
     release_info = {}
     if Path("ReleaseInfo.txt").exists():
-        with open("ReleaseInfo.txt", "r") as f:
+        with Path("ReleaseInfo.txt").open() as f:
             for line in f:
                 if "==>" in line:
                     key, value = line.strip().split(" ==> ")
                     release_info[key] = value
-    
+
     app_name = release_info.get("AppName", "BeanieDeploy")
     app_version = release_info.get("AppVersion", "0.94-Beta")
-    
+
     # Find PyInstaller executable
     pyinstaller_path = shutil.which("pyinstaller")
     if not pyinstaller_path:
@@ -54,52 +56,70 @@ def build_with_pyinstaller():
         if venv_pyinstaller.exists():
             pyinstaller_path = str(venv_pyinstaller)
         else:
-            print("PyInstaller not found! Please install it with: pip install pyinstaller")
+            print(
+                "PyInstaller not found! Please install it with: pip install pyinstaller"
+            )
             return False
-    
+
     # PyInstaller command
     cmd = [
         pyinstaller_path,
         "--onefile",
-        "--name", f"{app_name}-{app_version}",
-        "--distpath", "dist",
-        "--workpath", "build",
-        "--specpath", ".",
+        "--name",
+        f"{app_name}-{app_version}",
+        "--distpath",
+        "dist",
+        "--workpath",
+        "build",
+        "--specpath",
+        ".",
         # Add the src directory to Python path
-        "--paths", "src",
+        "--paths",
+        "src",
         # Add data files
-        "--add-data", "src/locales;locales",
-        "--add-data", "src/resources;resources",
+        "--add-data",
+        "src/locales;locales",
+        "--add-data",
+        "src/resources;resources",
         # Add hidden imports for babel translation system
-        "--hidden-import", "babel.localedata",
+        "--hidden-import",
+        "babel.localedata",
         # Add hidden imports for langtable and related modules
-        "--hidden-import", "langtable",
-        "--hidden-import", "babel",
-        "--hidden-import", "babel.localedata",
+        "--hidden-import",
+        "langtable",
+        "--hidden-import",
+        "babel",
+        "--hidden-import",
+        "babel.localedata",
         # Collect all data for langtable
-        "--collect-data", "langtable",
-        "--collect-data", "babel",
+        "--collect-data",
+        "langtable",
+        "--collect-data",
+        "babel",
         # Add hidden imports for jaraco modules used by pkg_resources
-        "--hidden-import", "jaraco.classes",
-        "--hidden-import", "jaraco.functools",
-        "--hidden-import", "jaraco.text",
-        "--hidden-import", "jaraco.context",
-        "--hidden-import", "jaraco.collections",
-        "src/main.py"
+        "--hidden-import",
+        "jaraco.classes",
+        "--hidden-import",
+        "jaraco.functools",
+        "--hidden-import",
+        "jaraco.text",
+        "--hidden-import",
+        "jaraco.context",
+        "--hidden-import",
+        "jaraco.collections",
+        "src/main.py",
     ]
-    
+
     # Add icon if it exists
     icon_path = Path("icon.ico")
     if icon_path.exists():
         cmd.extend(["--icon", str(icon_path)])
-    
+
     # Add version info
-    cmd.extend([
-        "--version-file", "version_info.txt"
-    ])
-    
+    cmd.extend(["--version-file", "version_info.txt"])
+
     print(f"Running: {' '.join(cmd)}")
-    
+
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
         print("Build successful!")
@@ -114,30 +134,30 @@ def build_with_pyinstaller():
 
 def create_version_info():
     """Create version info file for PyInstaller."""
-    
+
     # Read version from ReleaseInfo.txt
     release_info = {}
     if Path("ReleaseInfo.txt").exists():
-        with open("ReleaseInfo.txt", "r") as f:
+        with Path("ReleaseInfo.txt").open() as f:
             for line in f:
                 if "==>" in line:
                     key, value = line.strip().split(" ==> ")
                     release_info[key] = value
-    
+
     app_name = release_info.get("AppName", "")
     app_version = release_info.get("AppVersion", "Snapshot")
     description = release_info.get("Description", "")
     author = release_info.get("Author", "")
     company = release_info.get("Company", author)
-    copyright = release_info.get("Copyright", "")
-    
+    copyright_info = release_info.get("Copyright", "")
+
     # Convert version to Windows format (1.0.0.0)
     version_parts = app_version.split("-")[0].split(".")
     while len(version_parts) < 4:
         version_parts.append("0")
     version_tuple = ", ".join(version_parts[:4])
-    
-    version_info_content = f'''# UTF-8
+
+    version_info_content = f"""# UTF-8
 VSVersionInfo(
   ffi=FixedFileInfo(
     filevers=({version_tuple}),
@@ -159,7 +179,7 @@ VSVersionInfo(
             StringStruct(u'FileDescription', u'{description}'),
             StringStruct(u'FileVersion', u'1.0.0.0'),
             StringStruct(u'InternalName', u'{app_name}'),
-            StringStruct(u'LegalCopyright', u'{copyright}'),
+            StringStruct(u'LegalCopyright', u'{copyright_info}'),
             StringStruct(u'OriginalFilename', u'{app_name}-{app_version}.exe'),
             StringStruct(u'ProductName', u'{app_name}'),
             StringStruct(u'ProductVersion', u'{app_version}')
@@ -169,31 +189,31 @@ VSVersionInfo(
     ),
     VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
   ]
-)'''
-    
-    with open("version_info.txt", "w", encoding="utf-8") as f:
+)"""
+
+    with Path("version_info.txt").open("w", encoding="utf-8") as f:
         f.write(version_info_content)
-    
+
     print("Created version_info.txt")
 
 
 def main():
     """Main build function."""
     print("Building BeanieDeploy with PyInstaller")
-    
+
     # Clean up old build artifacts
     clean_build_artifacts()
-    
+
     # Create version info
     create_version_info()
-    
+
     # Build with PyInstaller
     if build_with_pyinstaller():
         print("\nBuild completed successfully!")
     else:
         print("\nBuild failed!")
         return 1
-    
+
     return 0
 
 

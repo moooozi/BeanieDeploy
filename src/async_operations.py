@@ -1,10 +1,11 @@
 import atexit
 import multiprocessing
 import queue
-import threading
 import subprocess
+import threading
+from collections.abc import Callable
 from enum import Enum
-from typing import Optional, Callable, List, Any, Dict, Tuple
+from typing import Any
 
 DETACHED_PROCESS_FLAG = 0x00000008
 
@@ -21,14 +22,16 @@ class AsyncOperation:
         self,
         use_threading: bool = True,
         use_queue: bool = False,
-        on_complete: Optional[Callable] = None,
+        on_complete: Callable | None = None,
     ):
         self.use_threading = use_threading
         self.use_queue = use_queue
-        self.queue: Optional[queue.Queue | multiprocessing.Queue] = (
+        self.queue: queue.Queue | multiprocessing.Queue | None = (
             multiprocessing.Queue()
             if not use_threading
-            else queue.Queue() if use_queue else None
+            else queue.Queue()
+            if use_queue
+            else None
         )
         self.status = Status.NOT_STARTED
         self.output: Any = None
@@ -37,13 +40,13 @@ class AsyncOperation:
     @classmethod
     def run(
         cls,
-        function: Optional[Callable] = None,
-        cmd: Optional[List[str]] = None,
-        args: Tuple = (),
-        kwargs: Optional[Dict[str, Any]] = None,
+        function: Callable | None = None,
+        cmd: list[str] | None = None,
+        args: tuple = (),
+        kwargs: dict[str, Any] | None = None,
         use_threading: bool = True,
         use_queue: bool = False,
-        on_complete: Optional[Callable] = None,
+        on_complete: Callable | None = None,
     ):
         if kwargs is None:
             kwargs = {}
@@ -61,7 +64,7 @@ class AsyncOperation:
         )
         return instance
 
-    def _read_cmd_output(self, command: List[str]) -> None:
+    def _read_cmd_output(self, command: list[str]) -> None:
         self.status = Status.RUNNING
         process = subprocess.Popen(
             command,
@@ -88,11 +91,11 @@ class AsyncOperation:
 
     def run_async_process(
         self,
-        function: Optional[Callable] = None,
-        cmd: Optional[List[str]] = None,
+        function: Callable | None = None,
+        cmd: str | list[str] | None = None,
         args=(),
         kwargs=None,
-        on_complete: Optional[Callable] = None,
+        on_complete: Callable | None = None,
     ):
         if kwargs is None:
             kwargs = {}
@@ -100,10 +103,12 @@ class AsyncOperation:
             self.on_complete = on_complete
 
         if not (bool(cmd) ^ bool(function)):
-            raise ValueError("Either 'cmd' or 'function' must be provided")
+            msg = "Either 'cmd' or 'function' must be provided"
+            raise ValueError(msg)
 
-        target = None
-        target_args = ()
+        target: Callable | None = None
+        target_args: tuple = ()
+
         if cmd:
             if isinstance(cmd, str):
                 cmd = [cmd]

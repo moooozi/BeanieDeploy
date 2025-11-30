@@ -1,5 +1,5 @@
-from tkinter_templates import *
 from config.settings import get_config
+from tkinter_templates import *
 
 
 class GenericPageLayout(ctk.CTkFrame):
@@ -13,13 +13,13 @@ class GenericPageLayout(ctk.CTkFrame):
         secondary_btn_command=None,
         title_pady=20,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             parent,
+            *args,
             bg_color="transparent",
             fg_color="transparent",
-            *args,
             **kwargs,
         )
         self.title = title
