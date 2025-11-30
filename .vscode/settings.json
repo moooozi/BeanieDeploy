@@ -1,12 +1,12 @@
 {
   "[python]": {
-    "editor.defaultFormatter": "ms-python.python",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff"
   },
   "python.analysis.autoImportCompletions": true,
   "python.analysis.autoFormatStrings": true,
   "python.analysis.completeFunctionParens": true,
   "python.analysis.diagnosticMode": "workspace",
-
-  "python.defaultInterpreterPath": "./.venv/Scripts/python.exe"
+  "python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
+  "ruff.enable": true
 }
