@@ -63,7 +63,7 @@ class MainApp(Application):
 
         if skip_check:
             logging.info("Skipping checks - using dummy data")
-            all_spins = parse_spins(dummy.DUMMY_ALL_SPINS)
+            all_spins = parse_spins(dummy.get_dummy_spin_data())
             get_state().compatibility.accepted_spins = all_spins
             get_state().compatibility.ip_locale = dummy.DUMMY_IP_LOCALE
             logging.info("Using dummy data")
