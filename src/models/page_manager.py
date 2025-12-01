@@ -208,8 +208,6 @@ class PageManager(ctk.CTkFrame):
         page.grid_rowconfigure(0, weight=1)
         page.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
-        logging.debug(f"Added page: {page_name}")
-
     def show_page(self, page_class: type[Page]):
         """Show a specific page."""
 

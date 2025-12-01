@@ -31,8 +31,6 @@ class PageAutoinstAddition1(Page):
         ip_locale = self.state.compatibility.ip_locale
         langs_and_locales = get_langs_and_locales(ip_locale)
 
-        # Debug logging for PyInstaller bundle issues
-        logging.debug(f"Available languages: {list(langs_and_locales.keys())}")
         if not langs_and_locales:
             logging.error(
                 "No languages/locales loaded - this may be a PyInstaller bundling issue"

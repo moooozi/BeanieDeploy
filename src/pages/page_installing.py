@@ -1,9 +1,9 @@
 import logging
+import threading
 import tkinter as tk
 
 import customtkinter as ctk
 
-from async_operations import AsyncOperation
 from models.installation_context import (
     InstallationContext,
     InstallationResult,
@@ -69,10 +69,7 @@ class PageInstalling(Page):
         )
 
         # Start installation in background
-        AsyncOperation.run(
-            function=self._run_installation,
-            use_threading=True,
-        )
+        threading.Thread(target=self._run_installation, daemon=True).start()
 
     def _run_installation(self) -> None:
         """Run the installation process (called in background thread)."""

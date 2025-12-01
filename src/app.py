@@ -1,10 +1,10 @@
 import logging
+import threading
 from typing import Any
 
 import requests
 
 import dummy
-from async_operations import AsyncOperation
 from config.settings import get_config
 from core.compatibility_logic import filter_spins
 from core.navigation_conditions import SkipCheckDisabledCondition
@@ -39,20 +39,10 @@ class MainApp(Application):
         # Get system components
         self.config = get_config()
         self.state_manager = get_state_manager()
+        self.state = get_state()
 
-        self.spins_promise = AsyncOperation.run(
-            lambda url: requests.get(url).json(),
-            args=(get_config().urls.available_spins_list,),
-            on_complete=self._on_spin_promise_complete,
-        )
-
-        self.ip_locale_promise = AsyncOperation.run(
-            lambda url: requests.get(url).json(),
-            args=(get_config().urls.fedora_geo_ip,),
-            on_complete=lambda data: setattr(
-                get_state().compatibility, "ip_locale", data
-            ),
-        )
+        threading.Thread(target=self._fetch_spins, daemon=True).start()
+        threading.Thread(target=self._fetch_ip_locale, daemon=True).start()
 
         # Create page manager with integrated navigation
         self.page_manager = PageManager(
@@ -145,14 +135,26 @@ class MainApp(Application):
         Sets the available spins in the state.
         """
         parsed_spins = parse_spins(spins)
-        state = get_state()
-        state.compatibility.all_spins = parsed_spins
-        filtered_result = filter_spins(state.compatibility.all_spins)
-        state.compatibility.accepted_spins = filtered_result.spins
+        self.state.compatibility.all_spins = parsed_spins
+        filtered_result = filter_spins(self.state.compatibility.all_spins)
+        self.state.compatibility.accepted_spins = filtered_result.spins
         if filtered_result.live_os_installer_index is not None:
-            state.compatibility.live_os_installer_spin = (
-                state.compatibility.accepted_spins[
+            self.state.compatibility.live_os_installer_spin = (
+                self.state.compatibility.accepted_spins[
                     filtered_result.live_os_installer_index
                 ]
             )
         logging.info("About to navigate_next()")
+
+    def _update_ip_locale(self, data):
+        self.state.compatibility.ip_locale = data
+
+    def _fetch_spins(self):
+        url = self.config.urls.available_spins_list
+        data = requests.get(url).json()
+        self.after(0, self._on_spin_promise_complete, data)
+
+    def _fetch_ip_locale(self):
+        url = self.config.urls.fedora_geo_ip
+        data = requests.get(url).json()
+        self.after(0, self._update_ip_locale, data)
