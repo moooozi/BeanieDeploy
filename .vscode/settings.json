@@ -13,5 +13,14 @@
   "python.analysis.diagnosticMode": "workspace",
   "python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
   "ruff.enable": true,
-  "ruff.organizeImports": true
+  "ruff.organizeImports": true,
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        // Run whenever Babel .po files are saved
+        "match": "\\.po$",
+        "cmd": ".\\.venv\\Scripts\\pybabel.exe compile -i ${file} -o ${fileDirname}/${fileBasenameNoExt}.mo"
+      }
+    ]
+  }
 }
