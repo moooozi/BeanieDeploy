@@ -39,7 +39,7 @@ class MainApp(Application):
         # Get system components
         self.config = get_config()
         self.state_manager = get_state_manager()
-        self.state = get_state()
+        self.app_state = get_state()
 
         threading.Thread(target=self._fetch_spins, daemon=True).start()
         threading.Thread(target=self._fetch_ip_locale, daemon=True).start()
@@ -135,19 +135,19 @@ class MainApp(Application):
         Sets the available spins in the state.
         """
         parsed_spins = parse_spins(spins)
-        self.state.compatibility.all_spins = parsed_spins
-        filtered_result = filter_spins(self.state.compatibility.all_spins)
-        self.state.compatibility.accepted_spins = filtered_result.spins
+        self.app_state.compatibility.all_spins = parsed_spins
+        filtered_result = filter_spins(self.app_state.compatibility.all_spins)
+        self.app_state.compatibility.accepted_spins = filtered_result.spins
         if filtered_result.live_os_installer_index is not None:
-            self.state.compatibility.live_os_installer_spin = (
-                self.state.compatibility.accepted_spins[
+            self.app_state.compatibility.live_os_installer_spin = (
+                self.app_state.compatibility.accepted_spins[
                     filtered_result.live_os_installer_index
                 ]
             )
         logging.info("About to navigate_next()")
 
     def _update_ip_locale(self, data):
-        self.state.compatibility.ip_locale = data
+        self.app_state.compatibility.ip_locale = data
 
     def _fetch_spins(self):
         url = self.config.urls.available_spins_list
