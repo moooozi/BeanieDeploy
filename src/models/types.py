@@ -2,7 +2,7 @@
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from models.page import Page
+    from .page import Page
 
 SpinDictList = list[dict[str, Any]]
 

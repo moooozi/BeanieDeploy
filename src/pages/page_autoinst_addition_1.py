@@ -102,16 +102,16 @@ class PageAutoinstAddition1(Page):
         )
 
         if language in langs_and_locales:
-            lang_list.on_click(language)
+            lang_list.preselect(language)
             self.update()
             on_lang_click()
-            self.locale_list.on_click(kickstart.locale_settings.locale)
+            self.locale_list.preselect(kickstart.locale_settings.locale)
         else:
             logging.warning(f"Language '{language}' not found in available languages")
             fallback_lang = get_fallback_language(language, langs_and_locales)
             if fallback_lang:
                 logging.info(f"Using fallback language: {fallback_lang}")
-                lang_list.on_click(fallback_lang)
+                lang_list.preselect(fallback_lang)
                 self.update()
                 on_lang_click()
                 first_locale = get_first_locale_for_language(
@@ -119,7 +119,7 @@ class PageAutoinstAddition1(Page):
                 )
                 if first_locale:
                     kickstart.locale_settings.locale = first_locale
-                    self.locale_list.on_click(first_locale)
+                    self.locale_list.preselect(first_locale)
                 else:
                     kickstart.locale_settings.locale = "en_US.UTF-8"
             else:

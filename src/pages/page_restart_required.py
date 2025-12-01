@@ -4,7 +4,7 @@ import tkinter as tk
 from models.page import Page, PageValidationResult
 from multilingual import _
 from templates.generic_page_layout import GenericPageLayout
-from tkinter_templates import FONTS_small, FONTS_smaller, TextLabel, color_blue
+from tkinter_templates import FONTS_small, FONTS_smaller, TextLabel, colors
 
 
 class PageRestartRequired(Page):
@@ -31,7 +31,7 @@ class PageRestartRequired(Page):
             page_frame.content_frame,
             var=self.restarting_text_var,
             font=FONTS_small,
-            foreground=color_blue,
+            text_color=colors.primary,
         )
         restarting_label.pack(pady=10)
 

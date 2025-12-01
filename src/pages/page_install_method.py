@@ -13,12 +13,11 @@ from templates.generic_page_layout import GenericPageLayout
 from templates.multi_radio_buttons import MultiRadioButtons
 from tkinter_templates import (
     FONTS_smaller,
+    FrameContainer,
     TextLabel,
-    color_blue,
-    color_red,
+    colors,
     var_tracer,
 )
-from utils.formatting import format_bytes
 
 
 class PageInstallMethod(Page):
@@ -137,8 +136,7 @@ class PageInstallMethod(Page):
         min_size_gb = DataUnit(
             self.app_config.app.dualboot_required_space.bytes_value
         ).gigabytes
-        self.entry1_frame = ctk.CTkFrame(page_frame, height=300)
-        self.entry1_frame.pack_propagate(False)
+        self.entry1_frame = FrameContainer(page_frame, height=300)
         self.entry1_frame.pack(
             fill="both",
             side="bottom",
@@ -149,7 +147,7 @@ class PageInstallMethod(Page):
             text=_("warn.backup.files.txt")
             % {"drive": f"{self._get_sys_drive_letter()}:\\"},
             font=FONTS_smaller,
-            foreground=color_red,
+            text_color=colors.red,
         )
         self.size_dualboot_txt_pre = TextLabel(
             self.entry1_frame,
@@ -158,7 +156,7 @@ class PageInstallMethod(Page):
         )
         self.size_dualboot_entry = ctk.CTkEntry(
             self.entry1_frame,
-            width=10,
+            width=100,
             textvariable=self.dualboot_size_var,
         )
         validation_func = self.register(
@@ -169,16 +167,14 @@ class PageInstallMethod(Page):
             validate="none", validatecommand=(validation_func, "%P")
         )
         # Format size range using humanize for clarity
-        min_size_txt = format_bytes(
-            self.app_config.app.dualboot_required_space.bytes_value
-        )
-        max_size_txt = format_bytes(max_size_bytes)
-        size_range_text = f"({min_size_txt} - {max_size_txt})"
+        min_size_txt = self.app_config.app.dualboot_required_space.to_gibibytes()
+        max_size_txt = DataUnit(max_size_bytes).to_gibibytes()
+        size_range_text = f"({min_size_txt}GiB - {max_size_txt}GiB)"
         self.size_dualboot_txt_post = TextLabel(
             self.entry1_frame,
             text=size_range_text,
             font=FONTS_smaller,
-            foreground=color_blue,
+            text_color=colors.primary,
         )
         var_tracer(
             self.dualboot_size_var,

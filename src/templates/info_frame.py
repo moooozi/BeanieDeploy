@@ -6,19 +6,29 @@ from tkinter_templates import *
 class InfoFrame(ctk.CTkFrame):
     def __init__(self, parent, title=""):
         super().__init__(parent)
+        self.configure(
+            width=MINWIDTH,
+            fg_color=colors.element_bg,
+        )
+        # Inner frame for padding
+        self.inner_frame = ctk.CTkFrame(self, fg_color=colors.element_bg)
+        self.inner_frame.pack(fill="both", expand=True, padx=(15, 10), pady=10)
+
         self.labels: dict[str, ctk.CTkLabel] = {}
         if title:
             title_label = TextLabel(
-                self,
+                self.inner_frame,
                 text=title,
-                foreground=color_green,
+                text_color=colors.green,
                 font=FONTS_smaller,
             )
-            title_label.pack(anchor=multilingual.get_di_var().w, pady=5, padx=4)
+            title_label.pack(anchor=multilingual.get_di_var().w, pady=(0, 5))
 
     def add_label(self, key: Any, text: str = "") -> None:
-        label = ctk.CTkLabel(self, text=text, anchor=multilingual.get_di_var().w)
-        label.pack(fill="x", pady=2, padx=10)
+        label = ctk.CTkLabel(
+            self.inner_frame, text=text, anchor=multilingual.get_di_var().w
+        )
+        label.pack(fill="x", pady=1)
         self.labels[key] = label
 
     def update_label(self, key: Any, text: str) -> None:

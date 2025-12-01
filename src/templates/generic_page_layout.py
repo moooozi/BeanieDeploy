@@ -81,7 +81,14 @@ class GenericPageLayout(ctk.CTkFrame):
         a preset for adding a CustomTkinter button. Used for the likes of "Back", "Cancel" and "Abort" buttons
         :return: CustomTkinter button object
         """
-        btn_back = ctk.CTkButton(parent, text=text, command=command)
+        btn_back = ctk.CTkButton(
+            parent,
+            text=text,
+            command=command,
+            fg_color=colors.btn_background,
+            hover_color=colors.btn_background_hover,
+            text_color=colors.btn_background_txt,
+        )
         btn_back.pack(
             anchor=multilingual.get_di_var().se,
             side=multilingual.get_di_var().r,

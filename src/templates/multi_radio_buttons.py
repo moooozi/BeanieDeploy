@@ -111,7 +111,7 @@ class MultiRadioButtons(ctk.CTkFrame):
             self,
             text=self.ADVANCED_OPTIONS_TEXT,
             font=FONTS_smaller,
-            text_color=color_blue,
+            text_color=colors.primary,
             cursor="hand2",
         )
 
@@ -185,7 +185,7 @@ class MultiRadioButtons(ctk.CTkFrame):
             justify="center",
             text=error_text,
             font=FONTS_smaller,
-            text_color=color_red,
+            text_color=colors.red,
         )
         error_label.grid(
             ipadx=self.GRID_PADDING,
@@ -203,7 +203,7 @@ class MultiRadioButtons(ctk.CTkFrame):
             justify="center",
             text=description_text,
             font=FONTS_tiny,
-            text_color=color_blue,
+            text_color=colors.primary,
         )
         description_label.grid(
             ipadx=self.GRID_PADDING,

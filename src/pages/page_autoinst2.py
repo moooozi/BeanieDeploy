@@ -6,7 +6,7 @@ import customtkinter as ctk
 from models.page import Page, PageValidationResult
 from multilingual import _
 from templates.generic_page_layout import GenericPageLayout
-from tkinter_templates import FONTS_smaller, color_blue
+from tkinter_templates import FONTS_smaller, colors
 
 
 class PageAutoinst2(Page):
@@ -98,7 +98,7 @@ class PageAutoinst2(Page):
             justify=self.di_var.l,
             text=_("encrypt.reminder.txt"),
             font=FONTS_smaller,
-            text_color=color_blue,
+            text_color=colors.primary,
         )
         self.encrypt_pass_note.grid(
             pady=5, padx=(0, 0), row=2, column=1, sticky=self.di_var.w

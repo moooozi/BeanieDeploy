@@ -15,8 +15,7 @@ class Application(ctk.CTk):
         self.minsize(MINWIDTH, MINHEIGHT)
         self.maxsize(int(MAXWIDTH * dpi_factor), int(MAXHEIGHT * dpi_factor))
         self.iconbitmap(config.paths.app_icon_path)
-
-        dark_theme(DARK_MODE, self)
+        self.configure(fg_color=colors.background)
 
     def wait_and_handle_queue_output(
         self,

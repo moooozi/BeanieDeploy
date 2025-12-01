@@ -8,7 +8,7 @@ from multilingual import _
 from templates.generic_page_layout import GenericPageLayout
 from templates.info_frame import InfoFrame
 from templates.multi_radio_buttons import MultiRadioButtons
-from tkinter_templates import FONTS_smaller
+from tkinter_templates import FONTS_smaller, colors
 from utils import format_bytes
 
 
@@ -43,7 +43,7 @@ class Page1(Page):
             if is_featured:
                 if dist.name == "Fedora Workstation":
                     distro_hint = _("distro.hint.fedora.workstation")
-                elif dist.name == "Fedora KDE Plasma":
+                elif dist.name == "Fedora KDE":
                     distro_hint = _("distro.hint.fedora.kde.plasma")
 
             spin_radio_dict[spin_fullname] = {
@@ -177,7 +177,7 @@ class Page1(Page):
             log = "\\nFedora Spin has been selected, spin details:"
             for key, value in vars(selected_spin).items():
                 log += f"\\n --> {key}: {value}"
-            logging.info(log)
+            logging.debug(log)
 
     def show_validation_error(self, message: str):
         """Show validation error using popup."""
@@ -197,9 +197,9 @@ class Page1(Page):
             if self.still_loading_label is None:
                 self.still_loading_label = ctk.CTkLabel(
                     self.page_frame,
-                    text="Loading spins...",
+                    text=_("loading.spins"),
                     font=FONTS_smaller,
-                    text_color="red",
+                    text_color=colors.primary,
                 )
                 self.still_loading_label.pack(expand=1, fill="both")
             self.after(200, self._wait_spin_loading)

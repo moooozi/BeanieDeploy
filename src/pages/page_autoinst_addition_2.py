@@ -86,8 +86,9 @@ class PageAutoinstAddition2(Page):
             else kickstart.locale_settings.keymap
         )
 
-        self.keyboard_list.on_click(default_keymap)
-        self.timezone_list.on_click(default_timezone)
+        # Preselect default values
+        self.keyboard_list.preselect(default_keymap)
+        self.timezone_list.preselect(default_timezone)
 
     def validate_input(self) -> PageValidationResult:
         """Validate that both timezone and keymap are selected."""

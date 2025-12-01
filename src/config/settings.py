@@ -10,6 +10,8 @@ from pathlib import Path
 
 from models.data_units import DataUnit
 
+Color = tuple[str, str]
+
 
 class PartitioningMethod(Enum):
     """Enumeration of available partitioning methods."""
@@ -137,6 +139,21 @@ class SystemRequirementsConfig:
 
 
 @dataclass(frozen=True)
+class ColorConfig:
+    """Color configuration with light and dark variants."""
+
+    background: Color = ("#D9D9D9", "#181818")
+    btn_background: Color = ("#C8C8C8", "#2D2D2D")
+    btn_background_hover: Color = ("#BFBFBF", "#3A3A3A")
+    btn_background_txt: Color = ("#000000", "#FFFFFF")
+    element_bg: Color = ("#CFCFCF", "#212121")
+    element_bg_hover: Color = ("#C2C2C2", "#2A2A2A")
+    red: Color = ("#e81123", "#ff4a4a")
+    green: Color = ("#008009", "#5dd25e")
+    primary: Color = ("#3B8ED0", "#2171B0")
+
+
+@dataclass(frozen=True)
 class UIConfig:
     """UI-related configuration."""
 
@@ -163,10 +180,7 @@ class UIConfig:
     font_tiny: tuple[str, int] = field(init=False)
 
     # Colors
-    color_background: str = "#856ff8"
-    color_red: str = "#e81123"
-    color_blue: str = "#0067b8"
-    color_green: str = "#008009"
+    colors: ColorConfig = field(default_factory=lambda: ColorConfig())
 
     # Other UI settings
     accepted_architectures: tuple[str, ...] = ("amd64",)
