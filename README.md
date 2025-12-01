@@ -20,12 +20,3 @@ Beanie Deploy is a powerful tool that allows you to install native Fedora Linux 
 
 - **Unfamiliar with the Process / No Spare USB Stick**: Things can go wrong, potentially bricking your system temporarily. Therefore, it's recommended that you have some knowledge of manual OS installation and possess a spare USB stick.
 
-
-
-## Acknowledgments
-
-- Thanks to the [Fedora Project](https://fedoraproject.org/) for providing a robust Linux distribution.
-
-
-- **Azure Theme for Tkinter**: Thanks to [Benedek Dévényi](https://github.com/rdbende) for creating the [Azure-ttk-theme](https://github.com/rdbende/Azure-ttk-theme) used in this project.
-
