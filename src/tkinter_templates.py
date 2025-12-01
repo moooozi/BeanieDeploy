@@ -1,4 +1,3 @@
-import ctypes
 from collections.abc import Callable
 from typing import Any
 
@@ -16,19 +15,11 @@ MINWIDTH = _ui_config.min_width
 MINHEIGHT = _ui_config.min_height
 MAXWIDTH = _ui_config.max_width
 MAXHEIGHT = _ui_config.max_height
-WIDTH_OFFSET = _ui_config.width_offset
-HEIGHT_OFFSET = _ui_config.height_offset
 TOP_FRAME_HEIGHT = _ui_config.top_frame_height
 LEFT_FRAME_WIDTH = _ui_config.left_frame_width
 colors = _ui_config.colors
 
 
-def get_dpi_scaling_factor():
-    return ctypes.windll.user32.GetDpiForSystem() / 96
-
-
-dpi_scaling_factor = _ui_config.dpi_scaling_factor
-# print("DPI scaling factor: ", dpi_scaling_factor)
 FONTS_large = _ui_config.font_large
 FONTS_medium = _ui_config.font_medium
 FONTS_small = _ui_config.font_small

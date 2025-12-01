@@ -240,7 +240,7 @@ class MultiRadioButtons(ctk.CTkFrame):
         """Show the advanced options frame and hide the toggle label."""
         if self._advanced_frame and self._show_advanced_label:
             self._advanced_frame.grid(row=len(self._items), column=0, sticky="w")
-            self._show_advanced_label.grid_remove()
+            self._show_advanced_label.grid_forget()
 
     # Public API methods
 

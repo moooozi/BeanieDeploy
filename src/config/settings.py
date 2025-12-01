@@ -164,15 +164,10 @@ class UIConfig:
     min_height: int = 530  # height - 50
     max_width: int = 1450  # width + 600
     max_height: int = 780  # height + 200
-    width_offset: int = 400
-    height_offset: int = 400
     top_frame_height: int = 80
     left_frame_width: int = 0
 
-    # DPI scaling
-    dpi_scaling_factor: float = 1.35
-
-    # Fonts (calculated based on DPI)
+    # Fonts
     font_large: tuple[str, int] = field(init=False)
     font_medium: tuple[str, int] = field(init=False)
     font_small: tuple[str, int] = field(init=False)
@@ -186,13 +181,11 @@ class UIConfig:
     accepted_architectures: tuple[str, ...] = ("amd64",)
 
     def __post_init__(self):
-        # Calculate fonts based on DPI scaling
-        factor = self.dpi_scaling_factor
-        object.__setattr__(self, "font_large", ("Arial", int(24 * factor)))
-        object.__setattr__(self, "font_medium", ("Arial Bold", int(16 * factor)))
-        object.__setattr__(self, "font_small", ("Arial", int(13 * factor)))
-        object.__setattr__(self, "font_smaller", ("Arial", int(12 * factor)))
-        object.__setattr__(self, "font_tiny", ("Arial", int(11 * factor)))
+        object.__setattr__(self, "font_large", ("Arial", 26))
+        object.__setattr__(self, "font_medium", ("Arial Bold", 22))
+        object.__setattr__(self, "font_small", ("Arial", 18))
+        object.__setattr__(self, "font_smaller", ("Arial", 17))
+        object.__setattr__(self, "font_tiny", ("Arial", 13))
 
 
 class ConfigManager:
