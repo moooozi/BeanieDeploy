@@ -223,16 +223,16 @@ msgstr "seconds"
 
 # Hints
 msgid "desktop.hint.gnome"
-msgstr "GNOME desktop is Minimal and very stable, touchpad & touchscreen optimized"
+msgstr "GNOME desktop is minimal, stable, touchpad & touchscreen optimized"
 
 msgid "desktop.hint.kde.plasma"
-msgstr "KDE is very feature-rich, highly customizable, and has Windows-like layout by default"
+msgstr "KDE is feature-rich, highly customizable, and has Windows-like layout by default"
 
 msgid "distro.hint.fedora.kde.plasma"
 msgstr "Fedora with KDE desktop environment"
 
 msgid "distro.hint.fedora.workstation"
-msgstr "The main Fedora edition with GNOME desktop environment"
+msgstr "Fedora with GNOME desktop environment"
 
 # Verify
 msgid "verify.autoinst.dualboot"
@@ -382,4 +382,7 @@ msgstr "Not enough space"
 
 msgid "windows.question"
 msgstr "Okay! How should %(distro_name)s be installed?"
+
+msgid "loading.spins"
+msgstr "Loading spins..."
 
