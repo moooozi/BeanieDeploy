@@ -15,6 +15,13 @@ class CheckType(Enum):
     RESIZABLE = "resizable"
     EFI_SPACE = "efi_space"
 
+    @property
+    def weight(self):
+        weights = {
+            CheckType.RESIZABLE: 30,
+        }
+        return weights.get(self, 10)
+
 
 @dataclass
 class Check:

@@ -1,9 +1,9 @@
 import logging
+import threading
 import tkinter as tk
 
 import customtkinter as ctk
 
-from async_operations import AsyncOperation
 from config.settings import ConfigManager
 from models.check import Check, CheckType, DoneChecks
 from models.data_units import DataUnit
@@ -34,15 +34,7 @@ class PageCheck(Page):
         self._progress = 0.0
         self.done_checks = DoneChecks()
         self._navigation_completed = False
-
-    def set_done_checks(self, done_checks):
-        logging.info("Received done checks")
-        self.done_checks = done_checks
-
-    def _delayed_navigate_next(self):
-        """Navigate to next page with a delay to avoid race conditions."""
-        logging.info("_delayed_navigate_next() called")
-        self.navigate_next()
+        self.total_weight = sum(check_type.weight for check_type in CheckType)
 
     def init_page(self):
         logging.info("PageCheck.init_page() called")
@@ -78,68 +70,36 @@ class PageCheck(Page):
             return
         check_type = self._pending_check_types.pop(0)
         self.update()
-        if self.done_checks.checks[check_type].returncode is not None:
-            logging.info(f"Check {check_type} already completed, skipping")
-            self.update_job_var_and_progressbar(check_type)
-            self.after(0, self._run_next_check)
-            return
         logging.info(f"Running check: {check_type}")
-        AsyncOperation().run(
-            self._check_functions[check_type],
-            on_complete=lambda output, check_type=check_type: self.after(
-                0, self._handle_check_complete, output, check_type
-            ),
-        )
+
+        def _run_check(check):
+            self.update_job_var_and_progressbar(check)
+            output = self._check_functions[check_type]()
+            self._handle_check_complete(output, check_type)
+
+        threading.Thread(target=_run_check, args=(check_type,), daemon=True).start()
 
     def _handle_check_complete(self, output: Check, check_type: CheckType) -> None:
         """Callback for when a check completes."""
-        logging.info(f"Check {check_type} completed successfully")
         self.done_checks.checks[check_type] = output
-        self.update_job_var_and_progressbar(check_type)
+        self._progress += (check_type.weight / self.total_weight) * 100
+        self.progressbar_check.set(self._progress / 100)
         self.after(0, self._run_next_check)
 
-    def update_job_var_and_progressbar(self, current_task: CheckType):
-        logging.info(f"Updating progress for task: {current_task}")
-        if current_task == CheckType.ARCH:
-            self._progress += 0.10
-            self.job_var.set(_("check.arch"))
-            self.progressbar_check.set(self._progress)
-            logging.info(f"Progress: {self._progress * 100}% - Architecture check")
-        elif current_task == CheckType.UEFI:
-            self._progress += 0.20
-            self.job_var.set(_("check.uefi"))
-            self.progressbar_check.set(self._progress)
-            logging.info(f"Progress: {self._progress * 100}% - UEFI check")
-        elif current_task == CheckType.RAM:
-            self._progress += 0.20
-            self.job_var.set(_("check.ram"))
-            self.progressbar_check.set(self._progress)
-            logging.info(f"Progress: {self._progress * 100}% - RAM check")
-        elif current_task == CheckType.SPACE:
-            self._progress += 0.20
-            self.job_var.set(_("check.space"))
-            self.progressbar_check.set(self._progress)
-            logging.info(f"Progress: {self._progress * 100}% - Disk space check")
-        elif current_task == CheckType.RESIZABLE:
-            self._progress += 0.30
-            self.job_var.set(_("check.resizable"))
-            self.progressbar_check.set(self._progress)
-            logging.info(
-                f"Progress: {self._progress * 100}% - Resizable partition check"
-            )
+    def update_job_var_and_progressbar(self, check: CheckType):
+        self.job_var.set(_(f"check.{check.value}"))  # noqa: INT001
+        logging.info(f"Progress: {self._progress}%")
 
     def on_checks_complete(self):
         """Callback for when all checks are complete."""
-        logging.info("finalize_and_parse_errors called")
         if self.done_checks:
             logging.info("Processing done_checks")
             errors = parse_errors(self.done_checks, self.app_config)
             if not errors:
                 logging.info("No errors found, proceeding with navigation")
                 self.state.compatibility.done_checks = self.done_checks
-                logging.info("About to navigate_next()")
                 self._navigation_completed = True  # Mark navigation as completed
-                self.after(10, self._delayed_navigate_next)
+                self.after(10, self.navigate_next)
             else:
                 msg = f"Found {len(errors)} errors, navigating to error page"
                 logging.info(msg)
@@ -162,36 +122,36 @@ class PageCheck(Page):
 def parse_errors(done_checks: DoneChecks, app_config: ConfigManager) -> list[str]:
     errors: list[str] = []
     if done_checks.checks[CheckType.ARCH].returncode != 0:
-        errors.append(_("error.arch.9"))
+        errors.append(_("error.arch.1"))
     elif (
         done_checks.checks[CheckType.ARCH].result
         not in app_config.ui.accepted_architectures
     ):
         errors.append(_("error.arch.0"))
     if done_checks.checks[CheckType.UEFI].returncode != 0:
-        errors.append(_("error.uefi.9"))
+        errors.append(_("error.uefi.1"))
     elif done_checks.checks[CheckType.UEFI].result is not True:
         errors.append(_("error.uefi.0"))
     if done_checks.checks[CheckType.RAM].returncode != 0:
-        errors.append(_("error.totalram.9"))
+        errors.append(_("error.totalram.1"))
     elif done_checks.checks[CheckType.RAM].result < app_config.app.minimal_required_ram:
         errors.append(_("error.totalram.0"))
     if done_checks.checks[CheckType.SPACE].returncode != 0:
-        errors.append(_("error.space.9"))
+        errors.append(_("error.space.1"))
     elif (
         done_checks.checks[CheckType.SPACE].result
         < app_config.app.minimal_required_space
     ):
         errors.append(_("error.space.0"))
     if done_checks.checks[CheckType.RESIZABLE].returncode != 0:
-        errors.append(_("error.resizable.9"))
+        errors.append(_("error.resizable.1"))
     elif (
         done_checks.checks[CheckType.RESIZABLE].result
         < app_config.app.minimal_required_space
     ):
         errors.append(_("error.resizable.0"))
     if done_checks.checks[CheckType.EFI_SPACE].returncode != 0:
-        errors.append(_("error.efi_space.9"))
+        errors.append(_("error.efi_space.1"))
     elif done_checks.checks[CheckType.EFI_SPACE].result < DataUnit.from_mebibytes(
         app_config.system_requirements.required_efi_space_mb
     ):

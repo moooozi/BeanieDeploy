@@ -81,11 +81,14 @@ msgstr "Checking available space"
 msgid "check.uefi"
 msgstr "Checking UEFI compliance"
 
+msgid "check.efi_space"
+msgstr "Checking EFI System Partition space"
+
 # Errors
 msgid "error.arch.0"
 msgstr "This device's CPU architecture is incompatible."
 
-msgid "error.arch.9"
+msgid "error.arch.1"
 msgstr "CPU architecture could not be verified."
 
 msgid "error.list"
@@ -94,13 +97,13 @@ msgstr "Following issues detected:"
 msgid "error.resizable.0"
 msgstr "Not enough shrink room on system drive."
 
-msgid "error.resizable.9"
+msgid "error.resizable.1"
 msgstr "Failed to check system drive resizability."
 
 msgid "error.space.0"
 msgstr "Not enough space on your system drive. Free up space and try again"
 
-msgid "error.space.9"
+msgid "error.space.1"
 msgstr "Failed to check available disk space on your system drive."
 
 msgid "error.title"
@@ -109,14 +112,20 @@ msgstr "%(app_name)s can't run on your system"
 msgid "error.totalram.0"
 msgstr "Your system does not have sufficient RAM capacity."
 
-msgid "error.totalram.9"
+msgid "error.totalram.1"
 msgstr "Failed to check available RAM capacity."
 
 msgid "error.uefi.0"
 msgstr "Your system does not support (or is not using) UEFI boot."
 
-msgid "error.uefi.9"
+msgid "error.uefi.1"
 msgstr "UEFI boot support could not be verified."
+
+msgid "error.efi_space.0"
+msgstr "Not enough space in the EFI System Partition."
+
+msgid "error.efi_space.1"
+msgstr "Failed to check available space in the EFI System Partition."
 
 # Install
 msgid "install.auto"
