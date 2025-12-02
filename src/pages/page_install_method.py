@@ -196,17 +196,11 @@ class PageInstallMethod(Page):
         self.size_dualboot_txt_post.grid_forget()
 
         if self.install_method_var.get() == PartitioningMethod.DUALBOOT.value:
-            self.size_dualboot_txt_pre.grid(
-                pady=5, padx=(10, 0), column=0, row=0, sticky=self.di_var.w
-            )
-            self.size_dualboot_entry.grid(pady=5, padx=5, column=1, row=0)
-            self.size_dualboot_txt_post.grid(
-                pady=5, padx=(0, 0), column=2, row=0, sticky=self.di_var.w
-            )
+            self.size_dualboot_txt_pre.grid(column=0, row=0, sticky=self.di_var.w)
+            self.size_dualboot_entry.grid(padx=5, column=1, row=0)
+            self.size_dualboot_txt_post.grid(column=2, row=0, sticky=self.di_var.w)
         elif self.install_method_var.get() == PartitioningMethod.REPLACE_WIN.value:
-            self.warn_backup_sys_drive_files.grid(
-                pady=5, padx=(10, 0), column=0, row=0, sticky=self.di_var.w
-            )
+            self.warn_backup_sys_drive_files.grid(column=0, row=0, sticky=self.di_var.w)
 
     def validate_input(self) -> PageValidationResult:
         """Validate the selected install method and options."""

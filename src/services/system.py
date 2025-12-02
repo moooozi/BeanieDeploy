@@ -13,6 +13,8 @@ import ctypes
 import locale
 import winreg
 
+import tzlocal
+
 from utils import com_context
 
 
@@ -26,6 +28,48 @@ def windows_language_code() -> str:
     lang_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
     lang_code = locale.windows_locale[lang_id]
     return lang_code.split("_")[0]
+
+
+def get_current_windows_locale() -> str | None:
+    """Get the current Windows locale."""
+    try:
+        return locale.getlocale()[0] or None
+    except Exception:
+        return None
+
+
+def get_current_windows_timezone() -> str | None:
+    """Get the current Windows timezone."""
+    try:
+        local_tz = tzlocal.get_localzone()
+        return local_tz.key
+    except Exception:
+        return None
+
+
+def get_current_windows_keyboard() -> str | None:
+    """Get the current Windows keyboard layout friendly name."""
+    try:
+        # Get the first keyboard layout from registry
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Keyboard Layout\Preload")
+        try:
+            # Get the first layout (usually "1")
+            layout_id = winreg.EnumValue(key, 0)[1]
+            winreg.CloseKey(key)
+
+            # Now get the friendly name from the Keyboard Layouts registry
+            layout_key = winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE,
+                rf"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\{layout_id}",
+            )
+            friendly_name, _ = winreg.QueryValueEx(layout_key, "Layout Text")
+            winreg.CloseKey(layout_key)
+            return friendly_name
+        except (OSError, FileNotFoundError):
+            winreg.CloseKey(key)
+            return None
+    except (OSError, FileNotFoundError):
+        return None
 
 
 def quit_and_restart_windows() -> None:

@@ -40,39 +40,43 @@ class PageAutoinstAddition1(Page):
         temp_frame = tkinter_templates.FrameContainer(page_frame)
         temp_frame.pack(expand=1, fill="both")
         temp_frame.grid_rowconfigure(0, weight=1)
-        temp_frame.columnconfigure(0, weight=1)
-        temp_frame.columnconfigure(1, weight=1)
-        lang_list_frame = tkinter_templates.FrameContainer(temp_frame)
-        lang_list_frame.grid(row=0, column=0, ipady=5, padx=5, sticky="news")
-        locale_list_frame = tkinter_templates.FrameContainer(temp_frame)
-        locale_list_frame.grid(row=0, column=1, ipady=5, padx=5, sticky="news")
+        temp_frame.columnconfigure(0, weight=1, uniform="cols")
+        temp_frame.columnconfigure(1, weight=1, uniform="cols")
 
-        lang_list = ListView(
-            lang_list_frame,
+        self.lang_list = ListView(
+            temp_frame,
             title=_("lang"),
         )
-        lang_list.pack(side="left", fill="both", expand=1)
 
-        self.locale_list = ListView(locale_list_frame, title=_("locale"))
-        self.locale_list.pack(side="left", fill="both", expand=1)
+        self.locale_list = ListView(temp_frame, title=_("locale"))
+
+        self.lang_list.grid(
+            row=0, column=0, sticky="nsew", padx=5, pady=5, ipady=5, ipadx=5
+        )
+
+        self.locale_list.grid(
+            row=0, column=1, sticky="nsew", padx=5, pady=5, ipady=5, ipadx=5
+        )
 
         for lang, lang_details in langs_and_locales.items():
-            lang_list.add_item(
+            self.lang_list.add_item(
                 lang,
                 f"{lang_details['names']['english']} ({lang_details['names']['native']})",
             )
 
-        def on_lang_click():
+        def on_lang_click(*_args):
             self.locale_list.clear()
-            selected_lang = lang_list.get_selected()
+            selected_lang = self.lang_list.get_selected()
             if selected_lang:
                 for locale, locale_details in langs_and_locales[selected_lang][
                     "locales"
                 ].items():
                     self.locale_list.add_item(locale, locale_details["names"]["native"])
 
-        lang_list.selection_callback = on_lang_click
-        lang_list.bind("<<ListboxSelect>>", on_lang_click)
+            self.locale_list.update_scrollbar_visibility()
+
+        self.lang_list.selection_callback = on_lang_click
+        self.lang_list.bind("<<ListboxSelect>>", on_lang_click)
 
         # Initialize kickstart if it doesn't exist
         if not self.state.installation.kickstart:
@@ -102,16 +106,17 @@ class PageAutoinstAddition1(Page):
         )
 
         if language in langs_and_locales:
-            lang_list.preselect(language)
+            self.lang_list.preselect(language)
             self.update()
             on_lang_click()
             self.locale_list.preselect(kickstart.locale_settings.locale)
+            self.lang_list.update_scrollbar_visibility()
         else:
             logging.warning(f"Language '{language}' not found in available languages")
             fallback_lang = get_fallback_language(language, langs_and_locales)
             if fallback_lang:
                 logging.info(f"Using fallback language: {fallback_lang}")
-                lang_list.preselect(fallback_lang)
+                self.lang_list.preselect(fallback_lang)
                 self.update()
                 on_lang_click()
                 first_locale = get_first_locale_for_language(
@@ -122,6 +127,7 @@ class PageAutoinstAddition1(Page):
                     self.locale_list.preselect(first_locale)
                 else:
                     kickstart.locale_settings.locale = "en_US.UTF-8"
+                self.lang_list.update_scrollbar_visibility()
             else:
                 logging.error("No languages available at all")
 
@@ -149,3 +155,10 @@ class PageAutoinstAddition1(Page):
         if kickstart and selected_locale:
             kickstart.locale_settings.locale = selected_locale
             logging.info(f"Selected locale: {selected_locale}")
+
+    def on_show(self):
+        # If items are seleceted in the treeview, make them visible by updating scrollbar
+        if hasattr(self, "locale_list"):
+            self.after(1, lambda: self.locale_list.see())
+        if hasattr(self, "lang_list"):
+            self.after(1, lambda: self.lang_list.see())

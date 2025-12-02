@@ -235,26 +235,44 @@ msgid "distro.hint.fedora.workstation"
 msgstr "Fedora with GNOME desktop environment"
 
 # Verify
-msgid "verify.autoinst.dualboot"
-msgstr "%(distro_name)s will be downloaded and installed alongside Windows."
-
-msgid "verify.autoinst.keep.data"
-msgstr "Your existing data will not be affected."
-
-msgid "verify.autoinst.replace.win"
-msgstr "%(distro_name)s will be downloaded and installed to replace Windows."
-
-msgid "verify.autoinst.rm.all"
-msgstr "Everything on this device will be erased."
-
 msgid "verify.autoinst.wifi"
 msgstr "Existing Wi-Fi profiles will be added in %(distro_name)s."
 
-msgid "verify.no.autoinst"
-msgstr "%(distro_name)s will be downloaded and will boot on the next restart to begin custom installation."
-
 msgid "verify.question"
 msgstr "Please verify your installation settings"
+
+msgid "verify.installation.summary"
+msgstr "Installation Settings Summary"
+
+msgid "verify.install.dualboot"
+msgstr "%(distro_name)s will be installed alongside Windows"
+
+msgid "verify.install.replace"
+msgstr "%(distro_name)s will be installed to replace Windows"
+
+msgid "verify.install.custom"
+msgstr "%(distro_name)s installation media will be created and booted on next restart"
+
+msgid "verify.partition.shrink"
+msgstr "%(partition)s partition will be shrunk to %(size)s"
+
+msgid "verify.encryption.info"
+msgstr "The root filesystem will be encrypted"
+
+msgid "verify.locale.current"
+msgstr "Locale"
+
+msgid "verify.timezone.current"
+msgstr "Timezone"
+
+msgid "verify.keyboard.current"
+msgstr "Keyboard layout"
+
+msgid "verify.settings.current"
+msgstr "Current: %(current)s"
+
+msgid "verify.settings.selected"
+msgstr "Selected: %(selected)s"
 
 # Misc
 msgid "add.auto.restart"
@@ -386,3 +404,8 @@ msgstr "Okay! How should %(distro_name)s be installed?"
 msgid "loading.spins"
 msgstr "Loading spins..."
 
+msgid "verify.settings"
+msgstr "Installation settings"
+
+msgid "verify.unknown"
+msgstr "Unknown"
