@@ -16,7 +16,7 @@ class PageValidationResult:
         self.error_message = error_message
 
 
-class Page(ctk.CTkFrame, ABC):
+class Page(ctk.CTkContainer, ABC):
     """
     Base class for all application pages.
 

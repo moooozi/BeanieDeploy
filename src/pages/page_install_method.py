@@ -13,7 +13,6 @@ from templates.generic_page_layout import GenericPageLayout
 from templates.multi_radio_buttons import MultiRadioButtons
 from tkinter_templates import (
     FONTS_smaller,
-    FrameContainer,
     TextLabel,
     colors,
     var_tracer,
@@ -136,7 +135,7 @@ class PageInstallMethod(Page):
         min_size_gb = DataUnit(
             self.app_config.app.dualboot_required_space.bytes_value
         ).gigabytes
-        self.entry1_frame = FrameContainer(page_frame, height=300)
+        self.entry1_frame = ctk.CTkContainer(page_frame, height=300)
         self.entry1_frame.pack(
             fill="both",
             side="bottom",

@@ -1,3 +1,4 @@
+import tkinter as tk
 from collections.abc import Callable
 from typing import Any
 
@@ -27,22 +28,18 @@ FONTS_smaller = _ui_config.font_smaller
 FONTS_tiny = _ui_config.font_tiny
 
 
-class FrameContainer(ctk.CTkFrame):
+class FrameContainer(ctk.CTkContainer):
     """Custom transparent frame container with predefined styling."""
 
     def __init__(self, parent: Any, **kwargs: Any) -> None:
         super().__init__(
             parent,
             width=MINWIDTH,
-            bg_color="transparent",
-            fg_color="transparent",
-            corner_radius=0,
-            border_width=0,
             **kwargs,
         )
 
 
-class TextLabel(ctk.CTkLabel):
+class TextLabel(ctk.CTkSimpleLabel):
     """Custom text label with predefined styling and smart configuration."""
 
     def __init__(
@@ -71,8 +68,8 @@ class TextLabel(ctk.CTkLabel):
             text=text_value,
             textvariable=var_value,
             font=font,
-            fg_color="transparent",
             bg_color="transparent",
+            pady=5,
             **kwargs,
         )
 
@@ -95,7 +92,7 @@ class LanguageComboBox(ctk.CTkComboBox):
         self.set("English")
 
 
-def flush_frame(frame: ctk.CTkFrame) -> None:
+def flush_frame(frame: tk.Widget) -> None:
     """removes all elements inside the middle frame, which contains all page-specific content"""
     for widget in frame.winfo_children():
         widget.destroy()

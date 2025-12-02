@@ -11,24 +11,24 @@ class InfoFrame(ctk.CTkFrame):
             fg_color=colors.element_bg,
         )
         # Inner frame for padding
-        self.inner_frame = ctk.CTkFrame(self, fg_color=colors.element_bg)
+        self.inner_frame = ctk.CTkContainer(self, bg_color=colors.element_bg)
         self.inner_frame.pack(fill="both", expand=True, padx=(15, 10), pady=10)
 
-        self.labels: dict[str, ctk.CTkLabel] = {}
+        self.labels: dict[str, ctk.CTkSimpleLabel] = {}
         if title:
-            title_label = TextLabel(
+            title_label = ctk.CTkSimpleLabel(
                 self.inner_frame,
                 text=title,
                 text_color=colors.green,
                 font=FONTS_smaller,
             )
-            title_label.pack(anchor=multilingual.get_di_var().w, pady=(0, 5))
+            title_label.pack(anchor=multilingual.get_di_var().w, pady=(3, 5))
 
     def add_label(self, key: Any, text: str = "") -> None:
-        label = ctk.CTkLabel(
+        label = ctk.CTkSimpleLabel(
             self.inner_frame, text=text, anchor=multilingual.get_di_var().w
         )
-        label.pack(fill="x", pady=1)
+        label.pack(fill="x", pady=4)
         self.labels[key] = label
 
     def update_label(self, key: Any, text: str) -> None:

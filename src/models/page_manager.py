@@ -9,7 +9,7 @@ from models.page import Page
 TPage = TypeVar("TPage", bound=Page)
 
 
-class PageManager(ctk.CTkFrame):
+class PageManager(ctk.CTkContainer):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.pages: dict[type[Page], Page] = {}
@@ -195,8 +195,6 @@ class PageManager(ctk.CTkFrame):
             self,
             page_name,
             *args,
-            fg_color="transparent",
-            bg_color="transparent",
             **kwargs,
         )
 

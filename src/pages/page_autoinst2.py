@@ -51,12 +51,8 @@ class PageAutoinst2(Page):
             lambda: self.navigate_previous(),
         )
         page_frame = page_layout.content_frame
-        frame_checkboxes = ctk.CTkFrame(
+        frame_checkboxes = ctk.CTkContainer(
             page_frame,
-            bg_color="transparent",
-            fg_color="transparent",
-            corner_radius=0,
-            border_width=0,
         )
         frame_checkboxes.grid(row=0, column=0, sticky="ew")
         page_frame.grid_columnconfigure(0, weight=1)
@@ -92,7 +88,7 @@ class PageAutoinst2(Page):
             else 400
         )
 
-        self.encrypt_pass_note = ctk.CTkLabel(
+        self.encrypt_pass_note = ctk.CTkSimpleLabel(
             frame_checkboxes,
             wraplength=max_width,
             justify=self.di_var.l,

@@ -11,17 +11,17 @@ class ListView(ctk.CTkFrame):
         self.selection_callback = None
 
         if title:
-            textlabel = ctk.CTkLabel(
+            textlabel = ctk.CTkSimpleLabel(
                 self,
                 text=title,
                 text_color=colors.green,
                 font=FONTS_smaller,
             )
-            textlabel.pack(anchor=multilingual.get_di_var().w, pady=5, padx=10)
+            textlabel.pack(anchor=multilingual.get_di_var().w, pady=10, padx=15)
 
         # Container frame for tree and scrollbar
         self.configure(fg_color=colors.element_bg)
-        container = ctk.CTkFrame(self, fg_color=colors.element_bg)
+        container = ctk.CTkContainer(self, bg_color=colors.element_bg)
         container.pack(fill="both", expand=True)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)

@@ -77,7 +77,7 @@ class MultiRadioButtons(ctk.CTkFrame):
         # UI components
         self._radio_buttons: dict[str, ctk.CTkRadioButton] = {}
         self._advanced_frame: ctk.CTkFrame | None = None
-        self._show_advanced_label: ctk.CTkLabel | None = None
+        self._show_advanced_label: ctk.CTkSimpleLabel | None = None
 
         # Initialize the widget
         self._setup_ui()
@@ -98,16 +98,14 @@ class MultiRadioButtons(ctk.CTkFrame):
 
     def _create_advanced_frame(self) -> None:
         """Create the frame that will contain advanced options."""
-        self._advanced_frame = ctk.CTkFrame(
-            self, bg_color="transparent", fg_color="transparent"
-        )
+        self._advanced_frame = ctk.CTkContainer(self)
 
     def _create_advanced_toggle_if_needed(self) -> None:
         """Create the 'Show advanced options' label if any items are marked as advanced."""
         if not self._has_advanced_options():
             return
 
-        self._show_advanced_label = ctk.CTkLabel(
+        self._show_advanced_label = ctk.CTkSimpleLabel(
             self,
             text=self.ADVANCED_OPTIONS_TEXT,
             font=FONTS_smaller,
@@ -180,7 +178,7 @@ class MultiRadioButtons(ctk.CTkFrame):
 
     def _create_error_label(self, parent, error_text: str, row: int) -> None:
         """Create an error label for a disabled radio button."""
-        error_label = ctk.CTkLabel(
+        error_label = ctk.CTkSimpleLabel(
             parent,
             justify="center",
             text=error_text,
@@ -198,7 +196,7 @@ class MultiRadioButtons(ctk.CTkFrame):
         self, parent, description_text: str, row: int
     ) -> None:
         """Create a description label for a radio button."""
-        description_label = ctk.CTkLabel(
+        description_label = ctk.CTkSimpleLabel(
             parent,
             justify="center",
             text=description_text,

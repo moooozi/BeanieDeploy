@@ -45,9 +45,7 @@ class MainApp(Application):
         threading.Thread(target=self._fetch_ip_locale, daemon=True).start()
 
         # Create page manager with integrated navigation
-        self.page_manager = PageManager(
-            self, fg_color="transparent", bg_color="transparent"
-        )
+        self.page_manager = PageManager(self)
         self.page_manager.grid(row=0, column=0, sticky="nsew")
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)

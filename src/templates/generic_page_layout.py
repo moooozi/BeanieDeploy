@@ -2,7 +2,7 @@ from config.settings import get_config
 from tkinter_templates import *
 
 
-class GenericPageLayout(ctk.CTkFrame):
+class GenericPageLayout(ctk.CTkContainer):
     def __init__(
         self,
         parent,
@@ -18,8 +18,6 @@ class GenericPageLayout(ctk.CTkFrame):
         super().__init__(
             parent,
             *args,
-            bg_color="transparent",
-            fg_color="transparent",
             **kwargs,
         )
         self.title = title
@@ -28,18 +26,12 @@ class GenericPageLayout(ctk.CTkFrame):
         self.secondary_btn_txt = secondary_btn_txt
         self.secondary_btn_command = secondary_btn_command
         self.title_pady = title_pady
-        self.content_frame = ctk.CTkFrame(
-            self,
-            bg_color="transparent",
-            fg_color="transparent",
-        )
+        self.content_frame = ctk.CTkContainer(self)
 
         if self.title:
             self.add_page_title(self.title)
         if self.primary_btn_txt or self.secondary_btn_txt:
-            self.bottom_frame = ctk.CTkFrame(
-                self, height=34, bg_color="transparent", fg_color="transparent"
-            )
+            self.bottom_frame = ctk.CTkContainer(self, height=34)
             self.bottom_frame.grid(row=2, column=0, sticky="ew")
             self.bottom_frame.grid_propagate(False)
             if self.primary_btn_txt:
@@ -99,7 +91,7 @@ class GenericPageLayout(ctk.CTkFrame):
 
     def add_page_title(self, text, pady=(40, 5)):
         config = get_config()
-        title = ctk.CTkLabel(
+        title = ctk.CTkSimpleLabel(
             self,
             wraplength=config.ui.max_width,
             justify=multilingual.get_di_var().l,

@@ -195,7 +195,7 @@ class Page1(Page):
         """Wait for spins to load before proceeding."""
         if not self.state.compatibility.accepted_spins:
             if self.still_loading_label is None:
-                self.still_loading_label = ctk.CTkLabel(
+                self.still_loading_label = ctk.CTkSimpleLabel(
                     self.page_frame,
                     text=_("loading.spins"),
                     font=FONTS_smaller,
