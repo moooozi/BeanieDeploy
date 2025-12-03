@@ -92,7 +92,7 @@ class PageAutoinst2(Page):
             frame_checkboxes,
             wraplength=max_width,
             justify=self.di_var.l,
-            text=_("encrypt.reminder.txt"),
+            text=f"ⓘ {_('encrypt.reminder.txt')}",
             font=FONTS_smaller,
             text_color=colors.primary,
         )
