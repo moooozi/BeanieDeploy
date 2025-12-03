@@ -13,6 +13,7 @@ class PartitioningConfig:
     boot_guid: str | None = None
     sys_drive_uuid: str | None = None
     sys_efi_uuid: str | None = None
+    tmp_part_uuid: str | None = None
 
 
 @dataclass

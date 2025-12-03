@@ -25,6 +25,7 @@ def _validate_kickstart_config(kickstart_config: KickstartConfig) -> None:
     elif kickstart_config.partitioning.method not in [
         PartitioningMethod.DUALBOOT,
         PartitioningMethod.REPLACE_WIN,
+        PartitioningMethod.CLEAN_DISK,
         PartitioningMethod.CUSTOM,
     ]:
         errors.append(
@@ -49,6 +50,14 @@ def _validate_kickstart_config(kickstart_config: KickstartConfig) -> None:
             errors.append("sys_drive_uuid is required for replace_win partition method")
         if not kickstart_config.partitioning.sys_efi_uuid:
             errors.append("sys_efi_uuid is required for replace_win partition method")
+
+    if kickstart_config.partitioning.method == PartitioningMethod.CLEAN_DISK:
+        if not kickstart_config.partitioning.sys_drive_uuid:
+            errors.append("sys_drive_uuid is required for clean_disk partition method")
+        if not kickstart_config.partitioning.sys_efi_uuid:
+            errors.append("sys_efi_uuid is required for clean_disk partition method")
+        if not kickstart_config.partitioning.tmp_part_uuid:
+            errors.append("tmp_part_uuid is required for clean_disk partition method")
 
     if kickstart_config.partitioning.is_encrypted and (
         kickstart_config.partitioning.method == PartitioningMethod.DUALBOOT
@@ -89,6 +98,66 @@ def _build_wifi_import(kickstart_config: KickstartConfig) -> list[str]:
         f"cp /run/install/repo/{kickstart_config.wifi_profiles_dir_name}/*.* /mnt/sysimage/etc/NetworkManager/system-connections",
         "%end",
     ]
+
+
+def _build_clean_disk_pre_install(partitioning_config: PartitioningConfig) -> list[str]:
+    """Build pre-install script for CLEAN_DISK method."""
+    return [
+        "# Pre-install script for CLEAN_DISK: Delete all partitions except specified ones",
+        "%pre --logfile=/tmp/ks-pre-clean.log",
+        "# Find the disk containing the sys_drive_uuid partition",
+        f"DISK=$(lsblk -no pkname /dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid})",
+        "# List all partitions on the disk",
+        'PARTITIONS=$(lsblk -no name /dev/$DISK | grep -E "^${DISK}p?[0-9]+$")',
+        "# Partitions to keep",
+        f"KEEP_PARTS='/dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid} /dev/disk/by-partuuid/{partitioning_config.sys_efi_uuid} /dev/disk/by-partuuid/{partitioning_config.tmp_part_uuid}'",
+        "# Delete partitions not in keep list",
+        "for PART in $PARTITIONS; do",
+        "    PART_UUID=$(blkid -s PARTUUID -o value /dev/$PART)",
+        '    if [[ ! " $KEEP_PARTS " =~ " /dev/disk/by-partuuid/$PART_UUID " ]]; then',
+        '        echo "Deleting partition /dev/$PART"',
+        "        parted /dev/$DISK rm $(echo $PART | sed 's/.*[a-z]//')",
+        "    fi",
+        "done",
+        "%end",
+    ]
+
+
+def _build_clean_disk_post_install(
+    partitioning_config: PartitioningConfig,
+) -> list[str]:
+    """Build post-install script for CLEAN_DISK method."""
+    lines = [
+        "# Post-install script for CLEAN_DISK: Clean up tmp partition and extend root",
+        "%post --logfile=/mnt/sysimage/root/ks-post-clean.log",
+        "# Force unmount and erase tmp partition",
+        f"umount /dev/disk/by-partuuid/{partitioning_config.tmp_part_uuid} 2>/dev/null || true",
+        f"wipefs -a /dev/disk/by-partuuid/{partitioning_config.tmp_part_uuid}",
+        f"parted $(lsblk -no pkname /dev/disk/by-partuuid/{partitioning_config.tmp_part_uuid}) rm $(lsblk -no partn /dev/disk/by-partuuid/{partitioning_config.tmp_part_uuid})",
+    ]
+
+    if partitioning_config.is_encrypted:
+        # Extend LUKS partition first
+        lines.extend(
+            [
+                "# Extend LUKS partition to fill disk",
+                f"LUKS_DEV=$(lsblk -no name /dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid})",
+                "parted /dev/$(lsblk -no pkname /dev/$LUKS_DEV) resizepart $(lsblk -no partn /dev/$LUKS_DEV) 100%",
+                "# Resize LUKS container",
+                f"cryptsetup resize /dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid}",
+            ]
+        )
+
+    # Extend Btrfs filesystem
+    lines.extend(
+        [
+            "# Extend Btrfs filesystem to fill partition",
+            "btrfs filesystem resize max /",
+            "%end",
+        ]
+    )
+
+    return lines
 
 
 def _build_system_config(locale_config: LocaleConfig) -> list[str]:
@@ -159,7 +228,10 @@ def _build_partitioning_config(partitioning_config: PartitioningConfig) -> list[
         root_partition += (
             f" --onpart=/dev/disk/by-partuuid/{partitioning_config.root_guid}"
         )
-    elif partitioning_config.method == PartitioningMethod.REPLACE_WIN:
+    elif partitioning_config.method in [
+        PartitioningMethod.REPLACE_WIN,
+        PartitioningMethod.CLEAN_DISK,
+    ]:
         efi_partition = f"part /boot/efi --fstype=efi --label=efi --onpart=/dev/disk/by-partuuid/{partitioning_config.sys_efi_uuid}"
         root_partition += (
             f" --onpart=/dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid}"
@@ -216,6 +288,15 @@ def build_autoinstall_ks_file(
     kickstart_lines.extend(_build_system_config(kickstart_config.locale_settings))
     kickstart_lines.extend(_build_install_source(kickstart_config))
     kickstart_lines.extend(_build_partitioning_config(kickstart_config.partitioning))
+
+    # Add CLEAN_DISK scripts if applicable
+    if kickstart_config.partitioning.method == PartitioningMethod.CLEAN_DISK:
+        kickstart_lines.extend(
+            _build_clean_disk_pre_install(kickstart_config.partitioning)
+        )
+        kickstart_lines.extend(
+            _build_clean_disk_post_install(kickstart_config.partitioning)
+        )
 
     # Final lines
     kickstart_lines.extend(["rootpw --lock", "reboot"])

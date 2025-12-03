@@ -103,15 +103,6 @@ class PageVerify(Page):
         install_options = self.state.installation.install_options
         partition = self.state.installation.partition
 
-        # Selected distribution
-        if selected_spin:
-            spin_info = f"{selected_spin.name} {selected_spin.version}"
-            if selected_spin.desktop:
-                spin_info += f" ({selected_spin.desktop})"
-            self.info_frame_raster.insert(
-                "", "end", text=f"Selected Distribution: {spin_info}"
-            )
-
         # Installation method and details
         if install_options and install_options.partition_method and selected_spin:
             method = install_options.partition_method
@@ -122,11 +113,18 @@ class PageVerify(Page):
                     text=_("verify.install.dualboot")
                     % {"distro_name": selected_spin.name},
                 )
+            elif method == PartitioningMethod.CLEAN_DISK:
+                self.info_frame_raster.insert(
+                    "",
+                    "end",
+                    text=_("verify.install.clean_disk")
+                    % {"distro_name": selected_spin.name},
+                )
             elif method == PartitioningMethod.REPLACE_WIN:
                 self.info_frame_raster.insert(
                     "",
                     "end",
-                    text=_("verify.install.replace")
+                    text=_("verify.install.replace_win")
                     % {"distro_name": selected_spin.name},
                 )
             elif method == PartitioningMethod.CUSTOM:

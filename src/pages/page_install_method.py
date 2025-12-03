@@ -66,12 +66,10 @@ class PageInstallMethod(Page):
 
         done_checks = self.state.compatibility.done_checks
         if "--skip_check" not in argv and done_checks is not None:
-            dualboot_space_available = (
+            has_dualboot_space = (
                 done_checks.checks[CheckType.RESIZABLE].result > space_dualboot
             )
-            replace_win_space_available = (
-                done_checks.checks[CheckType.RESIZABLE].result > space_clean
-            )
+            has_space = done_checks.checks[CheckType.RESIZABLE].result > space_clean
             # Convert string size to bytes for arithmetic operation
             # Spin size is already in bytes
             selected_spin_size_bytes = selected_spin.size
@@ -81,8 +79,8 @@ class PageInstallMethod(Page):
                 - self.app_config.app.additional_failsafe_space.bytes_value
             )
         else:
-            dualboot_space_available = True
-            replace_win_space_available = True
+            has_dualboot_space = True
+            has_space = True
             max_size_bytes = DataUnit.from_gibibytes(9999).bytes
 
         max_size_gb = DataUnit(max_size_bytes).gigabytes
@@ -92,19 +90,22 @@ class PageInstallMethod(Page):
         default = (
             PartitioningMethod.CUSTOM.value
             if not is_auto_installable
-            else PartitioningMethod.REPLACE_WIN.value
+            else PartitioningMethod.CLEAN_DISK.value
         )
         self.install_method_var.set(default)
 
         dualboot_error_msg = ""
         replace_win_error_msg = ""
+        clean_disk_error_msg = ""
         if not is_auto_installable:
             dualboot_error_msg = _("warn.not.available")
             replace_win_error_msg = _("warn.not.available")
+            clean_disk_error_msg = _("warn.not.available")
         else:
-            if not dualboot_space_available:
+            if not has_dualboot_space:
                 dualboot_error_msg = _("warn.space")
-            if not replace_win_space_available:
+            if not has_space:
+                clean_disk_error_msg = _("warn.space")
                 replace_win_error_msg = _("warn.space")
 
         install_methods_dict = {
@@ -113,8 +114,13 @@ class PageInstallMethod(Page):
                 "error": dualboot_error_msg,
                 "advanced": True,
             },
+            PartitioningMethod.CLEAN_DISK.value: {
+                "name": _("install.option.clean_disk"),
+                "error": clean_disk_error_msg,
+                "advanced": False,
+            },
             PartitioningMethod.REPLACE_WIN.value: {
-                "name": _("install.option.replace.win"),
+                "name": _("install.option.replace_win"),
                 "error": replace_win_error_msg,
                 "advanced": False,
             },
@@ -128,7 +134,7 @@ class PageInstallMethod(Page):
             page_frame,
             install_methods_dict,
             self.install_method_var,
-            lambda: self.show_more_options_if_needed(),
+            lambda: self.show_more_widgets_if_needed(),
         )
         radio_buttons.pack(expand=1, fill="x")
 
@@ -141,10 +147,16 @@ class PageInstallMethod(Page):
             side="bottom",
         )
 
+        win_drive_letter = self.state.installation.windows_partition_info.drive_letter
         self.warn_backup_sys_drive_files = TextLabel(
             self.entry1_frame,
-            text=_("warn.backup.files.txt")
-            % {"drive": f"{self._get_sys_drive_letter()}:\\"},
+            text=_("warn.backup.system_drive") % {"drive": f"{win_drive_letter}:\\"},
+            font=FONTS_smaller,
+            text_color=colors.red,
+        )
+        self.warn_backup_device = TextLabel(
+            self.entry1_frame,
+            text=_("warn.backup.device"),
             font=FONTS_smaller,
             text_color=colors.red,
         )
@@ -182,15 +194,16 @@ class PageInstallMethod(Page):
         )
 
         self.update_idletasks()
-        self.show_more_options_if_needed()  # GUI bugfix
+        self.show_more_widgets_if_needed()  # GUI bugfix
 
     def _on_dualboot_size_change(self):
         """Called when dualboot size changes."""
         # Could implement real-time validation feedback here if needed
 
-    def show_more_options_if_needed(self):
-        """Show/hide additional options based on selected install method."""
+    def show_more_widgets_if_needed(self):
+        """Show/hide additional widgets based on selected install method."""
         self.warn_backup_sys_drive_files.grid_forget()
+        self.warn_backup_device.grid_forget()
         self.size_dualboot_txt_pre.grid_forget()
         self.size_dualboot_entry.grid_forget()
         self.size_dualboot_txt_post.grid_forget()
@@ -201,6 +214,8 @@ class PageInstallMethod(Page):
             self.size_dualboot_txt_post.grid(column=2, row=0, sticky=self.di_var.w)
         elif self.install_method_var.get() == PartitioningMethod.REPLACE_WIN.value:
             self.warn_backup_sys_drive_files.grid(column=0, row=0, sticky=self.di_var.w)
+        elif self.install_method_var.get() == PartitioningMethod.CLEAN_DISK.value:
+            self.warn_backup_device.grid(column=0, row=0, sticky=self.di_var.w)
 
     def validate_input(self) -> PageValidationResult:
         """Validate the selected install method and options."""
@@ -262,10 +277,3 @@ class PageInstallMethod(Page):
                 self._initiated = False
                 self.init_page()
                 self._initiated = True
-
-    def _get_sys_drive_letter(self):
-        """Get the system drive letter."""
-        # This should be moved to a utility function
-        import os
-
-        return os.environ.get("SYSTEMDRIVE", "C:").replace(":", "")

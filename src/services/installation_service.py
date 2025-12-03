@@ -331,6 +331,9 @@ class InstallationService:
             context.kickstart.partitioning.sys_efi_uuid = (
                 self.state.installation.efi_partition_info.partition_guid
             )
+            context.kickstart.partitioning.tmp_part_uuid = (
+                partitioning_results.tmp_part.partition_info.partition_guid
+            )
 
             self._update_progress(
                 context,

@@ -146,8 +146,11 @@ msgstr "Custom installation and partitioning"
 msgid "install.option.dualboot"
 msgstr "Install alongside Windows"
 
-msgid "install.option.replace.win"
+msgid "install.option.replace_win"
 msgstr "Install and replace Windows"
+
+msgid "install.option.clean_disk"
+msgstr "Erase disk and install"
 
 msgid "install.running"
 msgstr "Installing..."
@@ -247,7 +250,10 @@ msgstr "Installation Settings Summary"
 msgid "verify.install.dualboot"
 msgstr "%(distro_name)s will be installed alongside Windows"
 
-msgid "verify.install.replace"
+msgid "verify.install.clean_disk"
+msgstr "The storage device will be wiped and %(distro_name)s will be installed"
+
+msgid "verify.install.replace_win"
 msgstr "%(distro_name)s will be installed to replace Windows"
 
 msgid "verify.install.custom"
@@ -389,14 +395,20 @@ msgstr "Something else"
 msgid "total.download"
 msgstr "Total download: %(size)s"
 
-msgid "warn.backup.files.txt"
+msgid "warn.backup.system_drive"
 msgstr "Backup your files! Everything inside %(drive)s will be permanently deleted"
+
+msgid "warn.backup.device"
+msgstr "Backup your files! Everything on this device will be permanently deleted"
 
 msgid "warn.not.available"
 msgstr "Not available"
 
 msgid "warn.space"
 msgstr "Not enough space"
+
+msgid "warn.experimental"
+msgstr "Experimental"
 
 msgid "windows.question"
 msgstr "Okay! How should %(distro_name)s be installed?"
