@@ -9,10 +9,18 @@
 
 ## Sudo
 
-Use `sudo` for running commands that require administrator privileges on Windows.
+Recent builds of Windows 11 have added native sudo support, and it is enabled on this system.
 
 ### Purpose and Usage
 - Standard terminal runs without elevation, but some tasks need admin rights.
-- Use `sudo` for commands requiring elevated privileges (e.g., `bcdedit`, registry modifications).
-- Run with: `sudo <command> [args...]`
-- Example: `sudo bcdedit /enum`
+- Usage: `sudo <command> [args...]`
+
+### Sudo Dos and Don'ts
+
+**Don't:**
+- `sudo echo "Hello world"` (echo is a cmdlet, not a binary)
+
+**Do:**
+- `sudo powershell -Command 'echo "Hello World"'` (powershell is a binary)
+- `sudo cmd /c 'echo Hello World'` (cmd is a binary)
+- `sudo bcdedit /enum` (bcdedit is a binary)
