@@ -7,7 +7,15 @@ from tkinter_templates import MINWIDTH, FONTS_smaller, colors
 
 
 class CTkTreeView(ctk.CTkFrame):
-    def __init__(self, master, title=None, show="tree", **kwargs):
+    def __init__(
+        self,
+        master,
+        title=None,
+        show="tree",
+        bulleting=False,
+        bullet_char=("⚪",),
+        **kwargs,
+    ):
         super().__init__(master, **kwargs)
         self.configure(width=MINWIDTH, fg_color=colors.element_bg)
         # Inner frame for padding
@@ -15,6 +23,9 @@ class CTkTreeView(ctk.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=0)
+
+        self.bulleting = bulleting
+        self.bullet_char = bullet_char
 
         if title:
             textlabel = ctk.CTkSimpleLabel(
@@ -52,6 +63,8 @@ class CTkTreeView(ctk.CTkFrame):
         self.tree.bind("<<TreeviewSelect>>", self._on_select)
         self.tree.bind("<Configure>", self._on_configure)
         self.tree.bind("<Map>", self._on_map)
+        self.tree.bind("<<TreeviewOpen>>", self._on_expand)
+        self.tree.bind("<<TreeviewClose>>", self._on_collapse)
         self.selection_callback = None
 
     def _scrollbar_set(self, first, last):
@@ -61,7 +74,7 @@ class CTkTreeView(ctk.CTkFrame):
 
         # Calculate needs_scrolling based on content height vs visible height
         rowheight = self._apply_widget_scaling(32)
-        total_height = len(self.get_children()) * rowheight
+        total_height = self._count_visible_items() * rowheight
         visible_height = self.tree.winfo_height()
         needs_scrolling = total_height > visible_height
 
@@ -73,6 +86,23 @@ class CTkTreeView(ctk.CTkFrame):
             # Hide scrollbar
             self.scrollbar.grid_remove()
             self._scrollbar_visible = False
+
+    def _count_visible_items(self, item=""):
+        """Recursively count all visible items in the treeview."""
+        count = 0
+        for child in self.tree.get_children(item):
+            count += 1
+            if self.tree.item(child, "open"):
+                count += self._count_visible_items(child)
+        return count
+
+    def _get_depth(self, item):
+        """Get the depth of an item in the tree."""
+        depth = 0
+        while item:
+            item = self.tree.parent(item)
+            depth += 1
+        return depth
 
     def _update_appearance(self):
         # Apply CTk theme colors and scaling
@@ -120,6 +150,10 @@ class CTkTreeView(ctk.CTkFrame):
 
     # Proxy methods to make it behave like ttk.Treeview
     def insert(self, parent, index, iid=None, **kwargs):
+        if self.bulleting and "text" in kwargs:
+            depth = self._get_depth(parent)
+            bullet = self.bullet_char[depth % len(self.bullet_char)]
+            kwargs["text"] = bullet + " " + kwargs["text"]
         return self.tree.insert(parent, index, iid=iid, **kwargs)
 
     def delete(self, *items):
@@ -173,6 +207,12 @@ class CTkTreeView(ctk.CTkFrame):
         if selected:
             self.tree.see(selected[0])
 
+    def _on_expand(self, _event):
+        self.update_scrollbar_visibility()
+
+    def _on_collapse(self, _event):
+        self.update_scrollbar_visibility()
+
     def expand_all(self):
         """Expand all items in the treeview."""
 
@@ -183,10 +223,12 @@ class CTkTreeView(ctk.CTkFrame):
 
         for item in self.tree.get_children():
             _expand_recursive(item)
+        self.update_scrollbar_visibility()
 
     def yview(self, *args):
         return self.tree.yview(*args)
 
     def update_scrollbar_visibility(self):
         """Public method to force scrollbar visibility update."""
-        self._scrollbar_set(0, 1)
+        first, last = self.tree.yview()
+        self._scrollbar_set(first, last)

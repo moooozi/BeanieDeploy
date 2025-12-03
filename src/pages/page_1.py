@@ -1,5 +1,6 @@
 import logging
 import tkinter as tk
+from threading import Thread
 
 import customtkinter as ctk
 
@@ -27,8 +28,13 @@ class Page1(Page):
         )
         page_frame = page_layout.content_frame
         self.page_frame = page_frame  # Store for later use
+        self.page_frame.columnconfigure(0, weight=1)
 
         self._wait_spin_loading()
+
+        # Access Windows Partition information so they are loaded early
+        loader = Thread(target=lambda: self.state.installation.windows_partition_info)
+        self.after(200, loader.start)
 
     def finish_init_page(self):
         """Final initialization after spins are loaded."""
@@ -75,10 +81,9 @@ class Page1(Page):
         )
 
         self.info_frame_raster = InfoFrame(self.page_frame, _("info.about.selection"))
-        frame_distro.grid_rowconfigure(
-            len(frame_distro.children) + 1, weight=1
-        )  # GUI bugfix for distro_description
-        frame_distro.pack(expand=1, fill="x")
+        # GUI bugfix for distro_description
+        frame_distro.grid(row=0, column=0, sticky="ew")
+        self.page_frame.rowconfigure(0, weight=1)
         self.update_selection_info()
 
     def update_selection_info(self):
@@ -126,7 +131,8 @@ class Page1(Page):
             self.info_frame_raster.add_label("size", dl_size_txt)
             self.info_frame_raster.add_label("desktop", dl_spin_desktop)
             self.info_frame_raster.add_label("desktop_desc", dl_spin_desktop_desc)
-            self.info_frame_raster.pack(side="bottom", fill="x")
+            self.info_frame_raster.grid(row=1, column=0, sticky="sew")
+            self.page_frame.grid_rowconfigure(1, weight=0)
 
     def _get_selected_spin_index(self):
         """Return the index of the currently selected spin, or None if not found."""
@@ -201,7 +207,7 @@ class Page1(Page):
                     font=FONTS_smaller,
                     text_color=colors.primary,
                 )
-                self.still_loading_label.pack(expand=1, fill="both")
+                self.still_loading_label.grid(row=0, column=0, sticky="ew")
             self.after(200, self._wait_spin_loading)
         else:
             if self.still_loading_label is not None:

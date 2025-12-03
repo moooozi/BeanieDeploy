@@ -51,7 +51,10 @@ class PageVerify(Page):
             return
 
         self.info_frame_raster = CTkTreeView(
-            page_frame, title=_("verify.installation.summary")
+            page_frame,
+            title=_("verify.installation.summary"),
+            bulleting=True,
+            bullet_char=("○", "○", "➤"),
         )
 
         # Build the review structure

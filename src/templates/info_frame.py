@@ -28,7 +28,7 @@ class InfoFrame(ctk.CTkFrame):
             title_label.pack(anchor=multilingual.get_di_var().w, pady=(3, 5))
 
     def add_label(self, key: Any, text: str = "") -> None:
-        if self.bulleting:
+        if self.bulleting and text:
             text = self.bullet_char + " " + text
         label = ctk.CTkSimpleLabel(
             self.inner_frame, text=text, anchor=multilingual.get_di_var().w
