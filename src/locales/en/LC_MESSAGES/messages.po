@@ -278,7 +278,7 @@ msgid "verify.settings.current"
 msgstr "Current (on Windows): %(current)s"
 
 msgid "verify.settings.selected"
-msgstr "Selected (for %(distro_name)s): %(selected)s"
+msgstr "Selected: %(selected)s"
 
 # Misc
 msgid "add.auto.restart"

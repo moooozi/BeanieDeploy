@@ -205,10 +205,7 @@ class PageVerify(Page):
                     locale_parent,
                     "end",
                     text=_("verify.settings.selected")
-                    % {
-                        "selected": strip_encoding(kickstart.locale_settings.locale),
-                        "distro_name": selected_spin.name,
-                    },
+                    % {"selected": strip_encoding(kickstart.locale_settings.locale)},
                 )
                 self.info_frame_raster.insert(
                     locale_parent,
@@ -223,10 +220,7 @@ class PageVerify(Page):
                     timezone_parent,
                     "end",
                     text=_("verify.settings.selected")
-                    % {
-                        "selected": kickstart.locale_settings.timezone,
-                        "distro_name": selected_spin.name,
-                    },
+                    % {"selected": kickstart.locale_settings.timezone},
                 )
                 self.info_frame_raster.insert(
                     timezone_parent,
@@ -247,11 +241,7 @@ class PageVerify(Page):
                 self.info_frame_raster.insert(
                     keyboard_parent,
                     "end",
-                    text=_("verify.settings.selected")
-                    % {
-                        "selected": keybaords_txt,
-                        "distro_name": selected_spin.name,
-                    },
+                    text=_("verify.settings.selected") % {"selected": keybaords_txt},
                 )
                 self.info_frame_raster.insert(
                     keyboard_parent,
