@@ -165,12 +165,12 @@ def _build_system_config(locale_config: LocaleConfig) -> list[str]:
     lines = []
 
     # Determine firstboot configuration
-    if locale_config.keymap and locale_config.locale and locale_config.timezone:
+    if locale_config.keymaps and locale_config.locale and locale_config.timezone:
         firstboot_line = "firstboot --enable"
     else:
         firstboot_line = "firstboot --reconfig"
-        if not locale_config.keymap:
-            locale_config.keymap = "us"
+        if not locale_config.keymaps:
+            locale_config.keymaps = ["us"]
         if not locale_config.locale:
             locale_config.locale = "en_US.UTF-8"
         if not locale_config.timezone:
@@ -180,9 +180,10 @@ def _build_system_config(locale_config: LocaleConfig) -> list[str]:
 
     # Keyboard configuration
     if locale_config.keymap_type == "vc":
-        lines.append(f"keyboard --vckeymap={locale_config.keymap}")
+        lines.append(f"keyboard --vckeymap={locale_config.keymaps[0]}")
     else:
-        lines.append(f"keyboard --xlayouts='{locale_config.keymap}'")
+        quoted_keymaps = [f"'{k}'" if " " in k else k for k in locale_config.keymaps]
+        lines.append(f"keyboard --xlayouts={','.join(quoted_keymaps)}")
 
     lines.extend(
         [

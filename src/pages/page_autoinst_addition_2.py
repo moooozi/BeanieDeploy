@@ -5,9 +5,14 @@ import tkinter_templates
 import tkinter_templates as tkt
 from models.page import Page, PageValidationResult
 from multilingual import _
-from services.patched_langtable import langtable
+from services.patched_langtable import keyboards_db, langtable
+from services.system import (
+    get_current_windows_timezone,
+    get_current_windows_timezone_iana,
+    get_windows_timezone_from_iana,
+)
+from templates.ctk_treeview import CTkTreeView
 from templates.generic_page_layout import GenericPageLayout
-from templates.list_view import ListView
 
 
 class PageAutoinstAddition2(Page):
@@ -45,9 +50,6 @@ class PageAutoinstAddition2(Page):
         )
         self.all_keymaps = sorted(langtable.list_all_keyboards())
 
-        selected_locale_timezones = langtable.list_timezones(
-            languageId=kickstart.locale_settings.locale
-        )
         self.all_timezones = sorted(langtable.list_all_timezones())
 
         temp_frame = tkinter_templates.FrameContainer(page_frame)
@@ -56,9 +58,11 @@ class PageAutoinstAddition2(Page):
         temp_frame.columnconfigure(0, weight=1, uniform="cols")
         temp_frame.columnconfigure(1, weight=1, uniform="cols")
 
-        self.keyboard_list = ListView(temp_frame, title=_("list.keymaps"))
+        self.keyboard_list = CTkTreeView(
+            temp_frame, title=_("list.keymaps"), multi_select=True
+        )
 
-        self.timezone_list = ListView(temp_frame, title=_("list.timezones"))
+        self.timezone_list = CTkTreeView(temp_frame, title=_("list.timezones"))
 
         self.keyboard_list.grid(
             row=0, column=0, sticky="nsew", padx=5, pady=5, ipady=5, ipadx=5
@@ -67,28 +71,58 @@ class PageAutoinstAddition2(Page):
         self.timezone_list.grid(
             row=0, column=1, sticky="nsew", padx=5, pady=5, ipady=5, ipadx=5
         )
-        for keymap in self.all_keymaps:
-            self.keyboard_list.add_item(keymap, keymap)
+        # Sort keymaps by description alphabetically
+        keymaps_sorted = sorted(
+            self.all_keymaps, key=lambda k: keyboards_db[k].description.lower()
+        )
+
+        for keymap in keymaps_sorted:
+            self.keyboard_list.insert(
+                "", "end", iid=keymap, text=keyboards_db[keymap].description
+            )
 
         for timezone in self.all_timezones:
             timezone_name = langtable.timezone_name(
                 timezone, languageIdQuery=kickstart.locale_settings.locale or "en"
             )
-            self.timezone_list.add_item(timezone, timezone_name or timezone)
+            self.timezone_list.insert(
+                "", "end", iid=timezone, text=timezone_name or timezone
+            )
 
-        default_timezone = (
-            selected_locale_timezones[0]
-            if not kickstart.locale_settings.timezone
-            else kickstart.locale_settings.timezone
+        # IP timezone in IANA format
+        ip_timezone = (
+            self.state.compatibility.ip_locale.time_zone
+            if self.state.compatibility.ip_locale is not None
+            and hasattr(self.state.compatibility.ip_locale, "time_zone")
+            else None
         )
+
+        # Determine default timezone
+        if ip_timezone:
+            ip_windows_tz = get_windows_timezone_from_iana(ip_timezone)
+            current_windows_tz = get_current_windows_timezone()
+            if (
+                ip_windows_tz
+                and current_windows_tz
+                and ip_windows_tz == current_windows_tz
+            ):
+                default_timezone = ip_timezone
+            else:
+                default_timezone = get_current_windows_timezone_iana()
+        else:
+            default_timezone = get_current_windows_timezone_iana()
+
         default_keymap = (
             selected_locale_keymaps[0]
-            if not kickstart.locale_settings.keymap
-            else kickstart.locale_settings.keymap
+            if not kickstart.locale_settings.keymaps
+            else kickstart.locale_settings.keymaps[0]
         )
 
         # Preselect default values
-        self.keyboard_list.preselect(default_keymap)
+        if kickstart.locale_settings.keymaps:
+            self.keyboard_list.selection_set(kickstart.locale_settings.keymaps)
+        else:
+            self.keyboard_list.preselect(default_keymap)
         self.timezone_list.preselect(default_timezone)
 
     def validate_input(self) -> PageValidationResult:
@@ -96,13 +130,13 @@ class PageAutoinstAddition2(Page):
         if not hasattr(self, "timezone_list") or not hasattr(self, "keyboard_list"):
             return PageValidationResult(False, "Page not properly initialized")
 
-        selected_timezone = self.timezone_list.get_selected()
-        selected_keymap = self.keyboard_list.get_selected()
+        selected_timezone = self.timezone_list.selection()[0]
+        selected_keymaps = self.keyboard_list.selection()
 
         if selected_timezone not in self.all_timezones:
             return PageValidationResult(False, "Please select a valid timezone")
 
-        if selected_keymap not in self.all_keymaps:
+        if any(keymap not in self.all_keymaps for keymap in selected_keymaps):
             return PageValidationResult(False, "Please select a valid keyboard layout")
 
         return PageValidationResult(True)
@@ -111,17 +145,17 @@ class PageAutoinstAddition2(Page):
         """Save the selected timezone and keymap to state."""
         kickstart = self.state.installation.kickstart
         if kickstart:
-            selected_timezone = self.timezone_list.get_selected()
-            selected_keymap = self.keyboard_list.get_selected()
+            selected_timezone = self.timezone_list.selection()[0]
+            selected_keymaps = list(self.keyboard_list.selection())
 
             if selected_timezone:
                 kickstart.locale_settings.timezone = selected_timezone
-            if selected_keymap:
-                kickstart.locale_settings.keymap = selected_keymap
+            if selected_keymaps:
+                kickstart.locale_settings.keymaps = selected_keymaps
                 kickstart.locale_settings.keymap_type = "xlayout"
 
             logging.info(
-                f"Selected timezone:S {kickstart.locale_settings.timezone}, keymap: {kickstart.locale_settings.keymap}"
+                f"Selected timezone: {kickstart.locale_settings.timezone}, keymaps: {kickstart.locale_settings.keymaps}"
             )
 
     def on_show(self):

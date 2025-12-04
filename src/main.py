@@ -30,7 +30,7 @@ import multilingual
 from app import MainApp
 from config.settings import get_config
 from core.state import get_state_manager
-from services.system import is_admin, windows_language_code
+from services.system import get_windows_ui_locale, is_admin
 from utils.logging import setup_file_logging
 
 
@@ -96,7 +96,9 @@ def run():
             config.paths.wifi_profiles_dir.mkdir(parents=True, exist_ok=True)
 
         # Set up language
-        lang_name = multilingual.get_lang_name_by_code(windows_language_code())
+        lang_name = multilingual.get_lang_name_by_code(
+            get_windows_ui_locale().split("_")[0]
+        )
         multilingual.set_lang(lang_name if lang_name else "English")
 
         # Create and run the main application

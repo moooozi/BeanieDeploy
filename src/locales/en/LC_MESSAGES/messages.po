@@ -275,10 +275,10 @@ msgid "verify.keyboard.current"
 msgstr "Keyboard layout"
 
 msgid "verify.settings.current"
-msgstr "Current: %(current)s"
+msgstr "Current (on Windows): %(current)s"
 
 msgid "verify.settings.selected"
-msgstr "Selected: %(selected)s"
+msgstr "Selected (for %(distro_name)s): %(selected)s"
 
 # Misc
 msgid "add.auto.restart"

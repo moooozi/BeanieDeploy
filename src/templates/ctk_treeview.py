@@ -2,7 +2,6 @@ import tkinter.ttk as ttk
 
 import customtkinter as ctk
 
-import multilingual
 from tkinter_templates import MINWIDTH, FONTS_smaller, colors
 
 
@@ -14,39 +13,70 @@ class CTkTreeView(ctk.CTkFrame):
         show="tree",
         bulleting=False,
         bullet_char=("⚪",),
+        multi_select=False,
         **kwargs,
     ):
         super().__init__(master, **kwargs)
         self.configure(width=MINWIDTH, fg_color=colors.element_bg)
-        # Inner frame for padding
-
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=0)
 
         self.bulleting = bulleting
         self.bullet_char = bullet_char
+        self.multi_select = multi_select
 
         if title:
-            textlabel = ctk.CTkSimpleLabel(
-                self,
+            self.grid_rowconfigure(0, weight=0)  # for title
+            self.grid_rowconfigure(1, weight=1)  # for container
+            self.grid_columnconfigure(0, weight=1)
+            self.grid_columnconfigure(1, weight=0)
+
+            self.title_frame = ctk.CTkFrame(self, fg_color="transparent")
+            self.title_frame.grid(row=0, column=0, sticky="ew", padx=15, pady=10)
+            self.title_frame.grid_columnconfigure(0, weight=0)
+            self.title_frame.grid_columnconfigure(1, weight=0)
+
+            self.original_title = title
+            self.title_label = ctk.CTkSimpleLabel(
+                self.title_frame,
                 text=title,
                 text_color=colors.green,
                 font=FONTS_smaller,
             )
-            textlabel.pack(anchor=multilingual.get_di_var().w, pady=10, padx=15)
+            self.title_label.grid(row=0, column=0, sticky="w")
+
+            if self.multi_select:
+                self.count_label = ctk.CTkSimpleLabel(
+                    self.title_frame, text="(0)", font=FONTS_smaller
+                )
+                self.count_label.grid(row=0, column=1, sticky="w", padx=(5, 0))
+        else:
+            self.grid_rowconfigure(0, weight=1)
+            self.grid_columnconfigure(0, weight=1)
+            self.grid_columnconfigure(1, weight=0)
+
+            if self.multi_select:
+                self.count_label = ctk.CTkSimpleLabel(
+                    self, text="(0)", font=FONTS_smaller
+                )
+                self.count_label.grid(row=0, column=0, sticky="w", padx=15, pady=10)
 
         # Container frame for tree and scrollbar
         self.configure(fg_color=colors.element_bg)
 
         container = ctk.CTkContainer(self, bg_color=colors.element_bg)
-        container.pack(fill="both", expand=True)
+        if title:
+            container.grid(row=1, column=0, columnspan=2, sticky="nsew")
+        else:
+            container.grid(row=0, column=0, columnspan=2, sticky="nsew")
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
         container.grid_columnconfigure(1, weight=0)
 
         # Embed the ttk.Treeview
         self.tree = ttk.Treeview(container, show=show)  # type: ignore
+        if self.multi_select:
+            self.tree.configure(selectmode="extended")
+        else:
+            self.tree.configure(selectmode="browse")
         self.tree.grid(row=0, column=0, sticky="nsew")
 
         # Scrollbar (initially hidden)
@@ -60,6 +90,7 @@ class CTkTreeView(ctk.CTkFrame):
         self._update_appearance()
 
         # Bind for selection events
+        self.tree.bind("<Button-1>", self._on_click)
         self.tree.bind("<<TreeviewSelect>>", self._on_select)
         self.tree.bind("<Configure>", self._on_configure)
         self.tree.bind("<Map>", self._on_map)
@@ -114,7 +145,7 @@ class CTkTreeView(ctk.CTkFrame):
             ctk.ThemeManager.theme["CTkButton"]["fg_color"]
         )
 
-        base_font = ctk.CTkFont(size=16)
+        base_font = ctk.CTkFont(size=14)
         scaled_font = self._apply_font_scaling(base_font)
         font_tuple = (
             scaled_font
@@ -200,7 +231,24 @@ class CTkTreeView(ctk.CTkFrame):
     def _on_map(self, _event):
         self.update_scrollbar_visibility()
 
+    def _on_click(self, event):
+        if self.multi_select:
+            item = self.tree.identify_row(event.y)
+            if item:
+                current_selection = set(self.tree.selection())
+                if item in current_selection:
+                    current_selection.remove(item)
+                else:
+                    current_selection.add(item)
+                self.tree.selection_set(list(current_selection))
+                self._on_select(event)
+            return "break"
+        return None
+
     def _on_select(self, event):
+        if self.multi_select:
+            selected_count = len(self.tree.selection())
+            self.count_label.configure(text=f"({selected_count})")
         if self.selection_callback:
             self.selection_callback(event)
         selected = self.tree.selection()
@@ -232,3 +280,24 @@ class CTkTreeView(ctk.CTkFrame):
         """Public method to force scrollbar visibility update."""
         first, last = self.tree.yview()
         self._scrollbar_set(first, last)
+
+    def add_item(self, key, text=""):
+        self.insert("", "end", iid=key, text=text)
+
+    def get_selected(self):
+        selected = self.selection()
+        return selected[0] if selected else None
+
+    def preselect(self, key):
+        if key in self.get_children():
+            self.selection_set(key)
+            self.see(key)
+            if self.selection_callback:
+                self.selection_callback()
+
+    def clear(self):
+        for item in self.get_children():
+            self.delete(item)
+
+    def bind_selection(self, callback):
+        self.selection_callback = callback

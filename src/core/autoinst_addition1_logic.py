@@ -3,15 +3,8 @@ Business logic for PageAutoinstAddition1: language/locale selection and kickstar
 """
 
 import autoinst
+from core.state import IPLocaleInfo
 from services.patched_langtable import langtable
-
-
-def get_langs_and_locales(ip_locale):
-    if ip_locale:
-        return autoinst.get_locales_and_langs_sorted_with_names(
-            territory=ip_locale["country_code"]
-        )
-    return autoinst.get_locales_and_langs_sorted_with_names()
 
 
 def get_fallback_langs_and_locales():
@@ -25,10 +18,11 @@ def get_fallback_langs_and_locales():
     }
 
 
-def get_available_locales(ip_locale):
-    if ip_locale:
-        return langtable.list_locales(territoryId=ip_locale["country_code"])
-    return []
+def get_available_locales(ip_locale: IPLocaleInfo):
+    result = langtable.list_locales(
+        territoryId=ip_locale.country_code, show_weights=True
+    )
+    return [locale for locale, weight in result if weight > 100]
 
 
 def get_language_from_locale(locale):

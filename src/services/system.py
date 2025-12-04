@@ -13,8 +13,6 @@ import ctypes
 import locale
 import winreg
 
-import tzlocal
-
 from utils import com_context
 
 
@@ -23,26 +21,44 @@ def is_admin() -> bool:
     return bool(ctypes.windll.shell32.IsUserAnAdmin())
 
 
-def windows_language_code() -> str:
-    """Get the Windows language code (e.g., 'en', 'de', 'fr')."""
+def get_windows_ui_locale() -> str:
+    """Get the Windows UI locale (e.g., 'en_US', 'de_DE', 'fr_FR')."""
     lang_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
-    lang_code = locale.windows_locale[lang_id]
-    return lang_code.split("_")[0]
+    return locale.windows_locale[lang_id]
 
 
-def get_current_windows_locale() -> str | None:
-    """Get the current Windows locale."""
+def get_current_windows_timezone() -> str | None:
+    """Get the current Windows timezone using Windows registry."""
     try:
-        return locale.getlocale()[0] or None
+        import winreg
+
+        key = winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SYSTEM\CurrentControlSet\Control\TimeZoneInformation",
+        )
+        tz_name, _ = winreg.QueryValueEx(key, "TimeZoneKeyName")
+        winreg.CloseKey(key)
+        return tz_name
     except Exception:
         return None
 
 
-def get_current_windows_timezone() -> str | None:
-    """Get the current Windows timezone."""
+def get_current_windows_timezone_iana() -> str | None:
+    """Get the current Windows timezone in IANA format using tzlocal."""
     try:
-        local_tz = tzlocal.get_localzone()
-        return local_tz.key
+        from tzlocal import get_localzone
+
+        return get_localzone().key
+    except Exception:
+        return None
+
+
+def get_windows_timezone_from_iana(iana_timezone: str) -> str | None:
+    """Get the Windows timezone name from an IANA timezone string."""
+    try:
+        from tzlocal.windows_tz import tz_win
+
+        return tz_win.get(iana_timezone)
     except Exception:
         return None
 

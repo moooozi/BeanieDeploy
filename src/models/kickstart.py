@@ -21,7 +21,7 @@ class LocaleConfig:
     locale: str = ""
     timezone: str = ""
     keymap_type: Literal["vc", "xlayout"] = "vc"
-    keymap: str = ""
+    keymaps: list[str] = field(default_factory=list)
 
 
 @dataclass

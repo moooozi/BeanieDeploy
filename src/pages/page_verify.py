@@ -3,14 +3,15 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from autoinst import get_keymap_description, strip_encoding
 from config.settings import PartitioningMethod
 from models.data_units import DataUnit
 from models.page import Page, PageValidationResult
 from multilingual import _
 from services.system import (
     get_current_windows_keyboard,
-    get_current_windows_locale,
     get_current_windows_timezone,
+    get_windows_ui_locale,
 )
 from templates.ctk_treeview import CTkTreeView
 from templates.generic_page_layout import GenericPageLayout
@@ -106,6 +107,9 @@ class PageVerify(Page):
         install_options = self.state.installation.install_options
         partition = self.state.installation.partition
 
+        if not selected_spin:
+            logging.error("No spin selected when building review structure")
+            return
         # Installation method and details
         if install_options and install_options.partition_method and selected_spin:
             method = install_options.partition_method
@@ -180,14 +184,14 @@ class PageVerify(Page):
             )
 
         # Localization settings (nested)
-        current_locale = get_current_windows_locale() or _("verify.unknown")
+        current_locale = get_windows_ui_locale() or _("verify.unknown")
         current_timezone = get_current_windows_timezone() or _("verify.unknown")
         current_keyboard = get_current_windows_keyboard() or _("verify.unknown")
 
         if kickstart and (
             kickstart.locale_settings.locale
             or kickstart.locale_settings.timezone
-            or kickstart.locale_settings.keymap
+            or kickstart.locale_settings.keymaps
         ):
             localization_parent = self.info_frame_raster.insert(
                 "", "end", text="Localization Settings"
@@ -201,7 +205,10 @@ class PageVerify(Page):
                     locale_parent,
                     "end",
                     text=_("verify.settings.selected")
-                    % {"selected": kickstart.locale_settings.locale},
+                    % {
+                        "selected": strip_encoding(kickstart.locale_settings.locale),
+                        "distro_name": selected_spin.name,
+                    },
                 )
                 self.info_frame_raster.insert(
                     locale_parent,
@@ -216,27 +223,41 @@ class PageVerify(Page):
                     timezone_parent,
                     "end",
                     text=_("verify.settings.selected")
-                    % {"selected": kickstart.locale_settings.timezone},
+                    % {
+                        "selected": kickstart.locale_settings.timezone,
+                        "distro_name": selected_spin.name,
+                    },
                 )
                 self.info_frame_raster.insert(
                     timezone_parent,
                     "end",
-                    text=_("verify.settings.current") % {"current": current_timezone},
+                    text=_("verify.settings.current")
+                    % {"current": current_timezone, "distro_name": selected_spin.name},
                 )
-            if kickstart.locale_settings.keymap:
+            if kickstart.locale_settings.keymaps:
                 keyboard_parent = self.info_frame_raster.insert(
                     localization_parent, "end", text=_("verify.keyboard.current")
+                )
+                keybaords_txt = ", ".join(
+                    [
+                        get_keymap_description(k)
+                        for k in kickstart.locale_settings.keymaps
+                    ]
                 )
                 self.info_frame_raster.insert(
                     keyboard_parent,
                     "end",
                     text=_("verify.settings.selected")
-                    % {"selected": kickstart.locale_settings.keymap},
+                    % {
+                        "selected": keybaords_txt,
+                        "distro_name": selected_spin.name,
+                    },
                 )
                 self.info_frame_raster.insert(
                     keyboard_parent,
                     "end",
-                    text=_("verify.settings.current") % {"current": current_keyboard},
+                    text=_("verify.settings.current")
+                    % {"current": current_keyboard, "distro_name": selected_spin.name},
                 )
 
         # Expand all tree items by default

@@ -13,6 +13,8 @@ if os.name == "nt":
     logging.basicConfig = patched_basic_config
 
 import langtable  # type: ignore
+from langtable.langtable import _keyboards_db as keyboards_db  # type: ignore
 
 # Expose langtable's API
+langtable.keyboards_db = keyboards_db  # type: ignore
 __all__ = ["langtable"]

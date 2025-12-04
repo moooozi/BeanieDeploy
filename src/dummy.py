@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from core.state import IPLocaleInfo
 from models.types import SpinDictList
 
 
@@ -11,9 +12,7 @@ def get_dummy_spin_data() -> SpinDictList:
         return json.load(f)
 
 
-DUMMY_IP_LOCALE = {
-    "time_zone": "Europe/Berlin",
-    "country_code3": "DEU",
-    "country_code": "DE",
-    "country_name": "Germany",
-}
+DUMMY_IP_LOCALE = IPLocaleInfo(
+    time_zone="Europe/Berlin",
+    country_code="DE",
+)

@@ -8,7 +8,7 @@ import dummy
 from config.settings import get_config
 from core.compatibility_logic import filter_spins
 from core.navigation_conditions import SkipCheckDisabledCondition
-from core.state import get_state, get_state_manager
+from core.state import IPLocaleInfo, get_state, get_state_manager
 from models.page_manager import PageManager
 from models.types import NavigationFlow, SpinDictList
 from pages.page_1 import Page1
@@ -145,7 +145,9 @@ class MainApp(Application):
         logging.info("About to navigate_next()")
 
     def _update_ip_locale(self, data):
-        self.app_state.compatibility.ip_locale = data
+        self.app_state.compatibility.ip_locale = IPLocaleInfo(
+            country_code=data["country_code"], time_zone=data["time_zone"]
+        )
 
     def _fetch_spins(self):
         url = self.config.urls.available_spins_list

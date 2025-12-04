@@ -23,6 +23,25 @@ from services.partition import TemporaryPartition
 from services.privilege_manager import elevated
 
 
+@dataclass(frozen=True)
+class IPLocaleInfo:
+    """IP-based locale information from Fedora's GeoIP service."""
+
+    country_code: str
+    time_zone: str
+    # ip: str
+    # city: str
+    # region_name: str
+    # region: str
+    # postal_code: str
+    # country_name: str
+    # latitude: float
+    # longitude: float
+    # metro_code: int | None = None
+    # dma_code: int | None = None
+    # country_code3: str = ""
+
+
 class InstallerStatus(Enum):
     """Installation status enumeration."""
 
@@ -40,7 +59,7 @@ class CompatibilityState:
     """State related to system compatibility checks."""
 
     done_checks: DoneChecks | None = None
-    ip_locale: dict[str, Any] = field(default_factory=dict)
+    ip_locale: IPLocaleInfo | None = None
     all_spins: list[Spin] = field(default_factory=list)
     accepted_spins: list[Spin] = field(default_factory=list)
     live_os_installer_spin: Spin | None = None

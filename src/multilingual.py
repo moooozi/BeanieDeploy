@@ -33,7 +33,7 @@ SUPPORTED_LANGUAGES = [
 ]
 
 
-def get_supported_languages():
+def get_app_supported_languages():
     """Get list of supported language display names."""
     return [lang[1] for lang in SUPPORTED_LANGUAGES]
 
