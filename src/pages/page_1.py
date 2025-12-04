@@ -75,9 +75,10 @@ class Page1(Page):
 
         frame_distro = MultiRadioButtons(
             self.page_frame,
-            spin_radio_dict,
-            self.distro_var,
-            lambda: self.update_selection_info(),
+            items=spin_radio_dict,
+            variable=self.distro_var,
+            validation_callback=lambda: self.update_selection_info(),
+            advanced_options_txt=_("show.advanced.options"),
         )
 
         self.info_frame_raster = InfoFrame(self.page_frame, _("info.about.selection"))

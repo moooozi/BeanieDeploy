@@ -39,8 +39,6 @@ class MultiRadioButtons(ctk.CTkFrame):
     """
 
     # UI Constants
-    ADVANCED_OPTIONS_TEXT = "Show advanced options"
-    AUTO_EXPAND_DELAY_MS = 2000
     GRID_PADDING = 5
 
     def __init__(
@@ -49,6 +47,7 @@ class MultiRadioButtons(ctk.CTkFrame):
         items: dict[str, dict[str, Any]],
         variable: ctk.Variable,
         validation_callback: Callable | None = None,
+        advanced_options_txt="Show advanced options",
         *args,
         **kwargs,
     ):
@@ -74,11 +73,14 @@ class MultiRadioButtons(ctk.CTkFrame):
         self._validation_callback = validation_callback
         self._items = self._parse_items(items)
 
+        self._number_of_standard_items = 0
+        self._number_of_advanced_items = 0
+        self._advanced_items: list[ctk.CTkRadioButton] = []
+
         # UI components
         self._radio_buttons: dict[str, ctk.CTkRadioButton] = {}
-        self._advanced_frame: ctk.CTkFrame | None = None
         self._show_advanced_label: ctk.CTkSimpleLabel | None = None
-
+        self._advanced_options_txt = advanced_options_txt
         # Initialize the widget
         self._setup_ui()
         self._handle_initial_state()
@@ -91,14 +93,8 @@ class MultiRadioButtons(ctk.CTkFrame):
 
     def _setup_ui(self) -> None:
         """Set up the complete user interface."""
-        self._create_advanced_frame()
         self._create_advanced_toggle_if_needed()
         self._create_radio_buttons()
-        self._configure_grid()
-
-    def _create_advanced_frame(self) -> None:
-        """Create the frame that will contain advanced options."""
-        self._advanced_frame = ctk.CTkContainer(self)
 
     def _create_advanced_toggle_if_needed(self) -> None:
         """Create the 'Show advanced options' label if any items are marked as advanced."""
@@ -107,7 +103,7 @@ class MultiRadioButtons(ctk.CTkFrame):
 
         self._show_advanced_label = ctk.CTkSimpleLabel(
             self,
-            text=self.ADVANCED_OPTIONS_TEXT,
+            text=self._advanced_options_txt,
             font=FONTS_smaller,
             text_color=colors.primary,
             cursor="hand2",
@@ -126,24 +122,32 @@ class MultiRadioButtons(ctk.CTkFrame):
 
     def _create_radio_buttons(self) -> None:
         """Create all radio buttons with their associated labels."""
-        for index, (item_key, item_config) in enumerate(self._items.items()):
-            target_frame = self._get_target_frame(item_config)
+        # Sort items to have standard options first
+        for index, (item_key, item_config) in enumerate(
+            sorted(self._items.items(), key=lambda x: x[1].advanced)
+        ):
+            if item_config.advanced:
+                self._number_of_advanced_items += 1
+            else:
+                self._number_of_standard_items += 1
 
             # Create and position radio button
-            radio_button = self._create_radio_button(
-                target_frame, item_config, item_key
-            )
+            radio_button = self._create_radio_button(self, item_config, item_key)
             radio_button.grid(
                 ipady=self.GRID_PADDING, row=index, column=0, sticky="nwe"
             )
+            if item_config.advanced:
+                radio_button.grid_remove()  # Hide initially if advanced
+                self._advanced_items.append(radio_button)
             self._radio_buttons[item_key] = radio_button
 
             # Create associated label (error or description)
-            self._create_associated_label(target_frame, item_config, index)
+            self._create_associated_label(self, item_config, index)
 
-    def _get_target_frame(self, item_config: RadioButtonItem):
-        """Determine which frame should contain this radio button."""
-        return self._advanced_frame if item_config.advanced else self
+        # cpnfigure grid weights for standard frame
+        self.grid_columnconfigure(0, weight=1)
+        for i in range(len(self._items)):
+            self.grid_rowconfigure(i, weight=1)
 
     def _create_radio_button(
         self, parent, item_config: RadioButtonItem, value: str
@@ -210,20 +214,13 @@ class MultiRadioButtons(ctk.CTkFrame):
             sticky=multilingual.get_di_var().w,
         )
 
-    def _configure_grid(self) -> None:
-        """Configure grid weights for proper resizing."""
-        self.grid_columnconfigure(0, weight=1)
-        if self._advanced_frame:
-            self._advanced_frame.grid_columnconfigure(0, weight=1)
-
     def _handle_initial_state(self) -> None:
         """Handle the initial state of the widget, including auto-expanding advanced options."""
         current_value = self._variable.get()
         if current_value in self._items:
             current_item = self._items[current_value]
             if current_item.advanced:
-                # Auto-expand advanced options after a delay
-                self.after(self.AUTO_EXPAND_DELAY_MS, self._show_advanced_options)
+                self._show_advanced_options()
 
     def _handle_error_state_selection(self, item_key: str) -> None:
         """Clear selection if the currently selected item is in error state."""
@@ -236,8 +233,9 @@ class MultiRadioButtons(ctk.CTkFrame):
 
     def _show_advanced_options(self) -> None:
         """Show the advanced options frame and hide the toggle label."""
-        if self._advanced_frame and self._show_advanced_label:
-            self._advanced_frame.grid(row=len(self._items), column=0, sticky="w")
+        if self._advanced_items and self._show_advanced_label:
+            for radio_button in self._advanced_items:
+                radio_button.grid()
             self._show_advanced_label.grid_forget()
 
     # Public API methods

@@ -421,3 +421,6 @@ msgstr "Installation settings"
 
 msgid "verify.unknown"
 msgstr "Unknown"
+
+msgid "show.advanced.options"
+msgstr "Show advanced options"

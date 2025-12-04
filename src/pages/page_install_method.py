@@ -41,6 +41,7 @@ class PageInstallMethod(Page):
             lambda: self.navigate_previous(),
         )
         page_frame = page_layout.content_frame
+        page_frame.columnconfigure(0, weight=1)
 
         self.selected_spin_name = selected_spin.name
 
@@ -110,7 +111,7 @@ class PageInstallMethod(Page):
 
         install_methods_dict = {
             PartitioningMethod.DUALBOOT.value: {
-                "name": _("install.option.dualboot"),
+                "name": _("install.option.dualboot") + f" ({_('warn.experimental')})",
                 "error": dualboot_error_msg,
                 "advanced": True,
             },
@@ -132,41 +133,42 @@ class PageInstallMethod(Page):
 
         radio_buttons = MultiRadioButtons(
             page_frame,
-            install_methods_dict,
-            self.install_method_var,
-            lambda: self.show_more_widgets_if_needed(),
+            items=install_methods_dict,
+            variable=self.install_method_var,
+            validation_callback=lambda: self.show_more_widgets_if_needed(),
+            advanced_options_txt=_("show.advanced.options"),
         )
-        radio_buttons.pack(expand=1, fill="x")
+        radio_buttons.grid(row=0, column=0, sticky="ew")
 
         min_size_gb = DataUnit(
             self.app_config.app.dualboot_required_space.bytes_value
         ).gigabytes
-        self.entry1_frame = ctk.CTkContainer(page_frame, height=300)
-        self.entry1_frame.pack(
-            fill="both",
-            side="bottom",
-        )
+        self.conditional_frame = ctk.CTkContainer(page_frame)
+        self.conditional_frame.grid(row=1, column=0, sticky="ws")
+
+        page_frame.rowconfigure(0, weight=5, uniform="a")
+        page_frame.rowconfigure(1, weight=1, uniform="a")
 
         win_drive_letter = self.state.installation.windows_partition_info.drive_letter
         self.warn_backup_sys_drive_files = TextLabel(
-            self.entry1_frame,
+            self.conditional_frame,
             text=_("warn.backup.system_drive") % {"drive": f"{win_drive_letter}:\\"},
             font=FONTS_smaller,
             text_color=colors.red,
         )
         self.warn_backup_device = TextLabel(
-            self.entry1_frame,
+            self.conditional_frame,
             text=_("warn.backup.device"),
             font=FONTS_smaller,
             text_color=colors.red,
         )
         self.size_dualboot_txt_pre = TextLabel(
-            self.entry1_frame,
+            self.conditional_frame,
             text=_("dualboot.size.txt") % {"distro_name": selected_spin.name},
             font=FONTS_smaller,
         )
         self.size_dualboot_entry = ctk.CTkEntry(
-            self.entry1_frame,
+            self.conditional_frame,
             width=100,
             textvariable=self.dualboot_size_var,
         )
@@ -182,7 +184,7 @@ class PageInstallMethod(Page):
         max_size_txt = DataUnit(max_size_bytes).to_gibibytes()
         size_range_text = f"({min_size_txt}GiB - {max_size_txt}GiB)"
         self.size_dualboot_txt_post = TextLabel(
-            self.entry1_frame,
+            self.conditional_frame,
             text=size_range_text,
             font=FONTS_smaller,
             text_color=colors.primary,
