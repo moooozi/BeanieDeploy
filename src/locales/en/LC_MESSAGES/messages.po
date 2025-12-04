@@ -411,7 +411,7 @@ msgid "warn.experimental"
 msgstr "Experimental"
 
 msgid "windows.question"
-msgstr "Okay! How should %(distro_name)s be installed?"
+msgstr "How should %(distro_name)s be installed?"
 
 msgid "loading.spins"
 msgstr "Loading spins..."
