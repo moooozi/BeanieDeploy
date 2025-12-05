@@ -5,7 +5,6 @@ import customtkinter as ctk
 from models.page import Page, PageValidationResult
 from multilingual import _
 from templates.generic_page_layout import GenericPageLayout
-from tkinter_templates import TextLabel
 
 
 class PagePlayground(Page):
@@ -21,11 +20,16 @@ class PagePlayground(Page):
         )
         self.page_frame = page_layout.content_frame
 
-        playground_label = TextLabel(self.page_frame, text="This is a label")
-        playground_label.pack(pady=10)
+        playground_label = ctk.CTkSimpleLabel(
+            self.page_frame,
+            text="This is a label",
+            justify=self._ui.di.l,
+            pady=5,
+        )
+        playground_label.grid(row=0, column=0, pady=10)
 
         self.progressbar = ctk.CTkProgressBar(self.page_frame, mode="determinate")
-        self.progressbar.pack(pady=10)
+        self.progressbar.grid(row=1, column=0, pady=10)
         self.progressbar.set(0)
 
         # Start the progress animation

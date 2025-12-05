@@ -6,7 +6,6 @@ import customtkinter as ctk
 from models.page import Page, PageValidationResult
 from multilingual import _
 from templates.generic_page_layout import GenericPageLayout
-from tkinter_templates import FONTS_smaller, colors
 
 
 class PageAutoinst2(Page):
@@ -66,7 +65,7 @@ class PageAutoinst2(Page):
             offvalue=False,
             width=99,
         )
-        check_wifi.grid(ipady=5, pady=(5, 0), row=0, column=0, sticky=self.di_var.w)
+        check_wifi.grid(ipady=5, pady=(5, 0), row=0, column=0, sticky=self._ui.di.w)
 
         check_encrypt = ctk.CTkCheckBox(
             frame_checkboxes,
@@ -79,25 +78,16 @@ class PageAutoinst2(Page):
             offvalue=False,
             width=99,
         )
-        check_encrypt.grid(ipady=5, row=2, column=0, sticky=self.di_var.w)
-
-        # Get max width from config instead of global
-        max_width = (
-            self.app_config.ui.max_width
-            if hasattr(self.app_config.ui, "max_width")
-            else 400
-        )
+        check_encrypt.grid(ipady=5, row=2, column=0, sticky=self._ui.di.w)
 
         self.encrypt_pass_note = ctk.CTkSimpleLabel(
             frame_checkboxes,
-            wraplength=max_width,
-            justify=self.di_var.l,
             text=f"ⓘ {_('encrypt.reminder.txt')}",
-            font=FONTS_smaller,
-            text_color=colors.primary,
+            font=self._ui.fonts.smaller,
+            text_color=self._ui.colors.primary,
         )
         self.encrypt_pass_note.grid(
-            pady=5, padx=(0, 0), row=2, column=1, sticky=self.di_var.w
+            pady=5, padx=(0, 0), row=2, column=1, sticky=self._ui.di.w
         )
         self.encrypt_pass_note.grid_remove()
 

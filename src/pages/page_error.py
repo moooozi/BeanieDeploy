@@ -1,10 +1,11 @@
 import logging
 
+import customtkinter as ctk
+
 from models.page import Page, PageValidationResult
 from multilingual import _
 from templates.generic_page_layout import GenericPageLayout
 from templates.info_frame import InfoFrame
-from tkinter_templates import TextLabel
 
 
 class PageError(Page):
@@ -56,15 +57,24 @@ class PageError(Page):
             secondary_btn_command=lambda: self._quit_application(),
         )
         self.page_frame = page_layout.content_frame
+        self.page_frame.columnconfigure(0, weight=1)
+        self.page_frame.rowconfigure(1, weight=1)
 
         # Subtitle
         subtitle_key = f"error.subtitle.{self.category}"
         subtitle = _(subtitle_key)
-        subtitle_label = TextLabel(self.page_frame, text=subtitle)
-        subtitle_label.pack(pady=(10, 5))
+        subtitle_label = ctk.CTkSimpleLabel(
+            self.page_frame,
+            text=subtitle,
+            justify=self._ui.di.l,
+            wraplength="self",
+            font=self._ui.fonts.small,
+            pady=5,
+        )
+        subtitle_label.grid(row=0, column=0, pady=(10, 5), sticky="ew")
 
         self.info_frame_raster = InfoFrame(self.page_frame)
-        self.info_frame_raster.pack(fill="x", pady=5, padx=10)
+        self.info_frame_raster.grid(row=1, column=0, pady=5, padx=10, sticky="nsew")
 
         self._display_errors()
 

@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 
 import customtkinter as ctk
 
-import multilingual
 from config.settings import ConfigManager, get_config
 from core.state import get_state
 
@@ -20,14 +19,13 @@ class Page(ctk.CTkContainer, ABC):
     """
     Base class for all application pages.
 
-    Provides text direction (di_var) as a class attribute.
     For translations, import and use _() directly from multilingual module.
     """
 
     @property
-    def di_var(self):
-        """Get current text direction."""
-        return multilingual.get_di_var()
+    def _ui(self):
+        """Get UI configuration."""
+        return self.app_config.ui
 
     def __init__(self, parent, page_name: str, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)

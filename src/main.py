@@ -79,7 +79,7 @@ def run():
             logging.info("PyInstaller bundle detected - running in release mode")
         else:
             # Development mode - always skip checks
-            set_skip_check(skip=True)
+            set_skip_check(skip=False)
             logging.info("Running in debug mode")
 
         # Update version if provided

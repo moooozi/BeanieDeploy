@@ -2,7 +2,7 @@ import tkinter.ttk as ttk
 
 import customtkinter as ctk
 
-from tkinter_templates import MINWIDTH, FONTS_smaller, colors
+from config.settings import get_config
 
 
 class CTkTreeView(ctk.CTkFrame):
@@ -17,7 +17,9 @@ class CTkTreeView(ctk.CTkFrame):
         **kwargs,
     ):
         super().__init__(master, **kwargs)
-        self.configure(width=MINWIDTH, fg_color=colors.element_bg)
+        self.configure(
+            width=get_config().ui.width, fg_color=get_config().ui.colors.element_bg
+        )
 
         self.bulleting = bulleting
         self.bullet_char = bullet_char
@@ -38,14 +40,14 @@ class CTkTreeView(ctk.CTkFrame):
             self.title_label = ctk.CTkSimpleLabel(
                 self.title_frame,
                 text=title,
-                text_color=colors.green,
-                font=FONTS_smaller,
+                text_color=get_config().ui.colors.green,
+                font=get_config().ui.fonts.smaller,
             )
             self.title_label.grid(row=0, column=0, sticky="w")
 
             if self.multi_select:
                 self.count_label = ctk.CTkSimpleLabel(
-                    self.title_frame, text="(0)", font=FONTS_smaller
+                    self.title_frame, text="(0)", font=get_config().ui.fonts.smaller
                 )
                 self.count_label.grid(row=0, column=1, sticky="w", padx=(5, 0))
         else:
@@ -55,14 +57,14 @@ class CTkTreeView(ctk.CTkFrame):
 
             if self.multi_select:
                 self.count_label = ctk.CTkSimpleLabel(
-                    self, text="(0)", font=FONTS_smaller
+                    self, text="(0)", font=get_config().ui.fonts.smaller
                 )
                 self.count_label.grid(row=0, column=0, sticky="w", padx=15, pady=10)
 
         # Container frame for tree and scrollbar
-        self.configure(fg_color=colors.element_bg)
+        self.configure(fg_color=get_config().ui.colors.element_bg)
 
-        container = ctk.CTkContainer(self, bg_color=colors.element_bg)
+        container = ctk.CTkContainer(self, bg_color=get_config().ui.colors.element_bg)
         if title:
             container.grid(row=1, column=0, columnspan=2, sticky="nsew")
         else:
@@ -168,7 +170,7 @@ class CTkTreeView(ctk.CTkFrame):
         mode = int(self._get_appearance_mode() == "dark")
         style.map(
             "CTk.Treeview",
-            background=[("selected", colors.element_bg_hover[mode])],
+            background=[("selected", get_config().ui.colors.element_bg_hover[mode])],
             foreground=[("selected", selected_color)],
         )
         if hasattr(self, "tree"):

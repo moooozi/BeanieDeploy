@@ -37,7 +37,6 @@ ignore = ["E501"]  # Ignore line length since we have line-length
 [tool.ruff.lint.per-file-ignores]
 # Allow star imports in template files (common for GUI constants)
 "src/templates/*.py" = ["F403", "F405"]
-"src/tkinter_templates.py" = ["F403", "F405"]
 
 [tool.ruff.format]
 quote-style = "double"

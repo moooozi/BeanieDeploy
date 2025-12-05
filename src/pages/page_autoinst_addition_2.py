@@ -1,8 +1,8 @@
 import logging
 import math
 
-import tkinter_templates
-import tkinter_templates as tkt
+import customtkinter as ctk
+
 from models.page import Page, PageValidationResult
 from multilingual import _
 from services.patched_langtable import keyboards_db, langtable
@@ -52,7 +52,7 @@ class PageAutoinstAddition2(Page):
 
         self.all_timezones = sorted(langtable.list_all_timezones())
 
-        temp_frame = tkinter_templates.FrameContainer(page_frame)
+        temp_frame = ctk.CTkContainer(page_frame)
         temp_frame.pack(expand=1, fill="both")
         temp_frame.grid_rowconfigure(0, weight=1)
         temp_frame.columnconfigure(0, weight=1, uniform="cols")
@@ -164,7 +164,8 @@ class PageAutoinstAddition2(Page):
             kickstart = self.state.installation.kickstart
             if kickstart and self.selected_locale != kickstart.locale_settings.locale:
                 logging.info("Locale changed, reinitializing page")
-                tkt.flush_frame(self)
+                for widget in self.winfo_children():
+                    widget.destroy()
                 self._initiated = False
                 self.init_page()
                 self._initiated = True

@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
+import multilingual
 from models.data_units import DataUnit
 
 Color = tuple[str, str]
@@ -155,38 +156,34 @@ class ColorConfig:
 
 
 @dataclass(frozen=True)
+class FontsConfig:
+    """Font configuration."""
+
+    large: tuple[str, int] = ("Roboto Bold", 26)
+    medium: tuple[str, int] = ("Roboto Bold", 22)
+    small: tuple[str, int] = ("Roboto", 18)
+    smaller: tuple[str, int] = ("Roboto", 17)
+    tiny: tuple[str, int] = ("Roboto", 13)
+
+
+@dataclass(frozen=True)
 class UIConfig:
     """UI-related configuration."""
 
     # Window dimensions
     width: int = 850
     height: int = 580
-    min_width: int = 800  # width - 50
-    min_height: int = 530  # height - 50
-    max_width: int = 1450  # width + 600
-    max_height: int = 780  # height + 200
-    top_frame_height: int = 80
-    left_frame_width: int = 0
-
-    # Fonts
-    font_large: tuple[str, int] = field(init=False)
-    font_medium: tuple[str, int] = field(init=False)
-    font_small: tuple[str, int] = field(init=False)
-    font_smaller: tuple[str, int] = field(init=False)
-    font_tiny: tuple[str, int] = field(init=False)
 
     # Colors
     colors: ColorConfig = field(default_factory=lambda: ColorConfig())
+    fonts: FontsConfig = field(default_factory=lambda: FontsConfig())
 
     # Other UI settings
     accepted_architectures: tuple[str, ...] = ("amd64",)
 
-    def __post_init__(self):
-        object.__setattr__(self, "font_large", ("Arial", 26))
-        object.__setattr__(self, "font_medium", ("Arial Bold", 22))
-        object.__setattr__(self, "font_small", ("Arial", 18))
-        object.__setattr__(self, "font_smaller", ("Arial", 17))
-        object.__setattr__(self, "font_tiny", ("Arial", 13))
+    @property
+    def di(self):
+        return multilingual.get_di_var()
 
 
 class ConfigManager:

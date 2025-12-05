@@ -1,10 +1,11 @@
 import logging
 import tkinter as tk
 
+import customtkinter as ctk
+
 from models.page import Page, PageValidationResult
 from multilingual import _
 from templates.generic_page_layout import GenericPageLayout
-from tkinter_templates import FONTS_small, FONTS_smaller, TextLabel, colors
 
 
 class PageRestartRequired(Page):
@@ -22,18 +23,24 @@ class PageRestartRequired(Page):
             lambda: self._quit_application(),
         )
 
-        finished_label = TextLabel(
-            page_frame.content_frame, text=_("finished.text"), font=FONTS_smaller
-        )
-        finished_label.pack(pady=10)
-
-        restarting_label = TextLabel(
+        finished_label = ctk.CTkSimpleLabel(
             page_frame.content_frame,
-            var=self.restarting_text_var,
-            font=FONTS_small,
-            text_color=colors.primary,
+            text=_("finished.text"),
+            font=self._ui.fonts.smaller,
+            justify=self._ui.di.l,
+            pady=5,
         )
-        restarting_label.pack(pady=10)
+        finished_label.grid(row=0, column=0, pady=10)
+
+        restarting_label = ctk.CTkSimpleLabel(
+            page_frame.content_frame,
+            textvariable=self.restarting_text_var,
+            font=self._ui.fonts.small,
+            text_color=self._ui.colors.primary,
+            justify=self._ui.di.l,
+            pady=5,
+        )
+        restarting_label.grid(row=1, column=0, pady=10)
 
         # Check if auto restart is enabled
         install_options = self.state.installation.install_options

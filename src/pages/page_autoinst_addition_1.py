@@ -1,6 +1,7 @@
 import logging
 
-import tkinter_templates
+import customtkinter as ctk
+
 from autoinst import SUPPORTED_LANGS, get_locales_and_langs_sorted_with_names
 from core.autoinst_addition1_logic import get_language_from_locale
 from models.page import Page, PageValidationResult
@@ -60,7 +61,7 @@ class PageAutoinstAddition1(Page):
             combined_locale_list
         )
 
-        temp_frame = tkinter_templates.FrameContainer(page_frame)
+        temp_frame = ctk.CTkContainer(page_frame)
         temp_frame.pack(expand=1, fill="both")
         temp_frame.grid_rowconfigure(0, weight=1)
         temp_frame.columnconfigure(0, weight=1, uniform="cols")

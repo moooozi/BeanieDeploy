@@ -9,7 +9,6 @@ from multilingual import _
 from templates.generic_page_layout import GenericPageLayout
 from templates.info_frame import InfoFrame
 from templates.multi_radio_buttons import MultiRadioButtons
-from tkinter_templates import FONTS_smaller, colors
 from utils import format_bytes
 
 
@@ -205,8 +204,8 @@ class Page1(Page):
                 self.still_loading_label = ctk.CTkSimpleLabel(
                     self.page_frame,
                     text=_("loading.spins"),
-                    font=FONTS_smaller,
-                    text_color=colors.primary,
+                    font=self._ui.fonts.smaller,
+                    text_color=self._ui.colors.primary,
                 )
                 self.still_loading_label.grid(row=0, column=0, sticky="ew")
             self.after(200, self._wait_spin_loading)

@@ -1,5 +1,6 @@
+import customtkinter as ctk
+
 from config.settings import get_config
-from tkinter_templates import *
 
 
 class GenericPageLayout(ctk.CTkContainer):
@@ -59,10 +60,11 @@ class GenericPageLayout(ctk.CTkContainer):
         a preset for adding a CustomTkinter button. Used for the likes of "Next" and "Install" buttons
         :return: CustomTkinter button object
         """
+        ui = get_config().ui
         btn_next = ctk.CTkButton(parent, text=text, command=command)
         btn_next.pack(
-            anchor=multilingual.get_di_var().se,
-            side=multilingual.get_di_var().r,
+            anchor=ui.di.se,
+            side=ui.di.r,
             ipadx=22,
             padx=0,
         )
@@ -73,37 +75,34 @@ class GenericPageLayout(ctk.CTkContainer):
         a preset for adding a CustomTkinter button. Used for the likes of "Back", "Cancel" and "Abort" buttons
         :return: CustomTkinter button object
         """
+        ui = get_config().ui
         btn_back = ctk.CTkButton(
             parent,
             text=text,
             command=command,
-            fg_color=colors.btn_background,
-            hover_color=colors.btn_background_hover,
-            text_color=colors.btn_background_txt,
+            fg_color=ui.colors.btn_background,
+            hover_color=ui.colors.btn_background_hover,
+            text_color=ui.colors.btn_background_txt,
         )
         btn_back.pack(
-            anchor=multilingual.get_di_var().se,
-            side=multilingual.get_di_var().r,
+            anchor=ui.di.se,
+            side=ui.di.r,
             padx=12,
             ipadx=8,
         )
         return btn_back
 
     def add_page_title(self, text, pady=(40, 5)):
-        config = get_config()
+        ui = get_config().ui
         title = ctk.CTkSimpleLabel(
-            self,
-            wraplength=config.ui.max_width,
-            justify=multilingual.get_di_var().l,
-            text=text,
-            font=FONTS_medium,
+            self, text=text, font=ui.fonts.medium, wraplength="self"
         )
         title.grid(
             row=0,
             column=0,
             pady=pady,
             padx=0,
-            sticky="",
+            sticky="ew",
         )
         return title
 

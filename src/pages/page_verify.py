@@ -15,7 +15,6 @@ from services.system import (
 )
 from templates.ctk_treeview import CTkTreeView
 from templates.generic_page_layout import GenericPageLayout
-from tkinter_templates import flush_frame
 
 
 class PageVerify(Page):
@@ -95,7 +94,9 @@ class PageVerify(Page):
     def on_show(self):
         """Called when the page is shown - reinitialize to show current selections."""
         if self._initiated:
-            flush_frame(self)
+            for widget in self.winfo_children():
+                widget.destroy()
+
             self._initiated = False
             self.init_page()
             self._initiated = True

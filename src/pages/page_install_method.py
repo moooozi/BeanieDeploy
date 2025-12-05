@@ -11,12 +11,6 @@ from models.page import Page, PageValidationResult
 from multilingual import _
 from templates.generic_page_layout import GenericPageLayout
 from templates.multi_radio_buttons import MultiRadioButtons
-from tkinter_templates import (
-    FONTS_smaller,
-    TextLabel,
-    colors,
-    var_tracer,
-)
 
 
 class PageInstallMethod(Page):
@@ -144,28 +138,34 @@ class PageInstallMethod(Page):
             self.app_config.app.dualboot_required_space.bytes_value
         ).gigabytes
         self.conditional_frame = ctk.CTkContainer(page_frame)
-        self.conditional_frame.grid(row=1, column=0, sticky="ws")
-
+        self.conditional_frame.grid(row=1, column=0, sticky="we")
         page_frame.rowconfigure(0, weight=5, uniform="a")
         page_frame.rowconfigure(1, weight=1, uniform="a")
+        self.conditional_frame.columnconfigure(0, weight=1)
 
         win_drive_letter = self.state.installation.windows_partition_info.drive_letter
-        self.warn_backup_sys_drive_files = TextLabel(
+        self.warn_backup_sys_drive_files = ctk.CTkSimpleLabel(
             self.conditional_frame,
             text=_("warn.backup.system_drive") % {"drive": f"{win_drive_letter}:\\"},
-            font=FONTS_smaller,
-            text_color=colors.red,
+            font=self._ui.fonts.smaller,
+            text_color=self._ui.colors.red,
+            justify=self._ui.di.l,
+            pady=5,
         )
-        self.warn_backup_device = TextLabel(
+        self.warn_backup_device = ctk.CTkSimpleLabel(
             self.conditional_frame,
             text=_("warn.backup.device"),
-            font=FONTS_smaller,
-            text_color=colors.red,
+            font=self._ui.fonts.smaller,
+            text_color=self._ui.colors.red,
+            justify=self._ui.di.l,
+            pady=5,
         )
-        self.size_dualboot_txt_pre = TextLabel(
+        self.size_dualboot_txt_pre = ctk.CTkSimpleLabel(
             self.conditional_frame,
             text=_("dualboot.size.txt") % {"distro_name": selected_spin.name},
-            font=FONTS_smaller,
+            font=self._ui.fonts.smaller,
+            justify=self._ui.di.l,
+            pady=5,
         )
         self.size_dualboot_entry = ctk.CTkEntry(
             self.conditional_frame,
@@ -183,16 +183,13 @@ class PageInstallMethod(Page):
         min_size_txt = self.app_config.app.dualboot_required_space.to_gibibytes()
         max_size_txt = DataUnit(max_size_bytes).to_gibibytes()
         size_range_text = f"({min_size_txt}GiB - {max_size_txt}GiB)"
-        self.size_dualboot_txt_post = TextLabel(
+        self.size_dualboot_txt_post = ctk.CTkSimpleLabel(
             self.conditional_frame,
             text=size_range_text,
-            font=FONTS_smaller,
-            text_color=colors.primary,
-        )
-        var_tracer(
-            self.dualboot_size_var,
-            "write",
-            lambda *_: self._on_dualboot_size_change(),
+            font=self._ui.fonts.smaller,
+            text_color=self._ui.colors.primary,
+            justify=self._ui.di.l,
+            pady=5,
         )
 
         self.update_idletasks()
@@ -211,13 +208,13 @@ class PageInstallMethod(Page):
         self.size_dualboot_txt_post.grid_forget()
 
         if self.install_method_var.get() == PartitioningMethod.DUALBOOT.value:
-            self.size_dualboot_txt_pre.grid(column=0, row=0, sticky=self.di_var.w)
+            self.size_dualboot_txt_pre.grid(column=0, row=0, sticky=self._ui.di.w)
             self.size_dualboot_entry.grid(padx=5, column=1, row=0)
-            self.size_dualboot_txt_post.grid(column=2, row=0, sticky=self.di_var.w)
+            self.size_dualboot_txt_post.grid(column=2, row=0, sticky=self._ui.di.w)
         elif self.install_method_var.get() == PartitioningMethod.REPLACE_WIN.value:
-            self.warn_backup_sys_drive_files.grid(column=0, row=0, sticky=self.di_var.w)
+            self.warn_backup_sys_drive_files.grid(column=0, row=0, sticky=self._ui.di.w)
         elif self.install_method_var.get() == PartitioningMethod.CLEAN_DISK.value:
-            self.warn_backup_device.grid(column=0, row=0, sticky=self.di_var.w)
+            self.warn_backup_device.grid(column=0, row=0, sticky=self._ui.di.w)
 
     def validate_input(self) -> PageValidationResult:
         """Validate the selected install method and options."""

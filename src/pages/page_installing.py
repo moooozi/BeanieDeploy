@@ -13,7 +13,6 @@ from models.page import Page
 from multilingual import _
 from services.installation_service import InstallationService
 from templates.generic_page_layout import GenericPageLayout
-from tkinter_templates import TextLabel
 from utils import format_eta, format_speed
 
 
@@ -45,14 +44,22 @@ class PageInstalling(Page):
         # Set up GUI
         page_layout = GenericPageLayout(self, _("install.running"))
         page_frame = page_layout.content_frame
+        page_frame.columnconfigure(0, weight=1)
 
         self.progressbar_install = ctk.CTkProgressBar(
             page_frame, orientation="horizontal", mode="determinate"
         )
-        self.progressbar_install.pack(pady=(0, 20), fill="both")
+        self.progressbar_install.grid(row=0, column=0, pady=(0, 20), sticky="ew")
 
-        install_label = TextLabel(page_frame, var=self.install_job_var)
-        install_label.pack(pady=0, padx=10)
+        install_label = ctk.CTkSimpleLabel(
+            page_frame,
+            textvariable=self.install_job_var,
+            pady=5,
+            wraplength="self",
+            font=self._ui.fonts.small,
+            justify=self._ui.di.l,
+        )
+        install_label.grid(row=1, column=0, pady=0, padx=10, sticky="ew")
 
         self.progressbar_install.set(0)
         self.update()

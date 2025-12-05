@@ -1,14 +1,17 @@
 from typing import Any
 
-from tkinter_templates import *
+import customtkinter as ctk
+
+import multilingual
+from config.settings import get_config
 
 
 class InfoFrame(ctk.CTkFrame):
     def __init__(self, parent, title="", bulleting=True, bullet_char="⚪"):
         super().__init__(parent)
         self.configure(
-            width=MINWIDTH,
-            fg_color=colors.element_bg,
+            width=get_config().ui.width,
+            fg_color=get_config().ui.colors.element_bg,
         )
         self.bulleting = bulleting
         self.bullet_char = bullet_char
@@ -22,8 +25,8 @@ class InfoFrame(ctk.CTkFrame):
             title_label = ctk.CTkSimpleLabel(
                 self.inner_frame,
                 text=title,
-                text_color=colors.green,
-                font=FONTS_smaller,
+                text_color=get_config().ui.colors.green,
+                font=get_config().ui.fonts.smaller,
             )
             title_label.pack(anchor=multilingual.get_di_var().w, pady=(3, 5))
 

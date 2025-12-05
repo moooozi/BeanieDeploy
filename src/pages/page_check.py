@@ -10,7 +10,6 @@ from models.data_units import DataUnit
 from models.page import Page
 from multilingual import _
 from templates.generic_page_layout import GenericPageLayout
-from tkinter_templates import TextLabel
 
 
 class PageCheck(Page):
@@ -41,15 +40,23 @@ class PageCheck(Page):
         page_layout = GenericPageLayout(self, _("check.running"))
 
         page_frame = page_layout.content_frame
+        page_frame.columnconfigure(0, weight=1)
 
         self.progressbar_check = ctk.CTkProgressBar(
             page_frame, orientation="horizontal", mode="determinate"
         )
-        self.progressbar_check.pack(pady=(0, 20), fill="both")
+        self.progressbar_check.grid(row=0, column=0, pady=(0, 20), sticky="ew")
         self.progressbar_check.set(0)
 
-        job_label = TextLabel(page_frame, var=self.job_var)
-        job_label.pack(pady=0, padx=10)
+        job_label = ctk.CTkSimpleLabel(
+            page_frame,
+            textvariable=self.job_var,
+            justify=self._ui.di.l,
+            wraplength="self",
+            font=self._ui.fonts.small,
+            pady=5,
+        )
+        job_label.grid(row=1, column=0, pady=0, padx=10, sticky="ew")
 
         self.update()
         logging.info("Starting checks")
