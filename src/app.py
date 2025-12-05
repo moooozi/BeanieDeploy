@@ -40,6 +40,9 @@ class MainApp(Application):
         self.app_state = get_state()
         self.download_service = DownloadService(self.config)
 
+        # Add observer for state changes
+        self.app_state.add_observer(self._on_state_change)
+
         threading.Thread(target=self._fetch_spins, daemon=True).start()
         threading.Thread(target=self._fetch_ip_locale, daemon=True).start()
 
@@ -71,7 +74,7 @@ class MainApp(Application):
             return self.page_manager.start()
         return None
 
-    def _on_state_change(self, change_type: str, **kwargs) -> None:
+    def _on_state_change(self, change_type: str, **_kwargs) -> None:
         """Handle state changes."""
         logging.info(f"State change detected: {change_type}")
         if change_type == "error_occurred":

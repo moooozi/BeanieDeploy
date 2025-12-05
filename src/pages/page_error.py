@@ -33,8 +33,7 @@ class PageError(Page):
 
         if self.state.error.has_error:
             self.category = self.state.error.category
-            self.errors = self.state.error.error_messages[:]
-            self.state.clear_error()
+            self.errors = self.state.error.error_messages
         else:
             self.errors = (
                 self.logged_errors[:] if self.logged_errors else [_("error.generic")]
@@ -66,6 +65,8 @@ class PageError(Page):
 
         self.info_frame_raster = InfoFrame(self.page_frame)
         self.info_frame_raster.pack(fill="x", pady=5, padx=10)
+
+        self._display_errors()
 
     def _display_errors(self):
         """Display the current errors in the UI."""
