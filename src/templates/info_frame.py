@@ -14,7 +14,7 @@ class InfoFrame(ctk.CTkFrame):
         self.bullet_char = bullet_char
 
         # Inner frame for padding
-        self.inner_frame = ctk.CTkContainer(self, bg_color=colors.element_bg)
+        self.inner_frame = ctk.CTkContainer(self)
         self.inner_frame.pack(fill="both", expand=True, padx=(15, 10), pady=10)
 
         self.labels: dict[str, ctk.CTkSimpleLabel] = {}

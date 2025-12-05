@@ -143,7 +143,7 @@ class SystemRequirementsConfig:
 class ColorConfig:
     """Color configuration with light and dark variants."""
 
-    background: Color = ("#D9D9D9", "#181818")
+    background: Color = ("#E2E2E2", "#181818")
     btn_background: Color = ("#C8C8C8", "#2D2D2D")
     btn_background_hover: Color = ("#BFBFBF", "#3A3A3A")
     btn_background_txt: Color = ("#000000", "#FFFFFF")
