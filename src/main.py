@@ -75,7 +75,6 @@ def run():
             sys, "_MEIPASS"
         )
         if is_pyinstaller_bundle:
-            set_skip_check(skip=True)
             args.release = True
             logging.info("PyInstaller bundle detected - running in release mode")
         else:

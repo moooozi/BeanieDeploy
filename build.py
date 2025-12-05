@@ -66,6 +66,8 @@ def build_with_pyinstaller():
         pyinstaller_path,
         "--onefile",
         "--windowed",
+        "--optimize",
+        "2",
         "--name",
         f"{app_name}-{app_version}",
         "--distpath",
