@@ -1,17 +1,15 @@
 """
 Download service for handling file downloads and network operations.
-Uses requests library for better reliability and features.
+Uses a custom Rust-based downloader for better performance and native SSL support.
 """
 
-import hashlib
 import logging
-import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import requests
+import requers
 
 from config.settings import ConfigManager
 
@@ -67,64 +65,55 @@ class DownloadService:
         logging.info(f"Starting download: {url} -> {filepath}")
 
         try:
-            start_time = time.time()
-            last_progress_time = start_time
+            # Use Rust downloader - now returns a handle for progress monitoring
+            download_handle = requers.download_file(
+                url,
+                str(filepath),
+                True,  # resume
+            )
 
-            # Start the download with requests
-            headers = {"User-Agent": "BeanieDeploy/1.0"}
-            with requests.get(
-                url, headers=headers, stream=True, timeout=30
-            ) as response:
-                response.raise_for_status()
+            # Monitor progress
+            while not download_handle.is_finished():
+                if progress_callback:
+                    progress_info = download_handle.get_progress()
+                    downloaded = progress_info.get("downloaded", 0)
+                    total = progress_info.get("total", 0)
+                    speed = progress_info.get("speed", 0.0)
+                    eta = progress_info.get("eta", 0.0)
 
-                total_size = int(response.headers.get("Content-Length", 0))
-                downloaded_size = 0
+                    percentage = (
+                        (downloaded / total) * 100 if total and total > 0 else 0.0
+                    )
 
-                with filepath.open("wb") as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:  # Filter out keep-alive chunks
-                            f.write(chunk)
-                            downloaded_size += len(chunk)
+                    progress = DownloadProgress(
+                        filename=filename,
+                        downloaded_bytes=downloaded,
+                        total_bytes=total,
+                        speed_bytes_per_sec=speed,
+                        eta_seconds=eta,
+                        percentage=percentage,
+                    )
 
-                            # Update progress
-                            current_time = time.time()
-                            if (
-                                progress_callback
-                                and (current_time - last_progress_time) > 0.5
-                            ):  # Update every 0.5s
-                                elapsed = current_time - start_time
-                                speed = downloaded_size / elapsed if elapsed > 0 else 0
-                                eta = (
-                                    (total_size - downloaded_size) / speed
-                                    if speed > 0
-                                    else 0
-                                )
-                                percentage = (
-                                    (downloaded_size / total_size) * 100
-                                    if total_size > 0
-                                    else 0
-                                )
+                    progress_callback(progress)
 
-                                progress = DownloadProgress(
-                                    filename=filename,
-                                    downloaded_bytes=downloaded_size,
-                                    total_bytes=total_size,
-                                    speed_bytes_per_sec=speed,
-                                    eta_seconds=eta,
-                                    percentage=percentage,
-                                )
+                # Small delay to avoid busy waiting
+                import time
 
-                                progress_callback(progress)
-                                last_progress_time = current_time
+                time.sleep(0.2)
+
+            # Check if download was successful
+            if not download_handle.is_successful():
+                filepath.unlink()
+                msg = f"Download failed for {filename}"
+                raise RuntimeError(msg)
 
             # Verify hash if provided
             if expected_hash and not self._verify_file_hash(filepath, expected_hash):
                 filepath.unlink()  # Remove corrupted file
                 msg = f"Hash verification failed for {filename}"
                 raise ValueError(msg)
-
             logging.info(
-                f"Successfully downloaded {filename} ({downloaded_size} bytes)"
+                f"Successfully downloaded {filename} ({filepath.stat().st_size} bytes)"
             )
             return filepath
 
@@ -138,12 +127,7 @@ class DownloadService:
     def _verify_file_hash(self, filepath: Path, expected_hash: str) -> bool:
         """Verify file SHA256 hash."""
         try:
-            sha256_hash = hashlib.sha256()
-            with filepath.open("rb") as f:
-                for chunk in iter(lambda: f.read(4096), b""):
-                    sha256_hash.update(chunk)
-
-            calculated_hash = sha256_hash.hexdigest().lower()
+            calculated_hash = requers.hash_file(str(filepath)).lower()
             expected_hash = expected_hash.lower()
 
             logging.debug(
@@ -155,9 +139,9 @@ class DownloadService:
             logging.error(f"Hash verification failed: {e}")
             return False
 
-    def fetch_json(self, url: str) -> dict[str, Any]:
+    def fetch_json(self, url: str) -> Any:
         """
-        Fetch and parse JSON from a URL using requests.
+        Fetch and parse JSON from a URL using the Rust downloader.
 
         Args:
             url: URL to fetch JSON from
@@ -168,7 +152,7 @@ class DownloadService:
         try:
             logging.info(f"Fetching JSON from: {url}")
             headers = {"User-Agent": "BeanieDeploy/1.0"}
-            response = requests.get(url, headers=headers, timeout=30)
+            response = requers.get(url, headers=headers, timeout=30.0)
             response.raise_for_status()
 
             data = response.json()

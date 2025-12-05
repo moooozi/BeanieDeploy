@@ -9,7 +9,6 @@ from models.check import Check, CheckType, DoneChecks
 from models.data_units import DataUnit
 from models.page import Page
 from multilingual import _
-from pages.page_error import PageError
 from templates.generic_page_layout import GenericPageLayout
 from tkinter_templates import TextLabel
 
@@ -103,17 +102,7 @@ class PageCheck(Page):
             else:
                 msg = f"Found {len(errors)} errors, navigating to error page"
                 logging.info(msg)
-                from models.page_manager import PageManager
-
-                if self._page_manager is None or not isinstance(
-                    self._page_manager, PageManager
-                ):
-                    msg = "PageManager is not set or is not an instance of PageManager"
-                    raise ValueError(msg)
-                self._page_manager.configure_page(
-                    PageError, lambda page: page.set_errors(errors)
-                )
-                self.navigate_to(PageError)
+                self.state.set_error_messages(errors, "compatibility")
         else:
             logging.info("No done_checks, navigating next anyway")
             self.navigate_next()

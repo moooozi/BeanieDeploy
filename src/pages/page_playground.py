@@ -55,6 +55,5 @@ class PagePlayground(Page):
     def _quit_application(self):
         """Quit the application."""
         logging.info("User quit from playground page")
-        import sys
 
-        sys.exit(0)
+        raise SystemExit(0)

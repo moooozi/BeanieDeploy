@@ -82,21 +82,12 @@ def build_with_pyinstaller():
         "src/locales;locales",
         "--add-data",
         "src/resources;resources",
-        # Add hidden imports for babel translation system
-        "--hidden-import",
-        "babel.localedata",
         # Add hidden imports for langtable and related modules
         "--hidden-import",
         "langtable",
-        "--hidden-import",
-        "babel",
-        "--hidden-import",
-        "babel.localedata",
         # Collect all data for langtable
         "--collect-data",
         "langtable",
-        "--collect-data",
-        "babel",
         # Add hidden imports for jaraco modules used by pkg_resources
         "--hidden-import",
         "jaraco.classes",
@@ -108,6 +99,15 @@ def build_with_pyinstaller():
         "jaraco.context",
         "--hidden-import",
         "jaraco.collections",
+        # Exclude unused modules and DLLs
+        "--exclude-module",
+        "win32ui",
+        "--exclude-module",
+        "ssl",
+        "--exclude-module",
+        "sqlite3",
+        "--exclude-module",
+        "lzma",
         "src/main.py",
     ]
 

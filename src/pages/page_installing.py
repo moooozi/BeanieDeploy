@@ -118,7 +118,6 @@ class PageInstalling(Page):
         self.install_job_var.set(message)
         real_progress = self._real_progress(index, percent) * 0.80  # 80% for downloads
         self.progressbar_install.set(0.1 + real_progress)
-        self.update()
 
     def _real_progress(self, index: int, percent: float) -> float:
         """Calculate real progress across all files."""
@@ -158,7 +157,6 @@ class PageInstalling(Page):
         self.current_stage = stage
         self.progressbar_install.set(percent / 100.0)
         self.install_job_var.set(message)
-        self.update()
 
     def _on_installation_complete(self, result: InstallationResult) -> None:
         """Handle installation completion (called on main thread)."""
@@ -166,23 +164,15 @@ class PageInstalling(Page):
             logging.info("Installation completed successfully")
             self.progressbar_install.set(1.0)
             self.install_job_var.set("Installation completed successfully!")
-            self.update()
 
             # Navigate to next page after short delay
             self.after(1000, self.navigate_next)
         else:
             logging.error(f"Installation failed: {result.error_message}")
-            # Navigate to installation failed page
-            from pages.page_install_failed import PageInstallFailed
+            # Set error in state  (will navigate to error page)
+            error_msg = result.error_message or "Unknown installation error"
+            self.state.set_error_messages([error_msg], "installation")
 
-            failed_page = self.navigate_to(PageInstallFailed)
-            if failed_page:
-                failed_page.set_error_message(result.error_message)
-            # Also raise the error for PyInstaller popup
-            msg = f"Installation failed: {result.error_message}"
-            raise RuntimeError(msg)
-
-    # Modern methods for new installation system
     def set_installation_context(self, installation_context):
         """Set the installation context for modern type-safe installation."""
         logging.info("Setting installation context for type-safe installation")

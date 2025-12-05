@@ -326,4 +326,4 @@ if __name__ == "__main__":
             from privilege_helper import main
 
             main(pipe_name)
-            sys.exit(0)
+            raise SystemExit(0)

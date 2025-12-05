@@ -3,8 +3,8 @@ Application state management.
 Replaces the global variable chaos with proper state management.
 """
 
+import logging
 from collections.abc import Callable
-from contextlib import suppress
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -109,8 +109,8 @@ class ErrorState:
     """State related to error handling."""
 
     has_error: bool = False
-    error_message: str = ""
-    error_details: str = ""
+    error_messages: list[str] = field(default_factory=list)
+    category: str = "generic"
 
 
 @dataclass
@@ -136,9 +136,12 @@ class ApplicationState:
 
     def notify_observers(self, change_type: str, **kwargs) -> None:
         """Notify all observers of a state change."""
+        logging.info(f"Notifying {len(self._observers)} observers of {change_type}")
         for observer in self._observers:
-            with suppress(Exception):
+            try:
                 observer(change_type, **kwargs)
+            except Exception as e:
+                logging.error(f"Error in observer: {e}")
 
     def update_installer_status(self, status: InstallerStatus) -> None:
         """Update the installer status and notify observers."""
@@ -167,18 +170,21 @@ class ApplicationState:
             "spins_data_updated", all_spins=all_spins, accepted_spins=accepted_spins
         )
 
-    def set_error_message(self, message: str, details: str = "") -> None:
-        """Set an error message and notify observers."""
+    def set_error_messages(
+        self, messages: list[str], category: str = "generic"
+    ) -> None:
+        """Set error messages and category, and notify observers."""
+        logging.info(f"Setting error messages: {messages}, category: {category}")
         self.error.has_error = True
-        self.error.error_message = message
-        self.error.error_details = details
-        self.notify_observers("error_occurred", message=message, details=details)
+        self.error.error_messages = messages
+        self.error.category = category
+        self.notify_observers("error_occurred", messages=messages, category=category)
 
     def clear_error(self) -> None:
         """Clear the current error state."""
         self.error.has_error = False
-        self.error.error_message = ""
-        self.error.error_details = ""
+        self.error.error_messages = []
+        self.error.category = "generic"
         self.notify_observers("error_cleared")
 
 

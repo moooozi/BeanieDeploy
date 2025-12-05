@@ -65,18 +65,16 @@ class PageRestartRequired(Page):
     def _quit_application(self):
         """Quit the application without restarting."""
         logging.info("User chose to restart later")
-        import sys
 
-        sys.exit(0)
+        raise SystemExit(0)
 
     def _quit_and_restart(self):
         """Quit application and restart Windows."""
         import subprocess
-        import sys
 
         try:
             # Restart Windows
             subprocess.run(["shutdown", "/r", "/t", "0"], check=True)
         except Exception as e:
             logging.error(f"Failed to restart system: {e}")
-            sys.exit(0)
+            raise SystemExit(0) from e

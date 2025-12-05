@@ -2,8 +2,6 @@ import logging
 import threading
 from typing import Any
 
-import requests
-
 import dummy
 from config.settings import get_config
 from core.compatibility_logic import filter_spins
@@ -17,12 +15,12 @@ from pages.page_autoinst_addition_1 import PageAutoinstAddition1
 from pages.page_autoinst_addition_2 import PageAutoinstAddition2
 from pages.page_check import PageCheck
 from pages.page_error import PageError
-from pages.page_install_failed import PageInstallFailed
 from pages.page_install_method import PageInstallMethod
 from pages.page_installing import PageInstalling
 from pages.page_playground import PagePlayground
 from pages.page_restart_required import PageRestartRequired
 from pages.page_verify import PageVerify
+from services.download import DownloadService
 from services.spin_manager import parse_spins
 from templates.application import Application
 
@@ -40,6 +38,7 @@ class MainApp(Application):
         self.config = get_config()
         self.state_manager = get_state_manager()
         self.app_state = get_state()
+        self.download_service = DownloadService(self.config)
 
         threading.Thread(target=self._fetch_spins, daemon=True).start()
         threading.Thread(target=self._fetch_ip_locale, daemon=True).start()
@@ -72,6 +71,14 @@ class MainApp(Application):
             return self.page_manager.start()
         return None
 
+    def _on_state_change(self, change_type: str, **kwargs) -> None:
+        """Handle state changes."""
+        logging.info(f"State change detected: {change_type}")
+        if change_type == "error_occurred":
+            logging.info("Scheduling navigation to error page")
+
+            self.after(0, lambda: self.page_manager.show_page(PageError))
+
     def _configure_navigation_flow(self):
         """Configure the navigation flow for the page manager."""
         from core.navigation_conditions import (
@@ -90,7 +97,6 @@ class MainApp(Application):
             PageRestartRequired: {},
             # Special pages not in main flow
             PageError: {"special": True},
-            PageInstallFailed: {"special": True},
         }
 
         self.page_manager.configure_navigation_flow(navigation_flow)
@@ -150,11 +156,21 @@ class MainApp(Application):
         )
 
     def _fetch_spins(self):
-        url = self.config.urls.available_spins_list
-        data = requests.get(url).json()
-        self.after(0, self._on_spin_promise_complete, data)
+        try:
+            data = self.download_service.fetch_json(
+                self.config.urls.available_spins_list
+            )
+            self.after(0, self._on_spin_promise_complete, data)
+        except Exception as e:
+            msg = f"Failed to fetch spins: {e}"
+            logging.exception(msg)
+            # Set error in state (will auto-navigate to error page)
+            self.app_state.set_error_messages([msg])
 
     def _fetch_ip_locale(self):
-        url = self.config.urls.fedora_geo_ip
-        data = requests.get(url).json()
-        self.after(0, self._update_ip_locale, data)
+        try:
+            data = self.download_service.fetch_json(self.config.urls.fedora_geo_ip)
+            self.after(0, self._update_ip_locale, data)
+        except Exception as e:
+            logging.error(f"Failed to fetch IP locale: {e}")
+            # Non-critical - just log and continue

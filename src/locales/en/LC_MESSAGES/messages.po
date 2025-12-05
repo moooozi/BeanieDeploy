@@ -91,8 +91,15 @@ msgstr "This device's CPU architecture is incompatible."
 msgid "error.arch.1"
 msgstr "CPU architecture could not be verified."
 
-msgid "error.list"
+msgid "error.subtitle.compatibility"
 msgstr "Following issues detected:"
+
+msgid "error.subtitle.installation"
+msgstr "Your system has been restored to its previous state. The following errors were encountered:"
+
+msgid "error.subtitle.generic"
+msgstr "The application encountered the following errors:"
+
 
 msgid "error.resizable.0"
 msgstr "Not enough shrink room on system drive."
@@ -106,8 +113,14 @@ msgstr "Not enough space on your system drive. Free up space and try again"
 msgid "error.space.1"
 msgstr "Failed to check available disk space on your system drive."
 
-msgid "error.title"
+msgid "error.title.compatibility"
 msgstr "%(app_name)s can't run on your system"
+
+msgid "error.title.installation"
+msgstr "Installation failed
+
+msgid "error.title.generic"
+msgstr "Runtime Error"
 
 msgid "error.totalram.0"
 msgstr "Your system does not have sufficient RAM capacity."
@@ -126,6 +139,9 @@ msgstr "Not enough space in the EFI System Partition."
 
 msgid "error.efi_space.1"
 msgstr "Failed to check available space in the EFI System Partition."
+
+msgid "error.generic"
+msgstr "An unexpected runtime error occurred."
 
 # Install
 msgid "install.auto"

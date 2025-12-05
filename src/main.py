@@ -12,7 +12,7 @@ if "/PIPE" in sys.argv:
         import privilege_helper
 
         privilege_helper.main(pipe_name)
-        sys.exit(0)
+        raise SystemExit(0)
 
 # Handle PyInstaller bundle
 if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
@@ -75,11 +75,12 @@ def run():
             sys, "_MEIPASS"
         )
         if is_pyinstaller_bundle:
+            set_skip_check(skip=True)
             args.release = True
             logging.info("PyInstaller bundle detected - running in release mode")
         else:
             # Development mode - always skip checks
-            set_skip_check(skip=True)
+            set_skip_check(skip=False)
             logging.info("Running in debug mode")
 
         # Update version if provided
@@ -124,7 +125,7 @@ if __name__ == "__main__":
         except Exception as e:
             logging.error(f"Application failed in release mode: {e}")
             # Fail silently in release mode to avoid showing errors to users
-            sys.exit(1)
+            raise SystemExit(1) from e
     else:
         # Development mode - show errors and keep console open
         if is_admin():

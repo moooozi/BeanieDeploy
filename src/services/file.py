@@ -3,10 +3,11 @@ File management services.
 Handles file operations, hashing, copying, etc.
 """
 
-import hashlib
 import os
 from pathlib import Path
 from urllib.parse import urlparse
+
+import requers
 
 
 def get_sha256_hash(file_path: str) -> str:
@@ -19,11 +20,7 @@ def get_sha256_hash(file_path: str) -> str:
     Returns:
         SHA256 hash as hexadecimal string
     """
-    sha256 = hashlib.sha256()
-    with Path(file_path).open("rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            sha256.update(chunk)
-    return sha256.hexdigest()
+    return requers.hash_file(file_path)
 
 
 def set_file_readonly(filepath: str, is_readonly: bool) -> None:

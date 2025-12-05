@@ -1,5 +1,10 @@
 # Copilot Instructions for BeanieDeploy Project
 
+## App starting point
+
+- Run `.venv/Scripts/python.exe src/main.py` to start the application.
+- For other scripts, run them similarly from the `.venv/Scripts/python.exe` interpreter.
+
 ## Error Checking and Linting
 
 **Always use native VS Code API tools** (`get_errors`) for checking errors/warnings instead of terminal commands like `ruff check` or `mypy`. This ensures consistency with VS Code's Problems panel and avoids discrepancies.
@@ -9,7 +14,7 @@
 
 ## Sudo
 
-Recent builds of Windows 11 have added native sudo support, and it is enabled on this system.
+Recent Windows 11 builds have native sudo support, and it is enabled on this system.
 
 ### Purpose and Usage
 - Standard terminal runs without elevation, but some tasks need admin rights.
@@ -24,3 +29,12 @@ Recent builds of Windows 11 have added native sudo support, and it is enabled on
 - `sudo powershell -Command 'echo "Hello World"'` (powershell is a binary)
 - `sudo cmd /c 'echo Hello World'` (cmd is a binary)
 - `sudo bcdedit /enum` (bcdedit is a binary)
+
+## `requers` Library Usage
+
+`requers` is a Rust-based HTTP client library with a Python interface. It provides a `get` method that resembles `requests.get`, and `download_file` for large file downloads.
+
+### Instructions
+
+- `requers` is located in `lib/requers`.
+- When you modify `requers`, re-build and re-install with a single command: `.venv/Scripts/python.exe -m pip install lib/requers`

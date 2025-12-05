@@ -22,5 +22,8 @@
         "cmd": ".\\.venv\\Scripts\\pybabel.exe compile -i ${file} -o ${fileDirname}/${fileBasenameNoExt}.mo"
       }
     ]
-  }
+  },
+  "rust-analyzer.linkedProjects": [
+    "lib/requers/Cargo.toml"
+  ]
 }

@@ -29,7 +29,7 @@ class GenericPageLayout(ctk.CTkContainer):
         self.content_frame = ctk.CTkContainer(self)
 
         if self.title:
-            self.add_page_title(self.title)
+            self._title_widget = self.add_page_title(self.title)
         if self.primary_btn_txt or self.secondary_btn_txt:
             self.bottom_frame = ctk.CTkContainer(self, height=34)
             self.bottom_frame.grid(row=2, column=0, sticky="ew")
@@ -106,3 +106,10 @@ class GenericPageLayout(ctk.CTkContainer):
             sticky="",
         )
         return title
+
+    def set_page_title(self, text):
+        """Set or update the page title."""
+        if hasattr(self, "_title_widget"):
+            self._title_widget.configure(text=text)
+        else:
+            self._title_widget = self.add_page_title(text)

@@ -144,7 +144,7 @@ def main(pipe_name: str):
 
     except Exception:
         traceback.print_exc()
-        sys.exit(1)
+        raise SystemExit(1) from None
     finally:
         if pipe_handle is not None:
             with contextlib.suppress(Exception):
