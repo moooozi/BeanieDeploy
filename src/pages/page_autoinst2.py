@@ -5,7 +5,6 @@ import customtkinter as ctk
 
 from models.page import Page, PageValidationResult
 from multilingual import _
-from templates.generic_page_layout import GenericPageLayout
 
 
 class PageAutoinst2(Page):
@@ -41,15 +40,11 @@ class PageAutoinst2(Page):
             logging.error("No spin selected when initializing auto-install page")
             return
 
-        page_layout = GenericPageLayout(
-            self,
-            _("windows.question") % {"distro_name": selected_spin.name},
-            _("btn.next"),
-            lambda: self.navigate_next(),
-            _("btn.back"),
-            lambda: self.navigate_previous(),
+        self.page_manager.set_title(
+            _("windows.question") % {"distro_name": selected_spin.name}
         )
-        page_frame = page_layout.content_frame
+
+        page_frame = self
         frame_checkboxes = ctk.CTkContainer(
             page_frame,
         )

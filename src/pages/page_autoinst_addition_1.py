@@ -9,7 +9,6 @@ from multilingual import _
 from services.patched_langtable import langtable
 from services.system import get_windows_ui_locale
 from templates.ctk_treeview import CTkTreeView
-from templates.generic_page_layout import GenericPageLayout
 
 
 class PageAutoinstAddition1(Page):
@@ -17,15 +16,9 @@ class PageAutoinstAddition1(Page):
         super().__init__(parent, page_name, *args, **kwargs)
 
     def init_page(self):
-        page_layout = GenericPageLayout(
-            self,
-            _("title.autoinst2"),
-            _("btn.next"),
-            lambda: self.navigate_next(),
-            _("btn.back"),
-            lambda: self.navigate_previous(),
-        )
-        page_frame = page_layout.content_frame
+        self.page_manager.set_title(_("title.autoinst2"))
+
+        page_frame = self
 
         # Get IP locale from state instead of globals
 
@@ -74,13 +67,9 @@ class PageAutoinstAddition1(Page):
 
         self.locale_list = CTkTreeView(temp_frame, title=_("locale"))
 
-        self.lang_list.grid(
-            row=0, column=0, sticky="nsew", padx=5, pady=5, ipady=5, ipadx=5
-        )
+        self.lang_list.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
-        self.locale_list.grid(
-            row=0, column=1, sticky="nsew", padx=5, pady=5, ipady=5, ipadx=5
-        )
+        self.locale_list.grid(row=0, column=1, sticky="nsew")
 
         for lang, lang_details in langs_and_locales.items():
             self.lang_list.insert(

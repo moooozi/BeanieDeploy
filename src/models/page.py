@@ -5,6 +5,7 @@ import customtkinter as ctk
 
 from config.settings import ConfigManager, get_config
 from core.state import get_state
+from models.page_manager_protocol import PageManagerProtocol
 
 
 class PageValidationResult:
@@ -40,7 +41,13 @@ class Page(ctk.CTkContainer, ABC):
 
     def set_page_manager(self, page_manager):
         """Set the page manager for this page."""
+
         self._page_manager = page_manager
+
+    @property
+    def page_manager(self) -> PageManagerProtocol:
+        """Get the page manager."""
+        return self._page_manager  # type: ignore
 
     @abstractmethod
     def init_page(self):

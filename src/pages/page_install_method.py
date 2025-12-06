@@ -9,7 +9,6 @@ from config.settings import PartitioningMethod
 from models.data_units import DataUnit
 from models.page import Page, PageValidationResult
 from multilingual import _
-from templates.generic_page_layout import GenericPageLayout
 from templates.multi_radio_buttons import MultiRadioButtons
 
 
@@ -26,15 +25,12 @@ class PageInstallMethod(Page):
             logging.error("No spin selected when initializing install method page")
             return
 
-        page_layout = GenericPageLayout(
-            self,
-            _("windows.question") % {"distro_name": selected_spin.name},
-            _("btn.next"),
-            lambda: self.navigate_next(),
-            _("btn.back"),
-            lambda: self.navigate_previous(),
+        self.page_manager.set_title(
+            _("windows.question") % {"distro_name": selected_spin.name}
         )
-        page_frame = page_layout.content_frame
+        # Primary and secondary buttons use defaults
+
+        page_frame = self
         page_frame.columnconfigure(0, weight=1)
 
         self.selected_spin_name = selected_spin.name

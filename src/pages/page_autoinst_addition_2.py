@@ -12,7 +12,6 @@ from services.system import (
     get_windows_timezone_from_iana,
 )
 from templates.ctk_treeview import CTkTreeView
-from templates.generic_page_layout import GenericPageLayout
 
 
 class PageAutoinstAddition2(Page):
@@ -27,15 +26,9 @@ class PageAutoinstAddition2(Page):
         self.tk.call("tk", "scaling", scaling_factor)
 
     def init_page(self):
-        page_layout = GenericPageLayout(
-            self,
-            _("title.autoinst3"),
-            _("btn.next"),
-            lambda: self.navigate_next(),
-            _("btn.back"),
-            lambda: self.navigate_previous(),
-        )
-        page_frame = page_layout.content_frame
+        self.page_manager.set_title(_("title.autoinst3"))
+
+        page_frame = self
 
         # Get locale from state instead of globals
         kickstart = self.state.installation.kickstart
@@ -64,13 +57,9 @@ class PageAutoinstAddition2(Page):
 
         self.timezone_list = CTkTreeView(temp_frame, title=_("list.timezones"))
 
-        self.keyboard_list.grid(
-            row=0, column=0, sticky="nsew", padx=5, pady=5, ipady=5, ipadx=5
-        )
+        self.keyboard_list.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
-        self.timezone_list.grid(
-            row=0, column=1, sticky="nsew", padx=5, pady=5, ipady=5, ipadx=5
-        )
+        self.timezone_list.grid(row=0, column=1, sticky="nsew")
         # Sort keymaps by description alphabetically
         keymaps_sorted = sorted(
             self.all_keymaps, key=lambda k: keyboards_db[k].description.lower()

@@ -174,7 +174,10 @@ class UIConfig:
     width: int = 850
     height: int = 580
     margin_bottom: int = 10
+    margin_button_bar: int = 10
     margin_side: int = 20
+    margin_title_top: int = 40
+    margin_title_bottom: int = 20
     # Colors
     colors: ColorConfig = field(default_factory=lambda: ColorConfig())
     fonts: FontsConfig = field(default_factory=lambda: FontsConfig())

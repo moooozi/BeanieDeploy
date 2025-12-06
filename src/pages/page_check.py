@@ -9,7 +9,6 @@ from models.check import Check, CheckType, DoneChecks
 from models.data_units import DataUnit
 from models.page import Page
 from multilingual import _
-from templates.generic_page_layout import GenericPageLayout
 
 
 class PageCheck(Page):
@@ -37,9 +36,11 @@ class PageCheck(Page):
     def init_page(self):
         logging.info("PageCheck.init_page() called")
 
-        page_layout = GenericPageLayout(self, _("check.running"))
+        self.page_manager.set_title(_("check.running"))
+        self.page_manager.set_primary_button(visible=False)
+        self.page_manager.set_secondary_button(visible=False)
 
-        page_frame = page_layout.content_frame
+        page_frame = self
         page_frame.columnconfigure(0, weight=1)
 
         self.progressbar_check = ctk.CTkProgressBar(

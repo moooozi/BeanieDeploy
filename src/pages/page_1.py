@@ -6,7 +6,6 @@ import customtkinter as ctk
 
 from models.page import Page, PageValidationResult
 from multilingual import _
-from templates.generic_page_layout import GenericPageLayout
 from templates.info_frame import InfoFrame
 from templates.multi_radio_buttons import MultiRadioButtons
 from utils import format_bytes
@@ -19,14 +18,10 @@ class Page1(Page):
         self.still_loading_label = None
 
     def init_page(self):
-        page_layout = GenericPageLayout(
-            self,
-            _("desktop.question"),
-            _("btn.next"),
-            lambda: self.navigate_next(),  # Use new navigation method
-        )
-        page_frame = page_layout.content_frame
-        self.page_frame = page_frame  # Store for later use
+        self.page_manager.set_title(_("desktop.question"))
+        # Primary and secondary buttons use defaults
+
+        self.page_frame = self  # Use self as the page frame
         self.page_frame.columnconfigure(0, weight=1)
 
         self._wait_spin_loading()

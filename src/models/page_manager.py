@@ -1,6 +1,9 @@
 import logging
 from typing import Any, TypeVar
 
+import customtkinter as ctk
+
+from config.settings import get_config
 from models.page import Page
 
 # Type variable for page types
@@ -16,8 +19,89 @@ class PageManager:
         # Navigation flow will be configured externally
         self._navigation_flow: dict[type[Page], Any] = {}
 
+        # Create shared UI elements
+        self.ui_config = get_config().ui
+        self.title_label = ctk.CTkSimpleLabel(
+            self.container, text="", font=self.ui_config.fonts.medium, wraplength="self"
+        )
+        self.title_label.grid(
+            row=0,
+            column=0,
+            columnspan=3,
+            sticky="ew",
+            pady=(self.ui_config.margin_title_top, 0),
+        )
+
+        self.primary_button = ctk.CTkButton(
+            self.container,
+            text="",
+            command=self._default_next,
+            corner_radius=20,
+        )
+        self.primary_button.grid(
+            row=2,
+            column=2,
+            ipadx=15,
+            padx=(0, self.ui_config.margin_side),
+            pady=(0, self.ui_config.margin_bottom),
+        )
+
+        self.secondary_button = ctk.CTkButton(
+            self.container,
+            text="",
+            command=self._default_previous,
+            fg_color=self.ui_config.colors.btn_background,
+            hover_color=self.ui_config.colors.btn_background_hover,
+            text_color=self.ui_config.colors.btn_background_txt,
+            corner_radius=20,
+        )
+        self.secondary_button.grid(
+            row=2, column=1, padx=12, pady=(0, self.ui_config.margin_bottom)
+        )
+        self.secondary_button.grid_remove()  # Hide by default
+
         self.container.grid_columnconfigure(0, weight=1)
-        self.container.grid_rowconfigure(0, weight=1)
+        self.container.grid_rowconfigure(1, weight=1)
+
+    def _default_next(self):
+        """Default next action: navigate to next page with validation."""
+        if self.current_page:
+            self.current_page.navigate_next()
+
+    def _default_previous(self):
+        """Default previous action: navigate to previous page."""
+        if self.current_page:
+            self.current_page.navigate_previous()
+
+    def set_title(self, text: str):
+        """Set the title text."""
+        self.title_label.configure(text=text)
+
+    def set_primary_button(
+        self, text: str | None = None, command=None, visible: bool = True
+    ):
+        """Set primary button properties."""
+        if text is not None:
+            self.primary_button.configure(text=text)
+        if command is not None:
+            self.primary_button.configure(command=command)
+        if visible:
+            self.primary_button.grid()
+        else:
+            self.primary_button.grid_remove()
+
+    def set_secondary_button(
+        self, text: str | None = None, command=None, visible: bool = True
+    ):
+        """Set secondary button properties."""
+        if text is not None:
+            self.secondary_button.configure(text=text)
+        if command is not None:
+            self.secondary_button.configure(command=command)
+        if visible:
+            self.secondary_button.grid()
+        else:
+            self.secondary_button.grid_remove()
 
     def configure_navigation_flow(self, navigation_flow: dict[type[Page], Any]):
         """Configure the navigation flow from external source."""
@@ -200,7 +284,17 @@ class PageManager:
         page.set_page_manager(self)
 
         self.pages[page_class] = page
-        page.grid(row=0, column=0, sticky="nsew")
+        page.grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            sticky="nsew",
+            padx=self.ui_config.margin_side,
+            pady=(
+                self.ui_config.margin_title_bottom,
+                self.ui_config.margin_button_bar,
+            ),
+        )
 
     def show_page(self, page_class: type[Page]):
         """Show a specific page."""
@@ -216,6 +310,13 @@ class PageManager:
         # Hide current page
         if self.current_page:
             self.current_page.on_hide()
+
+        # Set default button states
+        from multilingual import _
+
+        self.set_primary_button(_("btn.next"))
+        has_previous = self.get_previous_page(page_class) is not None
+        self.set_secondary_button(_("btn.back"), visible=has_previous)
 
         # Initialize page if needed
         if not page._initiated:  # noqa: SLF001

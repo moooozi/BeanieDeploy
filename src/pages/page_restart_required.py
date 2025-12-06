@@ -5,7 +5,6 @@ import customtkinter as ctk
 
 from models.page import Page, PageValidationResult
 from multilingual import _
-from templates.generic_page_layout import GenericPageLayout
 
 
 class PageRestartRequired(Page):
@@ -14,17 +13,18 @@ class PageRestartRequired(Page):
         self.restarting_text_var = tk.StringVar()
 
     def init_page(self):
-        page_frame = GenericPageLayout(
-            self,
-            _("finished.title"),
-            _("btn.restart.now"),
-            lambda: self._restart_now(),
-            _("btn.restart.later"),
-            lambda: self._quit_application(),
+        self.page_manager.set_title(_("finished.title"))
+        self.page_manager.set_primary_button(
+            _("btn.restart.now"), command=lambda: self._restart_now()
+        )
+        self.page_manager.set_secondary_button(
+            _("btn.restart.later"), command=lambda: self._quit_application()
         )
 
+        page_frame = self
+
         finished_label = ctk.CTkSimpleLabel(
-            page_frame.content_frame,
+            page_frame,
             text=_("finished.text"),
             font=self._ui.fonts.smaller,
             justify=self._ui.di.l,
@@ -33,7 +33,7 @@ class PageRestartRequired(Page):
         finished_label.grid(row=0, column=0, pady=10)
 
         restarting_label = ctk.CTkSimpleLabel(
-            page_frame.content_frame,
+            page_frame,
             textvariable=self.restarting_text_var,
             font=self._ui.fonts.small,
             text_color=self._ui.colors.primary,

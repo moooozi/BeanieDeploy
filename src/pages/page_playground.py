@@ -4,7 +4,6 @@ import customtkinter as ctk
 
 from models.page import Page, PageValidationResult
 from multilingual import _
-from templates.generic_page_layout import GenericPageLayout
 
 
 class PagePlayground(Page):
@@ -12,13 +11,12 @@ class PagePlayground(Page):
         super().__init__(parent, page_name, *args, **kwargs)
 
     def init_page(self):
-        page_layout = GenericPageLayout(
-            self,
-            "Hello, this is a playground page!",
-            secondary_btn_txt=_("btn.quit"),
-            secondary_btn_command=lambda: self._quit_application(),
+        self.page_manager.set_title("Hello, this is a playground page!")
+        self.page_manager.set_secondary_button(
+            _("btn.quit"), command=lambda: self._quit_application()
         )
-        self.page_frame = page_layout.content_frame
+
+        self.page_frame = self
 
         playground_label = ctk.CTkSimpleLabel(
             self.page_frame,

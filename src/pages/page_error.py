@@ -4,7 +4,6 @@ import customtkinter as ctk
 
 from models.page import Page, PageValidationResult
 from multilingual import _
-from templates.generic_page_layout import GenericPageLayout
 from templates.info_frame import InfoFrame
 
 
@@ -50,13 +49,13 @@ class PageError(Page):
             title = _("error.title.generic")
             subtitle = _("error.subtitle.generic")
 
-        page_layout = GenericPageLayout(
-            self,
-            title,
-            secondary_btn_txt=_("btn.quit"),
-            secondary_btn_command=lambda: self._quit_application(),
+        self.page_manager.set_title(title)
+        self.page_manager.set_primary_button(visible=False)
+        self.page_manager.set_secondary_button(
+            _("btn.quit"), command=lambda: self._quit_application()
         )
-        self.page_frame = page_layout.content_frame
+
+        self.page_frame = self
         self.page_frame.columnconfigure(0, weight=1)
         self.page_frame.rowconfigure(1, weight=1)
 

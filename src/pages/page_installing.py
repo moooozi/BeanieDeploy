@@ -12,7 +12,6 @@ from models.installation_context import (
 from models.page import Page
 from multilingual import _
 from services.installation_service import InstallationService
-from templates.generic_page_layout import GenericPageLayout
 from utils import format_eta, format_speed
 
 
@@ -42,8 +41,8 @@ class PageInstalling(Page):
         # Create installation context from application state if not already provided
         self.installation_context = self._get_installation_context()
         # Set up GUI
-        page_layout = GenericPageLayout(self, _("install.running"))
-        page_frame = page_layout.content_frame
+        self.page_manager.set_title(_("install.running"))
+        page_frame = self
         page_frame.columnconfigure(0, weight=1)
 
         self.progressbar_install = ctk.CTkProgressBar(

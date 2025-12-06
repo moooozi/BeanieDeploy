@@ -14,7 +14,6 @@ from services.system import (
     get_windows_ui_locale,
 )
 from templates.ctk_treeview import CTkTreeView
-from templates.generic_page_layout import GenericPageLayout
 
 
 class PageVerify(Page):
@@ -33,15 +32,11 @@ class PageVerify(Page):
         )
 
     def init_page(self):
-        page_layout = GenericPageLayout(
-            self,
-            _("verify.question"),
-            _("btn.install"),
-            lambda: self.navigate_next(),
-            _("btn.back"),
-            lambda: self.navigate_previous(),
-        )
-        page_frame = page_layout.content_frame
+        self.page_manager.set_title(_("verify.question"))
+        self.page_manager.set_primary_button(_("btn.install"))
+        # Secondary button uses default
+
+        page_frame = self
 
         # Get data from state
         selected_spin = self.state.installation.selected_spin
