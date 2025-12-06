@@ -38,3 +38,9 @@ Recent Windows 11 builds have native sudo support, and it is enabled on this sys
 
 - `requers` is located in `lib/requers`.
 - When you modify `requers`, re-build and re-install with a single command: `.venv/Scripts/python.exe -m pip install lib/requers`
+
+
+## CustomTkinter
+The project uses a modified CustomTkinter, with performance optimized widgets. These are:
+- `CTkSimpleLabel`: Must always be used instead of `CTkLabel`.
+- `CTkContainer`:  Simplified version of `CTkFrame`; should generally be preferred.
