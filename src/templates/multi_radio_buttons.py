@@ -94,8 +94,8 @@ class MultiRadioButtons(ctk.CTkContainer):
 
     def _setup_ui(self) -> None:
         """Set up the complete user interface."""
-        self._create_advanced_toggle_if_needed()
         self._create_radio_buttons()
+        self._create_advanced_toggle_if_needed()
 
     def _create_advanced_toggle_if_needed(self) -> None:
         """Create the 'Show advanced options' label if any items are marked as advanced."""
@@ -111,7 +111,7 @@ class MultiRadioButtons(ctk.CTkContainer):
         )
 
         # Position the label after all items
-        row_position = len(self._items) + 1
+        row_position = self._number_of_standard_items
         self._show_advanced_label.grid(
             ipady=self.GRID_PADDING, row=row_position, column=0, sticky="w"
         )
@@ -148,7 +148,7 @@ class MultiRadioButtons(ctk.CTkContainer):
         # cpnfigure grid weights for standard frame
         self.grid_columnconfigure(0, weight=1)
         for i in range(len(self._items)):
-            self.grid_rowconfigure(i, weight=1)
+            self.grid_rowconfigure(i, weight=1, uniform="rows")
 
     def _create_radio_button(
         self, parent, item_config: RadioButtonItem, value: str

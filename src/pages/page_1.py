@@ -73,10 +73,16 @@ class Page1(Page):
             advanced_options_txt=_("show.advanced.options"),
         )
 
+        # Make frame_distro leave 1/3 of vertical space above it
+        # Used to achieve balanced look with advanced radio hidden initially
+        # but their space is still pre-allocated
+        frame_distro.grid(row=1, column=0, rowspan=2, sticky="ew")
+        self.rowconfigure(0, weight=1, uniform="rows")
+        self.rowconfigure(1, weight=1, uniform="rows")
+        self.rowconfigure(2, weight=1, uniform="rows")
+
         self.info_frame_raster = InfoFrame(self, _("info.about.selection"))
-        # GUI bugfix for distro_description
-        frame_distro.grid(row=0, column=0, sticky="ew")
-        self.rowconfigure(0, weight=1)
+
         self.update_selection_info()
 
     def update_selection_info(self):
@@ -124,8 +130,7 @@ class Page1(Page):
             self.info_frame_raster.add_label("size", dl_size_txt)
             self.info_frame_raster.add_label("desktop", dl_spin_desktop)
             self.info_frame_raster.add_label("desktop_desc", dl_spin_desktop_desc)
-            self.info_frame_raster.grid(row=1, column=0, sticky="sew")
-            self.grid_rowconfigure(1, weight=0)
+            self.info_frame_raster.grid(row=3, column=0, sticky="sew")
 
     def _get_selected_spin_index(self):
         """Return the index of the currently selected spin, or None if not found."""
