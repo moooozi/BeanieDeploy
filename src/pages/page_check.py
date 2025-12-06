@@ -39,18 +39,16 @@ class PageCheck(Page):
         self.page_manager.set_title(_("check.running"))
         self.page_manager.set_primary_button(visible=False)
         self.page_manager.set_secondary_button(visible=False)
-
-        page_frame = self
-        page_frame.columnconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
 
         self.progressbar_check = ctk.CTkProgressBar(
-            page_frame, orientation="horizontal", mode="determinate"
+            self, orientation="horizontal", mode="determinate"
         )
         self.progressbar_check.grid(row=0, column=0, pady=(0, 20), sticky="ew")
         self.progressbar_check.set(0)
 
         job_label = ctk.CTkSimpleLabel(
-            page_frame,
+            self,
             textvariable=self.job_var,
             justify=self._ui.di.l,
             wraplength="self",

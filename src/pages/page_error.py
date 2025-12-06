@@ -55,15 +55,14 @@ class PageError(Page):
             _("btn.quit"), command=lambda: self._quit_application()
         )
 
-        self.page_frame = self
-        self.page_frame.columnconfigure(0, weight=1)
-        self.page_frame.rowconfigure(1, weight=1)
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
 
         # Subtitle
         subtitle_key = f"error.subtitle.{self.category}"
         subtitle = _(subtitle_key)
         subtitle_label = ctk.CTkSimpleLabel(
-            self.page_frame,
+            self,
             text=subtitle,
             justify=self._ui.di.l,
             wraplength="self",
@@ -72,7 +71,7 @@ class PageError(Page):
         )
         subtitle_label.grid(row=0, column=0, pady=(10, 5), sticky="ew")
 
-        self.info_frame_raster = InfoFrame(self.page_frame)
+        self.info_frame_raster = InfoFrame(self)
         self.info_frame_raster.grid(row=1, column=0, pady=5, padx=10, sticky="nsew")
 
         self._display_errors()

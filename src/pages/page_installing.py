@@ -42,16 +42,15 @@ class PageInstalling(Page):
         self.installation_context = self._get_installation_context()
         # Set up GUI
         self.page_manager.set_title(_("install.running"))
-        page_frame = self
-        page_frame.columnconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
 
         self.progressbar_install = ctk.CTkProgressBar(
-            page_frame, orientation="horizontal", mode="determinate"
+            self, orientation="horizontal", mode="determinate"
         )
         self.progressbar_install.grid(row=0, column=0, pady=(0, 20), sticky="ew")
 
         install_label = ctk.CTkSimpleLabel(
-            page_frame,
+            self,
             textvariable=self.install_job_var,
             pady=5,
             wraplength="self",

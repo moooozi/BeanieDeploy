@@ -28,8 +28,6 @@ class PageAutoinstAddition2(Page):
     def init_page(self):
         self.page_manager.set_title(_("title.autoinst3"))
 
-        page_frame = self
-
         # Get locale from state instead of globals
         kickstart = self.state.installation.kickstart
         if not kickstart:
@@ -45,7 +43,7 @@ class PageAutoinstAddition2(Page):
 
         self.all_timezones = sorted(langtable.list_all_timezones())
 
-        temp_frame = ctk.CTkContainer(page_frame)
+        temp_frame = ctk.CTkContainer(self)
         temp_frame.pack(expand=1, fill="both")
         temp_frame.grid_rowconfigure(0, weight=1)
         temp_frame.columnconfigure(0, weight=1, uniform="cols")

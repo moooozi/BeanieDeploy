@@ -16,17 +16,15 @@ class PagePlayground(Page):
             _("btn.quit"), command=lambda: self._quit_application()
         )
 
-        self.page_frame = self
-
         playground_label = ctk.CTkSimpleLabel(
-            self.page_frame,
+            self,
             text="This is a label",
             justify=self._ui.di.l,
             pady=5,
         )
         playground_label.grid(row=0, column=0, pady=10)
 
-        self.progressbar = ctk.CTkProgressBar(self.page_frame, mode="determinate")
+        self.progressbar = ctk.CTkProgressBar(self, mode="determinate")
         self.progressbar.grid(row=1, column=0, pady=10)
         self.progressbar.set(0)
 

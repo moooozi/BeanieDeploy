@@ -18,8 +18,6 @@ class PageAutoinstAddition1(Page):
     def init_page(self):
         self.page_manager.set_title(_("title.autoinst2"))
 
-        page_frame = self
-
         # Get IP locale from state instead of globals
 
         ip_locale = self.state.compatibility.ip_locale
@@ -54,7 +52,7 @@ class PageAutoinstAddition1(Page):
             combined_locale_list
         )
 
-        temp_frame = ctk.CTkContainer(page_frame)
+        temp_frame = ctk.CTkContainer(self)
         temp_frame.pack(expand=1, fill="both")
         temp_frame.grid_rowconfigure(0, weight=1)
         temp_frame.columnconfigure(0, weight=1, uniform="cols")

@@ -21,10 +21,8 @@ class PageRestartRequired(Page):
             _("btn.restart.later"), command=lambda: self._quit_application()
         )
 
-        page_frame = self
-
         finished_label = ctk.CTkSimpleLabel(
-            page_frame,
+            self,
             text=_("finished.text"),
             font=self._ui.fonts.smaller,
             justify=self._ui.di.l,
@@ -33,7 +31,7 @@ class PageRestartRequired(Page):
         finished_label.grid(row=0, column=0, pady=10)
 
         restarting_label = ctk.CTkSimpleLabel(
-            page_frame,
+            self,
             textvariable=self.restarting_text_var,
             font=self._ui.fonts.small,
             text_color=self._ui.colors.primary,

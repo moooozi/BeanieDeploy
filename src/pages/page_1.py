@@ -20,9 +20,7 @@ class Page1(Page):
     def init_page(self):
         self.page_manager.set_title(_("desktop.question"))
         # Primary and secondary buttons use defaults
-
-        self.page_frame = self  # Use self as the page frame
-        self.page_frame.columnconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
 
         self._wait_spin_loading()
 
@@ -68,17 +66,17 @@ class Page1(Page):
                 spin_radio_dict = {default_spin: default_entry, **spin_radio_dict}
 
         frame_distro = MultiRadioButtons(
-            self.page_frame,
+            self,
             items=spin_radio_dict,
             variable=self.distro_var,
             validation_callback=lambda: self.update_selection_info(),
             advanced_options_txt=_("show.advanced.options"),
         )
 
-        self.info_frame_raster = InfoFrame(self.page_frame, _("info.about.selection"))
+        self.info_frame_raster = InfoFrame(self, _("info.about.selection"))
         # GUI bugfix for distro_description
         frame_distro.grid(row=0, column=0, sticky="ew")
-        self.page_frame.rowconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
         self.update_selection_info()
 
     def update_selection_info(self):
@@ -127,7 +125,7 @@ class Page1(Page):
             self.info_frame_raster.add_label("desktop", dl_spin_desktop)
             self.info_frame_raster.add_label("desktop_desc", dl_spin_desktop_desc)
             self.info_frame_raster.grid(row=1, column=0, sticky="sew")
-            self.page_frame.grid_rowconfigure(1, weight=0)
+            self.grid_rowconfigure(1, weight=0)
 
     def _get_selected_spin_index(self):
         """Return the index of the currently selected spin, or None if not found."""
@@ -197,7 +195,7 @@ class Page1(Page):
         if not self.state.compatibility.accepted_spins:
             if self.still_loading_label is None:
                 self.still_loading_label = ctk.CTkSimpleLabel(
-                    self.page_frame,
+                    self,
                     text=_("loading.spins"),
                     font=self._ui.fonts.smaller,
                     text_color=self._ui.colors.primary,

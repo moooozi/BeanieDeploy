@@ -36,8 +36,6 @@ class PageVerify(Page):
         self.page_manager.set_primary_button(_("btn.install"))
         # Secondary button uses default
 
-        page_frame = self
-
         # Get data from state
         selected_spin = self.state.installation.selected_spin
 
@@ -46,7 +44,7 @@ class PageVerify(Page):
             return
 
         self.info_frame_raster = CTkTreeView(
-            page_frame,
+            self,
             title=_("verify.installation.summary"),
             bulleting=True,
             bullet_char=("○", "○", "➤"),
@@ -57,12 +55,12 @@ class PageVerify(Page):
 
         self.info_frame_raster.grid(row=0, column=0, sticky="nsew")
 
-        page_frame.columnconfigure(0, weight=1)
-        page_frame.grid_rowconfigure(0, weight=5, uniform="rows")
-        page_frame.grid_rowconfigure(1, weight=1, uniform="rows")
+        self.columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=5, uniform="rows")
+        self.grid_rowconfigure(1, weight=1, uniform="rows")
 
         check_restart = ctk.CTkCheckBox(
-            page_frame,
+            self,
             text=_("add.auto.restart"),
             variable=self.auto_restart_toggle_var,
             onvalue=True,

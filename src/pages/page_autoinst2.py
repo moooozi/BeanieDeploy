@@ -43,14 +43,10 @@ class PageAutoinst2(Page):
         self.page_manager.set_title(
             _("windows.question") % {"distro_name": selected_spin.name}
         )
-
-        page_frame = self
-        frame_checkboxes = ctk.CTkContainer(
-            page_frame,
-        )
+        frame_checkboxes = ctk.CTkContainer(self)
         frame_checkboxes.grid(row=0, column=0, sticky="ew")
-        page_frame.grid_columnconfigure(0, weight=1)
-        page_frame.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
 
         check_wifi = ctk.CTkCheckBox(
             frame_checkboxes,

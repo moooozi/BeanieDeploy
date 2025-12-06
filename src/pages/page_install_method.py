@@ -29,9 +29,7 @@ class PageInstallMethod(Page):
             _("windows.question") % {"distro_name": selected_spin.name}
         )
         # Primary and secondary buttons use defaults
-
-        page_frame = self
-        page_frame.columnconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
 
         self.selected_spin_name = selected_spin.name
 
@@ -122,7 +120,7 @@ class PageInstallMethod(Page):
         }
 
         radio_buttons = MultiRadioButtons(
-            page_frame,
+            self,
             items=install_methods_dict,
             variable=self.install_method_var,
             validation_callback=lambda: self.show_more_widgets_if_needed(),
@@ -133,10 +131,10 @@ class PageInstallMethod(Page):
         min_size_gb = DataUnit(
             self.app_config.app.dualboot_required_space.bytes_value
         ).gigabytes
-        self.conditional_frame = ctk.CTkContainer(page_frame)
+        self.conditional_frame = ctk.CTkContainer(self)
         self.conditional_frame.grid(row=1, column=0, sticky="we")
-        page_frame.rowconfigure(0, weight=5, uniform="a")
-        page_frame.rowconfigure(1, weight=1, uniform="a")
+        self.rowconfigure(0, weight=5, uniform="a")
+        self.rowconfigure(1, weight=1, uniform="a")
         self.conditional_frame.columnconfigure(0, weight=1)
 
         win_drive_letter = self.state.installation.windows_partition_info.drive_letter
