@@ -19,6 +19,9 @@ class PageManager:
         # Navigation flow will be configured externally
         self._navigation_flow: dict[type[Page], Any] = {}
 
+        # Store page-specific titles
+        self.page_titles: dict[type[Page], str] = {}
+
         # Create shared UI elements
         self.ui_config = get_config().ui
         self.title_label = ctk.CTkSimpleLabel(
@@ -76,6 +79,8 @@ class PageManager:
     def set_title(self, text: str):
         """Set the title text."""
         self.title_label.configure(text=text)
+        if self.current_page:
+            self.page_titles[type(self.current_page)] = text
 
     def set_primary_button(
         self, text: str | None = None, command=None, visible: bool = True
@@ -311,12 +316,18 @@ class PageManager:
         if self.current_page:
             self.current_page.on_hide()
 
+        self.current_page = page
+
         # Set default button states
         from multilingual import _
 
         self.set_primary_button(_("btn.next"))
         has_previous = self.get_previous_page(page_class) is not None
         self.set_secondary_button(_("btn.back"), visible=has_previous)
+
+        # Set page-specific title if stored
+        if page_class in self.page_titles:
+            self.title_label.configure(text=self.page_titles[page_class])
 
         # Initialize page if needed
         if not page._initiated:  # noqa: SLF001
@@ -327,7 +338,6 @@ class PageManager:
         # Show new page
         page.tkraise()
         page.on_show()
-        self.current_page = page
 
         logging.info(f"Showing page: {page_name}")
 
