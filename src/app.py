@@ -48,9 +48,6 @@ class MainApp(Application):
 
         # Create page manager with integrated navigation
         self.page_manager = PageManager(self)
-        self.page_manager.grid(row=0, column=0, sticky="nsew")
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)
 
         # Configure navigation flow and automatically add pages
         self._configure_navigation_flow()

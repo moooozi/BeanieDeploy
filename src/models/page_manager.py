@@ -1,25 +1,23 @@
 import logging
 from typing import Any, TypeVar
 
-import customtkinter as ctk
-
 from models.page import Page
 
 # Type variable for page types
 TPage = TypeVar("TPage", bound=Page)
 
 
-class PageManager(ctk.CTkContainer):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
+class PageManager:
+    def __init__(self, container):
+        self.container = container
         self.pages: dict[type[Page], Page] = {}
         self.current_page: Page | None = None
 
         # Navigation flow will be configured externally
         self._navigation_flow: dict[type[Page], Any] = {}
 
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)
+        self.container.grid_columnconfigure(0, weight=1)
+        self.container.grid_rowconfigure(0, weight=1)
 
     def configure_navigation_flow(self, navigation_flow: dict[type[Page], Any]):
         """Configure the navigation flow from external source."""
@@ -192,7 +190,7 @@ class PageManager(ctk.CTkContainer):
         """Add a page to the manager."""
         page_name = page_class.__name__
         page = page_class(
-            self,
+            self.container,
             page_name,
             *args,
             **kwargs,
@@ -202,9 +200,7 @@ class PageManager(ctk.CTkContainer):
         page.set_page_manager(self)
 
         self.pages[page_class] = page
-        page.grid_columnconfigure(0, weight=1)
-        page.grid_rowconfigure(0, weight=1)
-        page.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        page.grid(row=0, column=0, sticky="nsew")
 
     def show_page(self, page_class: type[Page]):
         """Show a specific page."""

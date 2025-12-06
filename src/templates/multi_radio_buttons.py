@@ -29,7 +29,7 @@ class RadioButtonItem:
         )
 
 
-class MultiRadioButtons(ctk.CTkFrame):
+class MultiRadioButtons(ctk.CTkContainer):
     """
     A customizable radio button group widget that supports advanced options,
     descriptions, and error states.
@@ -66,8 +66,6 @@ class MultiRadioButtons(ctk.CTkFrame):
         super().__init__(
             parent,
             *args,
-            bg_color="transparent",
-            fg_color="transparent",
             **kwargs,
         )
 
