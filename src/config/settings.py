@@ -29,6 +29,7 @@ class AppConfig:
 
     name: str = "BeanieDeploy"
     version: str = "Snapshot"
+    supported_version: str = "43"  # Supported Fedora version
 
     # Space requirements
     minimal_required_space: DataUnit = field(
@@ -162,7 +163,7 @@ class FontsConfig:
     large: tuple[str, int] = ("Roboto Bold", 26)
     medium: tuple[str, int] = ("Roboto Bold", 22)
     small: tuple[str, int] = ("Roboto", 18)
-    smaller: tuple[str, int] = ("Roboto", 17)
+    smaller: tuple[str, int] = ("Roboto", 16)
     tiny: tuple[str, int] = ("Roboto", 13)
 
 

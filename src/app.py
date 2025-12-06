@@ -4,7 +4,6 @@ from typing import Any
 
 import dummy
 from config.settings import get_config
-from core.compatibility_logic import filter_spins
 from core.navigation_conditions import SkipCheckDisabledCondition
 from core.state import IPLocaleInfo, get_state, get_state_manager
 from models.page_manager import PageManager
@@ -60,7 +59,7 @@ class MainApp(Application):
 
         if skip_check:
             logging.info("Skipping checks - using dummy data")
-            all_spins = parse_spins(dummy.get_dummy_spin_data())
+            all_spins, _ = parse_spins(dummy.get_dummy_spin_data())
             get_state().compatibility.accepted_spins = all_spins
             get_state().compatibility.ip_locale = dummy.DUMMY_IP_LOCALE
             logging.info("Using dummy data")
@@ -138,16 +137,19 @@ class MainApp(Application):
         Callback for when the spins promise completes.
         Sets the available spins in the state.
         """
-        parsed_spins = parse_spins(spins)
-        self.app_state.compatibility.all_spins = parsed_spins
-        filtered_result = filter_spins(self.app_state.compatibility.all_spins)
-        self.app_state.compatibility.accepted_spins = filtered_result.spins
-        if filtered_result.live_os_installer_index is not None:
-            self.app_state.compatibility.live_os_installer_spin = (
-                self.app_state.compatibility.accepted_spins[
-                    filtered_result.live_os_installer_index
-                ]
+        from services.spin_manager import parse_spins, set_spins_in_state
+
+        self.app_state.spin_selection.raw_spins_data = spins
+        supported_version = self.config.app.supported_version
+        parsed_spins, _ = parse_spins(spins, supported_version)
+        # If using supported and not available, fall back to dummy
+        if not any(spin.version == supported_version for spin in parsed_spins):
+            logging.warning(
+                f"Supported version {supported_version} not found, using dummy data"
             )
+            set_spins_in_state(self.app_state, dummy.get_dummy_spin_data())
+        else:
+            set_spins_in_state(self.app_state, spins, version=supported_version)
         logging.info("About to navigate_next()")
 
     def _update_ip_locale(self, data):

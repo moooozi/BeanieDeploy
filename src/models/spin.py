@@ -17,3 +17,8 @@ class Spin:
     is_base_netinstall: bool = False
     is_default: bool = False
     is_featured: bool = False
+
+    @property
+    def full_name(self) -> str:
+        """Get the full display name of the spin."""
+        return f"{self.name} {self.version}"

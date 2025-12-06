@@ -440,3 +440,9 @@ msgstr "Unknown"
 
 msgid "show.advanced.options"
 msgstr "Show advanced options"
+
+msgid "use.untested.version"
+msgstr "Use the newest available releases (untested)"
+
+msgid "using.untested.version"
+msgstr "Using untested release: %(distro_name)s"

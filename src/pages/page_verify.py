@@ -100,40 +100,48 @@ class PageVerify(Page):
         kickstart = self.state.installation.kickstart
         install_options = self.state.installation.install_options
         partition = self.state.installation.partition
+        is_using_untested = self.state.spin_selection.is_using_untested
 
         if not selected_spin:
             logging.error("No spin selected when building review structure")
             return
         # Installation method and details
         if install_options and install_options.partition_method and selected_spin:
+            if is_using_untested:
+                self.info_frame_raster.insert(
+                    "",
+                    "end",
+                    text=_("using.untested.version")
+                    % {"distro_name": selected_spin.full_name},
+                )
             method = install_options.partition_method
             if method == PartitioningMethod.DUALBOOT:
                 self.info_frame_raster.insert(
                     "",
                     "end",
                     text=_("verify.install.dualboot")
-                    % {"distro_name": selected_spin.name},
+                    % {"distro_name": selected_spin.full_name},
                 )
             elif method == PartitioningMethod.CLEAN_DISK:
                 self.info_frame_raster.insert(
                     "",
                     "end",
                     text=_("verify.install.clean_disk")
-                    % {"distro_name": selected_spin.name},
+                    % {"distro_name": selected_spin.full_name},
                 )
             elif method == PartitioningMethod.REPLACE_WIN:
                 self.info_frame_raster.insert(
                     "",
                     "end",
                     text=_("verify.install.replace_win")
-                    % {"distro_name": selected_spin.name},
+                    % {"distro_name": selected_spin.full_name},
                 )
             elif method == PartitioningMethod.CUSTOM:
                 self.info_frame_raster.insert(
                     "",
                     "end",
                     text=_("verify.install.custom")
-                    % {"distro_name": selected_spin.name},
+                    % {"distro_name": selected_spin.full_name},
                 )
 
             # Partition shrink for dualboot or custom
@@ -219,8 +227,7 @@ class PageVerify(Page):
                 self.info_frame_raster.insert(
                     timezone_parent,
                     "end",
-                    text=_("verify.settings.current")
-                    % {"current": current_timezone, "distro_name": selected_spin.name},
+                    text=_("verify.settings.current") % {"current": current_timezone},
                 )
             if kickstart.locale_settings.keymaps:
                 keyboard_parent = self.info_frame_raster.insert(
@@ -240,8 +247,7 @@ class PageVerify(Page):
                 self.info_frame_raster.insert(
                     keyboard_parent,
                     "end",
-                    text=_("verify.settings.current")
-                    % {"current": current_keyboard, "distro_name": selected_spin.name},
+                    text=_("verify.settings.current") % {"current": current_keyboard},
                 )
 
         # Expand all tree items by default

@@ -16,6 +16,7 @@ class Page1(Page):
         super().__init__(parent, page_name, *args, **kwargs)
         self.distro_var = tk.StringVar(self)
         self.still_loading_label = None
+        self.latest_label = None
 
     def init_page(self):
         self.page_manager.set_title(_("desktop.question"))
@@ -83,6 +84,22 @@ class Page1(Page):
 
         self.info_frame_raster = InfoFrame(self, _("info.about.selection"))
 
+        if (
+            not self.state.spin_selection.is_using_untested
+            and self.state.spin_selection.latest_version
+            and self.state.spin_selection.latest_version
+            != self.app_config.app.supported_version
+        ):
+            self.latest_label = ctk.CTkSimpleLabel(
+                self,
+                text=f"⟳ {_('use.untested.version')}",
+                font=self._ui.fonts.smaller,
+                text_color=self._ui.colors.primary,
+                cursor="hand2",
+            )
+            self.latest_label.bind("<Button-1>", self._on_use_latest)
+            self.latest_label.grid(row=0, column=0, sticky="ew")
+
         self.update_selection_info()
 
     def update_selection_info(self):
@@ -109,9 +126,7 @@ class Page1(Page):
                     "size": format_bytes(total_size_bytes)
                 }
 
-            dl_spin_name_text = (
-                f"{_('selected.dist')}: {selected_spin.name} {selected_spin.version}"
-            )
+            dl_spin_name_text = f"{_('selected.dist')}: {selected_spin.full_name}"
             dl_spin_desktop = (
                 f"{_('desktop.environment')}: {selected_spin.desktop}"
                 if selected_spin.desktop
@@ -205,10 +220,22 @@ class Page1(Page):
                     font=self._ui.fonts.smaller,
                     text_color=self._ui.colors.primary,
                 )
-                self.still_loading_label.grid(row=0, column=0, sticky="ew")
+                self.still_loading_label.grid(row=2, column=0, sticky="ew")
             self.after(200, self._wait_spin_loading)
         else:
             if self.still_loading_label is not None:
                 self.still_loading_label.destroy()
                 self.still_loading_label = None
             self.finish_init_page()
+
+    def _on_use_latest(self, _):
+        """Handle clicking the use latest label."""
+        self.state.spin_selection.is_using_untested = True
+        from services.spin_manager import set_spins_in_state
+
+        set_spins_in_state(self.state, self.state.spin_selection.raw_spins_data)
+        # Re-init the page
+        for widget in self.winfo_children():
+            widget.destroy()
+        self.distro_var.set("")
+        self.finish_init_page()

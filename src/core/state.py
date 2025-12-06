@@ -55,6 +55,15 @@ class InstallerStatus(Enum):
 
 
 @dataclass
+class SpinSelectionState:
+    """State related to spin version selection."""
+
+    latest_version: str = ""
+    is_using_untested: bool = False
+    raw_spins_data: list[dict] = field(default_factory=list)
+
+
+@dataclass
 class CompatibilityState:
     """State related to system compatibility checks."""
 
@@ -118,6 +127,7 @@ class ApplicationState:
     """Complete application state."""
 
     compatibility: CompatibilityState = field(default_factory=CompatibilityState)
+    spin_selection: SpinSelectionState = field(default_factory=SpinSelectionState)
     installation: InstallationState = field(default_factory=InstallationState)
     user: UserState = field(default_factory=UserState)
     error: ErrorState = field(default_factory=ErrorState)
