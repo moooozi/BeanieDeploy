@@ -16,10 +16,7 @@ class CTkTreeView(ctk.CTkFrame):
         multi_select=False,
         **kwargs,
     ):
-        super().__init__(master, **kwargs)
-        self.configure(
-            width=get_config().ui.width, fg_color=get_config().ui.colors.element_bg
-        )
+        super().__init__(master, fg_color=get_config().ui.colors.element_bg, **kwargs)
 
         self.bulleting = bulleting
         self.bullet_char = bullet_char
@@ -31,7 +28,7 @@ class CTkTreeView(ctk.CTkFrame):
             self.grid_columnconfigure(0, weight=1)
             self.grid_columnconfigure(1, weight=0)
 
-            self.title_frame = ctk.CTkFrame(self, fg_color="transparent")
+            self.title_frame = ctk.CTkContainer(self)
             self.title_frame.grid(row=0, column=0, sticky="ew", padx=15, pady=10)
             self.title_frame.grid_columnconfigure(0, weight=0)
             self.title_frame.grid_columnconfigure(1, weight=0)
@@ -61,28 +58,16 @@ class CTkTreeView(ctk.CTkFrame):
                 )
                 self.count_label.grid(row=0, column=0, sticky="w", padx=15, pady=10)
 
-        # Container frame for tree and scrollbar
-        self.configure(fg_color=get_config().ui.colors.element_bg)
-
-        container = ctk.CTkContainer(self, bg_color=get_config().ui.colors.element_bg)
-        if title:
-            container.grid(row=1, column=0, columnspan=2, sticky="nsew")
-        else:
-            container.grid(row=0, column=0, columnspan=2, sticky="nsew")
-        container.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
-        container.grid_columnconfigure(1, weight=0)
-
         # Embed the ttk.Treeview
-        self.tree = ttk.Treeview(container, show=show)  # type: ignore
+        self.tree = ttk.Treeview(self, show=show)  # type: ignore
         if self.multi_select:
             self.tree.configure(selectmode="extended")
         else:
             self.tree.configure(selectmode="browse")
-        self.tree.grid(row=0, column=0, sticky="nsew")
+        self.tree.grid(row=1, column=0, sticky="nsew")
 
         # Scrollbar (initially hidden)
-        self.scrollbar = ctk.CTkScrollbar(container, command=self.tree.yview)
+        self.scrollbar = ctk.CTkScrollbar(self, command=self.tree.yview)
         self._scrollbar_needs_shown = False
         self.tree.configure(yscrollcommand=self._scrollbar_set)
         self._scrollbar_visible = False
@@ -113,7 +98,7 @@ class CTkTreeView(ctk.CTkFrame):
 
         if needs_scrolling and not self._scrollbar_visible:
             # Show scrollbar
-            self.scrollbar.grid(row=0, column=1, sticky="ns")
+            self.scrollbar.grid(row=1, column=1, sticky="ns", padx=(0, 1))
             self._scrollbar_visible = True
         elif not needs_scrolling and self._scrollbar_visible:
             # Hide scrollbar
