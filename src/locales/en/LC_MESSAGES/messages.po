@@ -348,11 +348,21 @@ msgstr "Auto-unlock with TPM2"
 msgid "entry.encrypt.passphrase"
 msgstr "Set encryption passphrase"
 
+
+msgid "user.info.title"
+msgstr "Please enter your user information"
+
 msgid "entry.fullname"
 msgstr "Full name (optional)"
 
 msgid "entry.username"
 msgstr "Username"
+
+msgid "entry.user.username.required"
+msgstr "Username is required"
+
+msgid "user.username.invalid"
+msgstr "Username must start with a lowercase letter and can only contain letters, numbers, hyphens, and underscores (1-32 characters)."
 
 msgid "immutable.system"
 msgstr "Immutable system image"

@@ -4,7 +4,10 @@ from typing import Any
 
 import dummy
 from config.settings import get_config
-from core.navigation_conditions import SkipCheckDisabledCondition
+from core.navigation_conditions import (
+    SkipCheckDisabledCondition,
+    UsernameNeededCondition,
+)
 from core.state import IPLocaleInfo, get_state, get_state_manager
 from models.page_manager import PageManager
 from models.types import NavigationFlow, SpinDictList
@@ -18,6 +21,7 @@ from pages.page_install_method import PageInstallMethod
 from pages.page_installing import PageInstalling
 from pages.page_playground import PagePlayground
 from pages.page_restart_required import PageRestartRequired
+from pages.page_user_info import PageUserInfo
 from pages.page_verify import PageVerify
 from services.download import DownloadService
 from services.spin_manager import parse_spins
@@ -89,6 +93,9 @@ class MainApp(Application):
             Page1: {},
             PageInstallMethod: {},
             PageAutoinst2: {"conditions": [AutoInstallCondition()]},
+            PageUserInfo: {
+                "conditions": [AutoInstallCondition(), UsernameNeededCondition()]
+            },
             PageAutoinstAddition1: {"conditions": [AutoInstallCondition()]},
             PageAutoinstAddition2: {"conditions": [AutoInstallCondition()]},
             PageVerify: {},

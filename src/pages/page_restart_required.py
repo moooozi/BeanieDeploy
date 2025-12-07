@@ -5,6 +5,7 @@ import customtkinter as ctk
 
 from models.page import Page, PageValidationResult
 from multilingual import _
+from services.privilege_manager import elevated
 
 
 class PageRestartRequired(Page):
@@ -24,7 +25,7 @@ class PageRestartRequired(Page):
         finished_label = ctk.CTkSimpleLabel(
             self,
             text=_("finished.text"),
-            font=self._ui.fonts.smaller,
+            font=self._ui.fonts.small,
             justify=self._ui.di.l,
             pady=5,
         )
@@ -75,11 +76,11 @@ class PageRestartRequired(Page):
 
     def _quit_and_restart(self):
         """Quit application and restart Windows."""
-        import subprocess
 
         try:
-            # Restart Windows
-            subprocess.run(["shutdown", "/r", "/t", "0"], check=True)
+            # Stop Windows Update service to prevent installing updates during restart
+            elevated.run(["net", "stop", "wuauserv"])
+            elevated.run(["shutdown", "/r", "/t", "0", "/f"], check=True)
         except Exception as e:
             logging.error(f"Failed to restart system: {e}")
             raise SystemExit(0) from e

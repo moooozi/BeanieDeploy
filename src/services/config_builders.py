@@ -235,6 +235,19 @@ def _build_install_source(kickstart_config: KickstartConfig) -> list[str]:
     return lines
 
 
+def _build_user_config(kickstart_config: KickstartConfig) -> list[str]:
+    """Build user configuration section."""
+    if not kickstart_config.user_username:
+        return []
+
+    user_line = f"user --name={kickstart_config.user_username}"
+    if kickstart_config.user_full_name:
+        user_line += f" --gecos={kickstart_config.user_full_name}"
+    user_line += " --password=$y$j9T$Evvlldu/nejcJnjF9gj0.1$8TJcd0fh0754UQ5PhSwyZJq1gBCA431uk2sfZqtqGb7"
+
+    return [user_line]
+
+
 def _build_partitioning_config(partitioning_config: PartitioningConfig) -> list[str]:
     """Build partitioning configuration section."""
     lines = []
@@ -316,6 +329,7 @@ def build_autoinstall_ks_file(
     kickstart_lines.extend(_build_header())
     kickstart_lines.extend(_build_wifi_import(kickstart_config))
     kickstart_lines.extend(_build_system_config(kickstart_config.locale_settings))
+    kickstart_lines.extend(_build_user_config(kickstart_config))
     kickstart_lines.extend(_build_install_source(kickstart_config))
     kickstart_lines.extend(_build_partitioning_config(kickstart_config.partitioning))
 

@@ -21,6 +21,18 @@ class PageCondition(ABC):
         return self.is_enabled()
 
 
+class UsernameNeededCondition(PageCondition):
+    """Condition to check if username is needed."""
+
+    def is_enabled(self) -> bool:
+        # Currently, username is needed if Desktop environment is
+        # not "GNOME".
+        selected_spin = get_state().installation.selected_spin
+        if selected_spin:
+            return selected_spin.desktop != "GNOME"
+        return False
+
+
 class AutoInstallCondition(PageCondition):
     """Condition for auto-install related pages."""
 
