@@ -42,6 +42,8 @@ class PageInstalling(Page):
         self.installation_context = self._get_installation_context()
         # Set up GUI
         self.page_manager.set_title(_("install.running"))
+        self.page_manager.set_primary_button(visible=False)
+        self.page_manager.set_secondary_button(visible=False)
         self.columnconfigure(0, weight=1)
 
         self.progressbar_install = ctk.CTkProgressBar(

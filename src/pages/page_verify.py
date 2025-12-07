@@ -4,9 +4,9 @@ import tkinter as tk
 import customtkinter as ctk
 
 from autoinst import get_keymap_description, strip_encoding
-from config.settings import PartitioningMethod
 from models.data_units import DataUnit
 from models.page import Page, PageValidationResult
+from models.partition import PartitioningMethod
 from multilingual import _
 from services.system import (
     get_current_windows_keyboard,

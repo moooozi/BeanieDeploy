@@ -1,7 +1,10 @@
-from dataclasses import dataclass, field
-from typing import Literal
+from __future__ import annotations
 
-from config.settings import PartitioningMethod
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    from models.partition import PartitioningMethod
 
 
 @dataclass

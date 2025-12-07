@@ -5,9 +5,9 @@ from sys import argv
 import customtkinter as ctk
 
 from compatibility_checks import CheckType
-from config.settings import PartitioningMethod
 from models.data_units import DataUnit
 from models.page import Page, PageValidationResult
+from models.partition import PartitioningMethod
 from multilingual import _
 from templates.multi_radio_buttons import MultiRadioButtons
 

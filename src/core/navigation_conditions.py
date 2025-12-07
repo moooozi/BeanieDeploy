@@ -5,8 +5,8 @@ Simple conditions that can be used by PageManager for conditional navigation.
 
 from abc import ABC, abstractmethod
 
-from config.settings import PartitioningMethod
 from core.state import get_state
+from models.partition import PartitioningMethod
 
 
 class PageCondition(ABC):

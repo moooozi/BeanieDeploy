@@ -1,4 +1,14 @@
 from dataclasses import dataclass
+from enum import Enum
+
+
+class PartitioningMethod(Enum):
+    """Enumeration of available partitioning methods."""
+
+    DUALBOOT = "dualboot"
+    REPLACE_WIN = "replace_win"
+    CLEAN_DISK = "clean_disk"
+    CUSTOM = "custom"
 
 
 @dataclass

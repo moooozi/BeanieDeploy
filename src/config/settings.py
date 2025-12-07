@@ -5,22 +5,10 @@ Replaces the chaotic globals.py with proper configuration handling.
 
 import winreg
 from dataclasses import dataclass, field
-from enum import Enum
 from pathlib import Path
 
-import multilingual
+# import multilingual  # Moved to property to avoid circular import
 from models.data_units import DataUnit
-
-Color = tuple[str, str]
-
-
-class PartitioningMethod(Enum):
-    """Enumeration of available partitioning methods."""
-
-    DUALBOOT = "dualboot"
-    REPLACE_WIN = "replace_win"
-    CLEAN_DISK = "clean_disk"
-    CUSTOM = "custom"
 
 
 @dataclass(frozen=True)
@@ -141,6 +129,9 @@ class SystemRequirementsConfig:
     required_efi_space_mb: int = 18
 
 
+Color = tuple[str, str]
+
+
 @dataclass(frozen=True)
 class ColorConfig:
     """Color configuration with light and dark variants."""
@@ -188,6 +179,8 @@ class UIConfig:
 
     @property
     def di(self):
+        import multilingual
+
         return multilingual.get_di_var()
 
 

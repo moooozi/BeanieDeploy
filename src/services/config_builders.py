@@ -3,8 +3,8 @@ Configuration builders for Kickstart and GRUB files.
 Handles the generation of installation configuration files.
 """
 
-from config.settings import PartitioningMethod
 from models.kickstart import KickstartConfig, LocaleConfig, PartitioningConfig
+from models.partition import PartitioningMethod
 
 
 def _validate_kickstart_config(kickstart_config: KickstartConfig) -> None:

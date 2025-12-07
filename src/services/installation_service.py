@@ -10,7 +10,7 @@ import shutil
 from collections.abc import Callable
 from pathlib import Path
 
-from config.settings import PartitioningMethod, get_config
+from config.settings import get_config
 from core.state import get_state
 from models.downloadable_file import DownloadableFile
 from models.installation_context import (
@@ -18,6 +18,7 @@ from models.installation_context import (
     InstallationResult,
     InstallationStage,
 )
+from models.partition import PartitioningMethod
 from services import config_builders, disk, elevated
 from services import file as file_service
 from services.download import DownloadProgress, DownloadService
