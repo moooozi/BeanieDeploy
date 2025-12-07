@@ -60,7 +60,7 @@ class AppConfig:
 
     # Paths
     default_efi_file_path: str = r"\EFI\BOOT\BOOTX64.EFI"
-    live_img_path: str = "/LiveOS/squashfs.img"
+    live_img_path: str = "LiveOS/squashfs.img"
 
     # Directory names
     wifi_profiles_dir_name: str = "WIFI_PROFILES"
@@ -71,7 +71,7 @@ class AppConfig:
 
     @property
     def live_img_url(self) -> str:
-        return f"file:///run/install/repo{self.live_img_path}"
+        return f"file:///run/install/repo/{self.live_img_path}"
 
 
 @dataclass(frozen=True)

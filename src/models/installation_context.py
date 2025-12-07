@@ -63,9 +63,7 @@ class InstallationContext:
     live_os_installer_spin: Spin | None = None
 
     # File management
-    paths: InstallationPaths = field(
-        default_factory=lambda: InstallationPaths(Path())
-    )
+    paths: InstallationPaths = field(default_factory=lambda: InstallationPaths(Path()))
     downloadable_files: list[DownloadableFile] = field(default_factory=list)
 
     # Installation state
@@ -206,6 +204,14 @@ class InstallationContext:
             kickstart.partitioning.method = (
                 state.installation.install_options.partition_method
             )
+
+        # Sync ostree_args from selected_spin to kickstart if spin has ostree_args
+        if (
+            kickstart
+            and state.installation.selected_spin
+            and state.installation.selected_spin.ostree_args
+        ):
+            kickstart.ostree_args = state.installation.selected_spin.ostree_args
 
         return cls(
             kickstart=kickstart,

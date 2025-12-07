@@ -89,6 +89,12 @@ def parse_spins(
         # Determine if it's base netinstall (Everything)
         is_base_netinstall = variant == "Everything"
 
+        # Set ostree_args for Silverblue and Kinoite
+        if variant in ["Silverblue", "Kinoite"]:
+            ostree_args = f'--osname="fedora" --remote="fedora" --url="file:///ostree/repo" --ref="fedora/{release.get("version", "")}/x86_64/{variant.lower()}" --nogpg'
+        else:
+            ostree_args = ""
+
         # Create Spin object
         spin = Spin(
             name=spin_name,
@@ -106,7 +112,7 @@ def parse_spins(
                 "Kinoite",
             ],  # These have live installers
             is_advanced=variant == "Everything",  # Everything is more advanced
-            ostree_args="",  # Not applicable for these variants
+            ostree_args=ostree_args,
             is_base_netinstall=is_base_netinstall,
             is_default=variant == "KDE",  # Workstation is the default
             is_featured=variant
