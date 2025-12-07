@@ -38,7 +38,7 @@ class InstallationPaths:
     wifi_profiles_src_dir: Path | None = None
 
     # Relative paths within the installation
-    grub_cfg_relative_path: str = "boot/grub2/grub.cfg"
+    grub_cfg_relative_path: str = "EFI/BOOT/grub.cfg"
     kickstart_cfg_relative_path: str = "ks.cfg"
     efi_file_relative_path: str = "EFI/BOOT/bootx64.efi"
 

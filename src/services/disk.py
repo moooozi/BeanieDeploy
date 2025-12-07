@@ -449,6 +449,10 @@ def mount_volume_to_path(volume_unique_id: str, mount_path: str) -> None:
         volume_unique_id: Volume unique ID ( \\\\?\\Volume{...}\\)
         mount_path: Path to mount the volume to
     """
+    # Unmount if already mounted to avoid conflicts
+    with contextlib.suppress(subprocess.CalledProcessError):
+        unmount_volume_from_path(mount_path)
+
     # Ensure the mount path exists
     Path(mount_path).mkdir(parents=True, exist_ok=True)
 
