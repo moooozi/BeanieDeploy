@@ -5,8 +5,15 @@ Handles the generation of installation configuration files.
 
 from dataclasses import dataclass
 
-from models.kickstart import KickstartConfig, LocaleConfig, PartitioningConfig
+from models.kickstart import KickstartConfig, PartitioningConfig
 from models.partition import PartitioningMethod
+
+
+def auto_quote(value: str) -> str:
+    """Automatically quote a string if it contains spaces."""
+    if " " in value:
+        return f"'{value}'"
+    return value
 
 
 @dataclass(frozen=True)
@@ -189,13 +196,18 @@ def _build_clean_disk_post_install(
     return lines
 
 
-def _build_system_config(locale_config: LocaleConfig) -> list[str]:
+def _build_system_config(kickstart_config: KickstartConfig) -> list[str]:
     """Build system configuration section."""
     lines = []
 
+    locale_config = kickstart_config.locale_settings
+
     # Determine firstboot configuration
     if locale_config.keymaps and locale_config.locale and locale_config.timezone:
-        firstboot_line = "firstboot --enable"
+        if kickstart_config.user_username:
+            firstboot_line = "firstboot --disable"
+        else:
+            firstboot_line = "firstboot --enable"
     else:
         firstboot_line = "firstboot --reconfig"
         if not locale_config.keymaps:
@@ -211,7 +223,7 @@ def _build_system_config(locale_config: LocaleConfig) -> list[str]:
     if locale_config.keymap_type == "vc":
         lines.append(f"keyboard --vckeymap={locale_config.keymaps[0]}")
     else:
-        quoted_keymaps = [f"'{k}'" if " " in k else k for k in locale_config.keymaps]
+        quoted_keymaps = [auto_quote(k) for k in locale_config.keymaps]
         lines.append(f"keyboard --xlayouts={','.join(quoted_keymaps)}")
 
     lines.extend(
@@ -242,7 +254,7 @@ def _build_user_config(kickstart_config: KickstartConfig) -> list[str]:
 
     user_line = f"user --name={kickstart_config.user_username}"
     if kickstart_config.user_full_name:
-        user_line += f" --gecos={kickstart_config.user_full_name}"
+        user_line += f" --gecos={auto_quote(kickstart_config.user_full_name)}"
     user_line += " --password=$y$j9T$Evvlldu/nejcJnjF9gj0.1$8TJcd0fh0754UQ5PhSwyZJq1gBCA431uk2sfZqtqGb7"
 
     return [user_line]
@@ -328,7 +340,7 @@ def build_autoinstall_ks_file(
     # Build different sections of the kickstart file
     kickstart_lines.extend(_build_header())
     kickstart_lines.extend(_build_wifi_import(kickstart_config))
-    kickstart_lines.extend(_build_system_config(kickstart_config.locale_settings))
+    kickstart_lines.extend(_build_system_config(kickstart_config))
     kickstart_lines.extend(_build_user_config(kickstart_config))
     kickstart_lines.extend(_build_install_source(kickstart_config))
     kickstart_lines.extend(_build_partitioning_config(kickstart_config.partitioning))
