@@ -462,6 +462,10 @@ class InstallationService:
             context.kickstart.partitioning.method
             and context.kickstart.partitioning.method != PartitioningMethod.CUSTOM
         ):
+            # Set live_img_url if installing a live image
+            if context.selected_spin.is_live_img:
+                context.kickstart.live_img_url = get_config().app.live_img_url
+
             kickstart_path = (
                 destination_path / context.paths.kickstart_cfg_relative_path
             )
