@@ -1,4 +1,5 @@
 import logging
+import subprocess
 import tkinter as tk
 
 import customtkinter as ctk
@@ -80,7 +81,7 @@ class PageRestartRequired(Page):
         try:
             # Stop Windows Update service to prevent installing updates during restart
             elevated.run(["net", "stop", "wuauserv"])
-            elevated.run(["shutdown", "/r", "/t", "0", "/f"], check=True)
+            subprocess.run(["shutdown", "/r", "/t", "0", "/f"], check=True)
         except Exception as e:
             logging.error(f"Failed to restart system: {e}")
             raise SystemExit(0) from e
