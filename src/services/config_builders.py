@@ -252,7 +252,7 @@ def _build_user_config(kickstart_config: KickstartConfig) -> list[str]:
     if not kickstart_config.user_username:
         return []
 
-    user_line = f"user --name={kickstart_config.user_username}"
+    user_line = f"user --name={kickstart_config.user_username} --groups=wheel"
     if kickstart_config.user_full_name:
         user_line += f" --gecos={auto_quote(kickstart_config.user_full_name)}"
     user_line += " --password=$y$j9T$Evvlldu/nejcJnjF9gj0.1$8TJcd0fh0754UQ5PhSwyZJq1gBCA431uk2sfZqtqGb7"
