@@ -217,7 +217,13 @@ def _build_system_config(kickstart_config: KickstartConfig) -> list[str]:
 
     lines.append(firstboot_line)
 
-    quoted_keymaps = [auto_quote(k) for k in locale_config.keymaps]
+    # Format keymaps to ensure space before variant if needed
+    formatted_keymaps = []
+    for k in locale_config.keymaps:
+        if "(" in k and " (" not in k:
+            k = k.replace("(", " (")
+        formatted_keymaps.append(k)
+    quoted_keymaps = [auto_quote(k) for k in formatted_keymaps]
     lines.append(f"keyboard --xlayouts={','.join(quoted_keymaps)}")
 
     lines.extend(
