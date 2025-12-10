@@ -151,7 +151,7 @@ def _build_clean_disk_pre_ramdisk_autopart(
     should_encrypt = "yes" if partitioning_config.is_encrypted else "no"
     template = (
         load_ks_template("clean_disk_pre_ramdisk_autopart")
-        .replace("DISK_UUID_PLACEHOLDER", partitioning_config.sys_disk_uuid)
+        .replace("{DISK_UUID_PLACEHOLDER}", partitioning_config.sys_disk_uuid)
         .replace("{should_encrypt}", should_encrypt)
     )
     return template.splitlines()

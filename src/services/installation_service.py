@@ -335,6 +335,9 @@ class InstallationService:
             context.kickstart.partitioning.sys_drive_uuid = (
                 self.state.installation.windows_partition_info.partition_guid
             )
+            context.kickstart.partitioning.sys_disk_uuid = (
+                self.state.installation.windows_partition_info.disk_guid
+            )
             context.kickstart.partitioning.sys_efi_uuid = (
                 self.state.installation.efi_partition_info.partition_guid
             )

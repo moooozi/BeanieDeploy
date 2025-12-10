@@ -24,6 +24,7 @@ class PartitionInfo:
     partition_guid: str
     partition_number: int
     disk_number: int
+    disk_guid: str
     offset: int
     size: int
     logical_sector_size: int
@@ -280,6 +281,7 @@ def new_partition(
             partition_guid=partition_guid,
             partition_number=int(partition.PartitionNumber),
             disk_number=int(target_disk.Number),
+            disk_guid=PartitionUuid.to_raw(str(target_disk.Guid)),
             offset=offset,
             size=part_size,
             logical_sector_size=sector,
@@ -545,6 +547,7 @@ def _get_partition_info(partition, wmi) -> PartitionInfo:
         partition_guid=PartitionUuid.to_raw(str(partition.Guid)),
         partition_number=int(partition.PartitionNumber),
         disk_number=int(disk.Number),
+        disk_guid=PartitionUuid.to_raw(str(disk.Guid)),
         offset=offset,
         size=part_size,
         logical_sector_size=sector,
