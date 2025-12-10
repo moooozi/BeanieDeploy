@@ -66,15 +66,6 @@ def _validate_kickstart_config(kickstart_config: KickstartConfig) -> None:
     # Validate partitioning config
     if not kickstart_config.partitioning.method:
         errors.append("Partitioning method is required")
-    elif kickstart_config.partitioning.method not in [
-        PartitioningMethod.DUALBOOT,
-        PartitioningMethod.REPLACE_WIN,
-        PartitioningMethod.CLEAN_DISK,
-        PartitioningMethod.CUSTOM,
-    ]:
-        errors.append(
-            f"Invalid partitioning method: {kickstart_config.partitioning.method}"
-        )
 
     if kickstart_config.partitioning.method == PartitioningMethod.DUALBOOT:
         if not kickstart_config.partitioning.root_guid:
