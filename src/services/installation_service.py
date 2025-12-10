@@ -158,6 +158,12 @@ class InstallationService:
             # Recalculate partition size if live image installation
             self._update_tmp_partition_size(context)
 
+            # Temporary: Always use RAMDISK for CLEAN_DISK
+            if context.kickstart.partitioning.method == PartitioningMethod.CLEAN_DISK:
+                context.kickstart.partitioning.method = (
+                    PartitioningMethod.CLEAN_DISK_RAMDISK
+                )
+
             # Execute partitioning
             partition_result = self._setup_partitioning(context)
             if not partition_result.success:
@@ -436,6 +442,16 @@ class InstallationService:
                 kwargs={"dirs_exist_ok": True},
             )
 
+        # Copy install-helpers directory to the destination if it exists
+        install_helpers_dir = get_config().paths.install_helpers_dir
+        if install_helpers_dir.exists():
+            install_helpers_dst = destination_path / "install-helpers"
+            shutil.copytree(
+                str(install_helpers_dir),
+                str(install_helpers_dst),
+                dirs_exist_ok=True,
+            )
+
     def _generate_config_files(
         self, context: InstallationContext, destination: str
     ) -> None:
@@ -447,12 +463,22 @@ class InstallationService:
         grub_cfg_path.parent.mkdir(parents=True, exist_ok=True)
 
         elevated.call(file_service.set_file_readonly, args=(str(grub_cfg_path), False))
+
+        should_grub_autoinstall = bool(
+            context.kickstart.partitioning.method
+            and context.kickstart.partitioning.method != PartitioningMethod.CUSTOM
+        )
+        should_grub_autoinstall_ramdisk = (
+            should_grub_autoinstall
+            and context.kickstart.partitioning.method == PartitioningMethod.CUSTOM
+        )
         grub_cfg_content = config_builders.build_grub_cfg_file(
             context.partition.temp_part_label,
             is_autoinst=bool(
                 context.kickstart.partitioning.method
                 and context.kickstart.partitioning.method != PartitioningMethod.CUSTOM
             ),
+            autoinstall_ramdisk=should_grub_autoinstall_ramdisk,
         )
         grub_cfg_path.write_text(grub_cfg_content)
         elevated.call(file_service.set_file_readonly, args=(str(grub_cfg_path), True))

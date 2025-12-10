@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from models.partition import PartitioningMethod
@@ -14,6 +14,7 @@ class PartitioningConfig:
     passphrase: str = ""
     root_guid: str | None = None
     boot_guid: str | None = None
+    sys_disk_uuid: str | None = None
     sys_drive_uuid: str | None = None
     sys_efi_uuid: str | None = None
     tmp_part_uuid: str | None = None
@@ -23,7 +24,6 @@ class PartitioningConfig:
 class LocaleConfig:
     locale: str = ""
     timezone: str = ""
-    keymap_type: Literal["vc", "xlayout"] = "vc"
     keymaps: list[str] = field(default_factory=list)
 
 

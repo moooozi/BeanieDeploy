@@ -8,6 +8,7 @@ class PartitioningMethod(Enum):
     DUALBOOT = "dualboot"
     REPLACE_WIN = "replace_win"
     CLEAN_DISK = "clean_disk"
+    CLEAN_DISK_RAMDISK = "clean_disk_ramdisk"
     CUSTOM = "custom"
 
 

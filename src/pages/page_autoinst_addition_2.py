@@ -139,7 +139,6 @@ class PageAutoinstAddition2(Page):
                 kickstart.locale_settings.timezone = selected_timezone
             if selected_keymaps:
                 kickstart.locale_settings.keymaps = selected_keymaps
-                kickstart.locale_settings.keymap_type = "xlayout"
 
             logging.info(
                 f"Selected timezone: {kickstart.locale_settings.timezone}, keymaps: {kickstart.locale_settings.keymaps}"

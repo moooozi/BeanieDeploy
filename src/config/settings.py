@@ -73,36 +73,53 @@ class UrlConfig:
     # Specific package URLs
 
 
-@dataclass
+@dataclass(frozen=True)
 class PathConfig:
     """File and directory paths."""
 
-    current_dir: Path = field(init=False)
-    downloads_dir: Path = field(init=False)
-    work_dir: Path = field(init=False)
-    wifi_profiles_dir: Path = field(init=False)
-    scripts_dir: Path = field(init=False)
-    app_icon_path: Path = field(init=False)
-    live_iso_path: Path = field(init=False)
-    install_iso_path: Path = field(init=False)
-    grub_cfg_relative: str = field(init=False)
-    kickstart_relative: str = field(init=False)
-    bootmgr_helper_relative: Path = field(init=False)
+    @property
+    def current_dir(self) -> Path:
+        return Path(__file__).parent.parent
 
-    def __post_init__(self):
-        self.current_dir = Path(__file__).parent.parent
-        self.downloads_dir = self._get_user_downloads_folder()
-        self.work_dir = self.downloads_dir / "win2linux_tmpdir"
-        self.wifi_profiles_dir = self.work_dir / "WIFI_PROFILES"
-        self.scripts_dir = self.current_dir / "resources" / "scripts"
-        self.app_icon_path = self.current_dir / "resources" / "style" / "app-icon.ico"
-        self.live_iso_path = self.work_dir / "live_os.iso"
-        self.install_iso_path = self.work_dir / "install_media.iso"
-        self.grub_cfg_relative = r"EFI\BOOT\grub.cfg"
-        self.kickstart_relative = "ks.cfg"
-        self.bootmgr_helper_relative = (
-            self.current_dir / "resources" / "bootmgrhelper.exe"
-        )
+    @property
+    def downloads_dir(self) -> Path:
+        return self._get_user_downloads_folder()
+
+    @property
+    def work_dir(self) -> Path:
+        return self.downloads_dir / "win2linux_tmpdir"
+
+    @property
+    def wifi_profiles_dir(self) -> Path:
+        return self.work_dir / "WIFI_PROFILES"
+
+    @property
+    def app_icon_path(self) -> Path:
+        return self.current_dir / "resources" / "style" / "app-icon.ico"
+
+    @property
+    def grub_cfg_relative(self) -> str:
+        return r"EFI\BOOT\grub.cfg"
+
+    @property
+    def kickstart_relative(self) -> str:
+        return "ks.cfg"
+
+    @property
+    def install_helpers_dir(self) -> Path:
+        return self.current_dir / "resources" / "install-helpers"
+
+    @property
+    def install_helpers_ks_dir(self) -> Path:
+        return self.install_helpers_dir / "ks-templates"
+
+    @property
+    def install_helpers_scripts_dir(self) -> Path:
+        return self.install_helpers_dir / "scripts"
+
+    @property
+    def log_dir(self) -> str:
+        return "/tmp/beanie_logs"
 
     @staticmethod
     def _get_user_downloads_folder() -> Path:

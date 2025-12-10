@@ -5,6 +5,7 @@ Handles the generation of installation configuration files.
 
 from dataclasses import dataclass
 
+from config.settings import get_config
 from models.kickstart import KickstartConfig, PartitioningConfig
 from models.partition import PartitioningMethod
 
@@ -14,6 +15,13 @@ def auto_quote(value: str) -> str:
     if " " in value:
         return f"'{value}'"
     return value
+
+
+def load_ks_template(name: str) -> str:
+    config_path = get_config().paths
+    path = config_path.install_helpers_ks_dir / f"{name}.ks"
+    template = path.read_text()
+    return template.replace("{log_dir}", config_path.log_dir)
 
 
 @dataclass(frozen=True)
@@ -110,90 +118,80 @@ def _validate_kickstart_config(kickstart_config: KickstartConfig) -> None:
 
 def _build_header() -> list[str]:
     """Build the kickstart file header section."""
-    return [
-        "# Kickstart file created by BeanieDeploy.",
-        "graphical",
-        "# removing kickstart files containing sensitive data and",
-        "# reverting install media boot options",
-        "%post --nochroot --logfile=/mnt/sysimage/root/ks-post.log",
-        "rm /run/install/repo/ks.cfg",
-        "cp /run/install/repo/EFI/BOOT/BOOT.cfg /run/install/repo/EFI/BOOT/grub.cfg",
-        "%end",
-    ]
+    return load_ks_template("header").splitlines()
 
 
 def _build_wifi_import(kickstart_config: KickstartConfig) -> list[str]:
     """Build WiFi profiles import section."""
     if not kickstart_config.wifi_profiles_dir_name:
         return []
-
-    return [
-        "# Importing Wi-Fi profiles",
-        "%post --nochroot --logfile=/mnt/sysimage/root/ks-post_wifi.log",
-        "mkdir -p /mnt/sysimage/etc/NetworkManager/system-connections",
-        f"cp /run/install/repo/{kickstart_config.wifi_profiles_dir_name}/*.* /mnt/sysimage/etc/NetworkManager/system-connections",
-        "%end",
-    ]
+    template = load_ks_template("wifi_import").replace(
+        "{wifi_profiles_dir_name}", kickstart_config.wifi_profiles_dir_name
+    )
+    return template.splitlines()
 
 
 def _build_clean_disk_pre_install(partitioning_config: PartitioningConfig) -> list[str]:
     """Build pre-install script for CLEAN_DISK method."""
-    return [
-        "# Pre-install script for CLEAN_DISK: Delete all partitions except specified ones",
-        "%pre --logfile=/tmp/ks-pre-clean.log",
-        "# Find the disk containing the sys_drive_uuid partition",
-        f"DISK=$(lsblk -no pkname /dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid})",
-        "# List all partitions on the disk",
-        'PARTITIONS=$(lsblk -no name /dev/$DISK | grep -E "^${DISK}p?[0-9]+$")',
-        "# Partitions to keep",
-        f"KEEP_PARTS='/dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid} /dev/disk/by-partuuid/{partitioning_config.sys_efi_uuid} /dev/disk/by-partuuid/{partitioning_config.tmp_part_uuid}'",
-        "# Delete partitions not in keep list",
-        "for PART in $PARTITIONS; do",
-        "    PART_UUID=$(blkid -s PARTUUID -o value /dev/$PART)",
-        '    if [[ ! " $KEEP_PARTS " =~ " /dev/disk/by-partuuid/$PART_UUID " ]]; then',
-        '        echo "Deleting partition /dev/$PART"',
-        "        parted /dev/$DISK rm $(echo $PART | sed 's/.*[a-z]//')",
-        "    fi",
-        "done",
-        "%end",
-    ]
+    if not partitioning_config.sys_drive_uuid:
+        msg = "sys_drive_uuid is required for clean_disk_pre"
+        raise ValueError(msg)
+    if not partitioning_config.sys_efi_uuid:
+        msg = "sys_efi_uuid is required for clean_disk_pre"
+        raise ValueError(msg)
+    if not partitioning_config.tmp_part_uuid:
+        msg = "tmp_part_uuid is required for clean_disk_pre"
+        raise ValueError(msg)
+
+    template = load_ks_template("clean_disk_pre")
+    template = template.replace("{sys_drive_uuid}", partitioning_config.sys_drive_uuid)
+    template = template.replace("{sys_efi_uuid}", partitioning_config.sys_efi_uuid)
+    template = template.replace("{tmp_part_uuid}", partitioning_config.tmp_part_uuid)
+    return template.splitlines()
+
+
+def _build_clean_disk_pre_ramdisk_autopart(
+    partitioning_config: PartitioningConfig,
+) -> list[str]:
+    """Build pre-install script for CLEAN_DISK method with RAMDISK and autopartitioning."""
+    if not partitioning_config.sys_disk_uuid:
+        msg = "sys_disk_uuid is required for clean_disk_pre_ramdisk_autopart"
+        raise ValueError(msg)
+    should_encrypt = "yes" if partitioning_config.is_encrypted else "no"
+    template = (
+        load_ks_template("clean_disk_pre_ramdisk_autopart")
+        .replace("DISK_UUID_PLACEHOLDER", partitioning_config.sys_disk_uuid)
+        .replace("{should_encrypt}", should_encrypt)
+    )
+    return template.splitlines()
 
 
 def _build_clean_disk_post_install(
     partitioning_config: PartitioningConfig,
 ) -> list[str]:
     """Build post-install script for CLEAN_DISK method."""
-    lines = [
-        "# Post-install script for CLEAN_DISK: Clean up tmp partition and extend root",
-        "%post --logfile=/mnt/sysimage/root/ks-post-clean.log",
-        "# Force unmount and erase tmp partition",
-        f"umount /dev/disk/by-partuuid/{partitioning_config.tmp_part_uuid} 2>/dev/null || true",
-        f"wipefs -a /dev/disk/by-partuuid/{partitioning_config.tmp_part_uuid}",
-        f"parted $(lsblk -no pkname /dev/disk/by-partuuid/{partitioning_config.tmp_part_uuid}) rm $(lsblk -no partn /dev/disk/by-partuuid/{partitioning_config.tmp_part_uuid})",
-    ]
+    if not partitioning_config.tmp_part_uuid:
+        msg = "tmp_part_uuid is required for clean_disk_post_install"
+        raise ValueError(msg)
 
-    if partitioning_config.is_encrypted:
-        # Extend LUKS partition first
-        lines.extend(
-            [
-                "# Extend LUKS partition to fill disk",
-                f"LUKS_DEV=$(lsblk -no name /dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid})",
-                "parted /dev/$(lsblk -no pkname /dev/$LUKS_DEV) resizepart $(lsblk -no partn /dev/$LUKS_DEV) 100%",
-                "# Resize LUKS container",
-                f"cryptsetup resize /dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid}",
-            ]
-        )
-
-    # Extend Btrfs filesystem
-    lines.extend(
-        [
-            "# Extend Btrfs filesystem to fill partition",
-            "btrfs filesystem resize max /",
-            "%end",
-        ]
+    template_name = (
+        "clean_disk_post_encrypted"
+        if partitioning_config.is_encrypted
+        else "clean_disk_post_non_encrypted"
     )
 
-    return lines
+    template = load_ks_template(template_name)
+    template = template.replace("{tmp_part_uuid}", partitioning_config.tmp_part_uuid)
+
+    if partitioning_config.is_encrypted:
+        if not partitioning_config.sys_drive_uuid:
+            msg = "sys_drive_uuid is required for encrypted clean_disk_post_install"
+            raise ValueError(msg)
+        template = template.replace(
+            "{sys_drive_uuid}", partitioning_config.sys_drive_uuid
+        )
+
+    return template.splitlines()
 
 
 def _build_system_config(kickstart_config: KickstartConfig) -> list[str]:
@@ -219,12 +217,8 @@ def _build_system_config(kickstart_config: KickstartConfig) -> list[str]:
 
     lines.append(firstboot_line)
 
-    # Keyboard configuration
-    if locale_config.keymap_type == "vc":
-        lines.append(f"keyboard --vckeymap={locale_config.keymaps[0]}")
-    else:
-        quoted_keymaps = [auto_quote(k) for k in locale_config.keymaps]
-        lines.append(f"keyboard --xlayouts={','.join(quoted_keymaps)}")
+    quoted_keymaps = [auto_quote(k) for k in locale_config.keymaps]
+    lines.append(f"keyboard --xlayouts={','.join(quoted_keymaps)}")
 
     lines.extend(
         [
@@ -260,9 +254,17 @@ def _build_user_config(kickstart_config: KickstartConfig) -> list[str]:
     return [user_line]
 
 
+# DUALBOOT is broken. Disabled in the GUI but still available here.
 def _build_partitioning_config(partitioning_config: PartitioningConfig) -> list[str]:
     """Build partitioning configuration section."""
     lines = []
+
+    if partitioning_config.method == PartitioningMethod.CLEAN_DISK_RAMDISK:
+        return _build_clean_disk_pre_ramdisk_autopart(partitioning_config)
+
+    if partitioning_config.method == PartitioningMethod.CLEAN_DISK:
+        lines.extend(_build_clean_disk_pre_install(partitioning_config))
+        lines.extend(_build_clean_disk_post_install(partitioning_config))
 
     # Validate required parameters for dualboot
     if partitioning_config.method == PartitioningMethod.DUALBOOT:
@@ -292,27 +294,38 @@ def _build_partitioning_config(partitioning_config: PartitioningConfig) -> list[
             f" --onpart=/dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid}"
         )
 
+    boot_partition = f"part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-partuuid/{partitioning_config.boot_guid}"
+
     if partitioning_config.is_encrypted:
         # Separate boot partition for encryption
-        boot_partition = f"part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-partuuid/{partitioning_config.boot_guid}"
         root_partition += " --encrypted"
         if partitioning_config.passphrase:
             root_partition += f" --passphrase={partitioning_config.passphrase}"
-    else:
-        # Boot subvolume inside root if encryption is disabled
-        boot_partition = "btrfs /boot --subvol --name=boot fedora"
 
-    lines.extend(
-        [
-            efi_partition,
-            root_partition,
-            "btrfs none --label=fedora btrfs.01",
-            "btrfs / --subvol --name=root fedora",
-            "btrfs /home --subvol --name=home fedora",
-            "btrfs /var --subvol --name=var fedora",
-            boot_partition,
-        ]
-    )
+    if partitioning_config.method == PartitioningMethod.DUALBOOT:
+        lines.extend(
+            [
+                efi_partition,
+                root_partition,
+                "btrfs none --label=fedora btrfs.01",
+                "btrfs / --subvol --name=root fedora",
+                "btrfs /home --subvol --name=home fedora",
+                "btrfs /var --subvol --name=var fedora",
+                boot_partition,  # Boot partition is added last in dualboot
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                efi_partition,
+                root_partition,
+                boot_partition,
+                "btrfs none --label=fedora btrfs.01",
+                "btrfs / --subvol --name=root fedora",
+                "btrfs /home --subvol --name=home fedora",
+                "btrfs /var --subvol --name=var fedora",
+            ]
+        )
 
     return lines
 
@@ -360,7 +373,11 @@ def build_autoinstall_ks_file(
     return "\n".join(kickstart_lines) + "\n"
 
 
-def build_grub_cfg_file(root_partition_label: str, is_autoinst: bool = False) -> str:
+def build_grub_cfg_file(
+    root_partition_label: str,
+    is_autoinst: bool = False,
+    autoinstall_ramdisk: bool = False,
+) -> str:
     """
     Build a GRUB configuration file for the installer.
 
@@ -405,12 +422,17 @@ def build_grub_cfg_file(root_partition_label: str, is_autoinst: bool = False) ->
 
     # Add auto-install entry if enabled
     if is_autoinst:
+        linux_cmd = f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} rd.live.check inst.ks=hd:LABEL={root_partition_label} quiet"
+        if autoinstall_ramdisk:
+            linux_cmd = linux_cmd.replace(
+                " rd.live.check", " rd.live.check rd.live.ram"
+            )
         entries.insert(
             0,
             GrubEntry(
                 title="Auto Install Fedora",
                 prelines=(),
-                linux_cmd=f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} rd.live.check inst.ks=hd:LABEL={root_partition_label} quiet",
+                linux_cmd=linux_cmd,
                 initrd_cmd="initrd /images/pxeboot/initrd.img",
                 is_in_submenu=False,
             ),
