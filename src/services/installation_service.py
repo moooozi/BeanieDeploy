@@ -473,7 +473,8 @@ class InstallationService:
         )
         should_grub_autoinstall_ramdisk = (
             should_grub_autoinstall
-            and context.kickstart.partitioning.method == PartitioningMethod.CUSTOM
+            and context.kickstart.partitioning.method
+            == PartitioningMethod.CLEAN_DISK_RAMDISK
         )
         grub_cfg_content = config_builders.build_grub_cfg_file(
             context.partition.temp_part_label,
