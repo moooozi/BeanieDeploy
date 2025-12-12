@@ -29,7 +29,7 @@ else:
 import multilingual
 from app import MainApp
 from config.settings import get_config
-from core.state import get_state_manager
+from core.state import get_state
 from services.system import get_windows_ui_locale, is_admin
 from utils.logging import setup_file_logging
 
@@ -48,7 +48,7 @@ def parse_arguments():
 
 
 def set_skip_check(skip: bool):
-    state = get_state_manager().state
+    state = get_state()
     state.compatibility.skip_check = skip
     if skip:
         sys.argv.append("--skip_check")
@@ -71,9 +71,7 @@ def run():
         args = parse_arguments()
 
         # Auto-detect release mode for PyInstaller builds
-        is_pyinstaller_bundle = getattr(sys, "frozen", False) and hasattr(
-            sys, "_MEIPASS"
-        )
+        is_pyinstaller_bundle = get_state().is_release_mode
         if is_pyinstaller_bundle:
             args.release = True
             logging.info("PyInstaller bundle detected - running in release mode")

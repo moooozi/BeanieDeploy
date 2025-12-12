@@ -80,3 +80,10 @@ class SkipCheckDisabledCondition(PageCondition):
     def is_enabled(self) -> bool:
         state = get_state()
         return not getattr(state.compatibility, "skip_check", False)
+
+
+class ReleaseModeCondition(PageCondition):
+    """Condition to check if the app is in release mode."""
+
+    def is_enabled(self) -> bool:
+        return get_state().is_release_mode

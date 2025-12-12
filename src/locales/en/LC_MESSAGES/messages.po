@@ -56,6 +56,12 @@ msgstr "Retry"
 msgid "btn.yes"
 msgstr "Yes"
 
+msgid "btn.run_compatibility_check"
+msgstr "Run compatibility check"
+
+msgid "checkbox.accept.disclaimer"
+msgstr "I have read and accept the disclaimer above."
+
 # Checks
 msgid "check.arch"
 msgstr "Checking CPU architecture"
@@ -372,6 +378,12 @@ msgstr "Username is required"
 
 msgid "user.username.invalid"
 msgstr "Username must start with a lowercase letter and can only contain letters, numbers, hyphens, and underscores (1-32 characters)."
+
+msgid "disclaimer.title"
+msgstr "Disclaimer"
+
+msgid "disclaimer.text"
+msgstr "This software is provided \"as is\" without any guarantees or warranties of any kind, express or implied.\nBy using this software, you agree that the authors are not responsible for any damage or data loss that may occur."
 
 msgid "immutable.system"
 msgstr "Immutable system image"

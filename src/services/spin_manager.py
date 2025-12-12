@@ -7,36 +7,12 @@ from models.spin import Spin
 from models.types import SpinDictList
 
 
-def set_spins_in_state(state, spins_data, version=None):
-    """
-    Abstracts the logic for parsing, filtering, and setting spins in the state.
-    Args:
-        state: The app state object (with .spin_selection and .compatibility)
-        spins_data: Raw spins data (SpinDictList)
-        version: Optional version to filter for (str or None)
-    """
-    from core.compatibility_logic import filter_spins
-
-    parsed_spins, latest_version = parse_spins(spins_data, version)
-    state.spin_selection.latest_version = latest_version
-    state.compatibility.all_spins = parsed_spins
-    filtered_result = filter_spins(state.compatibility.all_spins)
-    state.compatibility.accepted_spins = filtered_result.spins
-    if filtered_result.live_os_installer_index is not None:
-        state.compatibility.live_os_installer_spin = state.compatibility.accepted_spins[
-            filtered_result.live_os_installer_index
-        ]
-
-
-def parse_spins(
-    spins_list: SpinDictList, version: str | None = None
-) -> tuple[list[Spin], str]:
+def parse_spins(spins_list: SpinDictList) -> tuple[list[Spin], str]:
     """
     Parse and filter spins list from JSON data.
 
     Args:
         spins_list: Raw spins data from JSON
-        version: Specific version to filter for, if None, use latest
 
     Returns:
         Tuple of (list of filtered Spin objects, latest version found)
@@ -51,7 +27,6 @@ def parse_spins(
             latest_version = version_str
 
     # Use provided version or latest
-    target_version = version if version is not None else latest_version
 
     # Filter for x86_64, ISO files, desired variants, and target version
     desired_variants = {"Workstation", "KDE", "Silverblue", "Kinoite", "Everything"}
@@ -62,7 +37,6 @@ def parse_spins(
             release.get("arch") != "x86_64"
             or not release.get("link", "").endswith(".iso")
             or release.get("variant") not in desired_variants
-            or release.get("version") != target_version
         ):
             continue
 

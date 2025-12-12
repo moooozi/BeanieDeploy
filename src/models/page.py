@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from typing import Any
 
 import customtkinter as ctk
 
@@ -137,3 +138,8 @@ class Page(ctk.CTkContainer, ABC):
         if self._page_manager:
             return self._page_manager.get_navigation_info()
         return None
+
+
+# Type definitions
+
+NavigationFlow = dict[type[Page], dict[str, Any]]

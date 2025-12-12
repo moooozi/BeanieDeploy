@@ -1,8 +1,7 @@
 import json
 from pathlib import Path
 
-from core.state import IPLocaleInfo
-from models.types import SpinDictList
+from models.types import IPLocaleInfo, SpinDictList
 
 
 def get_dummy_spin_data() -> SpinDictList:

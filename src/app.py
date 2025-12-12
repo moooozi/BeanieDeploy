@@ -1,21 +1,20 @@
 import logging
-import threading
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import dummy
 from config.settings import get_config
 from core.navigation_conditions import (
+    ReleaseModeCondition,
     SkipCheckDisabledCondition,
     UsernameNeededCondition,
 )
-from core.state import IPLocaleInfo, get_state, get_state_manager
+from core.state import get_state, get_state_manager
 from models.page_manager import PageManager
-from models.types import NavigationFlow, SpinDictList
 from pages.page_1 import Page1
 from pages.page_autoinst2 import PageAutoinst2
 from pages.page_autoinst_addition_1 import PageAutoinstAddition1
 from pages.page_autoinst_addition_2 import PageAutoinstAddition2
 from pages.page_check import PageCheck
+from pages.page_disclaimer import PageDisclaimer
 from pages.page_error import PageError
 from pages.page_install_method import PageInstallMethod
 from pages.page_installing import PageInstalling
@@ -23,9 +22,10 @@ from pages.page_playground import PagePlayground
 from pages.page_restart_required import PageRestartRequired
 from pages.page_user_info import PageUserInfo
 from pages.page_verify import PageVerify
-from services.download import DownloadService
-from services.spin_manager import parse_spins
 from templates.application import Application
+
+if TYPE_CHECKING:
+    from models.page import NavigationFlow
 
 
 class MainApp(Application):
@@ -41,13 +41,9 @@ class MainApp(Application):
         self.config = get_config()
         self.state_manager = get_state_manager()
         self.app_state = get_state()
-        self.download_service = DownloadService(self.config)
 
         # Add observer for state changes
         self.app_state.add_observer(self._on_state_change)
-
-        threading.Thread(target=self._fetch_spins, daemon=True).start()
-        threading.Thread(target=self._fetch_ip_locale, daemon=True).start()
 
         # Create page manager with integrated navigation
         self.page_manager = PageManager(self)
@@ -62,11 +58,7 @@ class MainApp(Application):
             return self.page_manager.show_page(PagePlayground)
 
         if skip_check:
-            logging.info("Skipping checks - using dummy data")
-            all_spins, _ = parse_spins(dummy.get_dummy_spin_data())
-            get_state().compatibility.accepted_spins = all_spins
-            get_state().compatibility.ip_locale = dummy.DUMMY_IP_LOCALE
-            logging.info("Using dummy data")
+            logging.info("Skipping checks")
 
         # Show the first page in self._navigation_flow if no page is currently shown
         if not self.page_manager.current_page:
@@ -89,6 +81,7 @@ class MainApp(Application):
         )
 
         navigation_flow: NavigationFlow = {
+            PageDisclaimer: {"conditions": [ReleaseModeCondition()]},
             PageCheck: {"conditions": [SkipCheckDisabledCondition()]},
             Page1: {},
             PageInstallMethod: {},
@@ -138,48 +131,3 @@ class MainApp(Application):
         logging.info(
             f"Successfully added {len(page_classes)} pages from navigation flow"
         )
-
-    def _on_spin_promise_complete(self, spins: SpinDictList) -> None:
-        """
-        Callback for when the spins promise completes.
-        Sets the available spins in the state.
-        """
-        from services.spin_manager import parse_spins, set_spins_in_state
-
-        self.app_state.spin_selection.raw_spins_data = spins
-        supported_version = self.config.app.supported_version
-        parsed_spins, _ = parse_spins(spins, supported_version)
-        # If using supported and not available, fall back to dummy
-        if not any(spin.version == supported_version for spin in parsed_spins):
-            logging.warning(
-                f"Supported version {supported_version} not found, using dummy data"
-            )
-            set_spins_in_state(self.app_state, dummy.get_dummy_spin_data())
-        else:
-            set_spins_in_state(self.app_state, spins, version=supported_version)
-        logging.info("About to navigate_next()")
-
-    def _update_ip_locale(self, data):
-        self.app_state.compatibility.ip_locale = IPLocaleInfo(
-            country_code=data["country_code"], time_zone=data["time_zone"]
-        )
-
-    def _fetch_spins(self):
-        try:
-            data = self.download_service.fetch_json(
-                self.config.urls.available_spins_list
-            )
-            self.after(0, self._on_spin_promise_complete, data)
-        except Exception as e:
-            msg = f"Failed to fetch spins: {e}"
-            logging.exception(msg)
-            # Set error in state (will auto-navigate to error page)
-            self.app_state.set_error_messages([msg])
-
-    def _fetch_ip_locale(self):
-        try:
-            data = self.download_service.fetch_json(self.config.urls.fedora_geo_ip)
-            self.after(0, self._update_ip_locale, data)
-        except Exception as e:
-            logging.error(f"Failed to fetch IP locale: {e}")
-            # Non-critical - just log and continue

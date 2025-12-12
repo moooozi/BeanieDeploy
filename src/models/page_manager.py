@@ -83,13 +83,14 @@ class PageManager:
             self.page_titles[type(self.current_page)] = text
 
     def set_primary_button(
-        self, text: str | None = None, command=None, visible: bool = True
+        self, text: str | None = None, command=None, visible: bool = True, state: str = "normal"
     ):
         """Set primary button properties."""
         if text is not None:
             self.primary_button.configure(text=text)
         if command is not None:
             self.primary_button.configure(command=command)
+        self.primary_button.configure(state=state)
         if visible:
             self.primary_button.grid()
         else:

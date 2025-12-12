@@ -3,7 +3,7 @@ Business logic for PageAutoinstAddition1: language/locale selection and kickstar
 """
 
 import autoinst
-from core.state import IPLocaleInfo
+from models.types import IPLocaleInfo
 from services.patched_langtable import langtable
 
 

@@ -20,6 +20,7 @@ class Page1(Page):
 
     def init_page(self):
         self.page_manager.set_title(_("desktop.question"))
+        self.page_manager.set_secondary_button(visible=False)
         # Primary and secondary buttons use defaults
         self.columnconfigure(0, weight=1)
 
@@ -31,7 +32,7 @@ class Page1(Page):
 
     def finish_init_page(self):
         """Final initialization after spins are loaded."""
-        accepted_spins = self.state.compatibility.accepted_spins
+        accepted_spins = self.state.spins.accepted_spins
         # Build a single dict for all spins, marking non-featured as advanced
         spin_radio_dict = {}
         for dist in accepted_spins:
@@ -85,10 +86,9 @@ class Page1(Page):
         self.info_frame_raster = InfoFrame(self, _("info.about.selection"))
 
         if (
-            not self.state.spin_selection.is_using_untested
-            and self.state.spin_selection.latest_version
-            and self.state.spin_selection.latest_version
-            != self.app_config.app.supported_version
+            not self.state.spins.is_using_untested
+            and self.state.spins.latest_version
+            and self.state.spins.latest_version != self.app_config.app.supported_version
         ):
             self.latest_label = ctk.CTkSimpleLabel(
                 self,
@@ -106,16 +106,13 @@ class Page1(Page):
         """Update the information display based on current selection."""
         spin_index = self._get_selected_spin_index()
         if spin_index is not None:
-            accepted_spins = self.state.compatibility.accepted_spins
+            accepted_spins = self.state.spins.accepted_spins
             selected_spin = accepted_spins[spin_index]
 
             total_size_bytes = selected_spin.size
 
-            if (
-                selected_spin.is_live_img
-                and self.state.compatibility.live_os_installer_spin
-            ):
-                total_size_bytes += self.state.compatibility.live_os_installer_spin.size
+            if selected_spin.is_live_img and self.state.spins.live_os_installer_spin:
+                total_size_bytes += self.state.spins.live_os_installer_spin.size
 
             if selected_spin.is_base_netinstall:
                 dl_size_txt = _("init.download") % {
@@ -150,7 +147,7 @@ class Page1(Page):
     def _get_selected_spin_index(self):
         """Return the index of the currently selected spin, or None if not found."""
         distro = self.distro_var.get()
-        spins = self.state.compatibility.accepted_spins
+        spins = self.state.spins.accepted_spins
         for idx, dist in enumerate(spins):
             if distro == f"{dist.name} {dist.version}":
                 return idx
@@ -166,7 +163,7 @@ class Page1(Page):
         """Handle next action - save the selected spin to state."""
         spin_index = self._get_selected_spin_index()
         if spin_index is not None:
-            accepted_spins = self.state.compatibility.accepted_spins
+            accepted_spins = self.state.spins.accepted_spins
             selected_spin = accepted_spins[spin_index]
 
             # Update state with selected spin
@@ -175,11 +172,8 @@ class Page1(Page):
             # Calculate and update partition size
             total_size_bytes = selected_spin.size
 
-            if (
-                selected_spin.is_live_img
-                and self.state.compatibility.live_os_installer_spin
-            ):
-                total_size_bytes += self.state.compatibility.live_os_installer_spin.size
+            if selected_spin.is_live_img and self.state.spins.live_os_installer_spin:
+                total_size_bytes += self.state.spins.live_os_installer_spin.size
 
             # Create partition if it doesn't exist and update size
             if self.state.installation.partition is None:
@@ -212,7 +206,7 @@ class Page1(Page):
 
     def _wait_spin_loading(self):
         """Wait for spins to load before proceeding."""
-        if not self.state.compatibility.accepted_spins:
+        if not self.state.spins.accepted_spins:
             if self.still_loading_label is None:
                 self.still_loading_label = ctk.CTkSimpleLabel(
                     self,
@@ -230,10 +224,8 @@ class Page1(Page):
 
     def _on_use_latest(self, _):
         """Handle clicking the use latest label."""
-        self.state.spin_selection.is_using_untested = True
-        from services.spin_manager import set_spins_in_state
-
-        set_spins_in_state(self.state, self.state.spin_selection.raw_spins_data)
+        self.state.spins.is_using_untested = True
+        self.state.spins.set_accepted_spins()
         # Re-init the page
         for widget in self.winfo_children():
             widget.destroy()

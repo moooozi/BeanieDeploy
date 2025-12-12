@@ -21,7 +21,7 @@ from models.installation_context import (
 from models.partition import PartitioningMethod
 from services import config_builders, disk, elevated
 from services import file as file_service
-from services.download import DownloadProgress, DownloadService
+from services.download import DownloadProgress, download_file
 from services.partition import partition_procedure
 
 
@@ -126,7 +126,6 @@ class InstallationService:
         self.state = get_state()
         self.progress_callback = progress_callback
         self.download_callback = download_callback
-        self.download_service = DownloadService(self.config)
         self._download_index: int = 0
 
     def install(self, context: InstallationContext) -> InstallationResult:
@@ -275,7 +274,7 @@ class InstallationService:
         """Download a single file with progress tracking."""
 
         # Use the new download service
-        self.download_service.download_file(
+        download_file(
             url=file_info.download_url,
             destination=file_info.destination_dir,
             filename=file_info.file_name,

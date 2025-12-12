@@ -41,6 +41,13 @@ class PageCheck(Page):
         self.page_manager.set_secondary_button(visible=False)
         self.columnconfigure(0, weight=1)
 
+        # Accessing Spin and IP Locale Info to ensure they are loaded
+        def _load_state_data():
+            _ = self.state.spins.accepted_spins
+            _ = self.state.compatibility.ip_locale
+
+        threading.Thread(target=_load_state_data, daemon=True).start()
+
         self.progressbar_check = ctk.CTkProgressBar(
             self, orientation="horizontal", mode="determinate"
         )

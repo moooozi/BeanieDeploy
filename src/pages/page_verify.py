@@ -100,7 +100,7 @@ class PageVerify(Page):
         kickstart = self.state.installation.kickstart
         install_options = self.state.installation.install_options
         partition = self.state.installation.partition
-        is_using_untested = self.state.spin_selection.is_using_untested
+        is_using_untested = self.state.spins.is_using_untested
 
         if not selected_spin:
             logging.error("No spin selected when building review structure")

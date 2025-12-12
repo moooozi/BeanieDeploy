@@ -7,7 +7,7 @@ class PageManagerProtocol(Protocol):
     def set_title(self, text: str) -> None: ...
 
     def set_primary_button(
-        self, text: str | None = None, command=None, visible: bool = True
+        self, text: str | None = None, command=None, visible: bool = True, state: str = "normal"
     ) -> None: ...
 
     def set_secondary_button(

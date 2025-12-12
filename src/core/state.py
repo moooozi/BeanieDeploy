@@ -4,42 +4,27 @@ Replaces the global variable chaos with proper state management.
 """
 
 import logging
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from config.settings import get_config
 from models.check import DoneChecks
 from models.install_options import InstallOptions
 from models.kickstart import KickstartConfig
 from models.partition import Partition
 from models.spin import Spin
+from models.types import IPLocaleInfo
 from services.disk import (
     PartitionInfo,
     get_efi_partition_info,
     get_windows_partition_info,
 )
+from services.download import fetch_json
 from services.partition import TemporaryPartition
 from services.privilege_manager import elevated
-
-
-@dataclass(frozen=True)
-class IPLocaleInfo:
-    """IP-based locale information from Fedora's GeoIP service."""
-
-    country_code: str
-    time_zone: str
-    # ip: str
-    # city: str
-    # region_name: str
-    # region: str
-    # postal_code: str
-    # country_name: str
-    # latitude: float
-    # longitude: float
-    # metro_code: int | None = None
-    # dma_code: int | None = None
-    # country_code3: str = ""
 
 
 class InstallerStatus(Enum):
@@ -55,24 +40,121 @@ class InstallerStatus(Enum):
 
 
 @dataclass
-class SpinSelectionState:
+class SpinState:
     """State related to spin version selection."""
 
-    latest_version: str = ""
+    supported_version: str
+    use_dummy: bool = False
+
     is_using_untested: bool = False
-    raw_spins_data: list[dict] = field(default_factory=list)
+
+    _latest_version: str = ""
+    _raw_spins_data: list[dict] = field(default_factory=list)
+    _accepted_spins: list[Spin] = field(default_factory=list)
+    _all_spins: list[Spin] = field(default_factory=list)
+    _live_os_installer_spin: Spin | None = None
+
+    @property
+    def latest_version(self) -> str:
+        """Get latest version."""
+        if not self._latest_version:
+            self.load_spins_info()
+        return self._latest_version
+
+    @property
+    def raw_spins_data(self) -> list[dict]:
+        """Get raw spins data."""
+        if not self._raw_spins_data:
+            self.load_spins_info()
+        return self._raw_spins_data
+
+    @property
+    def accepted_spins(self) -> list[Spin]:
+        """Get accepted spins."""
+        if not self._accepted_spins:
+            self.set_accepted_spins()
+        return self._accepted_spins
+
+    @property
+    def all_spins(self) -> list[Spin]:
+        """Get all spins."""
+        if not self._all_spins:
+            self.load_spins_info()
+        return self._all_spins
+
+    @property
+    def live_os_installer_spin(self) -> Spin | None:
+        for spin in self._accepted_spins:
+            if spin.is_base_netinstall:
+                return spin
+        return None
+
+    def load_spins_info(self):
+        from services.spin_manager import parse_spins
+
+        try:
+            if self.use_dummy:
+                import dummy
+
+                self._raw_spins_data = dummy.get_dummy_spin_data()
+            else:
+                url = get_config().urls.available_spins_list
+                data = fetch_json(url)
+                self._raw_spins_data = data
+            parsed_spins, latest_version = parse_spins(self._raw_spins_data)
+            self._latest_version = latest_version
+            self._all_spins = parsed_spins
+        except Exception as e:
+            msg = f"Failed to fetch spins: {e}"
+            logging.exception(msg)
+
+    def set_accepted_spins(self, version: str | None = None):
+        """Set accepted spins based on version."""
+        if version is None:
+            if self.is_using_untested:
+                version = self.latest_version
+            else:
+                version = self.supported_version
+        spins = [spin for spin in self.all_spins if spin.version == version]
+        for spin in spins:
+            if spin.is_base_netinstall:
+                self._live_os_installer_spin = spin
+                break
+        if self._live_os_installer_spin:
+            self._accepted_spins = spins
+        else:
+            # strip liveos images if no netinstall found
+            spins = [spin for spin in spins if not spin.is_live_img]
 
 
 @dataclass
 class CompatibilityState:
     """State related to system compatibility checks."""
 
+    use_dummy: bool
+
     done_checks: DoneChecks | None = None
-    ip_locale: IPLocaleInfo | None = None
-    all_spins: list[Spin] = field(default_factory=list)
-    accepted_spins: list[Spin] = field(default_factory=list)
-    live_os_installer_spin: Spin | None = None
+    _ip_locale: IPLocaleInfo | None = None
     skip_check: bool = False
+
+    @property
+    def ip_locale(self) -> IPLocaleInfo | None:
+        """Get IP locale information."""
+        if self._ip_locale is None:
+            if self.use_dummy:
+                import dummy
+
+                self._ip_locale = dummy.DUMMY_IP_LOCALE
+            else:
+                self.update_ip_locale()
+        return self._ip_locale
+
+    def update_ip_locale(self):
+        url = get_config().urls.fedora_geo_ip
+        data = fetch_json(url)
+        self._ip_locale = IPLocaleInfo(
+            country_code=data["country_code"], time_zone=data["time_zone"]
+        )
 
 
 @dataclass
@@ -126,14 +208,23 @@ class ErrorState:
 class ApplicationState:
     """Complete application state."""
 
-    compatibility: CompatibilityState = field(default_factory=CompatibilityState)
-    spin_selection: SpinSelectionState = field(default_factory=SpinSelectionState)
     installation: InstallationState = field(default_factory=InstallationState)
     user: UserState = field(default_factory=UserState)
     error: ErrorState = field(default_factory=ErrorState)
 
+    is_release_mode: bool = getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
+
+    compatibility: CompatibilityState = field(init=False)
+    spins: SpinState = field(init=False)
+
     # Additional runtime state
     _observers: list[Callable] = field(default_factory=list, init=False)
+
+    def __post_init__(self):
+        use_dummy = not self.is_release_mode
+        supported_version = get_config().app.supported_version
+        self.compatibility = CompatibilityState(use_dummy=use_dummy)
+        self.spins = SpinState(supported_version=supported_version, use_dummy=use_dummy)
 
     def add_observer(self, observer: Callable) -> None:
         """Add an observer to be notified of state changes."""
@@ -171,14 +262,6 @@ class ApplicationState:
         """Update compatibility check results."""
         self.compatibility.done_checks = done_checks
         self.notify_observers("compatibility_checks_updated", done_checks=done_checks)
-
-    def set_spins_data(self, all_spins: list[Spin], accepted_spins: list[Spin]) -> None:
-        """Set the spins data."""
-        self.compatibility.all_spins = all_spins
-        self.compatibility.accepted_spins = accepted_spins
-        self.notify_observers(
-            "spins_data_updated", all_spins=all_spins, accepted_spins=accepted_spins
-        )
 
     def set_error_messages(
         self, messages: list[str], category: str = "generic"
