@@ -22,6 +22,10 @@ class PageManager:
         # Store page-specific titles
         self.page_titles: dict[type[Page], str] = {}
 
+        # Store page-specific button settings
+        self.page_primary_buttons: dict[type[Page], dict[str, Any]] = {}
+        self.page_secondary_buttons: dict[type[Page], dict[str, Any]] = {}
+
         # Create shared UI elements
         self.ui_config = get_config().ui
         self.title_label = ctk.CTkSimpleLabel(
@@ -83,7 +87,11 @@ class PageManager:
             self.page_titles[type(self.current_page)] = text
 
     def set_primary_button(
-        self, text: str | None = None, command=None, visible: bool = True, state: str = "normal"
+        self,
+        text: str | None = None,
+        command=None,
+        visible: bool = True,
+        state: str = "normal",
     ):
         """Set primary button properties."""
         if text is not None:
@@ -95,6 +103,13 @@ class PageManager:
             self.primary_button.grid()
         else:
             self.primary_button.grid_remove()
+        if self.current_page:
+            self.page_primary_buttons[type(self.current_page)] = {
+                "text": text,
+                "command": command,
+                "visible": visible,
+                "state": state,
+            }
 
     def set_secondary_button(
         self, text: str | None = None, command=None, visible: bool = True
@@ -108,6 +123,12 @@ class PageManager:
             self.secondary_button.grid()
         else:
             self.secondary_button.grid_remove()
+        if self.current_page:
+            self.page_secondary_buttons[type(self.current_page)] = {
+                "text": text,
+                "command": command,
+                "visible": visible,
+            }
 
     def configure_navigation_flow(self, navigation_flow: dict[type[Page], Any]):
         """Configure the navigation flow from external source."""
@@ -322,13 +343,23 @@ class PageManager:
         # Set default button states
         from multilingual import _
 
-        self.set_primary_button(_("btn.next"))
-        has_previous = self.get_previous_page(page_class) is not None
-        self.set_secondary_button(_("btn.back"), visible=has_previous)
-
         # Set page-specific title if stored
         if page_class in self.page_titles:
             self.title_label.configure(text=self.page_titles[page_class])
+
+        # Apply page-specific button settings if stored
+        if page_class in self.page_primary_buttons:
+            settings = self.page_primary_buttons[page_class]
+            self.set_primary_button(**settings)
+        else:
+            self.set_primary_button(_("btn.next"))
+
+        if page_class in self.page_secondary_buttons:
+            settings = self.page_secondary_buttons[page_class]
+            self.set_secondary_button(**settings)
+        else:
+            has_previous = self.get_previous_page(page_class) is not None
+            self.set_secondary_button(_("btn.back"), visible=has_previous)
 
         # Initialize page if needed
         if not page._initiated:  # noqa: SLF001

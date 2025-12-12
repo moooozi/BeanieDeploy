@@ -119,6 +119,7 @@ class PageCheck(Page):
         else:
             logging.info("No done_checks, navigating next anyway")
             self.navigate_next()
+            self.destroy()
 
 
 def parse_errors(done_checks: DoneChecks, app_config: ConfigManager) -> list[str]:
