@@ -34,7 +34,10 @@ class InfoFrame(ctk.CTkFrame):
         if self.bulleting and text:
             text = self.bullet_char + " " + text
         label = ctk.CTkSimpleLabel(
-            self.inner_frame, text=text, anchor=multilingual.get_di_var().w
+            self.inner_frame,
+            text=text,
+            anchor=multilingual.get_di_var().w,
+            justify=multilingual.get_di_var().l,
         )
         label.pack(fill="x", pady=4)
         self.labels[key] = label
