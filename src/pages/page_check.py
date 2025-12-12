@@ -151,4 +151,8 @@ def parse_errors(done_checks: DoneChecks, app_config: ConfigManager) -> list[str
         app_config.system_requirements.required_efi_space_mb
     ):
         errors.append(_("error.efi_space.0"))
+    if done_checks.checks[CheckType.GPT].returncode != 0:
+        errors.append(_("error.gpt.1"))
+    elif not done_checks.checks[CheckType.GPT].result:
+        errors.append(_("error.gpt.0"))
     return errors

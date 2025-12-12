@@ -84,6 +84,9 @@ msgstr "Checking UEFI compliance"
 msgid "check.efi_space"
 msgstr "Checking EFI System Partition space"
 
+msgid "check.gpt"
+msgstr "Checking disk partition scheme"
+
 # Errors
 msgid "error.arch.0"
 msgstr "This device's CPU architecture is incompatible."
@@ -139,6 +142,12 @@ msgstr "Not enough space in the EFI System Partition."
 
 msgid "error.efi_space.1"
 msgstr "Failed to check available space in the EFI System Partition."
+
+msgid "error.gpt.0"
+msgstr "MBR or non-GPT partition schemes are not supported."
+
+msgid "error.gpt.1"
+msgstr "Failed to verify disk partition scheme."
 
 msgid "error.generic"
 msgstr "An unexpected runtime error occurred."

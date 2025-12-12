@@ -14,6 +14,7 @@ class CheckType(Enum):
     SPACE = "space"
     RESIZABLE = "resizable"
     EFI_SPACE = "efi_space"
+    GPT = "gpt"
 
     @property
     def weight(self):
@@ -28,14 +29,11 @@ class Check:
     name: str
     result: Any
     returncode: int | None
-    process: Any | None
 
 
 class DoneChecks:
     def __init__(self):
         self.checks: dict[CheckType, Check] = {
-            check_type: Check(
-                name=check_type.value, result=None, returncode=None, process=None
-            )
+            check_type: Check(name=check_type.value, result=None, returncode=None)
             for check_type in CheckType
         }

@@ -30,6 +30,7 @@ class PartitionInfo:
     logical_sector_size: int
     start_lba: int
     size_lba: int
+    disk_partition_style: int
     drive_letter: str | None = None
     free_space: int | None = None
     volume_unique_id: str | None = None
@@ -287,6 +288,7 @@ def new_partition(
             logical_sector_size=sector,
             start_lba=int(start_lba),
             size_lba=int(size_lba),
+            disk_partition_style=int(target_disk.PartitionStyle),
             drive_letter=drive_letter,
             free_space=free_space,
             volume_unique_id=vol_unique_id,
@@ -553,6 +555,7 @@ def _get_partition_info(partition, wmi) -> PartitionInfo:
         logical_sector_size=sector,
         start_lba=int(start_lba),
         size_lba=int(size_lba),
+        disk_partition_style=int(disk.PartitionStyle),
         drive_letter=drive_letter,
         free_space=free_space,
         volume_unique_id=volume_unique_id,

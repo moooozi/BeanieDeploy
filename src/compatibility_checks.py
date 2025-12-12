@@ -6,7 +6,11 @@ import win32com.client
 
 from core.state import get_state
 from models.check import Check, CheckType
-from services.disk import get_partition_supported_size
+from services.disk import (
+    get_efi_partition_info,
+    get_partition_supported_size,
+    get_windows_partition_info,
+)
 from services.privilege_manager import elevated
 from utils import com_context
 
@@ -18,7 +22,6 @@ def check_arch():
         CheckType.ARCH.value,
         result,
         0,  # Success return code
-        None,  # No subprocess used
     )
 
 
@@ -53,7 +56,6 @@ def check_uefi():
         CheckType.UEFI.value,
         proc,
         0 if proc is not None else 1,  # Success or error return code
-        None,  # No subprocess used
     )
 
 
@@ -71,7 +73,6 @@ def check_ram():
                 CheckType.RAM.value,
                 total_capacity,
                 0,  # Success
-                None,
             )
     except Exception as e:
         logging.exception("Error checking RAM: " + str(e))
@@ -79,7 +80,6 @@ def check_ram():
             CheckType.RAM.value,
             str(e),
             1,  # Error
-            None,
         )
 
 
@@ -93,21 +93,18 @@ def check_space():
                 CheckType.SPACE.value,
                 partition_info.free_space,
                 0,
-                None,
             )
         # If free_space is not available, return error
         return Check(
             CheckType.SPACE.value,
             "Free space information not available",
             1,
-            None,
         )
     except Exception as e:
         return Check(
             CheckType.SPACE.value,
             str(e) + " | Fallback error: " + str(e),
             1,
-            None,
         )
 
 
@@ -128,14 +125,12 @@ def check_resizable():
             CheckType.RESIZABLE.value,
             resizable_size,
             0,
-            None,
         )
     except Exception as e:
         return Check(
             CheckType.RESIZABLE.value,
             str(e),
             1,
-            None,
         )
 
 
@@ -155,8 +150,36 @@ def check_efi_space():
         CheckType.EFI_SPACE.value,
         result_value,
         0,
-        None,
     )
+
+
+def check_gpt():
+    """Check if Windows and EFI partitions are on GPT disks."""
+    try:
+        win_part = get_windows_partition_info()
+        efi_part = get_efi_partition_info()
+
+        win_gpt = win_part.disk_partition_style == 2  # 2 = GPT
+        efi_gpt = efi_part.disk_partition_style == 2
+
+        if win_gpt and efi_gpt:
+            return Check(
+                CheckType.GPT.value,
+                True,
+                0,
+            )
+        return Check(
+            CheckType.GPT.value,
+            False,
+            1,
+        )
+    except Exception as e:
+        logging.exception("Error checking GPT: " + str(e))
+        return Check(
+            CheckType.GPT.value,
+            str(e),
+            1,
+        )
 
 
 check_functions = {
@@ -166,4 +189,5 @@ check_functions = {
     CheckType.SPACE: check_space,
     CheckType.RESIZABLE: check_resizable,
     CheckType.EFI_SPACE: check_efi_space,
+    CheckType.GPT: check_gpt,
 }
