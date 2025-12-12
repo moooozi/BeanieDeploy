@@ -7,9 +7,7 @@ import win32com.client
 from core.state import get_state
 from models.check import Check, CheckType
 from services.disk import (
-    get_efi_partition_info,
     get_partition_supported_size,
-    get_windows_partition_info,
 )
 from services.privilege_manager import elevated
 from utils import com_context
@@ -156,8 +154,8 @@ def check_efi_space():
 def check_gpt():
     """Check if Windows and EFI partitions are on GPT disks."""
     try:
-        win_part = get_windows_partition_info()
-        efi_part = get_efi_partition_info()
+        win_part = get_state().installation.windows_partition_info
+        efi_part = get_state().installation.efi_partition_info
 
         win_gpt = win_part.disk_partition_style == 2  # 2 = GPT
         efi_gpt = efi_part.disk_partition_style == 2
