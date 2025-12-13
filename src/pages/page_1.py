@@ -2,7 +2,7 @@ import logging
 import tkinter as tk
 from threading import Thread
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from models.page import Page, PageValidationResult
 from multilingual import _
@@ -90,7 +90,7 @@ class Page1(Page):
             and self.state.spins.latest_version
             and self.state.spins.latest_version != self.app_config.app.supported_version
         ):
-            self.latest_label = ctk.CTkSimpleLabel(
+            self.latest_label = vgk.Label(
                 self,
                 text=f"⟳ {_('use.untested.version')}",
                 font=self._ui.fonts.smaller,
@@ -208,7 +208,7 @@ class Page1(Page):
         """Wait for spins to load before proceeding."""
         if not self.state.spins.accepted_spins:
             if self.still_loading_label is None:
-                self.still_loading_label = ctk.CTkSimpleLabel(
+                self.still_loading_label = vgk.Label(
                     self,
                     text=_("loading.spins"),
                     font=self._ui.fonts.smaller,

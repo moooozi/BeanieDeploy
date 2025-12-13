@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any
 
-import customtkinter as ctk
+import vgkit as vgk
 
 import multilingual
 from core.settings import get_config
@@ -29,7 +29,7 @@ class RadioButtonItem:
         )
 
 
-class MultiRadioButtons(ctk.CTkContainer):
+class MultiRadioButtons(vgk.Frame):
     """
     A customizable radio button group widget that supports advanced options,
     descriptions, and error states.
@@ -48,7 +48,7 @@ class MultiRadioButtons(ctk.CTkContainer):
         self,
         parent,
         items: dict[str, dict[str, Any]],
-        variable: ctk.Variable,
+        variable: vgk.Variable,
         validation_callback: Callable | None = None,
         advanced_options_txt="Show advanced options",
         *args,
@@ -76,11 +76,11 @@ class MultiRadioButtons(ctk.CTkContainer):
 
         self._number_of_standard_items = 0
         self._number_of_advanced_items = 0
-        self._advanced_items: list[ctk.CTkRadioButton] = []
+        self._advanced_items: list[vgk.RadioButton] = []
 
         # UI components
-        self._radio_buttons: dict[str, ctk.CTkRadioButton] = {}
-        self._show_advanced_label: ctk.CTkSimpleLabel | None = None
+        self._radio_buttons: dict[str, vgk.RadioButton] = {}
+        self._show_advanced_label: vgk.Label | None = None
         self._advanced_options_txt = advanced_options_txt
         # Initialize the widget
         self._setup_ui()
@@ -102,7 +102,7 @@ class MultiRadioButtons(ctk.CTkContainer):
         if not self._has_advanced_options():
             return
 
-        self._show_advanced_label = ctk.CTkSimpleLabel(
+        self._show_advanced_label = vgk.Label(
             self,
             text=self._advanced_options_txt,
             font=get_config().ui.fonts.smaller,
@@ -152,9 +152,9 @@ class MultiRadioButtons(ctk.CTkContainer):
 
     def _create_radio_button(
         self, parent, item_config: RadioButtonItem, value: str
-    ) -> ctk.CTkRadioButton:
+    ) -> vgk.RadioButton:
         """Create a single radio button."""
-        radio_button = ctk.CTkRadioButton(
+        radio_button = vgk.RadioButton(
             parent,
             text=item_config.name,
             variable=self._variable,
@@ -183,7 +183,7 @@ class MultiRadioButtons(ctk.CTkContainer):
 
     def _create_error_label(self, parent, error_text: str, row: int) -> None:
         """Create an error label for a disabled radio button."""
-        error_label = ctk.CTkSimpleLabel(
+        error_label = vgk.Label(
             parent,
             justify="center",
             text=error_text,
@@ -201,7 +201,7 @@ class MultiRadioButtons(ctk.CTkContainer):
         self, parent, description_text: str, row: int
     ) -> None:
         """Create a description label for a radio button."""
-        description_label = ctk.CTkSimpleLabel(
+        description_label = vgk.Label(
             parent,
             justify="center",
             text=description_text,

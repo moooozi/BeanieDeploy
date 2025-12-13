@@ -2,7 +2,7 @@ import logging
 import threading
 import tkinter as tk
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from core.settings import ConfigManager
 from models.check import Check, CheckType, DoneChecks
@@ -48,13 +48,13 @@ class PageCheck(Page):
 
         threading.Thread(target=_load_state_data, daemon=True).start()
 
-        self.progressbar_check = ctk.CTkProgressBar(
+        self.progressbar_check = vgk.ProgressBar(
             self, orientation="horizontal", mode="determinate"
         )
         self.progressbar_check.grid(row=0, column=0, pady=(0, 20), sticky="ew")
         self.progressbar_check.set(0)
 
-        job_label = ctk.CTkSimpleLabel(
+        job_label = vgk.Label(
             self,
             textvariable=self.job_var,
             justify=self._ui.di.l,

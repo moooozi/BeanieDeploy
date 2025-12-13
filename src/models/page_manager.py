@@ -1,7 +1,7 @@
 import logging
 from typing import Any, TypeVar
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from core.settings import get_config
 from models.page import Page
@@ -28,7 +28,7 @@ class PageManager:
 
         # Create shared UI elements
         self.ui_config = get_config().ui
-        self.title_label = ctk.CTkSimpleLabel(
+        self.title_label = vgk.Label(
             self.container, text="", font=self.ui_config.fonts.medium, wraplength="self"
         )
         self.title_label.grid(
@@ -39,7 +39,7 @@ class PageManager:
             pady=(self.ui_config.margin_title_top, 0),
         )
 
-        self.primary_button = ctk.CTkButton(
+        self.primary_button = vgk.Button(
             self.container,
             text="",
             command=self._default_next,
@@ -53,7 +53,7 @@ class PageManager:
             pady=(0, self.ui_config.margin_bottom),
         )
 
-        self.secondary_button = ctk.CTkButton(
+        self.secondary_button = vgk.Button(
             self.container,
             text="",
             command=self._default_previous,

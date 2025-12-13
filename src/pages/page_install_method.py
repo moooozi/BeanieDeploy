@@ -2,7 +2,7 @@ import logging
 import tkinter as tk
 from sys import argv
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from compatibility_checks import CheckType
 from models.data_units import DataUnit
@@ -131,14 +131,14 @@ class PageInstallMethod(Page):
         min_size_gb = DataUnit(
             self.app_config.app.dualboot_required_space.bytes_value
         ).gigabytes
-        self.conditional_frame = ctk.CTkContainer(self)
+        self.conditional_frame = vgk.Frame(self)
         self.conditional_frame.grid(row=1, column=0, sticky="we")
         self.rowconfigure(0, weight=5, uniform="a")
         self.rowconfigure(1, weight=1, uniform="a")
         self.conditional_frame.columnconfigure(0, weight=1)
 
         win_drive_letter = self.state.installation.windows_partition_info.drive_letter
-        self.warn_backup_sys_drive_files = ctk.CTkSimpleLabel(
+        self.warn_backup_sys_drive_files = vgk.Label(
             self.conditional_frame,
             text=_("warn.backup.system_drive") % {"drive": f"{win_drive_letter}:\\"},
             font=self._ui.fonts.smaller,
@@ -146,7 +146,7 @@ class PageInstallMethod(Page):
             justify=self._ui.di.l,
             pady=5,
         )
-        self.warn_backup_device = ctk.CTkSimpleLabel(
+        self.warn_backup_device = vgk.Label(
             self.conditional_frame,
             text=_("warn.backup.device"),
             font=self._ui.fonts.smaller,
@@ -154,14 +154,14 @@ class PageInstallMethod(Page):
             justify=self._ui.di.l,
             pady=5,
         )
-        self.size_dualboot_txt_pre = ctk.CTkSimpleLabel(
+        self.size_dualboot_txt_pre = vgk.Label(
             self.conditional_frame,
             text=_("dualboot.size.txt") % {"distro_name": selected_spin.name},
             font=self._ui.fonts.smaller,
             justify=self._ui.di.l,
             pady=5,
         )
-        self.size_dualboot_entry = ctk.CTkEntry(
+        self.size_dualboot_entry = vgk.Entry(
             self.conditional_frame,
             width=100,
             textvariable=self.dualboot_size_var,
@@ -177,7 +177,7 @@ class PageInstallMethod(Page):
         min_size_txt = self.app_config.app.dualboot_required_space.to_gibibytes()
         max_size_txt = DataUnit(max_size_bytes).to_gibibytes()
         size_range_text = f"({min_size_txt}GiB - {max_size_txt}GiB)"
-        self.size_dualboot_txt_post = ctk.CTkSimpleLabel(
+        self.size_dualboot_txt_post = vgk.Label(
             self.conditional_frame,
             text=size_range_text,
             font=self._ui.fonts.smaller,

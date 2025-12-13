@@ -38,9 +38,9 @@ class MainApp(Application):
         super().__init__(*args, **kwargs)
 
         # Get system components
-        self.config = get_config()
         self.state_manager = get_state_manager()
         self.app_state = get_state()
+        self.app_config = get_config()
 
         # Add observer for state changes
         self.app_state.add_observer(self._on_state_change)

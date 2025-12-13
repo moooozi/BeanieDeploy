@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from core.settings import ConfigManager, get_config
 from core.state import get_state
@@ -17,7 +17,7 @@ class PageValidationResult:
         self.error_message = error_message
 
 
-class Page(ctk.CTkContainer, ABC):
+class Page(vgk.Frame, ABC):
     """
     Base class for all application pages.
 

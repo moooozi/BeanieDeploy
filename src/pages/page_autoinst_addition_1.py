@@ -1,13 +1,12 @@
 import logging
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from autoinst import SUPPORTED_LANGS, get_locales_and_langs_sorted_with_names
 from models.page import Page, PageValidationResult
 from multilingual import _
 from services.patched_langtable import langtable
 from services.system import get_windows_ui_locale
-from templates.ctk_treeview import CTkTreeView
 
 
 class PageAutoinstAddition1(Page):
@@ -51,18 +50,23 @@ class PageAutoinstAddition1(Page):
             combined_locale_list
         )
 
-        temp_frame = ctk.CTkContainer(self)
+        temp_frame = vgk.Frame(self)
         temp_frame.pack(expand=1, fill="both")
         temp_frame.grid_rowconfigure(0, weight=1)
         temp_frame.columnconfigure(0, weight=1, uniform="cols")
         temp_frame.columnconfigure(1, weight=1, uniform="cols")
 
-        self.lang_list = CTkTreeView(
+        self.lang_list = vgk.TreeView(
             temp_frame,
             title=_("lang"),
+            fg_color=self._ui.colors.element_bg,
         )
 
-        self.locale_list = CTkTreeView(temp_frame, title=_("locale"))
+        self.locale_list = vgk.TreeView(
+            temp_frame,
+            title=_("locale"),
+            fg_color=self._ui.colors.element_bg,
+        )
 
         self.lang_list.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 

@@ -1,6 +1,6 @@
 import logging
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from models.page import Page, PageValidationResult
 from multilingual import _
@@ -61,7 +61,7 @@ class PageError(Page):
         # Subtitle
         subtitle_key = f"error.subtitle.{self.category}"
         subtitle = _(subtitle_key)
-        subtitle_label = ctk.CTkSimpleLabel(
+        subtitle_label = vgk.Label(
             self,
             text=subtitle,
             justify=self._ui.di.l,

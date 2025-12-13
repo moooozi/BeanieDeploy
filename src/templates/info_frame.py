@@ -1,12 +1,12 @@
 from typing import Any
 
-import customtkinter as ctk
+import vgkit as vgk
 
 import multilingual
 from core.settings import get_config
 
 
-class InfoFrame(ctk.CTkFrame):
+class InfoFrame(vgk.Container):
     def __init__(self, parent, title="", bulleting=True, bullet_char="⚪"):
         super().__init__(parent)
         self.configure(
@@ -17,12 +17,12 @@ class InfoFrame(ctk.CTkFrame):
         self.bullet_char = bullet_char
 
         # Inner frame for padding
-        self.inner_frame = ctk.CTkContainer(self)
+        self.inner_frame = vgk.Frame(self)
         self.inner_frame.pack(fill="both", expand=True, padx=(15, 10), pady=10)
 
-        self.labels: dict[str, ctk.CTkSimpleLabel] = {}
+        self.labels: dict[str, vgk.Label] = {}
         if title:
-            title_label = ctk.CTkSimpleLabel(
+            title_label = vgk.Label(
                 self.inner_frame,
                 text=title,
                 text_color=get_config().ui.colors.green,
@@ -33,7 +33,7 @@ class InfoFrame(ctk.CTkFrame):
     def add_label(self, key: Any, text: str = "") -> None:
         if self.bulleting and text:
             text = self.bullet_char + " " + text
-        label = ctk.CTkSimpleLabel(
+        label = vgk.Label(
             self.inner_frame,
             text=text,
             anchor=multilingual.get_di_var().w,

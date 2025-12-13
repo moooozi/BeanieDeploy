@@ -1,5 +1,5 @@
 # Production dependencies - only what the app needs to run
-git+https://github.com/moooozi/CustomTkinter/
+git+https://github.com/moooozi/VGKit/
 langtable==0.0.68
 xmltodict==1.0.2
 babel==2.17.0

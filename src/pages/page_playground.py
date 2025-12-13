@@ -1,6 +1,6 @@
 import logging
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from models.page import Page, PageValidationResult
 from multilingual import _
@@ -16,7 +16,7 @@ class PagePlayground(Page):
             _("btn.quit"), command=lambda: self._quit_application()
         )
 
-        playground_label = ctk.CTkSimpleLabel(
+        playground_label = vgk.Label(
             self,
             text="This is a label",
             justify=self._ui.di.l,
@@ -24,7 +24,7 @@ class PagePlayground(Page):
         )
         playground_label.grid(row=0, column=0, pady=10)
 
-        self.progressbar = ctk.CTkProgressBar(self, mode="determinate")
+        self.progressbar = vgk.ProgressBar(self, mode="determinate")
         self.progressbar.grid(row=1, column=0, pady=10)
         self.progressbar.set(0)
 

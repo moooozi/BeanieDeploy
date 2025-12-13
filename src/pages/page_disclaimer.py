@@ -1,6 +1,6 @@
 import tkinter as tk
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from models.page import Page, PageValidationResult
 from multilingual import _
@@ -21,11 +21,11 @@ class PageDisclaimer(Page):
         # Disclaimer text
         disclaimer_text = _("disclaimer.text")
 
-        info_frame = ctk.CTkFrame(
+        info_frame = vgk.Container(
             self,
             fg_color=self._ui.colors.element_bg,
         )
-        info_label = ctk.CTkSimpleLabel(
+        info_label = vgk.Label(
             info_frame,
             text=disclaimer_text,
             justify=self._ui.di.l,
@@ -41,7 +41,7 @@ class PageDisclaimer(Page):
         self.grid_rowconfigure(0, weight=8)
 
         self.accept_disclaimer_var = tk.BooleanVar(value=False)
-        checkbox = ctk.CTkCheckBox(
+        checkbox = vgk.CheckBox(
             self,
             text=_("checkbox.accept.disclaimer"),
             variable=self.accept_disclaimer_var,

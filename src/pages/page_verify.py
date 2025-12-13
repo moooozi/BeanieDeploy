@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from autoinst import get_keymap_description, strip_encoding
 from models.data_units import DataUnit
@@ -13,7 +13,6 @@ from services.system import (
     get_current_windows_timezone,
     get_windows_ui_locale,
 )
-from templates.ctk_treeview import CTkTreeView
 
 
 class PageVerify(Page):
@@ -43,11 +42,12 @@ class PageVerify(Page):
             logging.error("No spin selected when showing verify page")
             return
 
-        self.info_frame_raster = CTkTreeView(
+        self.info_frame_raster = vgk.TreeView(
             self,
             title=_("verify.installation.summary"),
             bulleting=True,
             bullet_char=("○", "○", "➤"),
+            fg_color=self._ui.colors.element_bg,
         )
 
         # Build the review structure
@@ -59,7 +59,7 @@ class PageVerify(Page):
         self.grid_rowconfigure(0, weight=5, uniform="rows")
         self.grid_rowconfigure(1, weight=1, uniform="rows")
 
-        check_restart = ctk.CTkCheckBox(
+        check_restart = vgk.CheckBox(
             self,
             text=_("add.auto.restart"),
             variable=self.auto_restart_toggle_var,

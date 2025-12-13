@@ -1,7 +1,7 @@
 import logging
 import math
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from models.page import Page, PageValidationResult
 from multilingual import _
@@ -11,7 +11,6 @@ from services.system import (
     get_current_windows_timezone_iana,
     get_windows_timezone_from_iana,
 )
-from templates.ctk_treeview import CTkTreeView
 
 
 class PageAutoinstAddition2(Page):
@@ -43,17 +42,24 @@ class PageAutoinstAddition2(Page):
 
         self.all_timezones = sorted(langtable.list_all_timezones())
 
-        temp_frame = ctk.CTkContainer(self)
+        temp_frame = vgk.Frame(self)
         temp_frame.pack(expand=1, fill="both")
         temp_frame.grid_rowconfigure(0, weight=1)
         temp_frame.columnconfigure(0, weight=1, uniform="cols")
         temp_frame.columnconfigure(1, weight=1, uniform="cols")
 
-        self.keyboard_list = CTkTreeView(
-            temp_frame, title=_("list.keymaps"), multi_select=True
+        self.keyboard_list = vgk.TreeView(
+            temp_frame,
+            title=_("list.keymaps"),
+            multi_select=True,
+            fg_color=self._ui.colors.element_bg,
         )
 
-        self.timezone_list = CTkTreeView(temp_frame, title=_("list.timezones"))
+        self.timezone_list = vgk.TreeView(
+            temp_frame,
+            title=_("list.timezones"),
+            fg_color=self._ui.colors.element_bg,
+        )
 
         self.keyboard_list.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 

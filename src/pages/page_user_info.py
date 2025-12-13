@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 
-import customtkinter as ctk
+import vgkit as vgk
 import win32api
 
 from models.page import Page, PageValidationResult
@@ -49,14 +49,14 @@ class PageUserInfo(Page):
         self.page_manager.set_title(_("user.info.title"))
 
         # Full Name entry
-        full_name_label = ctk.CTkSimpleLabel(
+        full_name_label = vgk.Label(
             self,
             text=_("entry.fullname"),
             font=self._ui.fonts.smaller,
         )
         full_name_label.grid(row=1, column=0, sticky=self._ui.di.w, pady=(10, 5))
 
-        self.full_name_entry = ctk.CTkEntry(
+        self.full_name_entry = vgk.Entry(
             self,
             textvariable=self.full_name_var,
             width=300,
@@ -64,14 +64,14 @@ class PageUserInfo(Page):
         self.full_name_entry.grid(row=2, column=0, sticky=self._ui.di.w, pady=(0, 10))
 
         # Username entry
-        username_label = ctk.CTkSimpleLabel(
+        username_label = vgk.Label(
             self,
             text=_("entry.username"),
             font=self._ui.fonts.smaller,
         )
         username_label.grid(row=3, column=0, sticky=self._ui.di.w, pady=(10, 5))
 
-        self.username_entry = ctk.CTkEntry(
+        self.username_entry = vgk.Entry(
             self,
             textvariable=self.username_var,
             width=300,
@@ -80,7 +80,7 @@ class PageUserInfo(Page):
         self.username_entry.bind("<KeyRelease>", self._on_username_change)
 
         # Error label for validation messages
-        self.error_label = ctk.CTkSimpleLabel(
+        self.error_label = vgk.Label(
             self,
             text="",
             font=self._ui.fonts.smaller,

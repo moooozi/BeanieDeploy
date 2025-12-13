@@ -1,9 +1,9 @@
-import customtkinter as ctk
+import vgkit as vgk
 
 from core.settings import get_config
 
 
-class Application(ctk.CTk):
+class Application(vgk.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         config = get_config()

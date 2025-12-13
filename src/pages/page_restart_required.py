@@ -2,7 +2,7 @@ import logging
 import subprocess
 import tkinter as tk
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from models.page import Page, PageValidationResult
 from multilingual import _
@@ -23,7 +23,7 @@ class PageRestartRequired(Page):
             _("btn.restart.later"), command=lambda: self._quit_application()
         )
 
-        finished_label = ctk.CTkSimpleLabel(
+        finished_label = vgk.Label(
             self,
             text=_("finished.text"),
             font=self._ui.fonts.small,
@@ -32,7 +32,7 @@ class PageRestartRequired(Page):
         )
         finished_label.grid(row=0, column=0, pady=10)
 
-        restarting_label = ctk.CTkSimpleLabel(
+        restarting_label = vgk.Label(
             self,
             textvariable=self.restarting_text_var,
             font=self._ui.fonts.small,

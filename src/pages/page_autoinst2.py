@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from models.page import Page, PageValidationResult
 from multilingual import _
@@ -43,12 +43,12 @@ class PageAutoinst2(Page):
         self.page_manager.set_title(
             _("windows.question") % {"distro_name": selected_spin.name}
         )
-        frame_checkboxes = ctk.CTkContainer(self)
+        frame_checkboxes = vgk.Frame(self)
         frame_checkboxes.grid(row=0, column=0, sticky="ew")
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        check_wifi = ctk.CTkCheckBox(
+        check_wifi = vgk.CheckBox(
             frame_checkboxes,
             text=_("add.import.wifi") % {"distro_name": selected_spin.name},
             variable=self.export_wifi_toggle_var,
@@ -58,7 +58,7 @@ class PageAutoinst2(Page):
         )
         check_wifi.grid(ipady=5, pady=(5, 0), row=0, column=0, sticky=self._ui.di.w)
 
-        check_encrypt = ctk.CTkCheckBox(
+        check_encrypt = vgk.CheckBox(
             frame_checkboxes,
             text=_("encrypted.root"),
             variable=self.enable_encryption_toggle_var,
@@ -71,7 +71,7 @@ class PageAutoinst2(Page):
         )
         check_encrypt.grid(ipady=5, row=2, column=0, sticky=self._ui.di.w)
 
-        self.encrypt_pass_note = ctk.CTkSimpleLabel(
+        self.encrypt_pass_note = vgk.Label(
             frame_checkboxes,
             text=f"ⓘ {_('encrypt.reminder.txt')}",
             font=self._ui.fonts.smaller,

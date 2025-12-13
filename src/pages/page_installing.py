@@ -2,7 +2,7 @@ import logging
 import threading
 import tkinter as tk
 
-import customtkinter as ctk
+import vgkit as vgk
 
 from models.installation_context import (
     InstallationContext,
@@ -46,12 +46,12 @@ class PageInstalling(Page):
         self.page_manager.set_secondary_button(visible=False)
         self.columnconfigure(0, weight=1)
 
-        self.progressbar_install = ctk.CTkProgressBar(
+        self.progressbar_install = vgk.ProgressBar(
             self, orientation="horizontal", mode="determinate"
         )
         self.progressbar_install.grid(row=0, column=0, pady=(0, 20), sticky="ew")
 
-        install_label = ctk.CTkSimpleLabel(
+        install_label = vgk.Label(
             self,
             textvariable=self.install_job_var,
             pady=5,
