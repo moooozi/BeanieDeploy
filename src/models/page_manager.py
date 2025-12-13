@@ -3,7 +3,7 @@ from typing import Any, TypeVar
 
 import customtkinter as ctk
 
-from config.settings import get_config
+from core.settings import get_config
 from models.page import Page
 
 # Type variable for page types

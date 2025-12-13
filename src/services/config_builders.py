@@ -5,7 +5,7 @@ Handles the generation of installation configuration files.
 
 from dataclasses import dataclass
 
-from config.settings import get_config
+from core.settings import get_config
 from models.kickstart import KickstartConfig, PartitioningConfig
 from models.partition import PartitioningMethod
 

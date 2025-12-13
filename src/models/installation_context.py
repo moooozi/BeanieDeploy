@@ -184,7 +184,7 @@ class InstallationContext:
 
         This method replaces the current fragile kwargs approach.
         """
-        from config.settings import get_config
+        from core.settings import get_config
 
         config = get_config()
 

@@ -10,7 +10,7 @@ import shutil
 from collections.abc import Callable
 from pathlib import Path
 
-from config.settings import get_config
+from core.settings import get_config
 from core.state import get_state
 from models.downloadable_file import DownloadableFile
 from models.installation_context import (

@@ -4,7 +4,7 @@ import tkinter as tk
 
 import customtkinter as ctk
 
-from config.settings import ConfigManager
+from core.settings import ConfigManager
 from models.check import Check, CheckType, DoneChecks
 from models.data_units import DataUnit
 from models.page import Page

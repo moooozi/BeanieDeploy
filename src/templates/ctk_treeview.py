@@ -2,7 +2,7 @@ import tkinter.ttk as ttk
 
 import customtkinter as ctk
 
-from config.settings import get_config
+from core.settings import get_config
 
 
 class CTkTreeView(ctk.CTkFrame):

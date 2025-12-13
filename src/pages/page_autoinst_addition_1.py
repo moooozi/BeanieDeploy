@@ -3,7 +3,6 @@ import logging
 import customtkinter as ctk
 
 from autoinst import SUPPORTED_LANGS, get_locales_and_langs_sorted_with_names
-from core.autoinst_addition1_logic import get_language_from_locale
 from models.page import Page, PageValidationResult
 from multilingual import _
 from services.patched_langtable import langtable
@@ -107,7 +106,7 @@ class PageAutoinstAddition1(Page):
             kickstart.locale_settings.locale = default_locale
 
         # Preselect default locale and language
-        default_language = get_language_from_locale(default_locale)
+        default_language = langtable.parse_locale(default_locale).language
         self.lang_list.preselect(default_language)
         self.update()
         on_lang_click()
@@ -123,12 +122,9 @@ class PageAutoinstAddition1(Page):
         if not selected_locale:
             return PageValidationResult(False, "Please select a locale")
 
-        # Validate that the selected locale is parseable
-        from core.autoinst_addition1_logic import validate_locale
-
-        valid, error = validate_locale(selected_locale)
-        if not valid:
-            return PageValidationResult(False, error)
+        # Validate that the selected locale has a valid language
+        if not langtable.parse_locale(selected_locale).language:
+            return PageValidationResult(False, "Selected locale is invalid")
         return PageValidationResult(True)
 
     def on_next(self):
@@ -165,8 +161,9 @@ class PageAutoinstAddition1(Page):
 
     def _filter_supported_locales(self, locale_list: list) -> list:
         """Filter locale list to only include supported locales."""
-        return [
-            (locale, weight)
-            for locale, weight in locale_list
-            if get_language_from_locale(locale) in SUPPORTED_LANGS
-        ]
+        filtered_locales = []
+        for locale, weight in locale_list:
+            parsed_locale = langtable.parse_locale(locale)
+            if parsed_locale.language in SUPPORTED_LANGS:
+                filtered_locales.append((locale, weight))
+        return filtered_locales

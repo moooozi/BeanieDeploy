@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from config.settings import get_config
+from core.settings import get_config
 from models.check import DoneChecks
 from models.install_options import InstallOptions
 from models.kickstart import KickstartConfig

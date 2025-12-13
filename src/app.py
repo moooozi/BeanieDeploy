@@ -1,12 +1,12 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from config.settings import get_config
 from core.navigation_conditions import (
     ReleaseModeCondition,
     SkipCheckDisabledCondition,
     UsernameNeededCondition,
 )
+from core.settings import get_config
 from core.state import get_state, get_state_manager
 from models.page_manager import PageManager
 from pages.page_1 import Page1

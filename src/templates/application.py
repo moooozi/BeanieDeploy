@@ -1,6 +1,6 @@
 import customtkinter as ctk
 
-from config.settings import get_config
+from core.settings import get_config
 
 
 class Application(ctk.CTk):

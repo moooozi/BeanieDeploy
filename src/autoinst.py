@@ -9,6 +9,7 @@ ALL_KEYMAPS = langtable.list_all_keyboards()
 ALL_LANGUAGES = langtable.list_all_languages()
 ALL_KEYMAPS_BY_DESC = {keyboards_db[key].description: key for key in ALL_KEYMAPS}
 # fmt: off
+# All locales supported by Fedora
 SUPPORTED_LANGS = ['af', 'am', 'ar', 'as', 'ast', 'be', 'bg', 'bn', 'ca', 'cmn', 'cs', 'cy', 'da', 'de', 'el', 'en', 'eo', 'es', 'et', 'eu', 'fa', 'fi', 'fil', 'fr', 'fur', 'fy', 'ga', 'gl', 'gu', 'he', 'hi', 'hr', 'hu', 'ia', 'id', 'is', 'it', 'ja', 'ka', 'kab', 'kk', 'km', 'kn', 'ko', 'kw', 'lt', 'lv', 'ml', 'mr', 'my', 'nb', 'nl', 'nn', 'oc', 'or', 'pa', 'pl', 'pt', 'ro', 'ru', 'si', 'sk', 'sl', 'sq', 'sr', 'sv', 'ta', 'te', 'th', 'tr', 'uk', 'ur', 'vi']  # noqa: Q000
 # fmt: on
 

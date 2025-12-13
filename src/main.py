@@ -28,7 +28,7 @@ else:
 # Legacy imports (to be refactored)
 import multilingual
 from app import MainApp
-from config.settings import get_config
+from core.settings import get_config
 from core.state import get_state
 from services.system import get_windows_ui_locale, is_admin
 from utils.logging import setup_file_logging

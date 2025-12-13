@@ -3,7 +3,7 @@ from typing import Any
 import customtkinter as ctk
 
 import multilingual
-from config.settings import get_config
+from core.settings import get_config
 
 
 class InfoFrame(ctk.CTkFrame):

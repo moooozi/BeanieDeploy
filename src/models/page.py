@@ -4,7 +4,7 @@ from typing import Any
 
 import customtkinter as ctk
 
-from config.settings import ConfigManager, get_config
+from core.settings import ConfigManager, get_config
 from core.state import get_state
 from models.page_manager_protocol import PageManagerProtocol
 
