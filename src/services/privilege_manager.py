@@ -323,7 +323,7 @@ if __name__ == "__main__":
             if str(src_dir) not in sys.path:
                 sys.path.insert(0, str(src_dir))
 
-            from privilege_helper import main
+            from .privilege_helper import main
 
             main(pipe_name)
             raise SystemExit(0)

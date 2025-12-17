@@ -94,9 +94,9 @@ class SpinState:
 
         try:
             if self.use_dummy:
-                import dummy
+                import offline_data
 
-                self._raw_spins_data = dummy.get_dummy_spin_data()
+                self._raw_spins_data = offline_data.get_fallback_offline_spin_data()
             else:
                 url = get_config().urls.available_spins_list
                 data = fetch_json(url)
@@ -142,9 +142,9 @@ class CompatibilityState:
         """Get IP locale information."""
         if self._ip_locale is None:
             if self.use_dummy:
-                import dummy
+                import offline_data
 
-                self._ip_locale = dummy.DUMMY_IP_LOCALE
+                self._ip_locale = offline_data.DEFAULT_IP_LOCALE
             else:
                 self.update_ip_locale()
         return self._ip_locale

@@ -9,7 +9,7 @@ if "/PIPE" in sys.argv:
     pipe_index = sys.argv.index("/PIPE")
     if pipe_index + 1 < len(sys.argv):
         pipe_name = sys.argv[pipe_index + 1]
-        import privilege_helper
+        from services import privilege_helper
 
         privilege_helper.main(pipe_name)
         raise SystemExit(0)
