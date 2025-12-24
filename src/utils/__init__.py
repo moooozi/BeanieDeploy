@@ -22,7 +22,7 @@ from .translation_manager import (
     gettext,
     set_language,
 )
-from .uuid_utils import PartitionUuid
+from .uuid import PartitionUuid
 
 
 @contextlib.contextmanager
