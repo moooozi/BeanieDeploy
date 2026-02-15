@@ -154,14 +154,11 @@ class ColorConfig:
     """Color configuration with light and dark variants."""
 
     background: Color = ("#E2E2E2", "#181818")
-    btn_background: Color = ("#C8C8C8", "#2D2D2D")
-    btn_background_hover: Color = ("#BFBFBF", "#3A3A3A")
-    btn_background_txt: Color = ("#000000", "#FFFFFF")
     element_bg: Color = ("#CFCFCF", "#212121")
     element_bg_hover: Color = ("#C2C2C2", "#2A2A2A")
     red: Color = ("#e81123", "#ff4a4a")
     green: Color = ("#008009", "#5dd25e")
-    primary: Color = ("#3B8ED0", "#2171B0")
+    primary: Color = ("#0067C0", "#56C6FB")
 
 
 @dataclass(frozen=True)

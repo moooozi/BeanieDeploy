@@ -40,10 +40,7 @@ class PageManager:
         )
 
         self.primary_button = vgk.Button(
-            self.container,
-            text="",
-            command=self._default_next,
-            corner_radius=20,
+            self.container, text="", command=self._default_next, mode="round"
         )
         self.primary_button.grid(
             row=2,
@@ -57,10 +54,8 @@ class PageManager:
             self.container,
             text="",
             command=self._default_previous,
-            fg_color=self.ui_config.colors.btn_background,
-            hover_color=self.ui_config.colors.btn_background_hover,
-            text_color=self.ui_config.colors.btn_background_txt,
-            corner_radius=20,
+            style="secondary",
+            mode="round",
         )
         self.secondary_button.grid(
             row=2, column=1, padx=12, pady=(0, self.ui_config.margin_bottom)
