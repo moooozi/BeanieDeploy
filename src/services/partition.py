@@ -6,6 +6,8 @@ Handles complex partitioning procedures and disk operations.
 import subprocess
 from dataclasses import dataclass
 
+from models.partition import Partition
+
 from .disk import (
     PartitionInfo,
     get_efi_partition_info,
@@ -45,22 +47,13 @@ class PartitioningResult:
 
 
 def partition_procedure(
-    tmp_part_size: int,
-    temp_part_label: str,
-    shrink_space: int = 0,
-    boot_part_size: int = 0,
-    make_root_partition: bool = False,
+    partition: Partition,
 ) -> PartitioningResult:
     """
     Execute the complete partitioning procedure.
 
     Args:
-        tmp_part_size: Size of temporary partition in bytes
-        temp_part_label: Label for temporary partition
-        shrink_space: Amount of space to shrink from system drive
-        boot_part_size: Size of boot partition in bytes
-        make_root_partition: Whether to create a root partition
-
+        partition: Partition configuration object
     Returns:
         PartitioningResult with partition information
     """
@@ -73,22 +66,22 @@ def partition_procedure(
         msg = "System drive letter could not be determined."
         raise RuntimeError(msg)
     # Calculate shrink space if not provided
-    if not (shrink_space and make_root_partition):
-        shrink_space = tmp_part_size + boot_part_size
+    if not (partition.shrink_space and partition.make_root_partition):
+        partition.shrink_space = partition.tmp_part_size + partition.boot_part_size
 
     # Resize system drive
     sys_drive_new_size = sys_drive_original_size - (
-        shrink_space + 1100000
+        partition.shrink_space + 1100000
     )  # Extra safety margin
     resize_partition(windows_partition.partition_guid, sys_drive_new_size)
 
     # Create partitions as needed
     partition_guids = _create_partitions(
         windows_partition.disk_number,
-        shrink_space,
-        tmp_part_size,
-        boot_part_size,
-        make_root_partition,
+        partition.shrink_space,
+        partition.tmp_part_size,
+        partition.boot_part_size,
+        partition.make_root_partition,
     )
 
     # Create temporary partition
@@ -98,20 +91,22 @@ def partition_procedure(
     # Create a temporary directory for mounting
     temp_base = Path(tempfile.gettempdir()) / "BeanieDeploy_TempMount"
     temp_base.mkdir(exist_ok=True)
-    tmp_mount_path = str(temp_base / f"temp_part_{temp_part_label}")
+    tmp_mount_path = str(temp_base / f"temp_part_{partition.temp_part_label}")
 
     # Ensure the mount path is clean
     if Path(tmp_mount_path).exists():
         subprocess.run(
             ["rmdir", "/s", "/q", tmp_mount_path],
-            check=True,
             capture_output=True,
             shell=True,
         )
 
     # Create the volume without assigning a drive letter initially
     tmp_part_metadata = new_partition(
-        windows_partition.disk_number, tmp_part_size, "FAT32", temp_part_label
+        windows_partition.disk_number,
+        partition.tmp_part_size,
+        "FAT32",
+        partition.temp_part_label,
     )
 
     # Get the volume GUID and mount it to the path
@@ -130,7 +125,7 @@ def partition_procedure(
         windows_partition=windows_partition,
         efi_partition=efi_partition,
         sys_drive_original_size=sys_drive_original_size,
-        shrink_space=shrink_space,
+        shrink_space=partition.shrink_space,
         partition_guids=partition_guids,
     )
 
