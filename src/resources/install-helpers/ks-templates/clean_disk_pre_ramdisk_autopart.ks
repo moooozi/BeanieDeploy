@@ -9,8 +9,9 @@ GUID="{DISK_UUID_PLACEHOLDER}"
 TMP_DIR="/tmp/beanie_vars"
 mkdir -p "$TMP_DIR"
 echo "$GUID" > "$TMP_DIR/disk_guid"
-DISK=$(/run/install/repo/install-helpers/scripts/find_disk_by_guid.sh "$GUID")
-if [ $? -ne 0 ]; then
+# Find disk by GUID using lsblk
+DISK=$(lsblk -ndo PATH,PTUUID | awk -v guid="$GUID" '$2==guid {print $1}')
+if [ -z "$DISK" ]; then
     echo "ERROR: Disk with GUID $GUID not found." >&2
     exit 1
 fi
