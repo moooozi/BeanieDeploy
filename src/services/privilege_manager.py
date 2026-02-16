@@ -19,6 +19,7 @@ import atexit
 import contextlib
 import ctypes
 import inspect
+import logging
 import pickle
 import subprocess
 import sys
@@ -101,29 +102,13 @@ class _PrivilegeManager:
                 executable = sys.executable
 
                 # Build command line for elevated helper
-                if getattr(sys, "frozen", False):
-                    # PyInstaller bundle - pass current args plus /PIPE
-                    args = [*sys.argv, "/PIPE", self.pipe_name]
-                else:
-                    # Normal Python - replace script with privilege_manager.py plus /PIPE
-                    privilege_manager_path = Path(__file__).resolve()
-                    args = [
-                        privilege_manager_path,
-                        *sys.argv[1:],
-                        "/PIPE",
-                        self.pipe_name,
-                    ]
+                args = [*sys.argv, "/PIPE", self.pipe_name]
 
                 command_line = " ".join(f'"{arg}"' for arg in args)
 
                 # Launch elevated helper
                 result = ctypes.windll.shell32.ShellExecuteW(
-                    None,
-                    "runas",
-                    executable,
-                    command_line,
-                    None,
-                    0,  # SW_HIDE
+                    None, "runas", executable, command_line, None, 0
                 )
 
                 if result <= 32:
@@ -131,7 +116,13 @@ class _PrivilegeManager:
                     raise RuntimeError(msg)
 
                 # Wait for helper to connect
+                logging.debug(
+                    f"Waiting for privilege helper to connect on pipe: {self.pipe_name}"
+                )
                 win32pipe.ConnectNamedPipe(self.pipe_handle, None)
+                logging.debug(
+                    f"Privilege helper successfully connected on pipe: {self.pipe_name}"
+                )
 
                 # Register cleanup on exit
                 atexit.register(self.shutdown)
