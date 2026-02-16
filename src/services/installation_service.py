@@ -218,7 +218,7 @@ class InstallationService:
                         context,
                         InstallationStage.VERIFYING_CHECKSUM,
                         10,
-                        f"Verifying existing file {file_info.file_name}",
+                        f"Verifying existing file: {file_info.file_name}",
                     )
                     if self._verify_file_hash(file_info):
                         self._download_index += 1
