@@ -489,7 +489,7 @@ class InstallationService:
             ),
             autoinstall_ramdisk=should_grub_autoinstall_ramdisk,
         )
-        grub_cfg_path.write_text(grub_cfg_content)
+        grub_cfg_path.write_text(grub_cfg_content, encoding="utf-8", newline="")
         elevated.call(file_service.set_file_readonly, args=(str(grub_cfg_path), True))
 
         # Generate kickstart config if needed
@@ -507,7 +507,7 @@ class InstallationService:
             kickstart_content = config_builders.build_autoinstall_ks_file(
                 context.kickstart
             )
-            kickstart_path.write_text(kickstart_content)
+            kickstart_path.write_text(kickstart_content, encoding="utf-8", newline="")
 
     def _copy_efi_to_system_partition(self, temp_destination: str) -> None:
         """Copy EFI directory to system EFI partition for proper booting."""
