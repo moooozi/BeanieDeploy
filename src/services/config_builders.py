@@ -239,13 +239,14 @@ def _build_install_source(kickstart_config: KickstartConfig) -> list[str]:
 
 
 def _build_user_config(kickstart_config: KickstartConfig) -> list[str]:
-    """Build user configuration section."""
+    """Build user configuration section with first-boot password setup."""
 
-    user_line = f"user --name={kickstart_config.user_username} --groups=wheel"
+    # Create user with locked password - will be set on first boot
+    user_line = f"user --name={kickstart_config.user_username} --groups=wheel --lock"
     if kickstart_config.user_full_name:
         user_line += f" --gecos={auto_quote(kickstart_config.user_full_name)}"
-    user_line += " --password=$y$j9T$GzhAGo.8wPNzc7t2UXYc.1$BKeaQVnM8Kw9qQ3mMujMItANkMtyTmhsXxbebJFQ5xC"
 
+    # Install password setup service that runs before SDDM on first boot
     post_lines = (
         load_ks_template("password_setup_post")
         .replace("{username}", kickstart_config.user_username)
