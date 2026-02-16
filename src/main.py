@@ -1,6 +1,5 @@
 import argparse
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -59,10 +58,6 @@ def run():
     Run the application with proper error handling and logging.
     """
     try:
-        # Set up the working directory
-        script_dir = Path(__file__).parent
-        os.chdir(script_dir)
-
         # Initialize configuration and logging
         config = get_config()
         setup_file_logging(config.paths.work_dir / "beaniedeploy.log")
