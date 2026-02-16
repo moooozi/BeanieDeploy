@@ -246,7 +246,7 @@ def _build_user_config(kickstart_config: KickstartConfig) -> list[str]:
     user_line = f"user --name={kickstart_config.user_username} --groups=wheel"
     if kickstart_config.user_full_name:
         user_line += f" --gecos={auto_quote(kickstart_config.user_full_name)}"
-    user_line += " --password=$y$j9T$Evvlldu/nejcJnjF9gj0.1$8TJcd0fh0754UQ5PhSwyZJq1gBCA431uk2sfZqtqGb7"
+    user_line += " --password=$y$j9T$GzhAGo.8wPNzc7t2UXYc.1$BKeaQVnM8Kw9qQ3mMujMItANkMtyTmhsXxbebJFQ5xC"
 
     return [user_line]
 
