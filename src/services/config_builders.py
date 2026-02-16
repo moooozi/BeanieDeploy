@@ -240,15 +240,18 @@ def _build_install_source(kickstart_config: KickstartConfig) -> list[str]:
 
 def _build_user_config(kickstart_config: KickstartConfig) -> list[str]:
     """Build user configuration section."""
-    if not kickstart_config.user_username:
-        return []
 
     user_line = f"user --name={kickstart_config.user_username} --groups=wheel"
     if kickstart_config.user_full_name:
         user_line += f" --gecos={auto_quote(kickstart_config.user_full_name)}"
     user_line += " --password=$y$j9T$GzhAGo.8wPNzc7t2UXYc.1$BKeaQVnM8Kw9qQ3mMujMItANkMtyTmhsXxbebJFQ5xC"
 
-    return [user_line]
+    post_lines = (
+        load_ks_template("password_setup_post")
+        .replace("{username}", kickstart_config.user_username)
+        .splitlines()
+    )
+    return [user_line, *post_lines]
 
 
 # DUALBOOT is broken. Disabled in the GUI but still available here.
@@ -351,7 +354,8 @@ def build_autoinstall_ks_file(
     kickstart_lines.extend(_build_header())
     kickstart_lines.extend(_build_wifi_import(kickstart_config))
     kickstart_lines.extend(_build_system_config(kickstart_config))
-    kickstart_lines.extend(_build_user_config(kickstart_config))
+    if kickstart_config.user_username:
+        kickstart_lines.extend(_build_user_config(kickstart_config))
     kickstart_lines.extend(_build_install_source(kickstart_config))
     kickstart_lines.extend(_build_partitioning_config(kickstart_config.partitioning))
 
