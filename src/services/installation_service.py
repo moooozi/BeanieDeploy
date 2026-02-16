@@ -206,10 +206,6 @@ class InstallationService:
     def _download_files(self, context: InstallationContext) -> InstallationResult:
         """Download all required files."""
         try:
-            self._update_progress(
-                context, InstallationStage.DOWNLOADING, 10, "Starting downloads..."
-            )
-
             for i, file_info in enumerate(context.downloadable_files):
                 context.current_file_index = i
 
@@ -217,9 +213,16 @@ class InstallationService:
                 Path(file_info.destination_dir).mkdir(parents=True, exist_ok=True)
 
                 # Check if file already exists with correct hash
-                if file_info.full_path.exists() and self._verify_file_hash(file_info):
-                    self._download_index += 1
-                    continue  # File is already downloaded and verified
+                if file_info.full_path.exists():
+                    self._update_progress(
+                        context,
+                        InstallationStage.VERIFYING_CHECKSUM,
+                        10,
+                        f"Verifying existing file {file_info.file_name}",
+                    )
+                    if self._verify_file_hash(file_info):
+                        self._download_index += 1
+                        continue  # File is already downloaded and verified
 
                 # Download the file
                 self._download_single_file(file_info)
@@ -313,10 +316,9 @@ class InstallationService:
                 50,
                 "Creating temporary partition...",
             )
-
             # Execute partitioning using the partition context
             partitioning_results = elevated.call(
-                partition_procedure, kwargs=vars(context.partition)
+                partition_procedure, kwargs={"partition": context.partition}
             )
 
             # Store the temporary partition information for later use
