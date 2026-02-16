@@ -376,6 +376,10 @@ class InstallationService:
                     InstallationStage.COPYING_TO_TMP_PART, "No installer ISO found"
                 )
 
+            if not context.tmp_part:
+                msg = "Partitioning succeeded but temporary partition info is missing"
+                raise RuntimeError(msg)
+
             # Set destination path
             destination = context.tmp_part.mount_path
 

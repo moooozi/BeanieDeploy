@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
+from core.state import ApplicationState
 from services.partition import PartitioningResult, TemporaryPartition
 
 from .downloadable_file import DownloadableFile
@@ -58,8 +59,8 @@ class InstallationContext:
     # Core configuration
     kickstart: KickstartConfig
     partition: Partition
-    tmp_part: TemporaryPartition
     selected_spin: Spin
+    tmp_part: TemporaryPartition | None = None
     live_os_installer_spin: Spin | None = None
 
     # File management
@@ -178,7 +179,7 @@ class InstallationContext:
         return errors
 
     @classmethod
-    def from_application_state(cls, state) -> "InstallationContext":
+    def from_application_state(cls, state: ApplicationState) -> "InstallationContext":
         """
         Create InstallationContext from the application state.
 
@@ -213,11 +214,22 @@ class InstallationContext:
         ):
             kickstart.ostree_args = state.installation.selected_spin.ostree_args
 
+        # make sure none of the required fields are None, otherwise raise an error
+        if kickstart is None:
+            msg = "Kickstart configuration is required in application state"
+            raise ValueError(msg)
+        if state.installation.partition is None:
+            msg = "Partition configuration is required in application state"
+            raise ValueError(msg)
+        if state.installation.selected_spin is None:
+            msg = "Selected spin is required in application state"
+            raise ValueError(msg)
+
         return cls(
             kickstart=kickstart,
             partition=state.installation.partition,
             selected_spin=state.installation.selected_spin,
-            live_os_installer_spin=state.compatibility.live_os_installer_spin,
+            live_os_installer_spin=state.spins.live_os_installer_spin,
             paths=paths,
             tmp_part=state.installation.tmp_part,
         )

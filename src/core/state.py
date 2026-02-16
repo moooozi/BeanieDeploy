@@ -167,7 +167,6 @@ class InstallationState:
     partition: Partition | None = None
     selected_spin: Spin | None = None
     tmp_part: TemporaryPartition | None = None
-
     # Cached partition info
     _windows_partition_info: PartitionInfo | None = None
     _efi_partition_info: PartitionInfo | None = None
