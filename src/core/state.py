@@ -14,16 +14,15 @@ from core.settings import get_config
 from models.check import DoneChecks
 from models.install_options import InstallOptions
 from models.kickstart import KickstartConfig
-from models.partition import Partition
+from models.partition import PartitioningOptions
 from models.spin import Spin
 from models.types import IPLocaleInfo
 from services.disk import (
-    PartitionInfo,
-    get_efi_partition_info,
-    get_windows_partition_info,
+    Partition,
+    get_efi_partition,
+    get_windows_partition,
 )
 from services.download import fetch_json
-from services.partition import TemporaryPartition
 from services.privilege_manager import elevated
 
 
@@ -164,26 +163,50 @@ class InstallationState:
     status: InstallerStatus = InstallerStatus.NOT_STARTED
     install_options: InstallOptions = field(default_factory=InstallOptions)
     kickstart: KickstartConfig | None = None
-    partition: Partition | None = None
+    partition: PartitioningOptions | None = None
     selected_spin: Spin | None = None
-    tmp_part: TemporaryPartition | None = None
+    tmp_part: Partition | None = None
     # Cached partition info
-    _windows_partition_info: PartitionInfo | None = None
-    _efi_partition_info: PartitionInfo | None = None
+    _windows_partition: Partition | None = None
+    _efi_partition: Partition | None = None
+    _windows_partition_fetched: bool = False
+    _efi_partition_fetched: bool = False
 
     @property
-    def windows_partition_info(self) -> PartitionInfo:
-        """Get Windows partition info, fetching and caching if needed."""
-        if self._windows_partition_info is None:
-            self._windows_partition_info = get_windows_partition_info()
-        return self._windows_partition_info
+    def windows_partition(self) -> Partition:
+        """Get Windows partition info, fetching and caching if needed.
+
+        Raises RuntimeError if the WMI query fails.  The failure is cached
+        so subsequent accesses raise immediately without re-querying.
+        """
+        if not self._windows_partition_fetched:
+            self._windows_partition_fetched = True
+            try:
+                self._windows_partition = get_windows_partition()
+            except Exception:
+                logging.exception("Failed to query Windows partition")
+        if self._windows_partition is None:
+            msg = "Windows partition could not be determined"
+            raise RuntimeError(msg)
+        return self._windows_partition
 
     @property
-    def efi_partition_info(self) -> PartitionInfo:
-        """Get EFI partition info, fetching and caching if needed."""
-        if self._efi_partition_info is None:
-            self._efi_partition_info = elevated.call(get_efi_partition_info)
-        return self._efi_partition_info
+    def efi_partition(self) -> Partition:
+        """Get EFI partition info, fetching and caching if needed.
+
+        Raises RuntimeError if the WMI query fails.  The failure is cached
+        so subsequent accesses raise immediately without re-querying.
+        """
+        if not self._efi_partition_fetched:
+            self._efi_partition_fetched = True
+            try:
+                self._efi_partition = elevated.call(get_efi_partition)
+            except Exception:
+                logging.exception("Failed to query EFI partition")
+        if self._efi_partition is None:
+            msg = "EFI partition could not be determined"
+            raise RuntimeError(msg)
+        return self._efi_partition
 
 
 @dataclass

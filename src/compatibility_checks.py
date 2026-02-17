@@ -85,7 +85,7 @@ def check_space():
     # Use shutil.disk_usage instead of PowerShell
     try:
         # Get the system drive info
-        partition_info = get_state().installation.windows_partition_info
+        partition_info = get_state().installation.windows_partition
         if partition_info.free_space is not None:
             return Check(
                 CheckType.SPACE.value,
@@ -109,7 +109,7 @@ def check_space():
 def check_resizable():
     """Check available resizable space on system drive."""
     try:
-        partition_info = get_state().installation.windows_partition_info
+        partition_info = get_state().installation.windows_partition
 
         # Extract GUID
         partition_guid = partition_info.partition_guid
@@ -134,11 +134,11 @@ def check_resizable():
 
 def _get_efi_free_space() -> int:
     """Get free space on EFI partition."""
-    efi_partition_info = get_state().installation.efi_partition_info
-    if efi_partition_info.free_space is None:
+    efi_partition = get_state().installation.efi_partition
+    if efi_partition.free_space is None:
         msg = "EFI partition free space information not available"
         raise ValueError(msg)
-    return efi_partition_info.free_space
+    return efi_partition.free_space
 
 
 def check_efi_space():
@@ -154,8 +154,8 @@ def check_efi_space():
 def check_gpt():
     """Check if Windows and EFI partitions are on GPT disks."""
     try:
-        win_part = get_state().installation.windows_partition_info
-        efi_part = get_state().installation.efi_partition_info
+        win_part = get_state().installation.windows_partition
+        efi_part = get_state().installation.efi_partition
 
         win_gpt = win_part.disk_partition_style == 2  # 2 = GPT
         efi_gpt = efi_part.disk_partition_style == 2

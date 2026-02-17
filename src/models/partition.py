@@ -13,7 +13,7 @@ class PartitioningMethod(Enum):
 
 
 @dataclass
-class Partition:
+class PartitioningOptions:
     make_root_partition: bool = False
     shrink_space: int = 0
     tmp_part_size: int = 0

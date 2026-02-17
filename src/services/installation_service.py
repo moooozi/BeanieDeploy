@@ -21,6 +21,7 @@ from models.installation_context import (
 from models.partition import PartitioningMethod
 from services import config_builders, disk, elevated
 from services import file as file_service
+from services.disk import Partition
 from services.download import DownloadProgress, download_file
 from services.partition import partition_procedure
 
@@ -37,13 +38,13 @@ class HashVerificationError(Exception):
         )
 
 
-def _create_boot_entry(efi_partition_info) -> int:
+def _create_boot_entry(efi_partition: Partition) -> int:
     """Create boot entry. Requires elevated privileges."""
     import uuid
 
     import firmware_variables as fwvars
 
-    if not efi_partition_info:
+    if not efi_partition:
         msg = "Could not get EFI partition information"
         raise RuntimeError(msg)
 
@@ -72,12 +73,12 @@ def _create_boot_entry(efi_partition_info) -> int:
                 hd_node = path.get_hard_drive_node()
                 if hd_node:
                     # Set to EFI partition instead of temp partition
-                    hd_node.partition_guid = efi_partition_info.partition_guid
-                    hd_node.partition_number = efi_partition_info.partition_number
-                    hd_node.partition_start_lba = efi_partition_info.start_lba
-                    hd_node.partition_size_lba = efi_partition_info.size_lba
+                    hd_node.partition_guid = efi_partition.partition_guid
+                    hd_node.partition_number = efi_partition.partition_number
+                    hd_node.partition_start_lba = efi_partition.start_lba
+                    hd_node.partition_size_lba = efi_partition.size_lba
                     hd_node.partition_signature = uuid.UUID(
-                        efi_partition_info.partition_guid
+                        efi_partition.partition_guid
                     ).bytes_le
                     path.set_hard_drive_node(hd_node)
 
@@ -187,6 +188,7 @@ class InstallationService:
             return InstallationResult.success_result(boot_result.boot_entry_created)
 
         except Exception as e:
+            logging.exception("Installation failed")
             error_msg = f"Unexpected error during installation: {e!s}"
 
             # Cleanup temporary partition if it was created
@@ -318,7 +320,7 @@ class InstallationService:
             )
             # Execute partitioning using the partition context
             partitioning_results = elevated.call(
-                partition_procedure, kwargs={"partition": context.partition}
+                partition_procedure, kwargs={"options": context.partition}
             )
 
             # Store the temporary partition information for later use
@@ -334,16 +336,16 @@ class InstallationService:
                 partitioning_results.partition_guids.boot_guid
             )
             context.kickstart.partitioning.sys_drive_uuid = (
-                self.state.installation.windows_partition_info.partition_guid
+                self.state.installation.windows_partition.partition_guid
             )
             context.kickstart.partitioning.sys_disk_uuid = (
-                self.state.installation.windows_partition_info.disk_guid
+                self.state.installation.windows_partition.disk_guid
             )
             context.kickstart.partitioning.sys_efi_uuid = (
-                self.state.installation.efi_partition_info.partition_guid
+                self.state.installation.efi_partition.partition_guid
             )
             context.kickstart.partitioning.tmp_part_uuid = (
-                partitioning_results.tmp_part.partition_info.partition_guid
+                partitioning_results.tmp_part.partition_guid
             )
 
             self._update_progress(
@@ -382,23 +384,20 @@ class InstallationService:
                 msg = "Partitioning succeeded but temporary partition info is missing"
                 raise RuntimeError(msg)
 
-            # Set destination path
-            destination = context.tmp_part.mount_path
+            with context.tmp_part.mount() as destination:
+                # Extract installer ISO contents directly to temp partition
+                disk.extract_iso_to_dir(str(installer_iso_path), destination)
 
-            # Extract installer ISO contents directly to temp partition
-            disk.extract_iso_to_dir(str(installer_iso_path), destination)
+                # Handle live image if needed
+                if context.is_live_image_installation():
+                    live_iso_path = context.get_live_iso_path()
+                    if live_iso_path:
+                        self._extract_liveos_from_iso(str(live_iso_path), destination)
 
-            # Handle live image if needed
-            if context.is_live_image_installation():
-                live_iso_path = context.get_live_iso_path()
-                if live_iso_path:
-                    # Extract only the LiveOS directory from live ISO directly to destination
-                    self._extract_liveos_from_iso(str(live_iso_path), destination)
-
-            # Copy additional files and generate configurations
-            self._copy_additional_files(context, destination)
-            self._generate_config_files(context, destination)
-            self._copy_efi_to_system_partition(destination)
+                # Copy additional files and generate configurations
+                self._copy_additional_files(context, destination)
+                self._generate_config_files(context, destination)
+                self._copy_efi_to_system_partition(destination)
 
             self._update_progress(
                 context,
@@ -409,15 +408,9 @@ class InstallationService:
             return InstallationResult.success_result()
 
         except Exception as e:
-            # Cleanup on failure
-            error_msg = f"File copying failed: {e!s}"
-            if context.tmp_part_already_created:
-                try:
-                    self._cleanup_failed_installation(context)
-                except Exception as cleanup_e:
-                    error_msg += f"\n\nCleanup also failed: {cleanup_e!s}"
             return InstallationResult.error_result(
-                InstallationStage.COPYING_TO_TMP_PART, error_msg
+                InstallationStage.COPYING_TO_TMP_PART,
+                f"File copying failed: {e!s}",
             )
 
     def _extract_liveos_from_iso(self, iso_path: str, target_dir: str) -> None:
@@ -483,10 +476,7 @@ class InstallationService:
         )
         grub_cfg_content = config_builders.build_grub_cfg_file(
             context.partition.temp_part_label,
-            is_autoinst=bool(
-                context.kickstart.partitioning.method
-                and context.kickstart.partitioning.method != PartitioningMethod.CUSTOM
-            ),
+            is_autoinst=should_grub_autoinstall,
             autoinstall_ramdisk=should_grub_autoinstall_ramdisk,
         )
         grub_cfg_path.write_text(grub_cfg_content, encoding="utf-8", newline="")
@@ -511,24 +501,11 @@ class InstallationService:
 
     def _copy_efi_to_system_partition(self, temp_destination: str) -> None:
         """Copy EFI directory to system EFI partition for proper booting."""
-        # Get EFI partition volume unique ID
-        efi_unique_id = self.state.installation.efi_partition_info.volume_unique_id
-        if not efi_unique_id:
-            msg = "Could not find system EFI partition"
-            raise RuntimeError(msg)
+        efi_partition = self.state.installation.efi_partition
 
-        # Create temp mount path for EFI partition
-        efi_mount_path = f"{temp_destination}_efi"
-        Path(efi_mount_path).mkdir(parents=True, exist_ok=True)
-
-        try:
-            # Mount EFI partition
-            elevated.call(
-                disk.mount_volume_to_path, args=(efi_unique_id, efi_mount_path)
-            )
-
+        with efi_partition.mount() as efi_mount:
             # Check if beanie directory already exists
-            efi_dst = Path(efi_mount_path) / "EFI" / "beanie"
+            efi_dst = Path(efi_mount) / "EFI" / "beanie"
             if efi_dst.exists():
                 msg = f"EFI beanie directory already exists at {efi_dst}, skipping copy"
                 logging.info(msg)
@@ -544,12 +521,6 @@ class InstallationService:
                 kwargs={"dirs_exist_ok": True},
             )
 
-        finally:
-            # Unmount EFI partition
-            elevated.call(disk.unmount_volume_from_path, args=(efi_mount_path,))
-            # Clean up temp mount directory
-            shutil.rmtree(efi_mount_path, ignore_errors=True)
-
     def _create_boot_entry(self, context: InstallationContext) -> InstallationResult:
         """Create boot entry for the installation."""
         try:
@@ -559,21 +530,15 @@ class InstallationService:
                 90,
                 "Creating boot entry...",
             )
-            efi_partition_info = self.state.installation.efi_partition_info
+            efi_partition = self.state.installation.efi_partition
             # Run the entire boot entry creation with elevation
-            new_entry_id = elevated.call(_create_boot_entry, args=(efi_partition_info,))
+            new_entry_id = elevated.call(_create_boot_entry, args=(efi_partition,))
 
             return InstallationResult.success_result(str(new_entry_id))
         except Exception as e:
-            # Cleanup on failure
-            error_msg = f"Boot entry creation failed: {e!s}"
-            if context.tmp_part_already_created:
-                try:
-                    self._cleanup_failed_installation(context)
-                except Exception as cleanup_e:
-                    error_msg += f"\n\nCleanup also failed: {cleanup_e!s}"
             return InstallationResult.error_result(
-                InstallationStage.ADDING_TMP_BOOT_ENTRY, error_msg
+                InstallationStage.ADDING_TMP_BOOT_ENTRY,
+                f"Boot entry creation failed: {e!s}",
             )
 
     def _cleanup_failed_installation(self, context: InstallationContext) -> None:
@@ -588,31 +553,38 @@ class InstallationService:
             context, InstallationStage.CLEANUP, 0, "Cleaning up failed installation..."
         )
 
-        # Unmount the temporary partition if it's still mounted
-        if context.tmp_part and context.tmp_part.mount_path:
-            elevated.call(
-                disk.unmount_volume_from_path, args=(context.tmp_part.mount_path,)
-            )
-
-        # Delete the temporary partition and extend system partition
-        # This requires the partitioning information that was stored during creation
+        # Delete created partitions and restore the system partition size
         if context.partitioning_result:
-            partitioning_info = context.partitioning_result
+            result = context.partitioning_result
 
-            # Delete the temporary partition
-            elevated.call(
-                disk.delete_partition,
-                args=(partitioning_info.windows_partition.partition_guid,),
-            )
+            # Delete all partitions created during the procedure
+            # (temp partition is always created; root/boot are conditional)
+            guids_to_delete: list[str] = [result.tmp_part.partition_guid]
+            if result.partition_guids.root_guid:
+                guids_to_delete.append(result.partition_guids.root_guid)
+            if result.partition_guids.boot_guid:
+                guids_to_delete.append(result.partition_guids.boot_guid)
 
-            # Extend the system partition back to original size
-            elevated.call(
-                disk.resize_partition,
-                args=(
-                    partitioning_info.windows_partition.partition_guid,
-                    partitioning_info.windows_partition.size,
-                ),
-            )
+            for guid in guids_to_delete:
+                try:
+                    elevated.call(disk.delete_partition, args=(guid,))
+                except Exception:
+                    logging.warning("Failed to delete partition %s", guid)
+
+            # Extend the system partition back to its original size
+            try:
+                elevated.call(
+                    disk.resize_partition,
+                    args=(
+                        result.windows_partition.partition_guid,
+                        result.sys_drive_original_size,
+                    ),
+                )
+            except Exception:
+                logging.error(
+                    "Failed to restore system partition to original size %d",
+                    result.sys_drive_original_size,
+                )
 
         self._update_progress(
             context, InstallationStage.CLEANUP, 100, "Cleanup completed"

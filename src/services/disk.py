@@ -7,8 +7,11 @@ import contextlib
 import logging
 import os
 import posixpath
+import shutil
 import subprocess
+import tempfile
 import winreg
+from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -16,9 +19,11 @@ from utils import PartitionUuid, com_context
 
 CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW
 
+_MOUNT_DIR_PREFIX = "Beanie_mount_"
+
 
 @dataclass
-class PartitionInfo:
+class Partition:
     """Structured partition information."""
 
     partition_guid: str
@@ -34,6 +39,69 @@ class PartitionInfo:
     drive_letter: str | None = None
     free_space: int | None = None
     volume_unique_id: str | None = None
+
+    @contextlib.contextmanager
+    def mount(self, mount_path: str | None = None) -> Generator[str, None, None]:
+        """Mount this partition to a path and automatically unmount on exit.
+
+        Behavior varies based on the *mount_path* argument:
+
+        * **None (default)** - a temporary directory is created under the
+          system temp folder (prefixed with ``Beanie_mount_``) and deleted
+          after unmounting.
+        * **Non-existent path** - the directory is created, used as the
+          mount point, and deleted after unmounting.
+        * **Existing empty directory** - used as-is and **not** deleted
+          afterwards (you only delete what you create).
+        * **Existing non-empty directory** - raises ``ValueError`` immediately.
+
+        Args:
+            mount_path: Optional directory path to mount the volume to.
+                        When *None*, a temporary directory is used.
+
+        Yields:
+            The resolved mount path for use inside the block.
+
+        Raises:
+            RuntimeError: If the partition has no volume unique ID.
+            ValueError: If *mount_path* exists and is not empty.
+        """
+        from services import elevated
+
+        if not self.volume_unique_id:
+            msg = "Volume unique ID not available for mounting"
+            raise RuntimeError(msg)
+
+        # Decide whether we own the directory (and should delete it later)
+        should_delete = False
+
+        if mount_path is None:
+            # Auto-create a temp directory
+            mount_path = tempfile.mkdtemp(prefix=_MOUNT_DIR_PREFIX)
+            should_delete = True
+            logging.debug("Auto-created mount point: %s", mount_path)
+        else:
+            mp = Path(mount_path)
+            if mp.exists():
+                if any(mp.iterdir()):
+                    msg = f"Mount path is not empty: {mount_path}"
+                    raise ValueError(msg)
+                # Existing empty dir - do not delete afterwards
+                should_delete = False
+            else:
+                mp.mkdir(parents=True, exist_ok=True)
+                should_delete = True
+
+        elevated.call(mount_volume_to_path, args=(self.volume_unique_id, mount_path))
+        try:
+            yield mount_path
+        finally:
+            try:
+                elevated.call(unmount_volume_from_path, args=(mount_path,))
+            except Exception:
+                logging.warning("Failed to unmount %s", mount_path)
+            if should_delete:
+                shutil.rmtree(mount_path, ignore_errors=True)
 
 
 @contextlib.contextmanager
@@ -155,7 +223,7 @@ def new_partition(
     drive_letter: str | None = None,
     assign_drive_letter: bool = False,
     force_decrypt: bool = True,
-) -> PartitionInfo:
+) -> Partition:
     """
     Create a new partition on the specified disk, optionally formatting it as a volume.
 
@@ -169,7 +237,7 @@ def new_partition(
         force_decrypt: Whether to attempt decryption on the formatted volume (default: True)
 
     Returns:
-        PartitionInfo object with partition information
+        Partition object with partition information
     """
     with com_context():
         import win32com.client
@@ -262,7 +330,7 @@ def new_partition(
         if force_decrypt and vol_unique_id:
             decrypt_partition(vol_unique_id)
 
-        # Return partition metadata as PartitionInfo
+        # Return partition metadata as Partition
         partition_guid = PartitionUuid.to_raw(str(partition.Guid))
 
         offset = int(partition.Offset)
@@ -278,7 +346,7 @@ def new_partition(
         # For newly created partitions, free_space is initially the full size
         free_space = part_size if filesystem else None
 
-        return PartitionInfo(
+        return Partition(
             partition_guid=partition_guid,
             partition_number=int(partition.PartitionNumber),
             disk_number=int(target_disk.Number),
@@ -489,7 +557,7 @@ def unmount_volume_from_path(mount_path: str) -> None:
     )
 
 
-def _get_partition_info(partition, wmi) -> PartitionInfo:
+def _build_partition_from_wmi(partition, wmi) -> Partition:
     """
     Internal helper to extract partition information from a partition object.
 
@@ -498,7 +566,7 @@ def _get_partition_info(partition, wmi) -> PartitionInfo:
         wmi: WMI connection object
 
     Returns:
-        PartitionInfo object with partition information
+        Partition object with partition information
     """
     # Get disk info
     disks = wmi.InstancesOf("MSFT_Disk")
@@ -545,7 +613,7 @@ def _get_partition_info(partition, wmi) -> PartitionInfo:
     start_lba = offset // sector
     size_lba = part_size // sector
 
-    return PartitionInfo(
+    return Partition(
         partition_guid=PartitionUuid.to_raw(str(partition.Guid)),
         partition_number=int(partition.PartitionNumber),
         disk_number=int(disk.Number),
@@ -562,27 +630,27 @@ def _get_partition_info(partition, wmi) -> PartitionInfo:
     )
 
 
-def get_windows_partition_info() -> PartitionInfo:
+def get_windows_partition() -> Partition:
     """Get cached Windows system partition info.
 
     Returns:
-        PartitionInfo object for the Windows system partition
+        Partition object for the Windows system partition
     """
     system_drive = os.environ.get("SYSTEMDRIVE", "C:")[0]
-    return get_partition_info_by_drive_letter(system_drive)
+    return get_partition_by_drive_letter(system_drive)
 
 
-def get_efi_partition_info() -> PartitionInfo:
+def get_efi_partition() -> Partition:
     """Get cached EFI system partition info.
 
     Returns:
-        PartitionInfo object for the EFI system partition
+        Partition object for the EFI system partition
     """
     efi_guid = get_efi_drive_uuid()
-    return get_partition_info_by_guid(efi_guid)
+    return get_partition_by_guid(efi_guid)
 
 
-def get_partition_info_by_guid(guid: str) -> PartitionInfo:
+def get_partition_by_guid(guid: str) -> Partition:
     """
     Get partition information by GUID (partition GUID) using pure WMI.
 
@@ -592,7 +660,7 @@ def get_partition_info_by_guid(guid: str) -> PartitionInfo:
         guid: Partition GUID (with or without braces)
 
     Returns:
-        PartitionInfo object with partition information
+        Partition object with partition information
     """
     with com_context():
         import win32com.client
@@ -616,10 +684,10 @@ def get_partition_info_by_guid(guid: str) -> PartitionInfo:
             msg = f"No partition found with GUID {guid}"
             raise RuntimeError(msg)
 
-        return _get_partition_info(target_partition, wmi)
+        return _build_partition_from_wmi(target_partition, wmi)
 
 
-def get_partition_info_by_drive_letter(drive_letter: str) -> PartitionInfo:
+def get_partition_by_drive_letter(drive_letter: str) -> Partition:
     """
     Get partition information by drive letter using pure WMI.
 
@@ -627,7 +695,7 @@ def get_partition_info_by_drive_letter(drive_letter: str) -> PartitionInfo:
         drive_letter: Drive letter (e.g., 'C')
 
     Returns:
-        PartitionInfo object with partition information
+        Partition object with partition information
     """
     with com_context():
         import win32com.client
@@ -648,7 +716,7 @@ def get_partition_info_by_drive_letter(drive_letter: str) -> PartitionInfo:
             msg = f"No partition found for drive letter {drive_letter}"
             raise RuntimeError(msg)
 
-        return _get_partition_info(target_partition, wmi)
+        return _build_partition_from_wmi(target_partition, wmi)
 
 
 def get_partition_supported_size(guid: str) -> int:

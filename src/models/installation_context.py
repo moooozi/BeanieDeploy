@@ -10,11 +10,12 @@ from enum import Enum
 from pathlib import Path
 
 from core.state import ApplicationState
-from services.partition import PartitioningResult, TemporaryPartition
+from services.disk import Partition
+from services.partition import PartitioningResult
 
 from .downloadable_file import DownloadableFile
 from .kickstart import KickstartConfig
-from .partition import Partition
+from .partition import PartitioningOptions
 from .spin import Spin
 
 
@@ -58,9 +59,9 @@ class InstallationContext:
 
     # Core configuration
     kickstart: KickstartConfig
-    partition: Partition
+    partition: PartitioningOptions
     selected_spin: Spin
-    tmp_part: TemporaryPartition | None = None
+    tmp_part: Partition | None = None
     live_os_installer_spin: Spin | None = None
 
     # File management

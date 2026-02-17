@@ -151,7 +151,7 @@ class PageVerify(Page):
                 and hasattr(partition, "shrink_space")
                 and partition.shrink_space
             ):
-                windows_part = self.state.installation.windows_partition_info
+                windows_part = self.state.installation.windows_partition
                 if windows_part:
                     new_size = DataUnit(windows_part.size - partition.shrink_space)
                     self.info_frame_raster.insert(

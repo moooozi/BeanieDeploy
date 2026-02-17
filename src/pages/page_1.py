@@ -27,7 +27,7 @@ class Page1(Page):
         self._wait_spin_loading()
 
         # Access Windows Partition information so they are loaded early
-        loader = Thread(target=lambda: self.state.installation.windows_partition_info)
+        loader = Thread(target=lambda: self.state.installation.windows_partition)
         self.after(200, loader.start)
 
     def finish_init_page(self):
@@ -177,9 +177,9 @@ class Page1(Page):
 
             # Create partition if it doesn't exist and update size
             if self.state.installation.partition is None:
-                from models.partition import Partition
+                from models.partition import PartitioningOptions
 
-                self.state.installation.partition = Partition()
+                self.state.installation.partition = PartitioningOptions()
 
             partition_size_bytes = (
                 total_size_bytes + self.app_config.app.temp_part_failsafe_space.bytes
@@ -193,16 +193,9 @@ class Page1(Page):
             logging.debug(log)
 
     def show_validation_error(self, message: str):
-        """Show validation error using popup."""
-        # This would integrate with your existing popup system
-        # For now, just call the parent implementation
+        """Show validation error"""
         super().show_validation_error(message)
-        # TODO: Implement actual popup display
-        # self.show_popup(
-        #     title=_("error.validation.title"),
-        #     message=message,
-        #     type_="warning",
-        # )
+        # TODO: visual feedback for validation errors
 
     def _wait_spin_loading(self):
         """Wait for spins to load before proceeding."""

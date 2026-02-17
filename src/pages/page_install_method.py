@@ -137,7 +137,7 @@ class PageInstallMethod(Page):
         self.rowconfigure(1, weight=1, uniform="a")
         self.conditional_frame.columnconfigure(0, weight=1)
 
-        win_drive_letter = self.state.installation.windows_partition_info.drive_letter
+        win_drive_letter = self.state.installation.windows_partition.drive_letter
         self.warn_backup_sys_drive_files = vgk.Label(
             self.conditional_frame,
             text=_("warn.backup.system_drive") % {"drive": f"{win_drive_letter}:\\"},
@@ -246,9 +246,9 @@ class PageInstallMethod(Page):
             # Save dual boot size
             size = DataUnit.from_gigabytes(float(self.dualboot_size_var.get()))
             if not self.state.installation.partition:
-                from models.partition import Partition
+                from models.partition import PartitioningOptions
 
-                self.state.installation.partition = Partition()
+                self.state.installation.partition = PartitioningOptions()
             self.state.installation.partition.shrink_space = size.bytes
         elif method == PartitioningMethod.CUSTOM.value:
             # Reset partition settings for custom install
