@@ -163,7 +163,7 @@ class InstallationState:
     status: InstallerStatus = InstallerStatus.NOT_STARTED
     install_options: InstallOptions = field(default_factory=InstallOptions)
     kickstart: KickstartConfig | None = None
-    partition: PartitioningOptions | None = None
+    partition: PartitioningOptions = field(default_factory=PartitioningOptions)
     selected_spin: Spin | None = None
     tmp_part: Partition | None = None
     # Cached partition info

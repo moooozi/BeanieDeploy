@@ -12,5 +12,5 @@ class InstallOptions:
     spin_index: int = -1
     auto_restart: bool = False
     torrent: bool = False
-    export_wifi: bool = True
+    export_wifi: bool = False
     partition_method: PartitioningMethod | None = None

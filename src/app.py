@@ -4,13 +4,11 @@ from typing import TYPE_CHECKING, Any
 from core.navigation_conditions import (
     ReleaseModeCondition,
     SkipCheckDisabledCondition,
-    UsernameNeededCondition,
 )
 from core.settings import get_config
 from core.state import get_state, get_state_manager
 from models.page_manager import PageManager
 from pages.page_1 import Page1
-from pages.page_autoinst2 import PageAutoinst2
 from pages.page_autoinst_addition_1 import PageAutoinstAddition1
 from pages.page_autoinst_addition_2 import PageAutoinstAddition2
 from pages.page_check import PageCheck
@@ -20,7 +18,6 @@ from pages.page_install_method import PageInstallMethod
 from pages.page_installing import PageInstalling
 from pages.page_playground import PagePlayground
 from pages.page_restart_required import PageRestartRequired
-from pages.page_user_info import PageUserInfo
 from pages.page_verify import PageVerify
 from templates.application import Application
 
@@ -85,10 +82,7 @@ class MainApp(Application):
             PageCheck: {"conditions": [SkipCheckDisabledCondition()]},
             Page1: {},
             PageInstallMethod: {},
-            PageAutoinst2: {"conditions": [AutoInstallCondition()]},
-            PageUserInfo: {
-                "conditions": [AutoInstallCondition(), UsernameNeededCondition()]
-            },
+            # PageUserInfo: {"conditions": [AutoInstallCondition(), UsernameNeededCondition()]},
             PageAutoinstAddition1: {"conditions": [AutoInstallCondition()]},
             PageAutoinstAddition2: {"conditions": [AutoInstallCondition()]},
             PageVerify: {},

@@ -144,13 +144,8 @@ class PageVerify(Page):
                     % {"distro_name": selected_spin.full_name},
                 )
 
-            # Partition shrink for dualboot or custom
-            if (
-                method in [PartitioningMethod.DUALBOOT, PartitioningMethod.CUSTOM]
-                and partition
-                and hasattr(partition, "shrink_space")
-                and partition.shrink_space
-            ):
+            # Partition shrink for dualboot
+            if method in [PartitioningMethod.DUALBOOT] and partition.shrink_space:
                 windows_part = self.state.installation.windows_partition
                 if windows_part:
                     new_size = DataUnit(windows_part.size - partition.shrink_space)
