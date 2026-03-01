@@ -193,7 +193,7 @@ class InstallationContext:
         # Create paths configuration
         paths = InstallationPaths(
             work_dir=config.paths.work_dir,
-            wifi_profiles_src_dir=getattr(config.paths, "wifi_profiles_dir", None),
+            wifi_profiles_src_dir=config.paths.wifi_profiles_dir,
         )
 
         # Sync partitioning method from install_options to kickstart if not set
@@ -218,9 +218,6 @@ class InstallationContext:
         # make sure none of the required fields are None, otherwise raise an error
         if kickstart is None:
             msg = "Kickstart configuration is required in application state"
-            raise ValueError(msg)
-        if state.installation.partition is None:
-            msg = "Partition configuration is required in application state"
             raise ValueError(msg)
         if state.installation.selected_spin is None:
             msg = "Selected spin is required in application state"
