@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import tkinter as tk
 from sys import argv
@@ -210,7 +211,9 @@ class PageInstallMethod(Page):
         )
         self.warning_label.grid(row=3, column=0, sticky=self._ui.di.w)
         # Update warning based on install method
-        self.install_method_var.trace_add("write", self.update_warning_label)
+        self._warning_trace_id = self.install_method_var.trace_add(
+            "write", self.update_warning_label
+        )
 
         self.update_idletasks()
         self.show_more_widgets_if_needed()
@@ -320,6 +323,11 @@ class PageInstallMethod(Page):
             current_spin = self.state.installation.selected_spin
             if current_spin and self.selected_spin_name != current_spin.name:
                 logging.info("Spin changed, reinitializing page")
+                # Remove trace before destroying widgets to avoid callbacks on dead widgets
+                with contextlib.suppress(Exception):
+                    self.install_method_var.trace_remove(
+                        "write", self._warning_trace_id
+                    )
                 # Clear the frame and reinitialize
                 for widget in self.winfo_children():
                     widget.destroy()
