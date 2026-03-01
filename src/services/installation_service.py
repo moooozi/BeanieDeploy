@@ -426,22 +426,10 @@ class InstallationService:
         )
 
     def _copy_additional_files(
-        self, context: InstallationContext, destination: str
+        self, _context: InstallationContext, destination: str
     ) -> None:
-        """Copy additional files like WiFi profiles."""
+        """Copy additional files for installation."""
         destination_path = Path(destination)
-
-        # Copy WiFi profiles if specified
-        if (
-            context.paths.wifi_profiles_src_dir
-            and context.paths.wifi_profiles_dst_dir_name
-        ):
-            wifi_dst_path = destination_path / context.paths.wifi_profiles_dst_dir_name
-            elevated.call(
-                shutil.copytree,
-                args=(str(context.paths.wifi_profiles_src_dir), str(wifi_dst_path)),
-                kwargs={"dirs_exist_ok": True},
-            )
 
         # Copy install-helpers directory to the destination if it exists
         install_helpers_dir = get_config().paths.install_helpers_dir

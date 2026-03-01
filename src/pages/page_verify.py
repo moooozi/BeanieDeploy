@@ -168,6 +168,7 @@ class PageVerify(Page):
             self.info_frame_raster.insert("", "end", text=_("verify.encryption.info"))
 
         # WiFi export
+        """
         if (
             install_options
             and hasattr(install_options, "export_wifi")
@@ -179,7 +180,7 @@ class PageVerify(Page):
                 "end",
                 text=_("verify.autoinst.wifi") % {"distro_name": selected_spin.name},
             )
-
+        """
         # Localization settings (nested)
         current_locale = get_windows_ui_locale() or _("verify.unknown")
         current_timezone = get_current_windows_timezone() or _("verify.unknown")

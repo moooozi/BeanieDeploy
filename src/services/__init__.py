@@ -6,7 +6,7 @@ This package contains service modules for:
 - system: System-level operations (admin, registry, etc.)
 - download: File downloading with progress tracking
 - installation_service: Main installation orchestration
-- network: Wi-Fi profile management
+- network: Network and download operations
 - file: File operations and validation
 """
 

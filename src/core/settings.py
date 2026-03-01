@@ -50,9 +50,6 @@ class AppConfig:
     default_efi_file_path: str = r"\EFI\BOOT\BOOTX64.EFI"
     live_img_path: str = "LiveOS/squashfs.img"
 
-    # Directory names
-    wifi_profiles_dir_name: str = "WIFI_PROFILES"
-
     # ISO filenames
     live_iso_name: str = "live_os.iso"
     install_iso_name: str = "install_media.iso"
@@ -87,11 +84,7 @@ class PathConfig:
 
     @property
     def work_dir(self) -> Path:
-        return self.downloads_dir / "win2linux_tmpdir"
-
-    @property
-    def wifi_profiles_dir(self) -> Path:
-        return self.work_dir / "WIFI_PROFILES"
+        return self.downloads_dir / "BeanieDeploy Downloads"
 
     @property
     def app_icon_path(self) -> Path:

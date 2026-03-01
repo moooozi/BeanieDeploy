@@ -33,6 +33,5 @@ class KickstartConfig:
     locale_settings: LocaleConfig = field(default_factory=LocaleConfig)
     live_img_url: str = ""
     ostree_args: str = ""
-    wifi_profiles_dir_name: str | None = None
     user_full_name: str = ""
     user_username: str = ""

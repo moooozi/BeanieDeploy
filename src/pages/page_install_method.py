@@ -20,8 +20,6 @@ class PageInstallMethod(Page):
         self.dualboot_size_var = tk.StringVar(parent)
 
         self.enable_encryption_toggle_var = tk.BooleanVar(parent)
-        # Temporarily disabled - export wifi functionality not fully implemented
-        # self.export_wifi_toggle_var = tk.BooleanVar(parent, export_wifi)
 
     def init_page(self):
         # Get selected spin from state
@@ -140,7 +138,7 @@ class PageInstallMethod(Page):
         self.rowconfigure(0, weight=3, uniform="a")
         self.rowconfigure(1, weight=1, uniform="a")
 
-        # Encryption and wifi checkboxes
+        # Encryption checkbox
         self.check_encrypt_frame = vgk.Frame(self.method_options_frame)
         self.check_encrypt_frame.grid(row=0, column=0, pady=5, sticky="w")
         self.check_encrypt = vgk.CheckBox(
@@ -162,17 +160,6 @@ class PageInstallMethod(Page):
         )
         self.encrypt_pass_note.grid(padx=10, row=0, column=1, sticky=self._ui.di.w)
         self.update_encrypt_note_visiblity()
-
-        # Wifi export checkbox - temporarily disabled
-        # self.check_wifi = vgk.CheckBox(
-        #     self.method_options_frame,
-        #     text=_("add.import.wifi") % {"distro_name": selected_spin.name},
-        #     variable=self.export_wifi_toggle_var,
-        #     onvalue=True,
-        #     offvalue=False,
-        #     width=99,
-        # )
-        # self.check_wifi.grid(ipady=5, pady=5, row=1, column=0, sticky=self._ui.di.w)
 
         self.dualboot_entry_frame = vgk.Frame(self.method_options_frame)
         self.dualboot_entry_frame.grid(row=2, column=0, sticky="w")
@@ -326,10 +313,6 @@ class PageInstallMethod(Page):
             is_encrypted = self.enable_encryption_toggle_var.get()
             logging.info(f"Encryption enabled: {is_encrypted}")
             partitioning.is_encrypted = is_encrypted
-
-            # install_options = self.state.installation.install_options
-            ## Wifi export temporarily disabled
-            # install_options.export_wifi = self.export_wifi_toggle_var.get()
 
     def on_show(self):
         """Called when page is shown - reinitialize if spin changed."""

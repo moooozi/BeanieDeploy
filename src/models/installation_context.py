@@ -37,15 +37,11 @@ class InstallationPaths:
     """All file paths needed for installation."""
 
     work_dir: Path
-    wifi_profiles_src_dir: Path | None = None
 
     # Relative paths within the installation
     grub_cfg_relative_path: str = "EFI/BOOT/grub.cfg"
     kickstart_cfg_relative_path: str = "ks.cfg"
     efi_file_relative_path: str = "EFI/BOOT/bootx64.efi"
-
-    # Destination directory names
-    wifi_profiles_dst_dir_name: str = "wifi_profiles"
 
 
 @dataclass
@@ -193,7 +189,6 @@ class InstallationContext:
         # Create paths configuration
         paths = InstallationPaths(
             work_dir=config.paths.work_dir,
-            wifi_profiles_src_dir=config.paths.wifi_profiles_dir,
         )
 
         # Sync partitioning method from install_options to kickstart if not set

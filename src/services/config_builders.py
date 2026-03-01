@@ -112,16 +112,6 @@ def _build_header() -> list[str]:
     return load_ks_template("header").splitlines()
 
 
-def _build_wifi_import(kickstart_config: KickstartConfig) -> list[str]:
-    """Build WiFi profiles import section."""
-    if not kickstart_config.wifi_profiles_dir_name:
-        return []
-    template = load_ks_template("wifi_import").replace(
-        "{wifi_profiles_dir_name}", kickstart_config.wifi_profiles_dir_name
-    )
-    return template.splitlines()
-
-
 def _build_clean_disk_pre_install(partitioning_config: PartitioningConfig) -> list[str]:
     """Build pre-install script for CLEAN_DISK method."""
     if not partitioning_config.sys_drive_uuid:
@@ -353,7 +343,6 @@ def build_autoinstall_ks_file(
 
     # Build different sections of the kickstart file
     kickstart_lines.extend(_build_header())
-    kickstart_lines.extend(_build_wifi_import(kickstart_config))
     kickstart_lines.extend(_build_system_config(kickstart_config))
     if kickstart_config.user_username:
         kickstart_lines.extend(_build_user_config(kickstart_config))
