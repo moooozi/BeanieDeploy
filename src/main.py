@@ -105,10 +105,8 @@ if __name__ == "__main__":
     args = parse_arguments()
 
     # Auto-detect release mode for PyInstaller builds
-    is_pyinstaller_bundle = getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
-    is_release_mode = args.release or is_pyinstaller_bundle
 
-    if is_release_mode:
+    if args.release or get_state().is_release_mode:
         try:
             run()
         except Exception as e:

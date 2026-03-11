@@ -119,7 +119,7 @@ class PageAutoinstAddition1(Page):
 
     def validate_input(self) -> PageValidationResult:
         """Validate that a locale has been selected."""
-        if not hasattr(self, "locale_list"):
+        if not self.locale_list:
             return PageValidationResult(False, "Page not properly initialized")
 
         selected_locale = self.locale_list.selection()[0]
@@ -141,10 +141,8 @@ class PageAutoinstAddition1(Page):
 
     def on_show(self):
         # If items are seleceted in the treeview, make them visible by updating scrollbar
-        if hasattr(self, "locale_list"):
-            self.after(1, lambda: self.locale_list.see())
-        if hasattr(self, "lang_list"):
-            self.after(1, lambda: self.lang_list.see())
+        self.after(1, lambda: self.locale_list.see())
+        self.after(1, lambda: self.lang_list.see())
 
     def _combine_locale_lists(self, list1: list, list2: list) -> list:
         """Combine two locale lists."""

@@ -160,11 +160,7 @@ class PageVerify(Page):
                     )
 
         # Encryption
-        if (
-            kickstart
-            and hasattr(kickstart.partitioning, "is_encrypted")
-            and kickstart.partitioning.is_encrypted
-        ):
+        if kickstart and kickstart.partitioning.is_encrypted:
             self.info_frame_raster.insert("", "end", text=_("verify.encryption.info"))
 
         # WiFi export

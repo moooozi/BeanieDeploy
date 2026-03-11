@@ -86,7 +86,6 @@ class PageAutoinstAddition2(Page):
         ip_timezone = (
             self.state.compatibility.ip_locale.time_zone
             if self.state.compatibility.ip_locale is not None
-            and hasattr(self.state.compatibility.ip_locale, "time_zone")
             else None
         )
 
@@ -120,8 +119,6 @@ class PageAutoinstAddition2(Page):
 
     def validate_input(self) -> PageValidationResult:
         """Validate that both timezone and keymap are selected."""
-        if not hasattr(self, "timezone_list") or not hasattr(self, "keyboard_list"):
-            return PageValidationResult(False, "Page not properly initialized")
 
         selected_timezone = self.timezone_list.selection()[0]
         selected_keymaps = self.keyboard_list.selection()
@@ -152,17 +149,14 @@ class PageAutoinstAddition2(Page):
 
     def on_show(self):
         """Called when page is shown - reinitialize if locale changed."""
-        if hasattr(self, "selected_locale"):
-            kickstart = self.state.installation.kickstart
-            if kickstart and self.selected_locale != kickstart.locale_settings.locale:
-                logging.info("Locale changed, reinitializing page")
-                for widget in self.winfo_children():
-                    widget.destroy()
-                self._initiated = False
-                self.init_page()
-                self._initiated = True
+        kickstart = self.state.installation.kickstart
+        if kickstart and self.selected_locale != kickstart.locale_settings.locale:
+            logging.info("Locale changed, reinitializing page")
+            for widget in self.winfo_children():
+                widget.destroy()
+            self._initiated = False
+            self.init_page()
+            self._initiated = True
         # If items are seleceted in the treeview, make them visible by updating scrollbar
-        if hasattr(self, "keyboard_list"):
-            self.after(1, lambda: self.keyboard_list.see())
-        if hasattr(self, "timezone_list"):
-            self.after(1, lambda: self.timezone_list.see())
+        self.after(1, lambda: self.keyboard_list.see())
+        self.after(1, lambda: self.timezone_list.see())

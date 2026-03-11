@@ -20,7 +20,7 @@ class PageCheck(Page):
 
     def tkraise(self, aboveThis=None):  # noqa: N803
         """Override tkraise to prevent PageCheck from coming to front after navigation."""
-        if hasattr(self, "_navigation_completed") and self._navigation_completed:
+        if self._navigation_completed:
             return
         super().tkraise(aboveThis)
 

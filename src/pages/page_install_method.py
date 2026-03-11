@@ -319,7 +319,7 @@ class PageInstallMethod(Page):
 
     def on_show(self):
         """Called when page is shown - reinitialize if spin changed."""
-        if hasattr(self, "selected_spin_name"):
+        if self.selected_spin_name:
             current_spin = self.state.installation.selected_spin
             if current_spin and self.selected_spin_name != current_spin.name:
                 logging.info("Spin changed, reinitializing page")
