@@ -8,7 +8,6 @@ import logging
 import os
 import posixpath
 import shutil
-import subprocess
 import tempfile
 import winreg
 from collections.abc import Generator
@@ -16,8 +15,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from utils import PartitionUuid, com_context
-
-CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW
 
 _MOUNT_DIR_PREFIX = "Beanie_mount_"
 
@@ -513,48 +510,103 @@ def get_efi_drive_uuid() -> str:
         raise ValueError(msg)
 
 
-def mount_volume_to_path(volume_unique_id: str, mount_path: str) -> None:
-    """
-    Mount a volume to a specified path instead of a drive letter.
+def _get_partition_by_volume_id(wmi, volume_unique_id: str):
+    """Find an MSFT_Partition by its associated volume's UniqueId.
 
     Args:
-        volume_unique_id: Volume unique ID ( \\\\?\\Volume{...}\\)
+        wmi: WMI connection object (root/Microsoft/Windows/Storage)
+        volume_unique_id: Volume unique ID (e.g. ``\\\\?\\Volume{...}\\``)
+
+    Returns:
+        The MSFT_Partition COM object associated with the volume.
+
+    Raises:
+        RuntimeError: If the volume or its associated partition cannot be found.
+    """
+    volumes = wmi.InstancesOf("MSFT_Volume")
+    for volume in volumes:
+        if str(volume.UniqueId).strip().lower() == volume_unique_id.strip().lower():
+            associated_partitions = volume.Associators_("MSFT_PartitionToVolume")
+            if associated_partitions:
+                return associated_partitions[0]
+            msg = f"No partition associated with volume {volume_unique_id}"
+            raise RuntimeError(msg)
+
+    msg = f"No volume found with unique ID {volume_unique_id}"
+    raise RuntimeError(msg)
+
+
+def _normalize_access_path(path: str) -> str:
+    """Normalize an access path for case-insensitive comparison."""
+    path = path.strip()
+    if not path.endswith("\\"):
+        path += "\\"
+    return path.lower()
+
+
+def mount_volume_to_path(volume_unique_id: str, mount_path: str) -> None:
+    """
+    Mount a volume to a specified path using MSFT_Partition.AddAccessPath.
+
+    Args:
+        volume_unique_id: Volume unique ID (``\\\\?\\Volume{...}\\``)
         mount_path: Path to mount the volume to
     """
     # Unmount if already mounted to avoid conflicts
-    with contextlib.suppress(subprocess.CalledProcessError):
+    with contextlib.suppress(Exception):
         unmount_volume_from_path(mount_path)
 
     # Ensure the mount path exists
     Path(mount_path).mkdir(parents=True, exist_ok=True)
 
-    # Mount the volume to the path
-    subprocess.run(
-        ["mountvol", mount_path, volume_unique_id],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        shell=True,
-        check=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
+    with com_context():
+        import win32com.client
+
+        wmi = win32com.client.GetObject("winmgmts:root/Microsoft/Windows/Storage")
+        partition = _get_partition_by_volume_id(wmi, volume_unique_id)
+
+        in_params = partition.Methods_("AddAccessPath").InParameters.SpawnInstance_()
+        in_params.AccessPath = mount_path
+
+        result = partition.ExecMethod_("AddAccessPath", in_params)
+        if result.ReturnValue != 0:
+            msg = f"AddAccessPath failed with code {result.ReturnValue}"
+            raise RuntimeError(msg)
 
 
 def unmount_volume_from_path(mount_path: str) -> None:
     """
-    Unmount a volume from a specified path.
+    Unmount a volume from a specified path using MSFT_Partition.RemoveAccessPath.
 
     Args:
         mount_path: Path where the volume is mounted
     """
-    subprocess.run(
-        [r"mountvol", mount_path, "/d"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        check=True,
-        shell=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
+    with com_context():
+        import win32com.client
+
+        wmi = win32com.client.GetObject("winmgmts:root/Microsoft/Windows/Storage")
+        partitions = wmi.InstancesOf("MSFT_Partition")
+
+        normalized_mount = _normalize_access_path(mount_path)
+
+        for partition in partitions:
+            if not partition.AccessPaths:
+                continue
+            for ap in partition.AccessPaths:
+                if _normalize_access_path(str(ap)) == normalized_mount:
+                    in_params = partition.Methods_(
+                        "RemoveAccessPath"
+                    ).InParameters.SpawnInstance_()
+                    in_params.AccessPath = mount_path
+
+                    result = partition.ExecMethod_("RemoveAccessPath", in_params)
+                    if result.ReturnValue != 0:
+                        msg = f"RemoveAccessPath failed with code {result.ReturnValue}"
+                        raise RuntimeError(msg)
+                    return
+
+        msg = f"No partition found mounted at {mount_path}"
+        raise RuntimeError(msg)
 
 
 def _build_partition_from_wmi(partition, wmi) -> Partition:
