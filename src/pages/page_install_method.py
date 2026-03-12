@@ -15,8 +15,8 @@ from templates.multi_radio_buttons import MultiRadioButtons
 
 
 class PageInstallMethod(Page):
-    def __init__(self, parent, page_name: str, *args, **kwargs):
-        super().__init__(parent, page_name, *args, **kwargs)
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
         self.install_method_var = tk.StringVar(parent)
         self.dualboot_size_var = tk.StringVar(parent)
 
@@ -29,9 +29,7 @@ class PageInstallMethod(Page):
             logging.error("No spin selected when initializing install method page")
             return
 
-        self.page_manager.set_title(
-            _("windows.question") % {"distro_name": selected_spin.name}
-        )
+        self.set_page_title(_("windows.question") % {"distro_name": selected_spin.name})
         self.columnconfigure(0, weight=1)
 
         self.selected_spin_name = selected_spin.name
@@ -331,6 +329,6 @@ class PageInstallMethod(Page):
                 # Clear the frame and reinitialize
                 for widget in self.winfo_children():
                     widget.destroy()
-                self._initiated = False
+                self.initiated = False
                 self.init_page()
-                self._initiated = True
+                self.initiated = True

@@ -280,8 +280,11 @@ class ApplicationState:
     def set_selected_spin(self, spin: Spin) -> None:
         """Set the selected spin and notify observers."""
         old_spin = self.installation.selected_spin
-        self.installation.selected_spin = spin
-        self.notify_observers("selected_spin_changed", old_spin=old_spin, new_spin=spin)
+        if old_spin != spin:
+            self.installation.selected_spin = spin
+            self.notify_observers(
+                "selected_spin_changed", old_spin=old_spin, new_spin=spin
+            )
 
     def update_compatibility_checks(self, done_checks: Any) -> None:
         """Update compatibility check results."""

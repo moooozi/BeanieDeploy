@@ -10,11 +10,8 @@ from services.system import get_windows_ui_locale
 
 
 class PageAutoinstAddition1(Page):
-    def __init__(self, parent, page_name: str, *args, **kwargs):
-        super().__init__(parent, page_name, *args, **kwargs)
-
     def init_page(self):
-        self.page_manager.set_title(_("title.autoinst2"))
+        self.set_page_title(_("title.autoinst2"))
 
         # Get IP locale from state instead of globals
 

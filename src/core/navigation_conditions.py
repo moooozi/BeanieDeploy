@@ -16,10 +16,6 @@ class PageCondition(ABC):
     def is_enabled(self) -> bool:
         """Check if this condition is met."""
 
-    def is_satisfied(self) -> bool:
-        """Check if the condition is satisfied."""
-        return self.is_enabled()
-
 
 class UsernameNeededCondition(PageCondition):
     """Condition to check if username is needed."""

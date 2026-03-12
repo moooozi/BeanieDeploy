@@ -10,16 +10,16 @@ from services.privilege_manager import elevated
 
 
 class PageRestartRequired(Page):
-    def __init__(self, parent, page_name: str, *args, **kwargs):
-        super().__init__(parent, page_name, *args, **kwargs)
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
         self.restarting_text_var = tk.StringVar()
 
     def init_page(self):
-        self.page_manager.set_title(_("finished.title"))
-        self.page_manager.set_primary_button(
+        self.set_page_title(_("finished.title"))
+        self.set_primary_button_config(
             _("btn.restart.now"), command=lambda: self._restart_now()
         )
-        self.page_manager.set_secondary_button(
+        self.set_secondary_button_config(
             _("btn.restart.later"), command=lambda: self._quit_application()
         )
 

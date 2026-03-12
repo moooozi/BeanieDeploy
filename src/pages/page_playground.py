@@ -7,12 +7,9 @@ from multilingual import _
 
 
 class PagePlayground(Page):
-    def __init__(self, parent, page_name: str, *args, **kwargs):
-        super().__init__(parent, page_name, *args, **kwargs)
-
     def init_page(self):
-        self.page_manager.set_title("Hello, this is a playground page!")
-        self.page_manager.set_secondary_button(
+        self.set_page_title("Hello, this is a playground page!")
+        self.set_secondary_button_config(
             _("btn.quit"), command=lambda: self._quit_application()
         )
 

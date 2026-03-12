@@ -1,5 +1,4 @@
 import logging
-import math
 
 import vgkit as vgk
 
@@ -14,18 +13,11 @@ from services.system import (
 
 
 class PageAutoinstAddition2(Page):
-    def __init__(self, parent, page_name: str, *args, **kwargs):
-        super().__init__(parent, page_name, *args, **kwargs)
-        self.set_scaling()  # Set scaling during initialization
-
-    def set_scaling(self):
-        scaling_factor = self._get_widget_scaling()
-        if scaling_factor > 1:
-            scaling_factor = math.ceil(scaling_factor)
-        self.tk.call("tk", "scaling", scaling_factor)
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
 
     def init_page(self):
-        self.page_manager.set_title(_("title.autoinst3"))
+        self.set_page_title(_("title.autoinst3"))
 
         # Get locale from state instead of globals
         kickstart = self.state.installation.kickstart
@@ -152,11 +144,7 @@ class PageAutoinstAddition2(Page):
         kickstart = self.state.installation.kickstart
         if kickstart and self.selected_locale != kickstart.locale_settings.locale:
             logging.info("Locale changed, reinitializing page")
-            for widget in self.winfo_children():
-                widget.destroy()
-            self._initiated = False
-            self.init_page()
-            self._initiated = True
+            self.reinitialize()
         # If items are seleceted in the treeview, make them visible by updating scrollbar
         self.after(1, lambda: self.keyboard_list.see())
         self.after(1, lambda: self.timezone_list.see())

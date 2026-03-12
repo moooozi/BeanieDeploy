@@ -38,15 +38,15 @@ def get_full_name():
 
 
 class PageUserInfo(Page):
-    def __init__(self, parent, page_name: str, *args, **kwargs):
-        super().__init__(parent, page_name, *args, **kwargs)
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
 
         # Initialize user info variables with Windows defaults
         self.full_name_var = tk.StringVar(value=get_full_name())
         self.username_var = tk.StringVar(value=get_username())
 
     def init_page(self):
-        self.page_manager.set_title(_("user.info.title"))
+        self.set_page_title(_("user.info.title"))
 
         # Full Name entry
         full_name_label = vgk.Label(

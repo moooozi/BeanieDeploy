@@ -12,15 +12,15 @@ from utils import format_bytes
 
 
 class Page1(Page):
-    def __init__(self, parent, page_name: str, *args, **kwargs):
-        super().__init__(parent, page_name, *args, **kwargs)
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
         self.distro_var = tk.StringVar(self)
         self.still_loading_label = None
         self.latest_label = None
 
     def init_page(self):
-        self.page_manager.set_title(_("desktop.question"))
-        self.page_manager.set_secondary_button(visible=False)
+        self.set_page_title(_("desktop.question"))
+        self.set_secondary_button_config(visible=False)
         # Primary and secondary buttons use defaults
         self.columnconfigure(0, weight=1)
 

@@ -16,8 +16,8 @@ from services.system import (
 
 
 class PageVerify(Page):
-    def __init__(self, parent, page_name: str, *args, **kwargs):
-        super().__init__(parent, page_name, *args, **kwargs)
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
 
         # Initialize install options if it doesn't exist
         if not self.state.installation.install_options:
@@ -31,8 +31,8 @@ class PageVerify(Page):
         )
 
     def init_page(self):
-        self.page_manager.set_title(_("verify.question"))
-        self.page_manager.set_primary_button(_("btn.install"))
+        self.set_page_title(_("verify.question"))
+        self.set_primary_button_config(_("btn.install"))
         # Secondary button uses default
 
         # Get data from state
@@ -86,13 +86,13 @@ class PageVerify(Page):
 
     def on_show(self):
         """Called when the page is shown - reinitialize to show current selections."""
-        if self._initiated:
+        if self.initiated:
             for widget in self.winfo_children():
                 widget.destroy()
 
-            self._initiated = False
+            self.initiated = False
             self.init_page()
-            self._initiated = True
+            self.initiated = True
 
     def _build_review_structure(self):
         """Build the nested review structure in the tree view."""

@@ -16,8 +16,8 @@ from utils import format_eta, format_speed
 
 
 class PageInstalling(Page):
-    def __init__(self, parent, page_name, *args, **kwargs):
-        super().__init__(parent, page_name, *args, **kwargs)
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
         self.installation_context: InstallationContext = None  # type: ignore
         self.installation_service: InstallationService = None  # type: ignore
         self.install_job_var = tk.StringVar(parent)
@@ -41,9 +41,9 @@ class PageInstalling(Page):
         # Create installation context from application state if not already provided
         self.installation_context = self._get_installation_context()
         # Set up GUI
-        self.page_manager.set_title(_("install.running"))
-        self.page_manager.set_primary_button(visible=False)
-        self.page_manager.set_secondary_button(visible=False)
+        self.set_page_title(_("install.running"))
+        self.set_primary_button_config(visible=False)
+        self.set_secondary_button_config(visible=False)
         self.columnconfigure(0, weight=1)
 
         self.progressbar_install = vgk.ProgressBar(

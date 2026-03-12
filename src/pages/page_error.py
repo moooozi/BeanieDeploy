@@ -8,8 +8,8 @@ from templates.info_frame import InfoFrame
 
 
 class PageError(Page):
-    def __init__(self, parent, page_name: str, *args, **kwargs):
-        super().__init__(parent, page_name, *args, **kwargs)
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
         self.errors: list[str] = []
         self.logged_errors: list[str] = []
         self.category = "generic"
@@ -49,9 +49,9 @@ class PageError(Page):
             title = _("error.title.generic")
             subtitle = _("error.subtitle.generic")
 
-        self.page_manager.set_title(title)
-        self.page_manager.set_primary_button(visible=False)
-        self.page_manager.set_secondary_button(
+        self.set_page_title(title)
+        self.set_primary_button_config(visible=False)
+        self.set_secondary_button_config(
             _("btn.quit"), command=lambda: self._quit_application()
         )
 

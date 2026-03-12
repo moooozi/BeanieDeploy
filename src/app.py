@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from core.navigation_conditions import (
     ReleaseModeCondition,
@@ -7,6 +7,7 @@ from core.navigation_conditions import (
 )
 from core.settings import get_config
 from core.state import get_state, get_state_manager
+from models.page import NavigationEntry
 from models.page_manager import PageManager
 from pages.page_1 import Page1
 from pages.page_autoinst_addition_1 import PageAutoinstAddition1
@@ -21,9 +22,6 @@ from pages.page_restart_required import PageRestartRequired
 from pages.page_verify import PageVerify
 from templates.application import Application
 
-if TYPE_CHECKING:
-    from models.page import NavigationFlow
-
 
 class MainApp(Application):
     def __init__(
@@ -34,94 +32,48 @@ class MainApp(Application):
     ):
         super().__init__(*args, **kwargs)
 
-        # Get system components
         self.state_manager = get_state_manager()
         self.app_state = get_state()
         self.app_config = get_config()
-
-        # Add observer for state changes
         self.app_state.add_observer(self._on_state_change)
 
-        # Create page manager with integrated navigation
         self.page_manager = PageManager(self)
+        self._setup_navigation()
 
-        # Configure navigation flow and automatically add pages
-        self._configure_navigation_flow()
-        self._add_pages_from_navigation_flow()
-        # Handle initialization parameters using new state system
         playground = False
-
         if playground:
             return self.page_manager.show_page(PagePlayground)
 
         if skip_check:
             logging.info("Skipping checks")
 
-        # Show the first page in self._navigation_flow if no page is currently shown
         if not self.page_manager.current_page:
-            # Show the first page in self._navigation_flow
             return self.page_manager.start()
         return None
 
     def _on_state_change(self, change_type: str, **_kwargs) -> None:
         """Handle state changes."""
-        logging.info(f"State change detected: {change_type}")
         if change_type == "error_occurred":
-            logging.info("Scheduling navigation to error page")
-
             self.after(0, lambda: self.page_manager.show_page(PageError))
 
-    def _configure_navigation_flow(self):
-        """Configure the navigation flow for the page manager."""
-        from core.navigation_conditions import (
-            AutoInstallCondition,
-        )
+    def _setup_navigation(self):
+        """Configure navigation flow and register all pages."""
+        from core.navigation_conditions import AutoInstallCondition
 
-        navigation_flow: NavigationFlow = {
-            PageDisclaimer: {"conditions": [ReleaseModeCondition()]},
-            PageCheck: {"conditions": [SkipCheckDisabledCondition()]},
-            Page1: {},
-            PageInstallMethod: {},
-            # PageUserInfo: {"conditions": [AutoInstallCondition(), UsernameNeededCondition()]},
-            PageAutoinstAddition1: {"conditions": [AutoInstallCondition()]},
-            PageAutoinstAddition2: {"conditions": [AutoInstallCondition()]},
-            PageVerify: {},
-            PageInstalling: {},
-            PageRestartRequired: {},
-            # Special pages not in main flow
-            PageError: {"special": True},
+        navigation_flow = {
+            PageDisclaimer: NavigationEntry(conditions=[ReleaseModeCondition()]),
+            PageCheck: NavigationEntry(conditions=[SkipCheckDisabledCondition()]),
+            Page1: NavigationEntry(),
+            PageInstallMethod: NavigationEntry(),
+            PageAutoinstAddition1: NavigationEntry(conditions=[AutoInstallCondition()]),
+            PageAutoinstAddition2: NavigationEntry(conditions=[AutoInstallCondition()]),
+            PageVerify: NavigationEntry(),
+            PageInstalling: NavigationEntry(),
+            PageRestartRequired: NavigationEntry(),
+            PageError: NavigationEntry(special=True),
         }
 
         self.page_manager.configure_navigation_flow(navigation_flow)
 
-    def _add_pages_from_navigation_flow(self):
-        """
-        Automatically add all pages from the navigation flow.
-        This eliminates the need to manually add each page and keeps everything in sync.
-        """
-        # Get the navigation flow that was just configured
-        navigation_flow = self.page_manager.get_navigation_flow()
-
-        if not navigation_flow:
-            logging.warning("No navigation flow configured, cannot add pages")
-            return
-
-        # Extract all page classes from the navigation flow
-        page_classes = set(navigation_flow.keys())
-
-        # Add special pages that might be referenced in custom navigation functions
-        # These could be referenced in "next" or "previous" callbacks
-        special_pages = {PagePlayground}  # Add any other special pages here
-        page_classes.update(special_pages)
-
-        # Add each page to the page manager
-        for page_class in page_classes:
-            try:
-                self.page_manager.add_page(page_class)
-                logging.debug(f"Added page: {page_class.__name__}")
-            except Exception as e:
-                logging.error(f"Failed to add page {page_class.__name__}: {e}")
-
-        logging.info(
-            f"Successfully added {len(page_classes)} pages from navigation flow"
-        )
+        for page_class in [*navigation_flow, PagePlayground]:
+            self.page_manager.add_page(page_class)

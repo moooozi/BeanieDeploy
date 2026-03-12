@@ -7,14 +7,12 @@ from multilingual import _
 
 
 class PageDisclaimer(Page):
-    def __init__(self, parent, page_name: str, *args, **kwargs):
-        super().__init__(parent, page_name, *args, **kwargs)
-
     def init_page(self):
-        self.page_manager.set_title(_("disclaimer.title"))
-        self.page_manager.set_primary_button(
+        self.set_page_title(_("disclaimer.title"))
+        self.set_primary_button_config(
             _("btn.run_compatibility_check"), state="disabled"
         )
+        self.destroy_on_next = True  # Destroy this page to free resources
 
         self.columnconfigure(0, weight=1)
 
@@ -55,7 +53,7 @@ class PageDisclaimer(Page):
     def _on_checkbox_change(self):
         """Enable or disable the primary button based on checkbox state."""
         state = "normal" if self.accept_disclaimer_var.get() else "disabled"
-        self.page_manager.set_primary_button(state=state)
+        self.set_primary_button_config(_("btn.run_compatibility_check"), state=state)
 
     def validate_input(self) -> PageValidationResult:
         """Validate that the disclaimer has been accepted."""

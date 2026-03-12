@@ -24,8 +24,8 @@ class PageCheck(Page):
             return
         super().tkraise(aboveThis)
 
-    def __init__(self, parent, page_name, *args, **kwargs):
-        super().__init__(parent, page_name, *args, **kwargs)
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
         self.job_var = tk.StringVar(self)
         self._active_check = 0
         self._progress = 0.0
@@ -36,9 +36,10 @@ class PageCheck(Page):
     def init_page(self):
         logging.info("PageCheck.init_page() called")
 
-        self.page_manager.set_title(_("check.running"))
-        self.page_manager.set_primary_button(visible=False)
-        self.page_manager.set_secondary_button(visible=False)
+        self.set_page_title(_("check.running"))
+        self.set_primary_button_config(visible=False)
+        self.set_secondary_button_config(visible=False)
+        self.destroy_on_next = True  # destroyed page after checks to free resources
         self.columnconfigure(0, weight=1)
 
         # Accessing Spin and IP Locale Info to ensure they are loaded
