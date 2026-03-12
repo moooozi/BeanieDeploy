@@ -143,7 +143,15 @@ def _get_efi_free_space() -> int:
 
 def check_efi_space():
     """Check available free space on the EFI partition."""
-    result_value = _get_efi_free_space()
+    try:
+        result_value = _get_efi_free_space()
+    except Exception as e:
+        logging.exception("Error checking EFI space: " + str(e))
+        return Check(
+            CheckType.EFI_SPACE.value,
+            str(e),
+            1,
+        )
     return Check(
         CheckType.EFI_SPACE.value,
         result_value,
