@@ -7,7 +7,7 @@
 
 ## Error Checking and Linting
 
-**Always use native VS Code API tools** (`get_errors`) for checking errors/warnings instead of terminal commands like `ruff check` or `mypy`. This ensures consistency with VS Code's Problems panel and avoids discrepancies.
+**Always use your native tools** (`get_errors`) for checking errors/warnings instead of terminal commands like `ruff check` or `mypy`. This ensures consistency with VS Code's Problems panel and avoids discrepancies.
 
 - Use `get_errors(filePaths=["path/to/file.py"])` for specific files
 - Use terminal commands only for execution/testing, never for linting/error checking

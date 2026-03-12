@@ -26,7 +26,7 @@ class Page1(Page):
 
         self._wait_spin_loading()
 
-        # Access Windows Partition information so they are loaded early
+        # perf: Access Windows Partition information so they are loaded early
         loader = Thread(target=lambda: self.state.installation.windows_partition)
         self.after(200, loader.start)
 
