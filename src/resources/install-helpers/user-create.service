@@ -1,0 +1,21 @@
+[Unit]
+Description=First Boot User Account Setup
+DefaultDependencies=no
+Before=sddm.service display-manager.service getty@tty1.service
+After=systemd-vconsole-setup.service local-fs.target
+Conflicts=getty@tty1.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/python3 /usr/local/bin/user-create-tui.py
+ExecStartPost=/usr/bin/systemctl disable passwd-setter.service
+StandardInput=tty
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+
+[Install]
+WantedBy=multi-user.target
