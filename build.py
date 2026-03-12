@@ -90,6 +90,9 @@ def build_with_pyinstaller():
         # Collect all data for langtable
         "--collect-data",
         "langtable",
+        # Collect all data for vgkit
+        "--collect-data",
+        "vgkit",
         # Add hidden imports for jaraco modules used by pkg_resources
         "--hidden-import",
         "jaraco.classes",
