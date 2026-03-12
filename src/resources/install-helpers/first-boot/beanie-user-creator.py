@@ -16,17 +16,19 @@ CURSES QUICK-REFERENCE (the three patterns used throughout):
   Centering     x = left_edge + (total_width - text_width) // 2
                 same idea as CSS margin:auto, just explicit.
 """
+
 import curses
 import locale
 import os
 import re
 import subprocess
 import sys
+import termios
 
 # Larger console font used when running on a Linux VT (e.g. Anaconda installer).
 # latarcyrheb-sun32 is a standard large font shipped with the kbd package on
 # every Fedora system.  Change to e.g. ter-v32b if you prefer Terminus.
-VT_FONT_LARGE   = "latarcyrheb-sun32"
+VT_FONT_LARGE = "latarcyrheb-sun32"
 VT_FONT_DEFAULT = ""  # empty string → setfont restores the compiled-in default
 INPUT_MAX = 128  # max password length accepted
 DEFAULTS_FILE = "/etc/beanie_user_creator"
@@ -50,14 +52,17 @@ def _read_defaults() -> tuple[str, str]:
 def hash_yescrypt(password: str) -> str:
     result = subprocess.run(
         ["mkpasswd", "-m", "yescrypt", password],
-        capture_output=True, text=True, check=True,
+        capture_output=True,
+        text=True,
+        check=True,
     )
     return result.stdout.strip()
 
 
 # Linux username rules: starts with letter or underscore, followed by
 # letters/digits/underscores/dashes/dots, max 32 chars total.
-_USERNAME_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9._-]{0,31}$')
+_USERNAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9._-]{0,31}$")
+
 
 def _username_error(name: str) -> str | None:
     """Return a human-readable error string, or None if the name is valid."""
@@ -78,13 +83,21 @@ def _w(fn, *args, **kwargs):
         pass
 
 
-def draw_ui(stdscr, username: list, fullname: list, pw1: list, pw2: list, field: int, status: str = ""):
+def draw_ui(
+    stdscr,
+    username: list,
+    fullname: list,
+    pw1: list,
+    pw2: list,
+    field: int,
+    status: str = "",
+):
     stdscr.erase()
     max_h, max_w = stdscr.getmaxyx()
 
-    BOX_W  = 54
-    BOX_H  = 13   # 4 input rows + match indicator + button + spacing
-    LBL_W  = 17   # all labels are exactly 17 chars — keeps input columns aligned
+    BOX_W = 54
+    BOX_H = 13  # 4 input rows + match indicator + button + spacing
+    LBL_W = 17  # all labels are exactly 17 chars — keeps input columns aligned
     INPUT_W = BOX_W - 4 - LBL_W  # 33 chars wide
     bx = max(0, (max_w - BOX_W) // 2)
     by = max(2, (max_h - BOX_H - 2) // 2)  # ≥2 reserves space for title above
@@ -94,8 +107,8 @@ def draw_ui(stdscr, username: list, fullname: list, pw1: list, pw2: list, field:
 
     # ── Title ──────────────────────────────────────────────────────────────
     title = "Create your user account"
-    _w(stdscr.attron,  CP(1) | B)
-    _w(stdscr.addstr,  by - 2, bx + (BOX_W - len(title)) // 2, title)
+    _w(stdscr.attron, CP(1) | B)
+    _w(stdscr.addstr, by - 2, bx + (BOX_W - len(title)) // 2, title)
     _w(stdscr.attroff, CP(1) | B)
 
     # ── Box ────────────────────────────────────────────────────────────────
@@ -109,58 +122,59 @@ def draw_ui(stdscr, username: list, fullname: list, pw1: list, pw2: list, field:
     # ── Input fields ───────────────────────────────────────────────────────
     # Each entry: (row_offset, label_17_chars, buffer, masked)
     fields_def = [
-        (1,  "Username:        ", username, False),
-        (3,  "Full name:       ", fullname, False),
-        (5,  "New password:    ", pw1,      True),
-        (7,  "Confirm password:", pw2,      True),
+        (1, "Username:        ", username, False),
+        (3, "Full name:       ", fullname, False),
+        (5, "New password:    ", pw1, True),
+        (7, "Confirm password:", pw2, True),
     ]
 
     for i, (row_off, lbl, buf, masked) in enumerate(fields_def):
-        _w(stdscr.attron,  CP(2))
-        _w(stdscr.addstr,  by + row_off, bx + 2, lbl)
+        _w(stdscr.attron, CP(2))
+        _w(stdscr.addstr, by + row_off, bx + 2, lbl)
         _w(stdscr.attroff, CP(2))
 
         text = "".join(buf)
         visible = ("*" * len(text)) if masked else text
         display = visible[-INPUT_W:].ljust(INPUT_W)
         attr = (CP(6) | B) if field == i else CP(7)
-        _w(stdscr.attron,  attr)
-        _w(stdscr.addstr,  by + row_off, bx + 2 + LBL_W, display)
+        _w(stdscr.attron, attr)
+        _w(stdscr.addstr, by + row_off, bx + 2 + LBL_W, display)
         _w(stdscr.attroff, attr)
 
     # ── Status line (username errors, password match, or apply errors) ───────
     uname_err = _username_error("".join(username))
     can_apply = bool(username) and uname_err is None and bool(pw1) and pw1 == pw2
     if status:
-        ind = status[:BOX_W - 4]
-        _w(stdscr.attron,  CP(4) | B)
-        _w(stdscr.addstr,  by + 9, bx + 2, ind)
+        ind = status[: BOX_W - 4]
+        _w(stdscr.attron, CP(4) | B)
+        _w(stdscr.addstr, by + 9, bx + 2, ind)
         _w(stdscr.attroff, CP(4) | B)
     elif uname_err:
-        _w(stdscr.attron,  CP(4) | B)
-        _w(stdscr.addstr,  by + 9, bx + (BOX_W - len(uname_err)) // 2, uname_err)
+        _w(stdscr.attron, CP(4) | B)
+        _w(stdscr.addstr, by + 9, bx + (BOX_W - len(uname_err)) // 2, uname_err)
         _w(stdscr.attroff, CP(4) | B)
     elif pw1 and pw2:
         ind, cp = (
-            ("✓  Passwords match",        CP(3) | B) if pw1 == pw2
+            ("✓  Passwords match", CP(3) | B)
+            if pw1 == pw2
             else ("✗  Passwords do not match", CP(4) | B)
         )
-        _w(stdscr.attron,  cp)
-        _w(stdscr.addstr,  by + 9, bx + (BOX_W - len(ind)) // 2, ind)
+        _w(stdscr.attron, cp)
+        _w(stdscr.addstr, by + 9, bx + (BOX_W - len(ind)) // 2, ind)
         _w(stdscr.attroff, cp)
 
     # ── Apply button ───────────────────────────────────────────────────────
-    btn  = "[ Apply ]"
+    btn = "[ Apply ]"
     bx_b = bx + (BOX_W - len(btn)) // 2
     cp_b = (CP(3) | B | (R if field == 4 else 0)) if can_apply else (CP(4) | D)
-    _w(stdscr.attron,  cp_b)
-    _w(stdscr.addstr,  by + 11, bx_b, btn)
+    _w(stdscr.attron, cp_b)
+    _w(stdscr.addstr, by + 11, bx_b, btn)
     _w(stdscr.attroff, cp_b)
 
     # ── Hint ───────────────────────────────────────────────────────────────
     hint = "Tab/Arrows · navigate    Enter · confirm    Esc · quit"
-    _w(stdscr.attron,  D)
-    _w(stdscr.addstr,  by + BOX_H + 1, bx + (BOX_W - len(hint)) // 2, hint)
+    _w(stdscr.attron, D)
+    _w(stdscr.addstr, by + BOX_H + 1, bx + (BOX_W - len(hint)) // 2, hint)
     _w(stdscr.attroff, D)
 
     # ── Cursor position ────────────────────────────────────────────────────
@@ -169,7 +183,9 @@ def draw_ui(stdscr, username: list, fullname: list, pw1: list, pw2: list, field:
         if field < 4:
             curses.curs_set(1)
             buf = [username, fullname, pw1, pw2][field]
-            stdscr.move(by + row_offsets[field], bx + 2 + LBL_W + min(len(buf), INPUT_W))
+            stdscr.move(
+                by + row_offsets[field], bx + 2 + LBL_W + min(len(buf), INPUT_W)
+            )
         else:
             curses.curs_set(0)
     except curses.error:
@@ -182,38 +198,40 @@ def draw_ui(stdscr, username: list, fullname: list, pw1: list, pw2: list, field:
 def main(stdscr, default_username: str = "", default_fullname: str = ""):
     curses.start_color()
     curses.use_default_colors()
-    curses.init_pair(1, curses.COLOR_CYAN,   -1)                 # title / border
-    curses.init_pair(2, curses.COLOR_WHITE,  -1)                 # labels
-    curses.init_pair(3, curses.COLOR_GREEN,  -1)                 # match / success
-    curses.init_pair(4, curses.COLOR_RED,    -1)                 # mismatch / error
-    curses.init_pair(5, curses.COLOR_YELLOW, -1)                 # (reserved)
-    curses.init_pair(6, curses.COLOR_BLACK,  curses.COLOR_CYAN)  # focused input
-    curses.init_pair(7, curses.COLOR_BLACK,  curses.COLOR_WHITE) # unfocused input
+    curses.init_pair(1, curses.COLOR_CYAN, -1)  # title / border
+    curses.init_pair(2, curses.COLOR_WHITE, -1)  # labels
+    curses.init_pair(3, curses.COLOR_GREEN, -1)  # match / success
+    curses.init_pair(4, curses.COLOR_RED, -1)  # mismatch / error
+    curses.init_pair(5, curses.COLOR_YELLOW, -1)  # (reserved)
+    curses.init_pair(6, curses.COLOR_BLACK, curses.COLOR_CYAN)  # focused input
+    curses.init_pair(7, curses.COLOR_BLACK, curses.COLOR_WHITE)  # unfocused input
     stdscr.keypad(True)
 
     username: list[str] = list(default_username)
     fullname: list[str] = list(default_fullname)
     pw1: list[str] = []
     pw2: list[str] = []
-    field = 0   # 0=username  1=fullname  2=pw1  3=pw2  4=apply
+    field = 0  # 0=username  1=fullname  2=pw1  3=pw2  4=apply
     status = ""  # error message shown in the status line; cleared on next keypress
     uname = ""
 
     while True:
-        can_apply, INPUT_W = draw_ui(stdscr, username, fullname, pw1, pw2, field, status)
+        can_apply, INPUT_W = draw_ui(
+            stdscr, username, fullname, pw1, pw2, field, status
+        )
         key = stdscr.getch()
         status = ""  # clear after the user acts
 
         if key == curses.KEY_RESIZE:
             continue
 
-        if key in (9, curses.KEY_DOWN):           # Tab / ↓ → next field
+        if key in (9, curses.KEY_DOWN):  # Tab / ↓ → next field
             if field < 3:
                 field += 1
             elif field == 3 and can_apply:
                 field = 4
 
-        elif key == curses.KEY_UP:                # ↑ → previous field
+        elif key == curses.KEY_UP:  # ↑ → previous field
             if field > 0:
                 field -= 1
 
@@ -228,18 +246,25 @@ def main(stdscr, default_username: str = "", default_fullname: str = ""):
                 try:
                     subprocess.run(
                         ["useradd", "-G", "wheel", "-c", fname, "-m", uname],
-                        capture_output=True, text=True, check=True,
+                        capture_output=True,
+                        text=True,
+                        check=True,
                     )
                     hashed = hash_yescrypt("".join(pw1))
                     subprocess.run(
                         ["chpasswd", "-e"],
                         input=f"{uname}:{hashed}\n",
-                        text=True, check=True,
+                        text=True,
+                        check=True,
                     )
                     break  # success
                 except subprocess.CalledProcessError as e:
                     # Stay in form; show the error from stderr (or fallback to str(e))
-                    status = (e.stderr.strip() if hasattr(e, 'stderr') and e.stderr else str(e))
+                    status = (
+                        e.stderr.strip()
+                        if hasattr(e, "stderr") and e.stderr
+                        else str(e)
+                    )
                     field = 0  # send user back to first field to correct
 
         elif key in (curses.KEY_BACKSPACE, 127, 8):
@@ -247,8 +272,10 @@ def main(stdscr, default_username: str = "", default_fullname: str = ""):
             if field < 4 and bufs[field]:
                 bufs[field].pop()
 
-        elif 32 <= key <= 126:                    # Printable ASCII only
-            if field == 0 and key != 32 and len(username) < INPUT_MAX:  # no spaces in username
+        elif 32 <= key <= 126:  # Printable ASCII only
+            if (
+                field == 0 and key != 32 and len(username) < INPUT_MAX
+            ):  # no spaces in username
                 username.append(chr(key))
             elif field == 1 and len(fullname) < INPUT_MAX:
                 fullname.append(chr(key))
@@ -262,8 +289,8 @@ def main(stdscr, default_username: str = "", default_fullname: str = ""):
     stdscr.erase()
     max_h, max_w = stdscr.getmaxyx()
     msg = f"✓  User '{uname}' created successfully!"
-    _w(stdscr.attron,  curses.color_pair(3) | curses.A_BOLD)
-    _w(stdscr.addstr,  max_h // 2, max(0, (max_w - len(msg)) // 2), msg)
+    _w(stdscr.attron, curses.color_pair(3) | curses.A_BOLD)
+    _w(stdscr.addstr, max_h // 2, max(0, (max_w - len(msg)) // 2), msg)
     _w(stdscr.attroff, curses.color_pair(3) | curses.A_BOLD)
     stdscr.refresh()
     curses.napms(2000)
@@ -278,7 +305,7 @@ def _on_linux_vt() -> str | None:
     """Return the VT path if stdout is a real Linux VT (/dev/ttyN), else None."""
     try:
         tty = os.ttyname(sys.stdout.fileno())
-        if tty.startswith("/dev/tty") and tty[len("/dev/tty"):].isdigit():
+        if tty.startswith("/dev/tty") and tty[len("/dev/tty") :].isdigit():
             return tty
     except Exception:
         pass
@@ -299,18 +326,44 @@ def _setfont(font: str, console: str = "") -> None:
 
 
 if __name__ == "__main__":
-    locale.setlocale(locale.LC_ALL, "")   # enable UTF-8 for box-drawing chars
+    locale.setlocale(locale.LC_ALL, "")  # enable UTF-8 for box-drawing chars
 
     default_username, default_fullname = _read_defaults()
+
+    # Suppress kernel/console messages so late boot output cannot corrupt the
+    # curses display or appear on‑screen while the TUI is running.
+    _saved_printk: str | None = None
+    try:
+        with open("/proc/sys/kernel/printk") as _f:
+            _saved_printk = _f.read()
+        with open("/proc/sys/kernel/printk", "w") as _f:
+            _f.write("1 4 1 7\n")  # KERN_EMERG only → silence everything else
+    except OSError:
+        pass
 
     vt_path = _on_linux_vt()
     if vt_path:
         _setfont(VT_FONT_LARGE, vt_path)
 
+    # Drain any input that accumulated in the TTY queue during boot (e.g.
+    # characters injected by Plymouth's handoff or stale systemd output).
     try:
-        rc = curses.wrapper(lambda stdscr: main(stdscr, default_username, default_fullname))
+        termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
+    except Exception:
+        pass
+
+    try:
+        rc = curses.wrapper(
+            lambda stdscr: main(stdscr, default_username, default_fullname)
+        )
     finally:
         if vt_path:
             _setfont(VT_FONT_DEFAULT, vt_path)
+        if _saved_printk is not None:
+            try:
+                with open("/proc/sys/kernel/printk", "w") as _f:
+                    _f.write(_saved_printk)
+            except OSError:
+                pass
 
     sys.exit(rc)
