@@ -234,7 +234,10 @@ class ApplicationState:
     user: UserState = field(default_factory=UserState)
     error: ErrorState = field(default_factory=ErrorState)
 
-    is_release_mode: bool = getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
+    is_pyinstaller_bundle: bool = getattr(sys, "frozen", False) and hasattr(
+        sys, "_MEIPASS"
+    )
+    is_release_mode: bool = is_pyinstaller_bundle
 
     compatibility: CompatibilityState = field(init=False)
     spins: SpinState = field(init=False)
