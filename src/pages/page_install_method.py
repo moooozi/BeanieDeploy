@@ -11,6 +11,7 @@ from models.kickstart import KickstartConfig
 from models.page import Page, PageValidationResult
 from models.partition import PartitioningMethod
 from multilingual import _
+from pages.page_user_info import get_full_name, get_username
 from templates.multi_radio_buttons import MultiRadioButtons
 
 
@@ -312,10 +313,14 @@ class PageInstallMethod(Page):
             # Ensure Kickstart partitioning settings exist for non-custom installs
             if not self.state.installation.kickstart:
                 self.state.installation.kickstart = KickstartConfig()
+
+            kickstart = self.state.installation.kickstart
             selected_spin = self.state.installation.selected_spin
-            self.state.installation.kickstart.should_use_native_firstboot = (
+            kickstart.should_use_native_firstboot = (
                 selected_spin is not None and selected_spin.desktop == "GNOME"
             )
+            kickstart.user_username = get_username()
+            kickstart.user_full_name = get_full_name()
             partitioning = self.state.installation.kickstart.partitioning
             is_encrypted = self.enable_encryption_toggle_var.get()
             logging.info(f"Encryption enabled: {is_encrypted}")
