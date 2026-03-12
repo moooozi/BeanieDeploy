@@ -1,5 +1,5 @@
 AppName ==> BeanieDeploy
-AppVersion ==> 0.95-Beta
+AppVersion ==> 0.1.0
 Description ==> BeanieDeploy
 Author ==> M Zidane
 ReleaseYear ==> 2021-2025
