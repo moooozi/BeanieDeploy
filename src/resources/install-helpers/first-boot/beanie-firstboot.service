@@ -8,8 +8,12 @@ Conflicts=getty@tty1.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/python3 /usr/local/bin/user-create-tui.py
-ExecStartPost=/usr/bin/systemctl disable passwd-setter.service
+ExecStartPre=-/usr/bin/plymouth deactivate
+ExecStartPre=-/usr/bin/setfont latarcyrheb-sun32 -C /dev/tty1
+ExecStart=/usr/bin/python3 /usr/local/bin/beanie-user-creator.py
+ExecStartPost=-/usr/bin/setfont -C /dev/tty1
+ExecStartPost=/usr/bin/systemctl disable beanie-firstboot.service
+ExecStartPost=-/usr/bin/plymouth reactivate
 StandardInput=tty
 StandardOutput=tty
 StandardError=tty

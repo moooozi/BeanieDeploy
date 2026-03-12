@@ -35,3 +35,4 @@ class KickstartConfig:
     ostree_args: str = ""
     user_full_name: str = ""
     user_username: str = ""
+    should_use_native_firstboot: bool = False

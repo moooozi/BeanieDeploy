@@ -29,6 +29,22 @@ import sys
 VT_FONT_LARGE   = "latarcyrheb-sun32"
 VT_FONT_DEFAULT = ""  # empty string → setfont restores the compiled-in default
 INPUT_MAX = 128  # max password length accepted
+DEFAULTS_FILE = "/etc/beanie_user_creator"
+
+
+def _read_defaults() -> tuple[str, str]:
+    """Return (username, fullname) from DEFAULTS_FILE, or ('', '') if missing."""
+    try:
+        with open(DEFAULTS_FILE) as f:
+            data = {}
+            for line in f:
+                line = line.strip()
+                if "=" in line:
+                    k, _, v = line.partition("=")
+                    data[k.strip().upper()] = v.strip()
+        return data.get("USERNAME", ""), data.get("FULLNAME", "")
+    except OSError:
+        return "", ""
 
 
 def hash_yescrypt(password: str) -> str:
@@ -70,11 +86,17 @@ def draw_ui(stdscr, username: list, fullname: list, pw1: list, pw2: list, field:
     BOX_H  = 13   # 4 input rows + match indicator + button + spacing
     LBL_W  = 17   # all labels are exactly 17 chars — keeps input columns aligned
     INPUT_W = BOX_W - 4 - LBL_W  # 33 chars wide
-    bx = 1
-    by = 2
+    bx = max(0, (max_w - BOX_W) // 2)
+    by = max(2, (max_h - BOX_H - 2) // 2)  # ≥2 reserves space for title above
 
     CP = curses.color_pair
     B, D, R = curses.A_BOLD, curses.A_DIM, curses.A_REVERSE
+
+    # ── Title ──────────────────────────────────────────────────────────────
+    title = "Create your user account"
+    _w(stdscr.attron,  CP(1) | B)
+    _w(stdscr.addstr,  by - 2, bx + (BOX_W - len(title)) // 2, title)
+    _w(stdscr.attroff, CP(1) | B)
 
     # ── Box ────────────────────────────────────────────────────────────────
     _w(stdscr.attron, CP(1))
@@ -136,7 +158,7 @@ def draw_ui(stdscr, username: list, fullname: list, pw1: list, pw2: list, field:
     _w(stdscr.attroff, cp_b)
 
     # ── Hint ───────────────────────────────────────────────────────────────
-    hint = "Tab/↑↓ · navigate    Enter · confirm    Esc · quit"
+    hint = "Tab/Arrows · navigate    Enter · confirm    Esc · quit"
     _w(stdscr.attron,  D)
     _w(stdscr.addstr,  by + BOX_H + 1, bx + (BOX_W - len(hint)) // 2, hint)
     _w(stdscr.attroff, D)
@@ -182,10 +204,10 @@ def main(stdscr, default_username: str = "", default_fullname: str = ""):
         key = stdscr.getch()
         status = ""  # clear after the user acts
 
-        if key == 27:                             # Esc → abort
-            return 1
+        if key == curses.KEY_RESIZE:
+            continue
 
-        elif key in (9, curses.KEY_DOWN):         # Tab / ↓ → next field
+        if key in (9, curses.KEY_DOWN):           # Tab / ↓ → next field
             if field < 3:
                 field += 1
             elif field == 3 and can_apply:
@@ -245,66 +267,50 @@ def main(stdscr, default_username: str = "", default_fullname: str = ""):
     _w(stdscr.attroff, curses.color_pair(3) | curses.A_BOLD)
     stdscr.refresh()
     curses.napms(2000)
+    try:
+        os.unlink(DEFAULTS_FILE)
+    except OSError:
+        pass
     return 0
 
 
-def _on_linux_vt() -> bool:
-    """Return True when stdout is a real Linux virtual terminal (/dev/ttyN)."""
+def _on_linux_vt() -> str | None:
+    """Return the VT path if stdout is a real Linux VT (/dev/ttyN), else None."""
     try:
         tty = os.ttyname(sys.stdout.fileno())
-        return tty.startswith("/dev/tty") and tty[len("/dev/tty"):].isdigit()
+        if tty.startswith("/dev/tty") and tty[len("/dev/tty"):].isdigit():
+            return tty
     except Exception:
-        return False
+        pass
+    return None
 
 
-def _setfont(font: str) -> None:
+def _setfont(font: str, console: str = "") -> None:
     """Call setfont, silently ignore any error (missing binary / font)."""
     try:
-        subprocess.run(["setfont"] + ([font] if font else []),
-                       check=True, capture_output=True)
+        cmd = ["setfont"]
+        if console:
+            cmd += ["-C", console]
+        if font:
+            cmd.append(font)
+        subprocess.run(cmd, check=True, capture_output=True)
     except Exception:
         pass
 
 
 if __name__ == "__main__":
-    import argparse
     locale.setlocale(locale.LC_ALL, "")   # enable UTF-8 for box-drawing chars
 
-    parser = argparse.ArgumentParser(description="Interactive user creation TUI")
-    parser.add_argument("--username", default="", metavar="NAME")
-    parser.add_argument("--fullname", default="", metavar="NAME")
-    args = parser.parse_args()
+    default_username, default_fullname = _read_defaults()
 
-    # VT detection must happen BEFORE the dup2 redirect below — after dup2,
-    # stdout becomes /dev/tty (not /dev/tty1), breaking the isdigit() check.
-    use_large_font = _on_linux_vt()
-    if use_large_font:
-        try:
-            cols, rows = os.get_terminal_size()
-            use_large_font = cols >= 110 and rows >= 28
-        except OSError:
-            use_large_font = False
-    if use_large_font:
-        _setfont(VT_FONT_LARGE)
-
-    # Redirect I/O to the current TTY so curses works even when the caller
-    # (e.g. Anaconda %post) has stdin/stdout pointing at a log file.
-    # Equivalent to the shell idiom: exec < $(tty) > $(tty) 2> $(tty)
-    try:
-        tty_fd = open("/dev/tty", "r+b", buffering=0)
-        for fd in (sys.stdin, sys.stdout, sys.stderr):
-            os.dup2(tty_fd.fileno(), fd.fileno())
-    except OSError:
-        pass  # not attached to a TTY at all — curses will fail gracefully
+    vt_path = _on_linux_vt()
+    if vt_path:
+        _setfont(VT_FONT_LARGE, vt_path)
 
     try:
-        sys.stdout.write("\033[?1049h")  # enter alternate screen (like nano/htop)
-        sys.stdout.flush()
-        rc = curses.wrapper(lambda stdscr: main(stdscr, args.username, args.fullname))
+        rc = curses.wrapper(lambda stdscr: main(stdscr, default_username, default_fullname))
     finally:
-        sys.stdout.write("\033[?1049l")  # leave alternate screen → original restored
-        sys.stdout.flush()
-        if use_large_font:
-            _setfont(VT_FONT_DEFAULT)    # restore original font on exit
+        if vt_path:
+            _setfont(VT_FONT_DEFAULT, vt_path)
 
-    exit(rc)
+    sys.exit(rc)

@@ -1,5 +1,5 @@
 # Post-install script for CLEAN_DISK: Clean up tmp partition and extend root
-requires: tmp_part_uuid, log_dir
+# requires: tmp_part_uuid, log_dir
 
 %post --logfile={log_dir}/ks-post-clean.log
 # Force unmount and erase tmp partition

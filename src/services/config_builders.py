@@ -183,10 +183,13 @@ def _build_system_config(kickstart_config: KickstartConfig) -> list[str]:
 
     # Determine firstboot configuration
     if locale_config.keymaps and locale_config.locale and locale_config.timezone:
-        if kickstart_config.user_username:
-            firstboot_line = "firstboot --disable"
-        else:
+        if kickstart_config.should_use_native_firstboot:
             firstboot_line = "firstboot --enable"
+        else:
+            # KDE has no firstboot tool and Fedora's tool sucks. We use our own firstboot service instead
+            firstboot_line = "firstboot --disable"
+            lines.extend(_build_user_config(kickstart_config))
+
     else:
         firstboot_line = "firstboot --reconfig"
         if not locale_config.keymaps:
@@ -231,18 +234,12 @@ def _build_install_source(kickstart_config: KickstartConfig) -> list[str]:
 def _build_user_config(kickstart_config: KickstartConfig) -> list[str]:
     """Build user configuration section with first-boot password setup."""
 
-    # Create user with locked password - will be set on first boot
-    user_line = f"user --name={kickstart_config.user_username} --groups=wheel --lock"
-    if kickstart_config.user_full_name:
-        user_line += f" --gecos={auto_quote(kickstart_config.user_full_name)}"
-
-    # Install password setup service that runs before SDDM on first boot
-    post_lines = (
-        load_ks_template("password_setup_post")
+    return (
+        load_ks_template("user_creation_tool")
         .replace("{username}", kickstart_config.user_username)
+        .replace("{fullname}", kickstart_config.user_full_name)
         .splitlines()
     )
-    return [user_line, *post_lines]
 
 
 # DUALBOOT is broken. Disabled in the GUI but still available here.
@@ -344,8 +341,6 @@ def build_autoinstall_ks_file(
     # Build different sections of the kickstart file
     kickstart_lines.extend(_build_header())
     kickstart_lines.extend(_build_system_config(kickstart_config))
-    if kickstart_config.user_username:
-        kickstart_lines.extend(_build_user_config(kickstart_config))
     kickstart_lines.extend(_build_install_source(kickstart_config))
     kickstart_lines.extend(_build_partitioning_config(kickstart_config.partitioning))
 

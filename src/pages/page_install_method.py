@@ -175,8 +175,10 @@ class PageInstallMethod(Page):
             textvariable=self.dualboot_size_var,
         )
         validation_func = self.register(
-            lambda x: x.replace(".", "", 1).isdigit()
-            and min_size_gb <= float(x) <= max_size_gb
+            lambda x: (
+                x.replace(".", "", 1).isdigit()
+                and min_size_gb <= float(x) <= max_size_gb
+            )
         )
         self.size_dualboot_entry.configure(
             validate="none", validatecommand=(validation_func, "%P")
@@ -310,6 +312,10 @@ class PageInstallMethod(Page):
             # Ensure Kickstart partitioning settings exist for non-custom installs
             if not self.state.installation.kickstart:
                 self.state.installation.kickstart = KickstartConfig()
+            selected_spin = self.state.installation.selected_spin
+            self.state.installation.kickstart.should_use_native_firstboot = (
+                selected_spin is not None and selected_spin.desktop == "GNOME"
+            )
             partitioning = self.state.installation.kickstart.partitioning
             is_encrypted = self.enable_encryption_toggle_var.get()
             logging.info(f"Encryption enabled: {is_encrypted}")
