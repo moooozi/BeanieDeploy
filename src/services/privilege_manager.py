@@ -49,6 +49,7 @@ class _PrivilegeManager:
         self.pipe_handle: int | None = None
         self._initialized = False
         self._initializing = False
+        self._failed = False
 
     @classmethod
     def get_instance(cls) -> "_PrivilegeManager":
@@ -67,6 +68,10 @@ class _PrivilegeManager:
             if self._initialized:
                 return
 
+            if self._failed:
+                msg = "Privilege helper initialization previously failed (e.g. UAC was denied)"
+                raise RuntimeError(msg)
+
             if self._initializing:
                 # Another thread is initializing, wait for it
                 while self._initializing:
@@ -76,6 +81,7 @@ class _PrivilegeManager:
             self._initializing = True
 
             try:
+                self._failed = False
                 # Generate unique pipe name
                 self.pipe_name = f"BeanieDeploy_Privilege_{uuid.uuid4().hex}"
                 full_pipe_name = rf"\\.\pipe\{self.pipe_name}"
@@ -101,8 +107,14 @@ class _PrivilegeManager:
                 # Get path to executable
                 executable = sys.executable
 
+                sys_args = sys.argv
+                # Check PyInstaller bundle
+                if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+                    # In PyInstaller bundle, executable and argv[0] are the same. Strip argv0
+                    sys_args = sys.argv[1:]
+
                 # Build command line for elevated helper
-                args = [*sys.argv, "/PIPE", self.pipe_name]
+                args = [*sys_args, "/PIPE", self.pipe_name]
 
                 command_line = " ".join(f'"{arg}"' for arg in args)
 
@@ -129,6 +141,9 @@ class _PrivilegeManager:
 
                 self._initialized = True
 
+            except Exception:
+                self._failed = True
+                raise
             finally:
                 self._initializing = False
 
