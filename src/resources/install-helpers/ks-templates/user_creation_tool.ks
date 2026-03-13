@@ -39,10 +39,19 @@ with service_dest.open("w", encoding="utf-8", newline="\n") as f:
             f.write(line + "\n")
 
 # Enable service in the target root.
-subprocess.run(["chroot", str(target), "systemctl", "daemon-reload"], check=True)
-subprocess.run(
-    ["chroot", str(target), "systemctl", "enable", "beanie-firstboot.service"],
-    check=True,
+print(
+    subprocess.run(
+        ["chroot", str(target), "systemctl", "daemon-reload"],
+        capture_output=True,
+        text=True,
+    )
+)
+print(
+    subprocess.run(
+        ["chroot", str(target), "systemctl", "enable", "beanie-firstboot.service"],
+        capture_output=True,
+        text=True,
+    )
 )
 
 # Write pre-filled defaults if provided.
