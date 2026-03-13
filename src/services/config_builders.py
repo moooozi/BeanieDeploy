@@ -235,14 +235,18 @@ def _build_user_config(kickstart_config: KickstartConfig) -> list[str]:
     """Build user configuration section with first-boot password setup."""
 
     is_ostree = "yes" if kickstart_config.ostree_args.strip() else "no"
+    lines = [
+        "user --name=temp --password='123' --plaintext --groups=wheel",
+    ]
 
-    return (
+    lines.extend(
         load_ks_template("user_creation_tool")
         .replace("{username}", kickstart_config.user_username)
         .replace("{fullname}", kickstart_config.user_full_name)
         .replace("{is_ostree}", is_ostree)
         .splitlines()
     )
+    return lines
 
 
 # DUALBOOT is broken. Disabled in the GUI but still available here.

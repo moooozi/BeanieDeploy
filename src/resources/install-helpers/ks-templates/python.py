@@ -1,9 +1,4 @@
-# User setup service for first-boot
-# requires: log_dir, username, fullname, is_ostree
-# Installs a systemd service that runs before SDDM on first boot to prompt for password
-# Note: install-helpers dir is mounted at /run/install/repo/install-helpers/
-%post --interpreter=/usr/bin/python3 --logfile={log_dir}/post_user_creation_tool_setup --nochroot
-
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -53,5 +48,3 @@ if username or fullname:
         f"USERNAME={username}\nFULLNAME={fullname}\n",
         encoding="utf-8",
     )
-
-%end
