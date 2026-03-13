@@ -363,6 +363,9 @@ def build_autoinstall_ks_file(
     # Final lines
     kickstart_lines.extend(["rootpw --lock", "reboot"])
 
+    # Add final post section
+    kickstart_lines.extend(load_ks_template("final_post").splitlines())
+
     return "\n".join(kickstart_lines) + "\n"
 
 
