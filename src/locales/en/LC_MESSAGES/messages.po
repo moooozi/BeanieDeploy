@@ -70,7 +70,7 @@ msgid "check.available.downloads"
 msgstr "Checking available downloads"
 
 msgid "check.existing.download.files"
-msgstr "Checking for existing files from previous installs"
+msgstr "Checking for existing files from previous runs"
 
 msgid "check.ram"
 msgstr "Checking available RAM capacity"
@@ -126,7 +126,7 @@ msgid "error.title.compatibility"
 msgstr "%(app_name)s can't run on your system"
 
 msgid "error.title.installation"
-msgstr "Installation failed
+msgstr "Preparation failed"
 
 msgid "error.title.generic"
 msgstr "Runtime Error"
@@ -159,17 +159,12 @@ msgid "error.generic"
 msgstr "An unexpected runtime error occurred."
 
 # Install
-msgid "install.auto"
-msgstr "Quick & guided install"
 
 msgid "install.failed.help"
-msgstr "The installation failed, and your system has been restored to its previous state."
+msgstr "The preparation failed, and your system has been restored to its previous state."
 
 msgid "install.failed.title"
-msgstr "Installation Failed"
-
-msgid "install.help"
-msgstr "Help me decide"
+msgstr "Preparation Failed"
 
 msgid "install.option.custom"
 msgstr "Custom installation and partitioning"
@@ -184,7 +179,7 @@ msgid "install.option.clean_disk"
 msgstr "Erase disk and install"
 
 msgid "install.running"
-msgstr "Installing..."
+msgstr "Preparing installation..."
 
 msgid "title.autoinst2"
 msgstr "Choose your language and locale"
@@ -215,13 +210,13 @@ msgid "job.checksum.mismatch.txt"
 msgstr "The downloaded file has an unexpected SHA256-Hash and cannot be trusted.\n\nFile Hash:\n%(actual_hash)s\nExpected Hash:\n%(expected_hash)s\n\nThis usually means that the file is not properly downloaded.\nTry to download again?"
 
 msgid "job.copying.to.tmp.part"
-msgstr "Copying required installer media files to temporary boot partition..."
+msgstr "Copying required installation media files to temporary boot partition..."
 
 msgid "job.creating.tmp.part"
-msgstr "Creating temporary boot partition for installer media..."
+msgstr "Creating temporary boot partition for installation media..."
 
 msgid "job.dl.install.media"
-msgstr "Downloading install media..."
+msgstr "Downloading installation media..."
 
 msgid "job.starting.download"
 msgstr "Starting download..."
@@ -240,7 +235,7 @@ msgid "finished.text.restarting.now"
 msgstr "Automatic restart in %(seconds)s seconds"
 
 msgid "finished.title"
-msgstr "Restart required"
+msgstr "Ready to install"
 
 # Time
 msgid "eta.hour"
@@ -424,20 +419,11 @@ msgstr "Locale"
 msgid "more.options"
 msgstr "More options"
 
-msgid "net.install"
-msgstr "Network Install"
-
-msgid "password.reminder.txt"
-msgstr "You will be able to set password for your user account after the installation"
-
 msgid "recommended"
 msgstr "Recommended"
 
 msgid "selected.dist"
 msgstr "Selected distro"
-
-msgid "something.else"
-msgstr "Something else"
 
 msgid "total.download"
 msgstr "Total download: %(size)s"
