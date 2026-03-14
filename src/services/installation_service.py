@@ -6,7 +6,9 @@ maintainable service that uses proper dependency injection and type safety.
 """
 
 import logging
+import os
 import shutil
+import stat
 from collections.abc import Callable
 from pathlib import Path
 
@@ -36,6 +38,27 @@ class HashVerificationError(Exception):
         super().__init__(
             f"Hash mismatch for {file_path}: expected {expected}, got {actual}"
         )
+
+
+def _handle_remove_readonly(func, path: str, _exc) -> None:  # type: ignore[no-untyped-def]
+    """Helper function to handle removal of read-only files during directory deletion."""
+    if not os.access(path, os.W_OK):
+        Path(path).chmod(stat.S_IWUSR | stat.S_IRUSR)
+        func(path)
+    else:
+        raise
+
+
+def _force_delete_directory(dir_path: str) -> None:
+    """
+    Force delete a directory and all its contents, ignoring read-only flags.
+
+    Args:
+        dir_path: Path to the directory to delete
+    """
+    path_obj = Path(dir_path)
+    if path_obj.exists():
+        shutil.rmtree(dir_path, onexc=_handle_remove_readonly)
 
 
 def _create_boot_entry(efi_partition: Partition) -> int:
@@ -492,12 +515,13 @@ class InstallationService:
         efi_partition = self.state.installation.efi_partition
 
         with efi_partition.mount() as efi_mount:
-            # Check if beanie directory already exists
+            # Check if beanie directory already exists and delete it
             efi_dst = Path(efi_mount) / "EFI" / "beanie"
             if efi_dst.exists():
-                msg = f"EFI beanie directory already exists at {efi_dst}, skipping copy"
+                msg = f"EFI beanie directory already exists at {efi_dst}, deleting..."
                 logging.info(msg)
-                return
+                elevated.call(_force_delete_directory, args=(str(efi_dst),))
+                logging.info(f"Successfully deleted {efi_dst}")
 
             # Copy EFI directory to \EFI\beanie on EFI partition
             efi_src = Path(temp_destination) / "EFI"
