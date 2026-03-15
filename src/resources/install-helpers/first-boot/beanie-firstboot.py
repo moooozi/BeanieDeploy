@@ -20,17 +20,11 @@ CURSES QUICK-REFERENCE (the three patterns used throughout):
 import contextlib
 import curses
 import locale
-import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 
-# Larger console font used when running on a Linux VT (e.g. Anaconda installer).
-# latarcyrheb-sun32 is a standard large font shipped with the kbd package on
-# every Fedora system.  Change to e.g. ter-v32b if you prefer Terminus.
-VT_FONT_LARGE = "latarcyrheb-sun32"
-VT_FONT_DEFAULT = ""  # empty string → setfont restores the compiled-in default
 INPUT_MAX = 128  # max password length accepted
 DEFAULTS_FILE = "/etc/beanie_firstboot.conf"
 
@@ -298,62 +292,10 @@ def main(stdscr, default_username: str = "", default_fullname: str = ""):
     return 0
 
 
-def _on_linux_vt() -> str | None:
-    """Return the VT path if stdout is a real Linux VT (/dev/ttyN), else None."""
-    try:
-        tty = os.ttyname(sys.stdout.fileno())
-        if tty.startswith("/dev/tty") and tty[len("/dev/tty") :].isdigit():
-            return tty
-    except Exception:
-        pass
-    return None
-
-
-def _setfont(font: str, console: str = "") -> None:
-    """Call setfont, silently ignore any error (missing binary / font)."""
-    try:
-        cmd = ["setfont"]
-        if console:
-            cmd += ["-C", console]
-        if font:
-            cmd.append(font)
-        subprocess.run(cmd, check=True, capture_output=True)
-    except Exception:
-        pass
-
-
 if __name__ == "__main__":
     locale.setlocale(locale.LC_ALL, "")  # enable UTF-8 for box-drawing chars
 
     default_username, default_fullname = _read_defaults()
 
-    # Suppress kernel/console messages so late boot output cannot corrupt the
-    # curses display or appear on‑screen while the TUI is running.
-    _saved_printk: str | None = None
-    try:
-        with Path("/proc/sys/kernel/printk").open() as _f:
-            _saved_printk = _f.read()
-        with Path("/proc/sys/kernel/printk").open("w") as _f:
-            _f.write("1 4 1 7\n")  # KERN_EMERG only → silence everything else
-    except OSError:
-        pass
-
-    vt_path = _on_linux_vt()
-    if vt_path:
-        _setfont(VT_FONT_LARGE, vt_path)
-
-    try:
-        rc = curses.wrapper(
-            lambda stdscr: main(stdscr, default_username, default_fullname)
-        )
-    finally:
-        if vt_path:
-            _setfont(VT_FONT_DEFAULT, vt_path)
-        if _saved_printk is not None:
-            try:
-                with Path("/proc/sys/kernel/printk").open("w") as _f:
-                    _f.write(_saved_printk)
-            except OSError:
-                pass
-
+    rc = curses.wrapper(lambda stdscr: main(stdscr, default_username, default_fullname))
     sys.exit(rc)
