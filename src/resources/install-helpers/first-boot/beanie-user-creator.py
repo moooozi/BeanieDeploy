@@ -6,7 +6,7 @@ CURSES QUICK-REFERENCE (the three patterns used throughout):
 
   Color pairs   curses requires you to declare color combos upfront as numbered
                 pairs: init_pair(id, fg, bg).  Reference them later with
-                color_pair(id).  id 1–7 are set up at the top of main().
+                color_pair(id).  id 1-7 are set up at the top of main().
 
   Attributes    curses has no styled-print; you bracket every draw call:
                   stdscr.attron(color_pair(3) | A_BOLD)   ← turn ON
@@ -17,6 +17,7 @@ CURSES QUICK-REFERENCE (the three patterns used throughout):
                 same idea as CSS margin:auto, just explicit.
 """
 
+import contextlib
 import curses
 import locale
 import os
@@ -24,6 +25,7 @@ import re
 import subprocess
 import sys
 import termios
+from pathlib import Path
 
 # Larger console font used when running on a Linux VT (e.g. Anaconda installer).
 # latarcyrheb-sun32 is a standard large font shipped with the kbd package on
@@ -37,7 +39,7 @@ DEFAULTS_FILE = "/etc/beanie_user_creator"
 def _read_defaults() -> tuple[str, str]:
     """Return (username, fullname) from DEFAULTS_FILE, or ('', '') if missing."""
     try:
-        with open(DEFAULTS_FILE) as f:
+        with Path(DEFAULTS_FILE).open() as f:
             data = {}
             for line in f:
                 line = line.strip()
@@ -77,10 +79,8 @@ def _username_error(name: str) -> str | None:
 
 def _w(fn, *args, **kwargs):
     """Ignore curses out-of-bounds write errors (e.g. bottom-right corner)."""
-    try:
+    with contextlib.suppress(curses.error):
         fn(*args, **kwargs)
-    except curses.error:
-        pass
 
 
 def draw_ui(
@@ -294,10 +294,8 @@ def main(stdscr, default_username: str = "", default_fullname: str = ""):
     _w(stdscr.attroff, curses.color_pair(3) | curses.A_BOLD)
     stdscr.refresh()
     curses.napms(2000)
-    try:
-        os.unlink(DEFAULTS_FILE)
-    except OSError:
-        pass
+    with contextlib.suppress(OSError):
+        Path(DEFAULTS_FILE).unlink()
     return 0
 
 
@@ -334,9 +332,9 @@ if __name__ == "__main__":
     # curses display or appear on‑screen while the TUI is running.
     _saved_printk: str | None = None
     try:
-        with open("/proc/sys/kernel/printk") as _f:
+        with Path("/proc/sys/kernel/printk").open() as _f:
             _saved_printk = _f.read()
-        with open("/proc/sys/kernel/printk", "w") as _f:
+        with Path("/proc/sys/kernel/printk").open("w") as _f:
             _f.write("1 4 1 7\n")  # KERN_EMERG only → silence everything else
     except OSError:
         pass
@@ -347,10 +345,8 @@ if __name__ == "__main__":
 
     # Drain any input that accumulated in the TTY queue during boot (e.g.
     # characters injected by Plymouth's handoff or stale systemd output).
-    try:
+    with contextlib.suppress(Exception):
         termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
-    except Exception:
-        pass
 
     try:
         rc = curses.wrapper(
@@ -361,7 +357,7 @@ if __name__ == "__main__":
             _setfont(VT_FONT_DEFAULT, vt_path)
         if _saved_printk is not None:
             try:
-                with open("/proc/sys/kernel/printk", "w") as _f:
+                with Path("/proc/sys/kernel/printk").open("w") as _f:
                     _f.write(_saved_printk)
             except OSError:
                 pass
