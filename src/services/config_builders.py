@@ -24,6 +24,36 @@ def load_ks_template(name: str) -> str:
     return template.replace("{log_dir}", config_path.log_dir)
 
 
+def load_ks_python_script(
+    name: str,
+    mode: str,
+    options: tuple[str, ...] = (),
+    template_vars: dict[str, str] | None = None,
+) -> str:
+    """Load a Python helper script and wrap it as a Kickstart script block."""
+    if mode not in {"pre", "post"}:
+        msg = f"Invalid kickstart script mode: {mode}"
+        raise ValueError(msg)
+
+    config_path = get_config().paths
+    script_name = name if name.endswith(".py") else f"{name}.py"
+    path = config_path.install_helpers_scripts_dir / script_name
+    script_content = path.read_text()
+
+    header = (
+        f"%{mode} --interpreter=/usr/bin/python3 "
+        f"--logfile={config_path.log_dir}/post_{path.stem}"
+    )
+    if options:
+        header = f"{header} {' '.join(options)}"
+
+    if template_vars:
+        for key, value in template_vars.items():
+            script_content = script_content.replace(f"{{{key}}}", value)
+
+    return "\n".join((header, script_content, "%end"))
+
+
 @dataclass(frozen=True)
 class GrubEntry:
     """Represents a GRUB menu entry configuration."""
@@ -117,17 +147,19 @@ def _build_clean_disk_pre_install(partitioning_config: PartitioningConfig) -> li
     if not partitioning_config.sys_drive_uuid:
         msg = "sys_drive_uuid is required for clean_disk_pre"
         raise ValueError(msg)
-    if not partitioning_config.sys_efi_uuid:
-        msg = "sys_efi_uuid is required for clean_disk_pre"
-        raise ValueError(msg)
     if not partitioning_config.tmp_part_uuid:
         msg = "tmp_part_uuid is required for clean_disk_pre"
         raise ValueError(msg)
 
-    template = load_ks_template("clean_disk_pre")
-    template = template.replace("{sys_drive_uuid}", partitioning_config.sys_drive_uuid)
-    template = template.replace("{sys_efi_uuid}", partitioning_config.sys_efi_uuid)
-    template = template.replace("{tmp_part_uuid}", partitioning_config.tmp_part_uuid)
+    template = load_ks_python_script(
+        "partition",
+        "pre",
+        template_vars={
+            "disk_path_or_uuid": partitioning_config.sys_drive_uuid,
+            "should_delete_all": "yes",
+            "delete_all_except": partitioning_config.tmp_part_uuid,
+        },
+    )
     return template.splitlines()
 
 
