@@ -183,7 +183,7 @@ def _build_system_config(kickstart_config: KickstartConfig) -> list[str]:
 
     # Determine firstboot configuration
     if locale_config.keymaps and locale_config.locale and locale_config.timezone:
-        if kickstart_config.should_use_native_firstboot:
+        if True:  # kickstart_config.should_use_native_firstboot:
             firstboot_line = "firstboot --enable"
         else:
             # KDE has no firstboot tool and Fedora's tool sucks. We use our own firstboot service instead
