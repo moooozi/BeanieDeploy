@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-User Creation TUI — stdlib only (curses).
+First Boot TUI — stdlib only (curses).
 
 CURSES QUICK-REFERENCE (the three patterns used throughout):
 
@@ -24,7 +24,6 @@ import os
 import re
 import subprocess
 import sys
-import termios
 from pathlib import Path
 
 # Larger console font used when running on a Linux VT (e.g. Anaconda installer).
@@ -33,7 +32,7 @@ from pathlib import Path
 VT_FONT_LARGE = "latarcyrheb-sun32"
 VT_FONT_DEFAULT = ""  # empty string → setfont restores the compiled-in default
 INPUT_MAX = 128  # max password length accepted
-DEFAULTS_FILE = "/etc/beanie_user_creator"
+DEFAULTS_FILE = "/etc/beanie_firstboot.conf"
 
 
 def _read_defaults() -> tuple[str, str]:
@@ -342,11 +341,6 @@ if __name__ == "__main__":
     vt_path = _on_linux_vt()
     if vt_path:
         _setfont(VT_FONT_LARGE, vt_path)
-
-    # Drain any input that accumulated in the TTY queue during boot (e.g.
-    # characters injected by Plymouth's handoff or stale systemd output).
-    with contextlib.suppress(Exception):
-        termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
 
     try:
         rc = curses.wrapper(

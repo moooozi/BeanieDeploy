@@ -15,9 +15,9 @@ staging_dir = target / staging_rel
 
 is_ostree = "{is_ostree}" == "yes"
 if is_ostree:
-    script_rel = Path("var/usrlocal/bin/beanie-user-creator.py")
+    script_rel = Path("var/usrlocal/bin/beanie-firstboot.py")
 else:
-    script_rel = Path("usr/local/bin/beanie-user-creator.py")
+    script_rel = Path("usr/local/bin/beanie-firstboot.py")
 
 script_dest = target / script_rel
 service_staging_dest = staging_dir / "beanie-firstboot.service"
@@ -34,7 +34,7 @@ print(f"[user_creation_tool] etc resolved path: {etc_path.resolve(strict=False)}
 # Install script and service into the target filesystem.
 script_dest.parent.mkdir(parents=True, exist_ok=True)
 staging_dir.mkdir(parents=True, exist_ok=True)
-shutil.copy2(helpers_dir / "first-boot/beanie-user-creator.py", script_dest)
+shutil.copy2(helpers_dir / "first-boot/beanie-firstboot.py", script_dest)
 script_dest.chmod(0o755)
 shutil.copy2(helpers_dir / "first-boot/beanie-firstboot.service", service_staging_dest)
 service_staging_dest.chmod(0o644)
@@ -53,7 +53,7 @@ with service_staging_dest.open("w", encoding="utf-8", newline="\n") as f:
 username = "{username}"
 fullname = "{fullname}"
 if username or fullname:
-    defaults_path = staging_dir / "beanie_user_creator"
+    defaults_path = staging_dir / "beanie_firstboot.conf"
     defaults_path.write_text(
         f"USERNAME={username}\nFULLNAME={fullname}\n",
         encoding="utf-8",
@@ -65,8 +65,8 @@ if username or fullname:
 
 install -D -m 0644 /var/lib/beanie-install/beanie-firstboot.service /etc/systemd/system/beanie-firstboot.service
 
-if [ -f /var/lib/beanie-install/beanie_user_creator ]; then
-    install -D -m 0644 /var/lib/beanie-install/beanie_user_creator /etc/beanie_user_creator
+if [ -f /var/lib/beanie-install/beanie_firstboot.conf ]; then
+    install -D -m 0644 /var/lib/beanie-install/beanie_firstboot.conf /etc/beanie_firstboot.conf
 fi
 
 systemctl daemon-reload
