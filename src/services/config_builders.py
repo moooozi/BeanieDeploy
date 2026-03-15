@@ -391,14 +391,14 @@ def build_grub_cfg_file(
             prelines=(),
             linux_cmd=f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} rd.live.check quiet",
             initrd_cmd="initrd /images/pxeboot/initrd.img",
-            is_in_submenu=False,
+            is_in_submenu=True,
         ),
         GrubEntry(
             title="Install Fedora (RAM-Boot)",
             prelines=(),
             linux_cmd=f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} rd.live.check rd.live.ram quiet",
             initrd_cmd="initrd /images/pxeboot/initrd.img",
-            is_in_submenu=False,
+            is_in_submenu=True,
         ),
         GrubEntry(
             title="Install Fedora in basic graphics mode",
@@ -465,7 +465,7 @@ def build_grub_cfg_file(
 
     # Add troubleshooting submenu if there are submenu entries
     if submenu_entries:
-        grub_lines.append("submenu 'Troubleshooting -->' {")
+        grub_lines.append("submenu 'Other Options -->' {")
         for entry in submenu_entries:
             menu_lines = [
                 f"""    menuentry '{entry.title}' --class fedora --class gnu-linux --class gnu --class os {{"""
