@@ -286,9 +286,6 @@ def _build_partitioning_config(partitioning_config: PartitioningConfig) -> list[
     """Build partitioning configuration section."""
     lines = []
 
-    if partitioning_config.method == PartitioningMethod.CLEAN_DISK_RAMDISK:
-        return _build_clean_disk_pre_ramdisk_autopart(partitioning_config)
-
     if partitioning_config.method == PartitioningMethod.CLEAN_DISK:
         lines.extend(_build_clean_disk_pre_install(partitioning_config))
         lines.extend(_build_clean_disk_post_install(partitioning_config))

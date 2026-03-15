@@ -181,12 +181,6 @@ class InstallationService:
             # Recalculate partition size if live image installation
             self._update_tmp_partition_size(context)
 
-            # Temporary: Always use RAMDISK for CLEAN_DISK
-            if context.kickstart.partitioning.method == PartitioningMethod.CLEAN_DISK:
-                context.kickstart.partitioning.method = (
-                    PartitioningMethod.CLEAN_DISK_RAMDISK
-                )
-
             # Execute partitioning
             partition_result = self._setup_partitioning(context)
             if not partition_result.success:
@@ -480,15 +474,11 @@ class InstallationService:
             context.kickstart.partitioning.method
             and context.kickstart.partitioning.method != PartitioningMethod.CUSTOM
         )
-        should_grub_autoinstall_ramdisk = (
-            should_grub_autoinstall
-            and context.kickstart.partitioning.method
-            == PartitioningMethod.CLEAN_DISK_RAMDISK
-        )
+
         grub_cfg_content = config_builders.build_grub_cfg_file(
             context.partition.temp_part_label,
             is_autoinst=should_grub_autoinstall,
-            autoinstall_ramdisk=should_grub_autoinstall_ramdisk,
+            autoinstall_ramdisk=False,
         )
         grub_cfg_path.write_text(grub_cfg_content, encoding="utf-8", newline="")
         elevated.call(file_service.set_file_readonly, args=(str(grub_cfg_path), True))
