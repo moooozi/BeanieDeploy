@@ -18,12 +18,12 @@ def handle_remove_readonly(func, path, exc):
 
 
 def main():
-    efi_path = Path("D:\\EFI\\beanie")
+    efi_path = Path("D:\\EFI\\wingone")
     example_efi = efi_path / "example.efi"
     example_cfg = efi_path / "example.cfg"
 
     try:
-        # Create the beanie directory
+        # Create the wingone directory
         print(f"Creating directory: {efi_path}")
         efi_path.mkdir(parents=True, exist_ok=True)
         print(f"✓ Directory created: {efi_path}")
@@ -48,7 +48,7 @@ def main():
         for item in efi_path.iterdir():
             print(f"  - {item.name}")
 
-        # Attempt to delete the entire beanie directory
+        # Attempt to delete the entire wingone directory
         print(f"\nAttempting to force delete directory: {efi_path}")
         shutil.rmtree(efi_path, onerror=handle_remove_readonly)
         print(
