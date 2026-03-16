@@ -9,6 +9,7 @@ Layout appended
   +3  <rest>  Linux root partition   (type: Linux filesystem)
 
 No partition is formatted — the script only writes partition table entries.
+Any partition selected for deletion is unmounted first.
 
 Configuration (see CONFIGURATION block below)
 ---------------------------------------------
@@ -233,6 +234,96 @@ def get_device_partitions(device: str) -> list[dict]:
     return partitions
 
 
+def refresh_kernel_partition_table(device: str) -> None:
+    """
+    Ask the kernel to re-read partition table changes and wait for udev.
+
+    We try partprobe first, then fall back to blockdev --rereadpt.
+    """
+    partprobe = subprocess.run(
+        ["partprobe", device],
+        capture_output=True,
+        text=True,
+    )
+    if partprobe.returncode != 0:
+        print(
+            f"partprobe failed for {device}, trying blockdev --rereadpt...",
+            file=sys.stderr,
+        )
+        reread = subprocess.run(
+            ["blockdev", "--rereadpt", device],
+            capture_output=True,
+            text=True,
+        )
+        if reread.returncode != 0:
+            die(
+                "Failed to refresh kernel partition table via partprobe and "
+                f"blockdev --rereadpt:\n{partprobe.stderr.strip()}\n{reread.stderr.strip()}"
+            )
+
+    # Let udev process device-node changes before we continue.
+    settle = subprocess.run(["udevadm", "settle"], capture_output=True, text=True)
+    if settle.returncode != 0:
+        print(
+            f"warning: udevadm settle returned {settle.returncode}: "
+            f"{settle.stderr.strip()}",
+            file=sys.stderr,
+        )
+
+
+def get_partition_mountpoints(device: str) -> dict[str, list[str]]:
+    """
+    Return mounted target paths for each partition node on *device*.
+
+    Output shape: {"/dev/sda1": ["/boot/efi"], ...}
+    """
+    result = subprocess.run(
+        ["lsblk", "--json", "--output", "PATH,PARTN,MOUNTPOINTS", "--path", device],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        die(f"lsblk failed while querying mount points:\n{result.stderr.strip()}")
+
+    data = json.loads(result.stdout)
+    mount_map: dict[str, list[str]] = {}
+
+    def walk(nodes: list) -> None:
+        for node in nodes:
+            if node.get("partn") is not None:
+                mounts = [
+                    m
+                    for m in (node.get("mountpoints") or [])
+                    if isinstance(m, str) and m.strip()
+                ]
+                if mounts:
+                    mount_map[node["path"]] = mounts
+            walk(node.get("children") or [])
+
+    walk(data.get("blockdevices", []))
+    return mount_map
+
+
+def unmount_partitions(partitions: list[dict], mount_map: dict[str, list[str]]) -> None:
+    """Unmount every mount point that belongs to the provided partitions."""
+    for part in partitions:
+        node = part["node"]
+        mounts = mount_map.get(node, [])
+        if not mounts:
+            continue
+
+        # Unmount deeper paths first if nested mount points exist.
+        for mount in sorted(set(mounts), key=len, reverse=True):
+            print(f"Unmounting {node} from {mount}", file=sys.stderr)
+            result = subprocess.run(
+                ["umount", mount],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                die(f"Failed to unmount {mount} ({node}):\n{result.stderr.strip()}")
+
+
 # ---------------------------------------------------------------------------
 # Partition spec resolution
 # ---------------------------------------------------------------------------
@@ -277,11 +368,6 @@ def resolve_spec_to_partuuid(
     if real in node_map:
         return node_map[real]
 
-    # 4. The symlink target might itself be a by-partuuid path; extract UUID.
-    basename = os.path.basename(real).upper()
-    if basename in partuuid_set:
-        return basename
-
     return None
 
 
@@ -290,14 +376,18 @@ def resolve_spec_to_partuuid(
 # ---------------------------------------------------------------------------
 
 
-def delete_partitions(device: str, partnos: list[int]) -> None:
+def delete_partitions(device: str, partitions: list[dict]) -> None:
     """
-    Delete the given partition numbers from *device* using sfdisk --delete.
-    Does nothing if *partnos* is empty.
+    Unmount and delete the given partitions from *device* using sfdisk --delete.
+    Does nothing if *partitions* is empty.
     """
-    if not partnos:
+    if not partitions:
         return
 
+    mount_map = get_partition_mountpoints(device)
+    unmount_partitions(partitions, mount_map)
+
+    partnos = [p["partno"] for p in partitions]
     sorted_nos = sorted(partnos)
     print(
         f"Deleting partition(s): {', '.join(str(n) for n in sorted_nos)}",
@@ -314,20 +404,19 @@ def delete_partitions(device: str, partnos: list[int]) -> None:
         print(result.stderr, file=sys.stderr)
         die(f"sfdisk --delete exited with status {result.returncode}")
 
-    subprocess.run(["partprobe", device], capture_output=True)
+    refresh_kernel_partition_table(device)
 
 
 def apply_deletion_mode(
     device: str,
     disk_guid: str,
-    delete_all: bool,
     keep_specs: list[str] | None,
 ) -> None:
     """
     Inspect existing partitions and delete the appropriate ones.
 
-    --delete-all               → delete everything
-    --delete-all-except specs  → delete all whose PARTUUID is not in keep_specs
+    keep_specs is None         → delete everything
+    keep_specs is not None     → delete all whose PARTUUID is not in keep_specs
     """
     existing = get_device_partitions(device)
 
@@ -335,10 +424,10 @@ def apply_deletion_mode(
         print("No existing partitions found — nothing to delete.", file=sys.stderr)
         return
 
-    if delete_all:
-        partnos_to_delete = [p["partno"] for p in existing]
+    if keep_specs is None:
+        partitions_to_delete = existing
 
-    else:  # --delete-all-except
+    else:  # delete-all-except
         keep_uuids: set[str] = set()
         keep_all = False
         for spec in keep_specs or []:
@@ -370,9 +459,9 @@ def apply_deletion_mode(
                 "Keeping: " + ", ".join(p["node"] for p in kept),
                 file=sys.stderr,
             )
-        partnos_to_delete = [p["partno"] for p in deleted]
+        partitions_to_delete = deleted
 
-    delete_partitions(device, partnos_to_delete)
+    delete_partitions(device, partitions_to_delete)
 
 
 # ---------------------------------------------------------------------------
@@ -421,7 +510,7 @@ def run_sfdisk_append(device: str, script: str) -> None:
         print(result.stderr, file=sys.stderr)
         die(f"sfdisk exited with status {result.returncode}")
 
-    subprocess.run(["partprobe", device], capture_output=True)
+    refresh_kernel_partition_table(device)
 
 
 # ---------------------------------------------------------------------------
@@ -563,7 +652,7 @@ def main() -> None:
     # Optional deletion pass.
     # ------------------------------------------------------------------
     if delete_all:
-        apply_deletion_mode(device, disk_guid, delete_all=True, keep_specs=keep_specs)
+        apply_deletion_mode(device, disk_guid, keep_specs=keep_specs)
 
     # ------------------------------------------------------------------
     # Append the three new partitions.
