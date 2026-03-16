@@ -142,7 +142,7 @@ def fetch_json(url: str) -> Any:
     """
     try:
         logging.info(f"Fetching JSON from: {url}")
-        headers = {"User-Agent": "BeanieDeploy/1.0"}
+        headers = {"User-Agent": "WinGone/1.0"}
         response = requers.get(url, headers=headers, timeout=30.0)
         response.raise_for_status()
 

@@ -15,7 +15,7 @@ from models.data_units import DataUnit
 class AppConfig:
     """Core application configuration."""
 
-    name: str = "BeanieDeploy"
+    name: str = "WinGone"
     version: str = "Snapshot"
     supported_version: str = "43"  # Supported Fedora version
 
@@ -84,7 +84,7 @@ class PathConfig:
 
     @property
     def work_dir(self) -> Path:
-        return self.downloads_dir / "BeanieDeploy Downloads"
+        return self.downloads_dir / "WinGone Downloads"
 
     @property
     def app_icon_path(self) -> Path:
@@ -112,7 +112,7 @@ class PathConfig:
 
     @property
     def log_dir(self) -> str:
-        return "/tmp/beanie_logs"
+        return "/tmp/wingone_logs"
 
     @staticmethod
     def _get_user_downloads_folder() -> Path:

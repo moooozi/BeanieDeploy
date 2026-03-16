@@ -1,12 +1,12 @@
-# BeanieDeploy RAMDISK: wipe disk and autopart install
+# WinGone RAMDISK: wipe disk and autopart install
 # requires: DISK_UUID_PLACEHOLDER, log_dir, should_encrypt
 
 %pre --logfile={log_dir}/ks-pre-clean_disk_pre_ramdisk_autopart.log
 #!/bin/bash
 
-# The UUID will be replaced with the actual disk UUID by BeanieDeploy's config_builder.py
+# The UUID will be replaced with the actual disk UUID by WinGone's config_builder.py
 GUID="{DISK_UUID_PLACEHOLDER}"
-TMP_DIR="/tmp/beanie_vars"
+TMP_DIR="/tmp/wingone_vars"
 mkdir -p "$TMP_DIR"
 echo "$GUID" > "$TMP_DIR/disk_guid"
 # Find disk by GUID using lsblk
@@ -27,4 +27,4 @@ else
 fi
 %end
 
-%include /tmp/beanie_vars/partition_cmds
+%include /tmp/wingone_vars/partition_cmds

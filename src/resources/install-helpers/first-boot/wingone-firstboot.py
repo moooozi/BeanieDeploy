@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 INPUT_MAX = 128  # max password length accepted
-DEFAULTS_FILE = "/etc/beanie_firstboot.conf"
+DEFAULTS_FILE = "/etc/wingone_firstboot.conf"
 
 
 def _read_defaults() -> tuple[str, str]:

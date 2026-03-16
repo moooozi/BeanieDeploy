@@ -10,27 +10,27 @@ from pathlib import Path
 helpers_dir = Path("/run/install/repo/install-helpers")
 target      = Path("/mnt/sysimage")
 
-staging_rel = Path("var/lib/beanie-install")
+staging_rel = Path("var/lib/wingone-install")
 staging_dir = target / staging_rel
 
 is_ostree = "{is_ostree}" == "yes"
 if is_ostree:
-    script_rel = Path("var/usrlocal/bin/beanie-partition-resize.py")
+    script_rel = Path("var/usrlocal/bin/wingone-partition-resize.py")
 else:
-    script_rel = Path("usr/local/bin/beanie-partition-resize.py")
+    script_rel = Path("usr/local/bin/wingone-partition-resize.py")
 
 script_dest = target / script_rel
 
-service_staging_dest = staging_dir / "beanie-partition-resize.service"
+service_staging_dest = staging_dir / "wingone-partition-resize.service"
 
 # Install the service script into the target filesystem.
 script_dest.parent.mkdir(parents=True, exist_ok=True)
 staging_dir.mkdir(parents=True, exist_ok=True)
 
-shutil.copy2(helpers_dir / "partition-resize/beanie-partition-resize.py", script_dest)
+shutil.copy2(helpers_dir / "partition-resize/wingone-partition-resize.py", script_dest)
 script_dest.chmod(0o755)
 
-shutil.copy2(helpers_dir / "partition-resize/beanie-partition-resize.service", service_staging_dest)
+shutil.copy2(helpers_dir / "partition-resize/wingone-partition-resize.service", service_staging_dest)
 service_staging_dest.chmod(0o644)
 
 # Update ExecStart in the copied service to match the install path.
@@ -45,7 +45,7 @@ with service_staging_dest.open("w", encoding="utf-8", newline="\n") as fh:
 
 # Copy partition UUIDs from the installer's /tmp into the target so the
 # service can read them on the installed system.
-src_uuids = Path("/tmp/beanie_vars/partition_uuids")
+src_uuids = Path("/tmp/wingone_vars/partition_uuids")
 dst_uuids = staging_dir / "partition_uuids"
 if src_uuids.exists():
     shutil.copy2(src_uuids, dst_uuids)
@@ -67,8 +67,8 @@ print(f"[partition_resize] Service staged    → {service_staging_dest}")
 
 %post --logfile={log_dir}/post_partition_resize_enable
 install -D -m 0644 \
-    /var/lib/beanie-install/beanie-partition-resize.service \
-    /etc/systemd/system/beanie-partition-resize.service
+    /var/lib/wingone-install/wingone-partition-resize.service \
+    /etc/systemd/system/wingone-partition-resize.service
 systemctl daemon-reload
-systemctl enable beanie-partition-resize.service
+systemctl enable wingone-partition-resize.service
 %end

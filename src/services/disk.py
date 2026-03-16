@@ -16,7 +16,7 @@ from pathlib import Path
 
 from utils import PartitionUuid, com_context
 
-_MOUNT_DIR_PREFIX = "Beanie_mount_"
+_MOUNT_DIR_PREFIX = "WinGone_mount_"
 
 
 @dataclass
@@ -44,7 +44,7 @@ class Partition:
         Behavior varies based on the *mount_path* argument:
 
         * **None (default)** - a temporary directory is created under the
-          system temp folder (prefixed with ``Beanie_mount_``) and deleted
+          system temp folder (prefixed with ``WinGone_mount_``) and deleted
           after unmounting.
         * **Non-existent path** - the directory is created, used as the
           mount point, and deleted after unmounting.

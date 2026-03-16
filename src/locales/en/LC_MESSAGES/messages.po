@@ -1,10 +1,10 @@
-# English translations for BeanieDeploy.
+# English translations.
 # Copyright (C) 2024
-# This file is distributed under the same license as the BeanieDeploy project.
+# This file is distributed under the same license as the WinGone project.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: BeanieDeploy 0.94\n"
+"Project-Id-Version: WinGone 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2024-01-01 00:00+0000\n"
 "PO-Revision-Date: 2024-01-01 00:00+0000\n"

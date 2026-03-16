@@ -83,7 +83,7 @@ class _PrivilegeManager:
             try:
                 self._failed = False
                 # Generate unique pipe name
-                self.pipe_name = f"BeanieDeploy_Privilege_{uuid.uuid4().hex}"
+                self.pipe_name = f"WinGone_Privilege_{uuid.uuid4().hex}"
                 full_pipe_name = rf"\\.\pipe\{self.pipe_name}"
 
                 # Create the named pipe

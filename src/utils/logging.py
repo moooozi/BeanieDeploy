@@ -1,5 +1,5 @@
 """
-Colored logging for BeanieDeploy.
+Colored logging for WinGone.
 """
 
 import logging

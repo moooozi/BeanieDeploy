@@ -34,7 +34,7 @@ def clean_build_artifacts():
 def build_with_pyinstaller():
     """Build the application using PyInstaller."""
 
-    print("Building BeanieDeploy with PyInstaller...")
+    print("Building with PyInstaller...")
 
     # Read version from ReleaseInfo.txt
     release_info = {}
@@ -45,8 +45,8 @@ def build_with_pyinstaller():
                     key, value = line.strip().split(" ==> ")
                     release_info[key] = value
 
-    app_name = release_info.get("AppName", "BeanieDeploy")
-    app_version = release_info.get("AppVersion", "0.94-Beta")
+    app_name = release_info.get("AppName", "WinGone")
+    app_version = release_info.get("AppVersion", "Snapshot")
 
     # Find PyInstaller executable
     pyinstaller_path = shutil.which("pyinstaller")
@@ -205,7 +205,7 @@ VSVersionInfo(
 
 def main():
     """Main build function."""
-    print("Building BeanieDeploy with PyInstaller")
+    print("Building with PyInstaller")
 
     # Clean up old build artifacts
     clean_build_artifacts()

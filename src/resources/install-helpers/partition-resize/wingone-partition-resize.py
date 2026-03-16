@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-beanie-partition-resize — first-boot partition cleanup and root resize.
+wingone-partition-resize — first-boot partition cleanup and root resize.
 
 What this does
 --------------
   1. Deletes the temporary partition {tmp_part_uuid} from its disk.
   2. Extends the root btrfs partition (ROOT_PARTUUID from
-     /var/lib/beanie-install/partition_uuids) to fill all newly freed space.
+     /var/lib/wingone-install/partition_uuids) to fill all newly freed space.
   3. Resizes the btrfs filesystem online so the OS sees the extra space.
   4. Disables and removes this script so it never runs again.
 
@@ -23,7 +23,7 @@ from typing import NoReturn
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-PARTITION_UUIDS_FILE = Path("/var/lib/beanie-install/partition_uuids")
+PARTITION_UUIDS_FILE = Path("/var/lib/wingone-install/partition_uuids")
 
 # Placeholder — substituted by the runner before the script is installed.
 TMP_PART_UUID = "{tmp_part_uuid_placeholder}"
@@ -36,11 +36,11 @@ TMP_PART_UUID = "{tmp_part_uuid_placeholder}"
 
 def log(msg: str) -> None:
     """Print to stdout; systemd captures this into the journal."""
-    print(f"[beanie-partition-resize] {msg}", flush=True)
+    print(f"[wingone-partition-resize] {msg}", flush=True)
 
 
 def die(msg: str, code: int = 1) -> NoReturn:
-    print(f"[beanie-partition-resize] FATAL: {msg}", file=sys.stderr, flush=True)
+    print(f"[wingone-partition-resize] FATAL: {msg}", file=sys.stderr, flush=True)
     sys.exit(code)
 
 

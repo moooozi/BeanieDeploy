@@ -85,13 +85,13 @@ def _create_boot_entry(efi_partition: Partition) -> int:
 
         # Duplicate the entry
         new_entry = fwvars.get_parsed_boot_entry(windows_entry_id)
-        new_entry.description = "Beanie Installer"
+        new_entry.description = "WinGone Installer"
         new_entry.optional_data = b""
 
         # Edit the duplicate entry to point to our EFI file on EFI partition
         for path in new_entry.file_path_list.paths:
             if path.is_file_path():
-                path.set_file_path("\\EFI\\beanie\\BOOT\\BOOTX64.EFI")
+                path.set_file_path("\\EFI\\wingone\\BOOT\\BOOTX64.EFI")
             elif path.is_hard_drive():
                 hd_node = path.get_hard_drive_node()
                 if hd_node:
@@ -505,15 +505,15 @@ class InstallationService:
         efi_partition = self.state.installation.efi_partition
 
         with efi_partition.mount() as efi_mount:
-            # Check if beanie directory already exists and delete it
-            efi_dst = Path(efi_mount) / "EFI" / "beanie"
+            # Check if wingone directory already exists and delete it
+            efi_dst = Path(efi_mount) / "EFI" / "wingone"
             if efi_dst.exists():
-                msg = f"EFI beanie directory already exists at {efi_dst}, deleting..."
+                msg = f"EFI wingone directory already exists at {efi_dst}, deleting..."
                 logging.info(msg)
                 elevated.call(_force_delete_directory, args=(str(efi_dst),))
                 logging.info(f"Successfully deleted {efi_dst}")
 
-            # Copy EFI directory to \EFI\beanie on EFI partition
+            # Copy EFI directory to \EFI\wingone on EFI partition
             efi_src = Path(temp_destination) / "EFI"
             efi_dst.parent.mkdir(parents=True, exist_ok=True)
 

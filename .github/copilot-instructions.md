@@ -1,4 +1,4 @@
-# Copilot Instructions for BeanieDeploy Project
+# Copilot Instructions for WinGone Project
 
 ## App starting point
 
@@ -17,15 +17,18 @@
 Recent Windows 11 builds have native sudo support, and it is enabled on this system.
 
 ### Purpose and Usage
+
 - Standard terminal runs without elevation, but some tasks need admin rights.
 - Usage: `sudo <command> [args...]`
 
 ### Sudo Dos and Don'ts
 
 **Don't:**
+
 - `sudo echo "Hello world"` (echo is a cmdlet, not a binary)
 
 **Do:**
+
 - `sudo powershell -Command 'echo "Hello World"'` (powershell is a binary)
 - `sudo cmd /c 'echo Hello World'` (cmd is a binary)
 - `sudo bcdedit /enum` (bcdedit is a binary)
@@ -39,11 +42,12 @@ Recent Windows 11 builds have native sudo support, and it is enabled on this sys
 - `requers` is located in `lib/requers`.
 - When you modify `requers`, re-build and re-install with a single command: `.venv/Scripts/python.exe -m pip install lib/requers`
 
-
 ## VGKit
+
 VGKit is a modified CustomTkinter with performance optimized widgets.
 
 ### Usage
+
 ```python
 import vgkit as vgk
 
@@ -53,4 +57,3 @@ label = vgk.Label(frame, text="Hello World")
 frame.pack()
 label.pack()
 ```
-

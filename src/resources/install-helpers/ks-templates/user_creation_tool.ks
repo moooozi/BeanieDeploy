@@ -11,25 +11,25 @@ from pathlib import Path
 helpers_dir = Path("/run/install/repo/install-helpers")
 target = Path("/mnt/sysimage")
 
-staging_rel = Path("var/lib/beanie-install")
+staging_rel = Path("var/lib/wingone-install")
 staging_dir = target / staging_rel
 
 is_ostree = "{is_ostree}" == "yes"
 if is_ostree:
-    script_rel = Path("var/usrlocal/bin/beanie-firstboot.py")
+    script_rel = Path("var/usrlocal/bin/wingone-firstboot.py")
 else:
-    script_rel = Path("usr/local/bin/beanie-firstboot.py")
+    script_rel = Path("usr/local/bin/wingone-firstboot.py")
 
 script_dest = target / script_rel
 
-service_staging_dest = staging_dir / "beanie-firstboot.service"
+service_staging_dest = staging_dir / "wingone-firstboot.service"
 
 # Install script and service into the target filesystem.
 script_dest.parent.mkdir(parents=True, exist_ok=True)
 staging_dir.mkdir(parents=True, exist_ok=True)
-shutil.copy2(helpers_dir / "first-boot/beanie-firstboot.py", script_dest)
+shutil.copy2(helpers_dir / "first-boot/wingone-firstboot.py", script_dest)
 script_dest.chmod(0o755)
-shutil.copy2(helpers_dir / "first-boot/beanie-firstboot.service", service_staging_dest)
+shutil.copy2(helpers_dir / "first-boot/wingone-firstboot.service", service_staging_dest)
 service_staging_dest.chmod(0o644)
 
 # Update ExecStart in the copied service to match install path.
@@ -46,7 +46,7 @@ with service_staging_dest.open("w", encoding="utf-8", newline="\n") as f:
 username = "{username}"
 fullname = "{fullname}"
 if username or fullname:
-    defaults_path = staging_dir / "beanie_firstboot.conf"
+    defaults_path = staging_dir / "wingone_firstboot.conf"
     defaults_path.write_text(
         f"USERNAME={username}\nFULLNAME={fullname}\n",
         encoding="utf-8",
@@ -56,13 +56,13 @@ if username or fullname:
 
 %post --logfile={log_dir}/post_user_creation_tool_enable
 
-install -D -m 0644 /var/lib/beanie-install/beanie-firstboot.service /etc/systemd/system/beanie-firstboot.service
+install -D -m 0644 /var/lib/wingone-install/wingone-firstboot.service /etc/systemd/system/wingone-firstboot.service
 
-if [ -f /var/lib/beanie-install/beanie_firstboot.conf ]; then
-    install -D -m 0644 /var/lib/beanie-install/beanie_firstboot.conf /etc/beanie_firstboot.conf
+if [ -f /var/lib/wingone-install/wingone_firstboot.conf ]; then
+    install -D -m 0644 /var/lib/wingone-install/wingone_firstboot.conf /etc/wingone_firstboot.conf
 fi
 
 systemctl daemon-reload
-systemctl enable beanie-firstboot.service
+systemctl enable wingone-firstboot.service
 
 %end

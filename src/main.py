@@ -60,7 +60,7 @@ def run():
     try:
         # Initialize configuration and logging
         config = get_config()
-        setup_file_logging(config.paths.work_dir / "beaniedeploy.log")
+        setup_file_logging(config.paths.work_dir / "wingone.log")
 
         # Parse arguments
         args = parse_arguments()

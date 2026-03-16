@@ -685,7 +685,7 @@ def main() -> None:
     write_output_files(efi_uuid, boot_uuid, root_uuid)
 
 
-OUTPUT_DIR = "/tmp/beanie_vars"
+OUTPUT_DIR = "/tmp/wingone_vars"
 
 
 def write_output_files(efi_uuid: str, boot_uuid: str, root_uuid: str) -> None:
