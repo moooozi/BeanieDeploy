@@ -151,7 +151,7 @@ def _build_clean_disk_pre_install(partitioning_config: PartitioningConfig) -> li
         msg = "tmp_part_uuid is required for clean_disk_pre"
         raise ValueError(msg)
 
-    template = load_ks_python_script(
+    lines = load_ks_python_script(
         "partition",
         "pre",
         template_vars={
@@ -159,42 +159,26 @@ def _build_clean_disk_pre_install(partitioning_config: PartitioningConfig) -> li
             "should_delete_all": "yes",
             "delete_all_except": partitioning_config.tmp_part_uuid,
         },
-    )
-    return template.splitlines()
+    ).splitlines()
 
-
-def _build_clean_disk_pre_ramdisk_autopart(
-    partitioning_config: PartitioningConfig,
-) -> list[str]:
-    """Build pre-install script for CLEAN_DISK method with RAMDISK and autopartitioning."""
-    if not partitioning_config.sys_disk_uuid:
-        msg = "sys_disk_uuid is required for clean_disk_pre_ramdisk_autopart"
-        raise ValueError(msg)
-    should_encrypt = "yes" if partitioning_config.is_encrypted else "no"
-    template = (
-        load_ks_template("clean_disk_pre_ramdisk_autopart")
-        .replace("{DISK_UUID_PLACEHOLDER}", partitioning_config.sys_disk_uuid)
-        .replace("{should_encrypt}", should_encrypt)
-    )
-    return template.splitlines()
+    lines.append(r"%include /tmp/beanie_vars/partitioning_ks")
+    return lines
 
 
 def _build_clean_disk_post_install(
     partitioning_config: PartitioningConfig,
+    is_ostree: bool,
 ) -> list[str]:
     """Build post-install script for CLEAN_DISK method."""
     if not partitioning_config.tmp_part_uuid:
         msg = "tmp_part_uuid is required for clean_disk_post_install"
         raise ValueError(msg)
 
-    template_name = (
-        "clean_disk_post_encrypted"
-        if partitioning_config.is_encrypted
-        else "clean_disk_post_non_encrypted"
-    )
-
+    template_name = "partition_resize_tool"
     template = load_ks_template(template_name)
-    template = template.replace("{tmp_part_uuid}", partitioning_config.tmp_part_uuid)
+    template = template.replace(
+        "{tmp_part_uuid}", partitioning_config.tmp_part_uuid
+    ).replace("{is_ostree}", "yes" if is_ostree else "no")
 
     if partitioning_config.is_encrypted:
         if not partitioning_config.sys_drive_uuid:
@@ -281,79 +265,6 @@ def _build_user_config(kickstart_config: KickstartConfig) -> list[str]:
     return lines
 
 
-# DUALBOOT is broken. Disabled in the GUI but still available here.
-def _build_partitioning_config(partitioning_config: PartitioningConfig) -> list[str]:
-    """Build partitioning configuration section."""
-    lines = []
-
-    if partitioning_config.method == PartitioningMethod.CLEAN_DISK:
-        lines.extend(_build_clean_disk_pre_install(partitioning_config))
-        lines.extend(_build_clean_disk_post_install(partitioning_config))
-
-    # Validate required parameters for dualboot
-    if partitioning_config.method == PartitioningMethod.DUALBOOT:
-        if not partitioning_config.root_guid:
-            msg = "root_guid is required for dualboot partition method"
-            raise ValueError(msg)
-        if partitioning_config.is_encrypted and not partitioning_config.boot_guid:
-            msg = "boot_guid is required for dualboot partition method with encryption"
-            raise ValueError(msg)
-
-    root_partition = "part btrfs.01"
-    efi_partition = ""
-
-    if partitioning_config.method == PartitioningMethod.DUALBOOT:
-        efi_partition = (
-            f"mount /dev/disk/by-partuuid/{partitioning_config.sys_efi_uuid} /boot/efi "
-        )
-        root_partition += (
-            f" --onpart=/dev/disk/by-partuuid/{partitioning_config.root_guid}"
-        )
-    elif partitioning_config.method in [
-        PartitioningMethod.REPLACE_WIN,
-        PartitioningMethod.CLEAN_DISK,
-    ]:
-        efi_partition = f"part /boot/efi --fstype=efi --label=efi --onpart=/dev/disk/by-partuuid/{partitioning_config.sys_efi_uuid}"
-        root_partition += (
-            f" --onpart=/dev/disk/by-partuuid/{partitioning_config.sys_drive_uuid}"
-        )
-
-    boot_partition = f"part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-partuuid/{partitioning_config.boot_guid}"
-
-    if partitioning_config.is_encrypted:
-        # Separate boot partition for encryption
-        root_partition += " --encrypted"
-        if partitioning_config.passphrase:
-            root_partition += f" --passphrase={partitioning_config.passphrase}"
-
-    if partitioning_config.method == PartitioningMethod.DUALBOOT:
-        lines.extend(
-            [
-                efi_partition,
-                root_partition,
-                "btrfs none --label=fedora btrfs.01",
-                "btrfs / --subvol --name=root fedora",
-                "btrfs /home --subvol --name=home fedora",
-                "btrfs /var --subvol --name=var fedora",
-                boot_partition,  # Boot partition is added last in dualboot
-            ]
-        )
-    else:
-        lines.extend(
-            [
-                efi_partition,
-                root_partition,
-                boot_partition,
-                "btrfs none --label=fedora btrfs.01",
-                "btrfs / --subvol --name=root fedora",
-                "btrfs /home --subvol --name=home fedora",
-                "btrfs /var --subvol --name=var fedora",
-            ]
-        )
-
-    return lines
-
-
 def build_autoinstall_ks_file(
     kickstart_config: KickstartConfig,
 ) -> str:
@@ -378,7 +289,6 @@ def build_autoinstall_ks_file(
     kickstart_lines.extend(_build_header())
     kickstart_lines.extend(_build_system_config(kickstart_config))
     kickstart_lines.extend(_build_install_source(kickstart_config))
-    kickstart_lines.extend(_build_partitioning_config(kickstart_config.partitioning))
 
     # Add CLEAN_DISK scripts if applicable
     if kickstart_config.partitioning.method == PartitioningMethod.CLEAN_DISK:
@@ -386,7 +296,9 @@ def build_autoinstall_ks_file(
             _build_clean_disk_pre_install(kickstart_config.partitioning)
         )
         kickstart_lines.extend(
-            _build_clean_disk_post_install(kickstart_config.partitioning)
+            _build_clean_disk_post_install(
+                kickstart_config.partitioning, bool(kickstart_config.ostree_args)
+            )
         )
 
     # Final lines
