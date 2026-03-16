@@ -144,8 +144,8 @@ def _build_header() -> list[str]:
 
 def _build_clean_disk_pre_install(partitioning_config: PartitioningConfig) -> list[str]:
     """Build pre-install script for CLEAN_DISK method."""
-    if not partitioning_config.sys_drive_uuid:
-        msg = "sys_drive_uuid is required for clean_disk_pre"
+    if not partitioning_config.sys_disk_uuid:
+        msg = "sys_disk_uuid is required for clean_disk_pre"
         raise ValueError(msg)
     if not partitioning_config.tmp_part_uuid:
         msg = "tmp_part_uuid is required for clean_disk_pre"
@@ -155,7 +155,7 @@ def _build_clean_disk_pre_install(partitioning_config: PartitioningConfig) -> li
         "partition",
         "pre",
         template_vars={
-            "disk_path_or_uuid": partitioning_config.sys_drive_uuid,
+            "disk_path_or_uuid": partitioning_config.sys_disk_uuid,
             "should_delete_all": "yes",
             "delete_all_except": partitioning_config.tmp_part_uuid,
         },
