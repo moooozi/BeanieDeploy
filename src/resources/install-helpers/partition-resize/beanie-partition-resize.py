@@ -18,6 +18,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import NoReturn
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -38,14 +39,21 @@ def log(msg: str) -> None:
     print(f"[beanie-partition-resize] {msg}", flush=True)
 
 
-def die(msg: str, code: int = 1) -> None:
+def die(msg: str, code: int = 1) -> NoReturn:
     print(f"[beanie-partition-resize] FATAL: {msg}", file=sys.stderr, flush=True)
     sys.exit(code)
 
 
-def run(cmd: list[str], check: bool = True) -> subprocess.CompletedProcess:
+def run(
+    cmd: list[str], check: bool = True, input_text: str | None = None
+) -> subprocess.CompletedProcess:
     log(f"$ {' '.join(cmd)}")
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        input=input_text,
+    )
     if result.stdout:
         log(result.stdout.strip())
     if result.stderr:
@@ -121,6 +129,35 @@ def node_to_partno(node: str) -> int:
         die(f"Could not determine partition number for {node}")
 
 
+def refresh_kernel_partition_view(disk: str) -> None:
+    """Ask the kernel and udev to re-read partition table changes."""
+    # Different tools succeed in different boot states / kernels; run all best-effort.
+    run(["partprobe", disk], check=False)
+    run(["blockdev", "--rereadpt", disk], check=False)
+    run(["udevadm", "settle"], check=False)
+
+
+def unmount_partition_if_mounted(node: str) -> None:
+    """Unmount all mountpoints of *node* so it can be safely deleted."""
+    result = subprocess.run(
+        ["findmnt", "--noheadings", "--raw", "--source", node, "--output", "TARGET"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode not in (0, 1):
+        die(f"findmnt failed for {node}: {result.stderr.strip()}")
+
+    targets = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    if not targets:
+        log(f"{node} is not mounted.")
+        return
+
+    # Unmount deeper mountpoints first if there are nested mounts.
+    for target in sorted(targets, key=len, reverse=True):
+        log(f"Unmounting {node} from {target}...")
+        run(["umount", target])
+
+
 # ---------------------------------------------------------------------------
 # Core operations
 # ---------------------------------------------------------------------------
@@ -140,7 +177,7 @@ def read_root_partuuid() -> str:
     die(f"ROOT_PARTUUID not found in {PARTITION_UUIDS_FILE}")
 
 
-def delete_tmp_partition(tmp_uuid: str) -> str:
+def delete_tmp_partition(tmp_uuid: str) -> str | None:
     """
     Delete the temporary partition by PARTUUID.
     Returns the disk device so the caller can reuse it.
@@ -154,9 +191,11 @@ def delete_tmp_partition(tmp_uuid: str) -> str:
     disk = node_to_parent_disk(node)
     partno = node_to_partno(node)
 
+    unmount_partition_if_mounted(node)
+
     log(f"Deleting {node} (partition {partno} on {disk})...")
     run(["sfdisk", "--delete", disk, str(partno)])
-    run(["partprobe", disk])
+    refresh_kernel_partition_view(disk)
     log("Temporary partition deleted.")
     return disk
 
@@ -164,7 +203,7 @@ def delete_tmp_partition(tmp_uuid: str) -> str:
 def extend_root_partition(root_uuid: str, disk: str) -> None:
     """
     Extend the root partition to fill all remaining free space on *disk*
-    using parted's resizepart command in script mode.
+    using sfdisk's non-interactive partition editor.
     """
     log(f"Resolving root partition {root_uuid}...")
     node = partuuid_to_node(root_uuid)
@@ -174,9 +213,9 @@ def extend_root_partition(root_uuid: str, disk: str) -> None:
     partno = node_to_partno(node)
     log(f"Extending {node} (partition {partno} on {disk}) to 100%...")
 
-    # parted -s: script mode (no prompts).  '100%' means end of disk.
-    run(["parted", "-s", disk, "resizepart", str(partno), "100%"])
-    run(["partprobe", disk])
+    # Equivalent to: echo ", +" | sfdisk --no-reread -N <partno> <disk>
+    run(["sfdisk", "--no-reread", "-N", str(partno), disk], input_text=", +\n")
+    refresh_kernel_partition_view(disk)
     log("Partition table updated.")
 
 
