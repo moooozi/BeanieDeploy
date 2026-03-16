@@ -4,7 +4,6 @@ import tkinter as tk
 import vgkit as vgk
 
 from autoinst import get_keymap_description, strip_encoding
-from models.data_units import DataUnit
 from models.page import Page, PageValidationResult
 from models.partition import PartitioningMethod
 from multilingual import _
@@ -99,7 +98,6 @@ class PageVerify(Page):
         selected_spin = self.state.installation.selected_spin
         kickstart = self.state.installation.kickstart
         install_options = self.state.installation.install_options
-        partition = self.state.installation.partition
         is_using_untested = self.state.spins.is_using_untested
 
         if not selected_spin:
@@ -115,25 +113,11 @@ class PageVerify(Page):
                     % {"distro_name": selected_spin.full_name},
                 )
             method = install_options.partition_method
-            if method == PartitioningMethod.DUALBOOT:
-                self.info_frame_raster.insert(
-                    "",
-                    "end",
-                    text=_("verify.install.dualboot")
-                    % {"distro_name": selected_spin.full_name},
-                )
-            elif method == PartitioningMethod.CLEAN_DISK:
+            if method == PartitioningMethod.CLEAN_DISK:
                 self.info_frame_raster.insert(
                     "",
                     "end",
                     text=_("verify.install.clean_disk")
-                    % {"distro_name": selected_spin.full_name},
-                )
-            elif method == PartitioningMethod.REPLACE_WIN:
-                self.info_frame_raster.insert(
-                    "",
-                    "end",
-                    text=_("verify.install.replace_win")
                     % {"distro_name": selected_spin.full_name},
                 )
             elif method == PartitioningMethod.CUSTOM:
@@ -143,21 +127,6 @@ class PageVerify(Page):
                     text=_("verify.install.custom")
                     % {"distro_name": selected_spin.full_name},
                 )
-
-            # Partition shrink for dualboot
-            if method in [PartitioningMethod.DUALBOOT] and partition.shrink_space:
-                windows_part = self.state.installation.windows_partition
-                if windows_part:
-                    new_size = DataUnit(windows_part.size - partition.shrink_space)
-                    self.info_frame_raster.insert(
-                        "",
-                        "end",
-                        text=_("verify.partition.shrink")
-                        % {
-                            "partition": f"{windows_part.drive_letter}:",
-                            "size": new_size.to_gibibytes(),
-                        },
-                    )
 
         # Encryption
         if kickstart and kickstart.partitioning.is_encrypted:

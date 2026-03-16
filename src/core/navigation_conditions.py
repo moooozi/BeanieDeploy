@@ -48,17 +48,6 @@ class NetInstallCondition(PageCondition):
         return bool(selected_spin and selected_spin.is_base_netinstall)
 
 
-class DualBootCondition(PageCondition):
-    """Condition for dual boot specific pages."""
-
-    def is_enabled(self) -> bool:
-        state = get_state()
-        return (
-            state.installation.install_options.partition_method
-            == PartitioningMethod.DUALBOOT
-        )
-
-
 class CustomInstallCondition(PageCondition):
     """Condition for custom install method."""
 

@@ -97,25 +97,6 @@ def _validate_kickstart_config(kickstart_config: KickstartConfig) -> None:
     if not kickstart_config.partitioning.method:
         errors.append("Partitioning method is required")
 
-    if kickstart_config.partitioning.method == PartitioningMethod.DUALBOOT:
-        if not kickstart_config.partitioning.root_guid:
-            errors.append("root_guid is required for dualboot partition method")
-        if (
-            kickstart_config.partitioning.is_encrypted
-            and not kickstart_config.partitioning.boot_guid
-        ):
-            errors.append(
-                "boot_guid is required for dualboot partition method with encryption"
-            )
-        if not kickstart_config.partitioning.sys_efi_uuid:
-            errors.append("sys_efi_uuid is required for dualboot partition method")
-
-    if kickstart_config.partitioning.method == PartitioningMethod.REPLACE_WIN:
-        if not kickstart_config.partitioning.sys_drive_uuid:
-            errors.append("sys_drive_uuid is required for replace_win partition method")
-        if not kickstart_config.partitioning.sys_efi_uuid:
-            errors.append("sys_efi_uuid is required for replace_win partition method")
-
     if kickstart_config.partitioning.method == PartitioningMethod.CLEAN_DISK:
         if not kickstart_config.partitioning.sys_drive_uuid:
             errors.append("sys_drive_uuid is required for clean_disk partition method")
@@ -123,14 +104,6 @@ def _validate_kickstart_config(kickstart_config: KickstartConfig) -> None:
             errors.append("sys_efi_uuid is required for clean_disk partition method")
         if not kickstart_config.partitioning.tmp_part_uuid:
             errors.append("tmp_part_uuid is required for clean_disk partition method")
-
-    if kickstart_config.partitioning.is_encrypted and (
-        kickstart_config.partitioning.method == PartitioningMethod.DUALBOOT
-        and not kickstart_config.partitioning.boot_guid
-    ):
-        errors.append(
-            "boot_guid is required for dualboot partition method with encryption"
-        )
 
     if errors:
         msg = f"Invalid kickstart configuration: {'; '.join(errors)}"

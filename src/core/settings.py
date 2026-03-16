@@ -23,9 +23,6 @@ class AppConfig:
     minimal_required_space: DataUnit = field(
         default_factory=lambda: DataUnit.from_gigabytes(4)
     )
-    dualboot_required_space: DataUnit = field(
-        default_factory=lambda: DataUnit.from_gigabytes(35)
-    )
     additional_failsafe_space: DataUnit = field(
         default_factory=lambda: DataUnit.from_gigabytes(2)
     )

@@ -169,14 +169,15 @@ msgstr "Preparation Failed"
 msgid "install.option.custom"
 msgstr "Custom installation and partitioning"
 
-msgid "install.option.dualboot"
-msgstr "Install alongside Windows"
-
-msgid "install.option.replace_win"
-msgstr "Install and replace Windows"
 
 msgid "install.option.clean_disk"
-msgstr "Erase disk and install"
+msgstr "Wipe disk and install (recommended)"
+
+msgid "install.option.clean_disk.desc"
+msgstr "Remove all files, and perform automatic installation."
+
+msgid "install.option.custom.desc"
+msgstr "Prepare installation media and let you handle the rest."
 
 msgid "install.running"
 msgstr "Preparing installation..."
@@ -254,14 +255,20 @@ msgstr "seconds"
 msgid "desktop.hint.gnome"
 msgstr "GNOME desktop is minimal, stable, touchpad & touchscreen optimized"
 
-msgid "desktop.hint.kde.plasma"
+msgid "desktop.hint.kde"
 msgstr "KDE is feature-rich, highly customizable, and has Windows-like layout by default"
 
-msgid "distro.hint.fedora.kde.plasma"
+msgid "desktop.hint.cosmic"
+msgstr "COSMIC is a new desktop, focused on keyboard navigation, tiled windows, and maximizing productivity"
+
+msgid "distro.hint.fedora.kde"
 msgstr "Fedora with KDE desktop environment"
 
 msgid "distro.hint.fedora.workstation"
 msgstr "Fedora with GNOME desktop environment"
+
+msgid "distro.hint.fedora.cosmic"
+msgstr "Fedora with COSMIC desktop environment"
 
 # Verify
 msgid "verify.autoinst.wifi"
@@ -273,14 +280,8 @@ msgstr "Please verify your installation settings"
 msgid "verify.installation.summary"
 msgstr "Installation Settings Summary"
 
-msgid "verify.install.dualboot"
-msgstr "%(distro_name)s will be installed alongside Windows"
-
 msgid "verify.install.clean_disk"
 msgstr "The storage device will be wiped and %(distro_name)s will be installed"
-
-msgid "verify.install.replace_win"
-msgstr "%(distro_name)s will be installed to replace Windows"
 
 msgid "verify.install.custom"
 msgstr "%(distro_name)s installation media will be created and booted on next restart"
@@ -342,9 +343,6 @@ msgstr "Time left"
 
 msgid "downloads.number"
 msgstr "File %(current_file)s out of %(total_files)s"
-
-msgid "dualboot.size.txt"
-msgstr "Reserved space for %(distro_name)s:"
 
 msgid "encrypt.reminder.txt"
 msgstr "You will be asked to enter encryption passphase later"
@@ -427,9 +425,6 @@ msgstr "Selected distro"
 
 msgid "total.download"
 msgstr "Total download: %(size)s"
-
-msgid "warn.backup.system_drive"
-msgstr "Backup your files! Everything inside %(drive)s will be permanently deleted"
 
 msgid "warn.backup.device"
 msgstr "Backup your files! Everything on this device will be permanently deleted"

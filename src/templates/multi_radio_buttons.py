@@ -77,6 +77,7 @@ class MultiRadioButtons(vgk.Frame):
         self._number_of_standard_items = 0
         self._number_of_advanced_items = 0
         self._advanced_items: list[vgk.RadioButton] = []
+        self._advanced_labels: list[vgk.Label] = []
 
         # UI components
         self._radio_buttons: dict[str, vgk.RadioButton] = {}
@@ -143,7 +144,10 @@ class MultiRadioButtons(vgk.Frame):
             self._radio_buttons[item_key] = radio_button
 
             # Create associated label (error or description)
-            self._create_associated_label(self, item_config, index)
+            associated_label = self._create_associated_label(self, item_config, index)
+            if item_config.advanced and associated_label is not None:
+                associated_label.grid_remove()
+                self._advanced_labels.append(associated_label)
 
         # cpnfigure grid weights for standard frame
         self.grid_columnconfigure(0, weight=1)
@@ -174,14 +178,15 @@ class MultiRadioButtons(vgk.Frame):
 
     def _create_associated_label(
         self, parent, item_config: RadioButtonItem, row: int
-    ) -> None:
+    ) -> vgk.Label | None:
         """Create error or description label for the radio button."""
         if item_config.error:
-            self._create_error_label(parent, item_config.error, row)
-        elif item_config.description:
-            self._create_description_label(parent, item_config.description, row)
+            return self._create_error_label(parent, item_config.error, row)
+        if item_config.description:
+            return self._create_description_label(parent, item_config.description, row)
+        return None
 
-    def _create_error_label(self, parent, error_text: str, row: int) -> None:
+    def _create_error_label(self, parent, error_text: str, row: int) -> vgk.Label:
         """Create an error label for a disabled radio button."""
         error_label = vgk.Label(
             parent,
@@ -196,10 +201,11 @@ class MultiRadioButtons(vgk.Frame):
             column=1,
             sticky=multilingual.get_di_var().w,
         )
+        return error_label
 
     def _create_description_label(
         self, parent, description_text: str, row: int
-    ) -> None:
+    ) -> vgk.Label:
         """Create a description label for a radio button."""
         description_label = vgk.Label(
             parent,
@@ -214,6 +220,7 @@ class MultiRadioButtons(vgk.Frame):
             column=1,
             sticky=multilingual.get_di_var().w,
         )
+        return description_label
 
     def _handle_initial_state(self) -> None:
         """Handle the initial state of the widget, including auto-expanding advanced options."""
@@ -237,6 +244,8 @@ class MultiRadioButtons(vgk.Frame):
         if self._advanced_items and self._show_advanced_label:
             for radio_button in self._advanced_items:
                 radio_button.grid()
+            for label in self._advanced_labels:
+                label.grid()
             self._show_advanced_label.grid_forget()
 
     # Public API methods

@@ -6,7 +6,6 @@ from sys import argv
 import vgkit as vgk
 
 from compatibility_checks import CheckType
-from models.data_units import DataUnit
 from models.kickstart import KickstartConfig
 from models.page import Page, PageValidationResult
 from models.partition import PartitioningMethod
@@ -19,7 +18,6 @@ class PageInstallMethod(Page):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.install_method_var = tk.StringVar(parent)
-        self.dualboot_size_var = tk.StringVar(parent)
 
         self.enable_encryption_toggle_var = tk.BooleanVar(parent)
 
@@ -43,12 +41,6 @@ class PageInstallMethod(Page):
             else 0
         )
 
-        space_dualboot = (
-            self.app_config.app.dualboot_required_space.bytes_value
-            + self.app_config.app.linux_boot_partition_size.bytes_value
-            + self.app_config.app.additional_failsafe_space.bytes_value
-            + partition_size * 2
-        )
         space_clean = (
             self.app_config.app.linux_boot_partition_size.bytes_value
             + self.app_config.app.additional_failsafe_space.bytes_value
@@ -57,24 +49,9 @@ class PageInstallMethod(Page):
 
         done_checks = self.state.compatibility.done_checks
         if "--skip_check" not in argv and done_checks is not None:
-            has_dualboot_space = (
-                done_checks.checks[CheckType.RESIZABLE].result > space_dualboot
-            )
             has_space = done_checks.checks[CheckType.RESIZABLE].result > space_clean
-            # Convert string size to bytes for arithmetic operation
-            # Spin size is already in bytes
-            selected_spin_size_bytes = selected_spin.size
-            max_size_bytes = (
-                done_checks.checks[CheckType.RESIZABLE].result
-                - selected_spin_size_bytes
-                - self.app_config.app.additional_failsafe_space.bytes_value
-            )
         else:
-            has_dualboot_space = True
             has_space = True
-            max_size_bytes = DataUnit.from_gibibytes(9999).bytes
-
-        max_size_gb = DataUnit(max_size_bytes).gigabytes
 
         is_auto_installable = selected_spin.is_auto_installable
 
@@ -85,38 +62,23 @@ class PageInstallMethod(Page):
         )
         self.install_method_var.set(default)
 
-        dualboot_error_msg = ""
-        replace_win_error_msg = ""
         clean_disk_error_msg = ""
         if not is_auto_installable:
-            dualboot_error_msg = _("warn.not.available")
-            replace_win_error_msg = _("warn.not.available")
             clean_disk_error_msg = _("warn.not.available")
         else:
-            if not has_dualboot_space:
-                dualboot_error_msg = _("warn.space")
             if not has_space:
                 clean_disk_error_msg = _("warn.space")
-                replace_win_error_msg = _("warn.space")
 
         install_methods_dict = {
-            PartitioningMethod.DUALBOOT.value: {
-                "name": _("install.option.dualboot") + f" ({_('warn.experimental')})",
-                "error": dualboot_error_msg,
-                "advanced": True,
-            },
             PartitioningMethod.CLEAN_DISK.value: {
                 "name": _("install.option.clean_disk"),
                 "error": clean_disk_error_msg,
-                "advanced": False,
-            },
-            PartitioningMethod.REPLACE_WIN.value: {
-                "name": _("install.option.replace_win"),
-                "error": replace_win_error_msg,
+                "description": _("install.option.clean_disk.desc"),
                 "advanced": False,
             },
             PartitioningMethod.CUSTOM.value: {
                 "name": _("install.option.custom"),
+                "description": _("install.option.custom.desc"),
                 "advanced": True,
             },
         }
@@ -130,9 +92,6 @@ class PageInstallMethod(Page):
         )
         radio_buttons.grid(row=0, column=0, sticky="ew")
 
-        min_size_gb = DataUnit(
-            self.app_config.app.dualboot_required_space.bytes_value
-        ).gigabytes
         self.method_options_frame = vgk.Frame(self)
         self.method_options_frame.grid(row=1, column=0, sticky="we")
         self.rowconfigure(0, weight=3, uniform="a")
@@ -161,46 +120,6 @@ class PageInstallMethod(Page):
         self.encrypt_pass_note.grid(padx=10, row=0, column=1, sticky=self._ui.di.w)
         self.update_encrypt_note_visiblity()
 
-        self.dualboot_entry_frame = vgk.Frame(self.method_options_frame)
-        self.dualboot_entry_frame.grid(row=2, column=0, sticky="w")
-        self.size_dualboot_txt_pre = vgk.Label(
-            self.dualboot_entry_frame,
-            text=_("dualboot.size.txt") % {"distro_name": selected_spin.name},
-            font=self._ui.fonts.smaller,
-            justify=self._ui.di.l,
-            pady=5,
-        )
-        self.size_dualboot_entry = vgk.Entry(
-            self.dualboot_entry_frame,
-            width=100,
-            textvariable=self.dualboot_size_var,
-        )
-        validation_func = self.register(
-            lambda x: (
-                x.replace(".", "", 1).isdigit()
-                and min_size_gb <= float(x) <= max_size_gb
-            )
-        )
-        self.size_dualboot_entry.configure(
-            validate="none", validatecommand=(validation_func, "%P")
-        )
-
-        # Format size range using humanize for clarity
-        min_size_txt = self.app_config.app.dualboot_required_space.to_gibibytes()
-        max_size_txt = DataUnit(max_size_bytes).to_gibibytes()
-        size_range_text = f"({min_size_txt}GiB - {max_size_txt}GiB)"
-        self.size_dualboot_txt_post = vgk.Label(
-            self.dualboot_entry_frame,
-            text=size_range_text,
-            font=self._ui.fonts.smaller,
-            text_color=self._ui.colors.primary,
-            justify=self._ui.di.l,
-            pady=5,
-        )
-        self.size_dualboot_txt_pre.grid(column=0, row=0, sticky=self._ui.di.w)
-        self.size_dualboot_entry.grid(padx=5, column=1, row=0, sticky=self._ui.di.w)
-        self.size_dualboot_txt_post.grid(column=2, row=0, sticky=self._ui.di.w)
-
         # Warning label for destructive options
         self.warning_label = vgk.Label(
             self.method_options_frame,
@@ -220,19 +139,10 @@ class PageInstallMethod(Page):
         self.show_more_widgets_if_needed()
         self.update_warning_label()
 
-    def _on_dualboot_size_change(self):
-        """Called when dualboot size changes."""
-        # Could implement real-time validation feedback here if needed
-
     def update_warning_label(self, *_args):
         # print args for debugging
         method = self.install_method_var.get()
-        if method == PartitioningMethod.REPLACE_WIN.value:
-            win_drive_letter = self.state.installation.windows_partition.drive_letter
-            self.warning_label.configure(
-                text=_("warn.backup.system_drive") % {"drive": f"{win_drive_letter}:\\"}
-            )
-        elif method == PartitioningMethod.CLEAN_DISK.value:
+        if method == PartitioningMethod.CLEAN_DISK.value:
             self.warning_label.configure(text=_("warn.backup.device"))
         else:
             self.warning_label.configure(text="")
@@ -249,7 +159,6 @@ class PageInstallMethod(Page):
         method = self.install_method_var.get()
         # Hide all method-specific widgets first
         self.warning_label.grid_remove()
-        self.dualboot_entry_frame.grid_remove()
 
         # Hide checkboxes for custom install (they don't make sense)
         if method == PartitioningMethod.CUSTOM.value:
@@ -258,36 +167,11 @@ class PageInstallMethod(Page):
             self.check_encrypt_frame.grid()
 
         # Show method-specific widgets
-        if method == PartitioningMethod.DUALBOOT.value:
-            self.dualboot_entry_frame.grid()
-        elif method in [
-            PartitioningMethod.REPLACE_WIN.value,
-            PartitioningMethod.CLEAN_DISK.value,
-        ]:
+        if method == PartitioningMethod.CLEAN_DISK.value:
             self.warning_label.grid()
 
     def validate_input(self) -> PageValidationResult:
         """Validate the selected install method and options."""
-        method = self.install_method_var.get()
-
-        # Validate dual boot size if needed
-        if method == PartitioningMethod.DUALBOOT.value:
-            try:
-                size_str = self.dualboot_size_var.get().strip()
-                if not size_str:
-                    return PageValidationResult(False, "Dual boot size is required")
-
-                size_value = float(size_str)
-                if size_value <= 0:
-                    return PageValidationResult(
-                        False, "Dual boot size must be positive"
-                    )
-
-            except ValueError:
-                return PageValidationResult(
-                    False, "Dual boot size must be a valid number"
-                )
-
         return PageValidationResult(True)
 
     def on_next(self):
@@ -298,13 +182,7 @@ class PageInstallMethod(Page):
         self.state.installation.install_options.partition_method = PartitioningMethod(
             method
         )
-
-        if method == PartitioningMethod.DUALBOOT.value:
-            # Save dual boot size
-            size = DataUnit.from_gigabytes(float(self.dualboot_size_var.get()))
-            self.state.installation.partition.shrink_space = size.bytes
-        else:
-            self.state.installation.partition.shrink_space = 0
+        self.state.installation.partition.shrink_space = 0
 
         if method == PartitioningMethod.CUSTOM.value:
             # Unset Kickstart partitioning settings for custom install
