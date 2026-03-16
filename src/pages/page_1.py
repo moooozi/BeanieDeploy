@@ -36,23 +36,31 @@ class Page1(Page):
         # Build a single dict for all spins, marking non-featured as advanced
         spin_radio_dict = {}
         for dist in accepted_spins:
-            spin_fullname = f"{dist.name} {dist.version}"
+            spin_id = f"{dist.name} {dist.version}"
             is_featured = dist.is_default or dist.is_featured
             # Get distro hint based on name
             distro_hint = ""
             if is_featured:
                 if dist.name == "Fedora Workstation":
                     distro_hint = _("distro.hint.fedora.workstation")
-                elif dist.name == "Fedora KDE":
-                    distro_hint = _("distro.hint.fedora.kde.plasma")
+                elif dist.name == "Fedora Workstation KDE":
+                    distro_hint = _("distro.hint.fedora.kde")
+                elif dist.name == "Fedora COSMIC":
+                    distro_hint = _("distro.hint.fedora.cosmic")
 
-            spin_radio_dict[spin_fullname] = {
-                "name": spin_fullname,
+            # Display label may include a "(Recommended)" tag, but the dict key
+            # (used as the radio button value) stays as the stable spin_id.
+            spin_displayname = spin_id
+            if dist.is_default:
+                spin_displayname += f" ({_('recommended')})"
+                if self.distro_var.get() == "":
+                    self.distro_var.set(spin_id)
+
+            spin_radio_dict[spin_id] = {
+                "name": spin_displayname,
                 "description": distro_hint,
                 "advanced": not is_featured,
             }
-            if dist.is_default and self.distro_var.get() == "":
-                self.distro_var.set(spin_fullname)
         # Move default spin to top if present
         if any(dist.is_default for dist in accepted_spins):
             default_spin = next(
@@ -131,11 +139,11 @@ class Page1(Page):
             )
 
             # Get desktop hint based on desktop environment
+            desktop_hint_key = ""
             dl_spin_desktop_desc = ""
-            if selected_spin.desktop == "KDE Plasma":
-                dl_spin_desktop_desc = _("desktop.hint.kde.plasma")
-            elif selected_spin.desktop == "GNOME":
-                dl_spin_desktop_desc = _("desktop.hint.gnome")
+            if selected_spin.desktop:
+                desktop_hint_key = f"desktop.hint.{selected_spin.desktop.lower()}"
+                dl_spin_desktop_desc = _(desktop_hint_key)
 
             self.info_frame_raster.flush_labels()
             self.info_frame_raster.add_label("name", dl_spin_name_text)
