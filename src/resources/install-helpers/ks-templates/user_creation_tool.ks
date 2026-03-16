@@ -10,6 +10,7 @@ from pathlib import Path
 
 helpers_dir = Path("/run/install/repo/install-helpers")
 target = Path("/mnt/sysimage")
+
 staging_rel = Path("var/lib/beanie-install")
 staging_dir = target / staging_rel
 
@@ -20,16 +21,8 @@ else:
     script_rel = Path("usr/local/bin/beanie-firstboot.py")
 
 script_dest = target / script_rel
-service_staging_dest = staging_dir / "beanie-firstboot.service"
 
-# Print and log symlink status for OSTree path debugging.
-etc_path = target / "etc"
-print(f"[user_creation_tool] etc path: {etc_path}")
-print(f"[user_creation_tool] etc exists: {etc_path.exists()}")
-print(f"[user_creation_tool] etc is symlink: {etc_path.is_symlink()}")
-if etc_path.is_symlink():
-    print(f"[user_creation_tool] etc symlink target: {os.readlink(etc_path)}")
-print(f"[user_creation_tool] etc resolved path: {etc_path.resolve(strict=False)}")
+service_staging_dest = staging_dir / "beanie-firstboot.service"
 
 # Install script and service into the target filesystem.
 script_dest.parent.mkdir(parents=True, exist_ok=True)
