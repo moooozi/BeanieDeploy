@@ -700,9 +700,9 @@ def write_output_files(efi_uuid: str, boot_uuid: str, root_uuid: str) -> None:
     # --- partition_uuids ---
     uuids_path = os.path.join(OUTPUT_DIR, "partition_uuids")
     uuids_content = (
-        f"EFI_PARTUUID={efi_uuid}\n"
-        f"BOOT_PARTUUID={boot_uuid}\n"
-        f"ROOT_PARTUUID={root_uuid}\n"
+        f"EFI_PARTUUID={efi_uuid.lower()}\n"
+        f"BOOT_PARTUUID={boot_uuid.lower()}\n"
+        f"ROOT_PARTUUID={root_uuid.lower()}\n"
     )
     _write(uuids_path, uuids_content)
 
@@ -710,13 +710,13 @@ def write_output_files(efi_uuid: str, boot_uuid: str, root_uuid: str) -> None:
     ks_path = os.path.join(OUTPUT_DIR, "partitioning_ks")
     ks_content = (
         f"# EFI\n"
-        f"part /boot/efi --fstype=efi --label=efi --onpart=/dev/disk/by-partuuid/{efi_uuid}\n"
+        f"part /boot/efi --fstype=efi --label=efi --onpart=/dev/disk/by-partuuid/{efi_uuid.lower()}\n"
         f"\n"
         f"# boot\n"
-        f"part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-partuuid/{boot_uuid}\n"
+        f"part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-partuuid/{boot_uuid.lower()}\n"
         f"\n"
         f"# root\n"
-        f"part btrfs.01 --onpart=/dev/disk/by-partuuid/{root_uuid}\n"
+        f"part btrfs.01 --onpart=/dev/disk/by-partuuid/{root_uuid.lower()}\n"
         f"btrfs none --label=fedora btrfs.01\n"
         f"btrfs / --subvol --name=root fedora\n"
         f"btrfs /home --subvol --name=home fedora\n"
