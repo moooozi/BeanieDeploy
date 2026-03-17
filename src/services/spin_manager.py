@@ -107,6 +107,7 @@ def parse_spins(spins_list: SpinDictList) -> tuple[list[Spin], str]:
             dl_link=release.get("link", ""),
             is_live_img=is_live,
             version=version,
+            full_version=version_str,
             desktop=desktop,
             is_auto_installable=subvariant
             not in [

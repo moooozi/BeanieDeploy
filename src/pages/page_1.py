@@ -36,7 +36,7 @@ class Page1(Page):
         # Build a single dict for all spins, marking non-featured as advanced
         spin_radio_dict = {}
         for dist in accepted_spins:
-            spin_id = f"{dist.name} {dist.version}"
+            spin_id = f"{dist.name} {dist.full_version}"
             is_featured = dist.is_default or dist.is_featured
             # Get distro hint based on name
             distro_hint = ""
@@ -65,7 +65,7 @@ class Page1(Page):
         if any(dist.is_default for dist in accepted_spins):
             default_spin = next(
                 (
-                    f"{dist.name} {dist.version}"
+                    f"{dist.name} {dist.full_version}"
                     for dist in accepted_spins
                     if dist.is_default
                 ),
@@ -157,7 +157,7 @@ class Page1(Page):
         distro = self.distro_var.get()
         spins = self.state.spins.accepted_spins
         for idx, dist in enumerate(spins):
-            if distro == f"{dist.name} {dist.version}":
+            if distro == f"{dist.name} {dist.full_version}":
                 return idx
         return None
 

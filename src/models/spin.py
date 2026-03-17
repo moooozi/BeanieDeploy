@@ -9,6 +9,7 @@ class Spin:
     dl_link: str
     is_live_img: bool = False
     version: str = ""
+    full_version: str = ""
     desktop: str = ""
     is_auto_installable: bool = False
     is_advanced: bool = False
