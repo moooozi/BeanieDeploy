@@ -214,9 +214,7 @@ class KickstartBuilder:
 
     def _build_user_config(self) -> list[str]:
         is_ostree = "yes" if self.kickstart_config.ostree_args.strip() else "no"
-        lines = [
-            "user --name=temp --password='123' --plaintext --groups=wheel",
-        ]
+        lines = []
 
         lines.extend(
             self.load_template("user_creation_tool")
