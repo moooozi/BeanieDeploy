@@ -470,23 +470,18 @@ class InstallationService:
 
         elevated.call(file_service.set_file_readonly, args=(str(grub_cfg_path), False))
 
-        should_grub_autoinstall = bool(
-            context.kickstart.partitioning.method
-            and context.kickstart.partitioning.method != PartitioningMethod.CUSTOM
-        )
+        method = context.kickstart.partitioning.method
+        is_autoinstall = method != PartitioningMethod.CUSTOM
 
         grub_cfg_content = config_builders.build_grub_cfg_file(
             context.partition.temp_part_label,
-            is_autoinst=should_grub_autoinstall,
+            is_autoinst=is_autoinstall,
         )
         grub_cfg_path.write_text(grub_cfg_content, encoding="utf-8", newline="")
         elevated.call(file_service.set_file_readonly, args=(str(grub_cfg_path), True))
 
         # Generate kickstart config if needed
-        if (
-            context.kickstart.partitioning.method
-            and context.kickstart.partitioning.method != PartitioningMethod.CUSTOM
-        ):
+        if is_autoinstall:
             # Set live_img_url if installing a live image
             if context.selected_spin.is_live_img:
                 context.kickstart.live_img_url = get_config().app.live_img_url

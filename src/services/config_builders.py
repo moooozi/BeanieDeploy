@@ -50,7 +50,7 @@ def build_base_ks_file(kickstart_config: KickstartConfig) -> str:
 
 
 def write_ks_files(kickstart_config: KickstartConfig, base_path: Path) -> None:
-    """Write Kickstart files (`ks.cfg` and include files) to disk."""
+    """Write Kickstart files and include trees to disk."""
     kickstart_builder.write_ks_files(kickstart_config, base_path)
 
 
@@ -73,28 +73,28 @@ def build_grub_cfg_file(
         GrubEntry(
             title="Install Fedora",
             prelines=(),
-            linux_cmd=f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} rd.live.check quiet",
+            linux_cmd=f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} rd.live.check inst.ks=hd:LABEL={root_partition_label}:/ks.cfg quiet",
             initrd_cmd="initrd /images/pxeboot/initrd.img",
             is_in_submenu=True,
         ),
         GrubEntry(
             title="Install Fedora (RAM-Boot)",
             prelines=(),
-            linux_cmd=f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} rd.live.check rd.live.ram quiet",
+            linux_cmd=f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} rd.live.check rd.live.ram inst.ks=hd:LABEL={root_partition_label}:/ks.cfg quiet",
             initrd_cmd="initrd /images/pxeboot/initrd.img",
             is_in_submenu=True,
         ),
         GrubEntry(
             title="Install Fedora in basic graphics mode",
             prelines=(),
-            linux_cmd=f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} nomodeset quiet",
+            linux_cmd=f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} nomodeset inst.ks=hd:LABEL={root_partition_label}:/ks.cfg quiet",
             initrd_cmd="initrd /images/pxeboot/initrd.img",
             is_in_submenu=True,
         ),
         GrubEntry(
             title="Rescue a Fedora system",
             prelines=(),
-            linux_cmd=f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} inst.rescue quiet",
+            linux_cmd=f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} inst.rescue inst.ks=hd:LABEL={root_partition_label}:/ks.cfg quiet",
             initrd_cmd="initrd /images/pxeboot/initrd.img",
             is_in_submenu=True,
         ),
@@ -102,7 +102,12 @@ def build_grub_cfg_file(
 
     # Add auto-install entry if enabled
     if is_autoinst:
-        linux_cmd = f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} rd.live.check inst.ks=hd:LABEL={root_partition_label} quiet"
+        linux_cmd = (
+            "linux /images/pxeboot/vmlinuz "
+            f"inst.stage2=hd:LABEL={root_partition_label} "
+            "rd.live.check "
+            f"inst.ks=hd:LABEL={root_partition_label}:/autoinstall.ks quiet"
+        )
         entries.insert(
             0,
             GrubEntry(

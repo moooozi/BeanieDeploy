@@ -39,6 +39,10 @@ class KickstartDocument:
         return cls("ks.cfg")
 
     @classmethod
+    def create_entry(cls, name: str) -> KickstartDocument:
+        return cls(name)
+
+    @classmethod
     def create_include(cls, name: str) -> KickstartDocument:
         return cls(Path("ks_includes") / f"{name}.ks")
 
@@ -56,11 +60,23 @@ class KickstartDocument:
 
     def include(self, document: KickstartDocument) -> KickstartDocument:
         self._includes.append(document)
-        parent_dir = self.relative_path.parent.as_posix() or "."
-        include_path = posixpath.relpath(
-            document.relative_path.as_posix(),
-            start=parent_dir,
-        )
+
+        # Entry files (ks.cfg, autoinstall.ks) use absolute paths for reliable execution
+        # when copied to different paths by the runtime. Nested files within ks_includes
+        # continue using relative paths.
+        is_entry_file = self.relative_path.parent == Path()
+
+        if is_entry_file:
+            # Entry files use absolute paths to ensure reliable execution
+            include_path = f"/run/install/repo/{document.relative_path.as_posix()}"
+        else:
+            # Nested includes within ks_includes use relative paths
+            parent_dir = self.relative_path.parent.as_posix() or "."
+            include_path = posixpath.relpath(
+                document.relative_path.as_posix(),
+                start=parent_dir,
+            )
+
         self.add_line(f"%include {include_path}")
         return self
 
@@ -281,12 +297,9 @@ class KickstartBuilder:
         lines.extend(self.load_template("final_post").splitlines())
         return lines
 
-    def _build_base_content_lines(self) -> list[str]:
-        method = self.kickstart_config.partitioning.method
-        is_autoinstall = method != PartitioningMethod.CUSTOM
-
+    def _build_base_content_lines(self, include_autoinstall: bool) -> list[str]:
         lines: list[str] = []
-        if is_autoinstall:
+        if include_autoinstall:
             lines.extend(self.load_template("header_autoinst").splitlines())
         else:
             lines.extend(self.load_template("header_custom").splitlines())
@@ -359,28 +372,57 @@ class KickstartBuilder:
         )
         return doc
 
-    def build_base_document(self) -> KickstartDocument:
-        doc = KickstartDocument.create_main()
-        doc.add(self._build_base_content_lines())
+    def build_base_document(
+        self,
+        relative_path: str,
+        include_autoinstall: bool,
+    ) -> KickstartDocument:
+        doc = KickstartDocument.create_entry(relative_path)
+        doc.add(self._build_base_content_lines(include_autoinstall))
+        if include_autoinstall:
+            doc.include(self.build_autoinstall_document())
         return doc
 
-    def build_document_tree(self) -> KickstartDocument:
-        base_doc = self.build_base_document()
+    def build_documents(self) -> list[KickstartDocument]:
         method = self.kickstart_config.partitioning.method
         is_autoinstall = method != PartitioningMethod.CUSTOM
+
         if is_autoinstall:
-            base_doc.include(self.build_autoinstall_document())
-        return base_doc
+            return [
+                self.build_base_document(
+                    relative_path="ks.cfg",
+                    include_autoinstall=False,
+                ),
+                self.build_base_document(
+                    relative_path="autoinstall.ks",
+                    include_autoinstall=True,
+                ),
+            ]
+        return [
+            self.build_base_document(
+                relative_path="ks.cfg",
+                include_autoinstall=False,
+            )
+        ]
+
+    def build_document_tree(self) -> KickstartDocument:
+        return self.build_base_document(
+            relative_path="ks.cfg",
+            include_autoinstall=False,
+        )
 
     def write_files(self, base_path: Path) -> None:
-        self.build_document_tree().write(base_path)
+        for document in self.build_documents():
+            document.write(base_path)
 
     def render_autoinstall_content(self) -> str:
         self._validate_config()
         return "\n".join(self._build_autoinstall_content_lines()) + "\n"
 
     def render_base_content(self) -> str:
-        return "\n".join(self._build_base_content_lines()) + "\n"
+        method = self.kickstart_config.partitioning.method
+        is_autoinstall = method != PartitioningMethod.CUSTOM
+        return "\n".join(self._build_base_content_lines(is_autoinstall)) + "\n"
 
 
 def build_autoinstall_ks_file(kickstart_config: KickstartConfig) -> str:
@@ -394,5 +436,10 @@ def build_base_ks_file(kickstart_config: KickstartConfig) -> str:
 
 
 def write_ks_files(kickstart_config: KickstartConfig, base_path: Path) -> None:
-    """Write Kickstart file tree (`ks.cfg` and include files) to disk."""
+    """Write Kickstart file tree to disk.
+
+    When autoinstall is enabled, writes both entry files:
+    - `autoinstall.ks` (autoinstall entry)
+    - `ks.cfg` (non-autoinstall fallback entry)
+    """
     KickstartBuilder(kickstart_config).write_files(base_path)
