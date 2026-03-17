@@ -492,13 +492,7 @@ class InstallationService:
             if context.selected_spin.is_live_img:
                 context.kickstart.live_img_url = get_config().app.live_img_url
 
-            kickstart_path = (
-                destination_path / context.paths.kickstart_cfg_relative_path
-            )
-            kickstart_content = config_builders.build_autoinstall_ks_file(
-                context.kickstart
-            )
-            kickstart_path.write_text(kickstart_content, encoding="utf-8", newline="")
+            config_builders.write_ks_files(context.kickstart, destination_path)
 
     def _copy_efi_to_system_partition(self, temp_destination: str) -> None:
         """Copy EFI directory to system EFI partition for proper booting."""

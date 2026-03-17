@@ -185,8 +185,8 @@ class PageInstallMethod(Page):
         self.state.installation.partition.shrink_space = 0
 
         if method == PartitioningMethod.CUSTOM.value:
-            # Unset Kickstart partitioning settings for custom install
-            self.state.installation.kickstart = None
+            # Reset Kickstart settings for custom install
+            self.state.installation.kickstart = KickstartConfig()
         else:
             # Ensure Kickstart partitioning settings exist for non-custom installs
             if not self.state.installation.kickstart:

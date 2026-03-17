@@ -4,54 +4,10 @@ Handles the generation of installation configuration files.
 """
 
 from dataclasses import dataclass
+from pathlib import Path
 
-from core.settings import get_config
-from models.kickstart import KickstartConfig, PartitioningConfig
-from models.partition import PartitioningMethod
-
-
-def auto_quote(value: str) -> str:
-    """Automatically quote a string if it contains spaces."""
-    if " " in value:
-        return f"'{value}'"
-    return value
-
-
-def load_ks_template(name: str) -> str:
-    config_path = get_config().paths
-    path = config_path.install_helpers_ks_dir / f"{name}.ks"
-    template = path.read_text()
-    return template.replace("{log_dir}", config_path.log_dir)
-
-
-def load_ks_python_script(
-    name: str,
-    mode: str,
-    options: tuple[str, ...] = (),
-    template_vars: dict[str, str] | None = None,
-) -> str:
-    """Load a Python helper script and wrap it as a Kickstart script block."""
-    if mode not in {"pre", "post"}:
-        msg = f"Invalid kickstart script mode: {mode}"
-        raise ValueError(msg)
-
-    config_path = get_config().paths
-    script_name = name if name.endswith(".py") else f"{name}.py"
-    path = config_path.install_helpers_scripts_dir / script_name
-    script_content = path.read_text()
-
-    header = (
-        f"%{mode} --interpreter=/usr/bin/python3 "
-        f"--logfile={config_path.log_dir}/post_{path.stem}"
-    )
-    if options:
-        header = f"{header} {' '.join(options)}"
-
-    if template_vars:
-        for key, value in template_vars.items():
-            script_content = script_content.replace(f"{{{key}}}", value)
-
-    return "\n".join((header, script_content, "%end"))
+from models.kickstart import KickstartConfig
+from services import kickstart_builder
 
 
 @dataclass(frozen=True)
@@ -81,206 +37,21 @@ def _build_load_video_function() -> str:
     return "\n".join(lines)
 
 
-def _validate_kickstart_config(kickstart_config: KickstartConfig) -> None:
-    """
-    Validate the kickstart configuration for required fields and consistency.
-
-    Args:
-        kickstart_config: The configuration to validate
-
-    Raises:
-        ValueError: If the configuration is invalid with details about what's wrong
-    """
-    errors: list[str] = []
-
-    # Validate partitioning config
-    if not kickstart_config.partitioning.method:
-        errors.append("Partitioning method is required")
-
-    if kickstart_config.partitioning.method == PartitioningMethod.CLEAN_DISK:
-        if not kickstart_config.partitioning.sys_drive_uuid:
-            errors.append("sys_drive_uuid is required for clean_disk partition method")
-        if not kickstart_config.partitioning.sys_efi_uuid:
-            errors.append("sys_efi_uuid is required for clean_disk partition method")
-        if not kickstart_config.partitioning.tmp_part_uuid:
-            errors.append("tmp_part_uuid is required for clean_disk partition method")
-
-    if errors:
-        msg = f"Invalid kickstart configuration: {'; '.join(errors)}"
-        raise ValueError(msg)
-
-
-def _build_header() -> list[str]:
-    """Build the kickstart file header section."""
-    return load_ks_template("header").splitlines()
-
-
-def _build_clean_disk_pre_install(partitioning_config: PartitioningConfig) -> list[str]:
-    """Build pre-install script for CLEAN_DISK method."""
-    if not partitioning_config.sys_disk_uuid:
-        msg = "sys_disk_uuid is required for clean_disk_pre"
-        raise ValueError(msg)
-    if not partitioning_config.tmp_part_uuid:
-        msg = "tmp_part_uuid is required for clean_disk_pre"
-        raise ValueError(msg)
-
-    lines = load_ks_python_script(
-        "partition",
-        "pre",
-        template_vars={
-            "disk_path_or_uuid": partitioning_config.sys_disk_uuid,
-            "should_delete_all": "yes",
-            "delete_all_except": partitioning_config.tmp_part_uuid,
-        },
-    ).splitlines()
-
-    lines.append(r"%include /tmp/wingone_vars/partitioning_ks")
-    return lines
-
-
-def _build_clean_disk_post_install(
-    partitioning_config: PartitioningConfig,
-    is_ostree: bool,
-) -> list[str]:
-    """Build post-install script for CLEAN_DISK method."""
-    if not partitioning_config.tmp_part_uuid:
-        msg = "tmp_part_uuid is required for clean_disk_post_install"
-        raise ValueError(msg)
-
-    template_name = "partition_resize_tool"
-    template = load_ks_template(template_name)
-    template = template.replace(
-        "{tmp_part_uuid}", partitioning_config.tmp_part_uuid
-    ).replace("{is_ostree}", "yes" if is_ostree else "no")
-
-    if partitioning_config.is_encrypted:
-        if not partitioning_config.sys_drive_uuid:
-            msg = "sys_drive_uuid is required for encrypted clean_disk_post_install"
-            raise ValueError(msg)
-        template = template.replace(
-            "{sys_drive_uuid}", partitioning_config.sys_drive_uuid
-        )
-
-    return template.splitlines()
-
-
-def _build_system_config(kickstart_config: KickstartConfig) -> list[str]:
-    """Build system configuration section."""
-    lines = []
-
-    locale_config = kickstart_config.locale_settings
-
-    # Determine firstboot configuration
-    if locale_config.keymaps and locale_config.locale and locale_config.timezone:
-        if True:  # kickstart_config.should_use_native_firstboot:
-            firstboot_line = "firstboot --enable"
-        else:
-            # KDE has no firstboot tool and Fedora's tool sucks. We use our own firstboot service instead
-            firstboot_line = "firstboot --disable"
-            lines.extend(_build_user_config(kickstart_config))
-
-    else:
-        firstboot_line = "firstboot --reconfig"
-        if not locale_config.keymaps:
-            locale_config.keymaps = ["us"]
-        if not locale_config.locale:
-            locale_config.locale = "en_US.UTF-8"
-        if not locale_config.timezone:
-            locale_config.timezone = "America/New_York"
-
-    lines.append(firstboot_line)
-
-    # Format keymaps to ensure space before variant if needed
-    formatted_keymaps = []
-    for k in locale_config.keymaps:
-        if "(" in k and " (" not in k:
-            k = k.replace("(", " (")
-        formatted_keymaps.append(k)
-    quoted_keymaps = [auto_quote(k) for k in formatted_keymaps]
-    lines.append(f"keyboard --xlayouts={','.join(quoted_keymaps)}")
-
-    lines.extend(
-        [
-            f"lang {locale_config.locale}",
-            "firewall --use-system-defaults",
-            f"timezone {locale_config.timezone} --utc",
-        ]
-    )
-
-    return lines
-
-
-def _build_install_source(kickstart_config: KickstartConfig) -> list[str]:
-    """Build install source configuration section."""
-    lines = []
-    if kickstart_config.ostree_args:
-        lines.append(f"ostreesetup {kickstart_config.ostree_args}")
-    if kickstart_config.live_img_url:
-        lines.append(f"liveimg --url='{kickstart_config.live_img_url}' --noverifyssl")
-    return lines
-
-
-def _build_user_config(kickstart_config: KickstartConfig) -> list[str]:
-    """Build user configuration section with first-boot password setup."""
-
-    is_ostree = "yes" if kickstart_config.ostree_args.strip() else "no"
-    lines = [
-        "user --name=temp --password='123' --plaintext --groups=wheel",
-    ]
-
-    lines.extend(
-        load_ks_template("user_creation_tool")
-        .replace("{username}", kickstart_config.user_username)
-        .replace("{fullname}", kickstart_config.user_full_name)
-        .replace("{is_ostree}", is_ostree)
-        .splitlines()
-    )
-    return lines
-
-
 def build_autoinstall_ks_file(
     kickstart_config: KickstartConfig,
 ) -> str:
-    """
-    Build a Kickstart file for automated Fedora installation.
+    """Build a Kickstart file for automated Fedora installation."""
+    return kickstart_builder.build_autoinstall_ks_file(kickstart_config)
 
-    Args:
-        kickstart_config: Kickstart configuration object
 
-    Returns:
-        Generated Kickstart file content
+def build_base_ks_file(kickstart_config: KickstartConfig) -> str:
+    """Build base Kickstart file content."""
+    return kickstart_builder.build_base_ks_file(kickstart_config)
 
-    Raises:
-        ValueError: If the configuration is invalid
-    """
-    # Validate configuration
-    _validate_kickstart_config(kickstart_config)
 
-    kickstart_lines = []
-
-    # Build different sections of the kickstart file
-    kickstart_lines.extend(_build_header())
-    kickstart_lines.extend(_build_system_config(kickstart_config))
-    kickstart_lines.extend(_build_install_source(kickstart_config))
-
-    # Add CLEAN_DISK scripts if applicable
-    if kickstart_config.partitioning.method == PartitioningMethod.CLEAN_DISK:
-        kickstart_lines.extend(
-            _build_clean_disk_pre_install(kickstart_config.partitioning)
-        )
-        kickstart_lines.extend(
-            _build_clean_disk_post_install(
-                kickstart_config.partitioning, bool(kickstart_config.ostree_args)
-            )
-        )
-
-    # Final lines
-    kickstart_lines.extend(["rootpw --lock", "reboot"])
-
-    # Add final post section
-    kickstart_lines.extend(load_ks_template("final_post").splitlines())
-
-    return "\n".join(kickstart_lines) + "\n"
+def write_ks_files(kickstart_config: KickstartConfig, base_path: Path) -> None:
+    """Write Kickstart files (`ks.cfg` and include files) to disk."""
+    kickstart_builder.write_ks_files(kickstart_config, base_path)
 
 
 def build_grub_cfg_file(
