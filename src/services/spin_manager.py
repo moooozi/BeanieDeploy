@@ -19,12 +19,13 @@ def parse_spins(spins_list: SpinDictList) -> tuple[list[Spin], str]:
     """
     accepted_spins_list: list[Spin] = []
 
-    # Find the latest version
+    # Find the latest version (supports formats like "43" or "44 Beta").
     latest_version = "0"
     for release in spins_list:
-        version_str = release.get("version", "0")
-        if version_str.isdigit() and int(version_str) > int(latest_version):
-            latest_version = version_str
+        version_str = str(release.get("version", "0")).strip()
+        version_token = version_str.split(maxsplit=1)[0] if version_str else "0"
+        if version_token.isdigit() and int(version_token) > int(latest_version):
+            latest_version = version_token
 
     # Use provided version or latest
 
@@ -58,6 +59,8 @@ def parse_spins(spins_list: SpinDictList) -> tuple[list[Spin], str]:
 
         variant = release.get("variant", "")
         subvariant = release.get("subvariant", "")
+        version_str = str(release.get("version", "")).strip()
+        version = version_str.split(maxsplit=1)[0] if version_str else ""
 
         if subvariant not in desired_subvariants:
             continue
@@ -88,7 +91,7 @@ def parse_spins(spins_list: SpinDictList) -> tuple[list[Spin], str]:
 
         # Set ostree_args for Silverblue and Kinoite
         if subvariant in ["Silverblue", "Kinoite", "COSMIC-Atomic"]:
-            ostree_args = f'--osname="fedora" --remote="fedora" --url="file:///ostree/repo" --ref="fedora/{release.get("version", "")}/x86_64/{variant.lower()}" --nogpg'
+            ostree_args = f'--osname="fedora" --remote="fedora" --url="file:///ostree/repo" --ref="fedora/{version}/x86_64/{variant.lower()}" --nogpg'
         else:
             ostree_args = ""
 
@@ -99,7 +102,7 @@ def parse_spins(spins_list: SpinDictList) -> tuple[list[Spin], str]:
             hash256=release.get("sha256", ""),
             dl_link=release.get("link", ""),
             is_live_img=is_live,
-            version=release.get("version", ""),
+            version=version,
             desktop=desktop,
             is_auto_installable=subvariant
             not in [
