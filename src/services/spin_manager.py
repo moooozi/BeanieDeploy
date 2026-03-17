@@ -33,10 +33,10 @@ def parse_spins(spins_list: SpinDictList) -> tuple[list[Spin], str]:
     desired_subvariants = {
         "KDE",
         "Workstation",
-        "COSMIC",
+        # "COSMIC",
         "Kinoite",
         "Silverblue",
-        "COSMIC-Atomic",
+        # "COSMIC-Atomic",
         "Everything",
     }
 
@@ -90,7 +90,11 @@ def parse_spins(spins_list: SpinDictList) -> tuple[list[Spin], str]:
         is_base_netinstall = subvariant == "Everything"
 
         # Set ostree_args for Silverblue and Kinoite
-        if subvariant in ["Silverblue", "Kinoite", "COSMIC-Atomic"]:
+        if subvariant in [
+            "Silverblue",
+            "Kinoite",
+            # "COSMIC-Atomic",
+        ]:
             ostree_args = f'--osname="fedora" --remote="fedora" --url="file:///ostree/repo" --ref="fedora/{version}/x86_64/{variant.lower()}" --nogpg'
         else:
             ostree_args = ""
