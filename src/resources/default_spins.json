@@ -1,5 +1,75 @@
 [
   {
+    "version": "44 Beta",
+    "arch": "x86_64",
+    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/test/44_Beta/COSMIC-Atomic/x86_64/images/Fedora-COSMIC-Atomic-x86_64-44_Beta.1.2.ociarchive",
+    "variant": "COSMIC-Atomic",
+    "subvariant": "Atomic"
+  },
+  {
+    "version": "44 Beta",
+    "arch": "x86_64",
+    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/test/44_Beta/COSMIC-Atomic/x86_64/iso/Fedora-COSMIC-Atomic-ostree-x86_64-44_Beta-1.2.iso",
+    "variant": "COSMIC-Atomic",
+    "subvariant": "Atomic"
+  },
+  {
+    "version": "44 Beta",
+    "arch": "x86_64",
+    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/test/44_Beta/Everything/x86_64/iso/Fedora-Everything-netinst-x86_64-44_Beta-1.2.iso",
+    "variant": "Everything",
+    "subvariant": "Everything"
+  },
+  {
+    "version": "44 Beta",
+    "arch": "x86_64",
+    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/test/44_Beta/KDE/x86_64/iso/Fedora-KDE-Desktop-Live-44_Beta-1.2.x86_64.iso",
+    "variant": "KDE",
+    "subvariant": "KDE"
+  },
+  {
+    "version": "44 Beta",
+    "arch": "x86_64",
+    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/test/44_Beta/Kinoite/x86_64/images/Fedora-Kinoite-x86_64-44_Beta.1.2.ociarchive",
+    "variant": "Kinoite",
+    "subvariant": "Kinoite"
+  },
+  {
+    "version": "44 Beta",
+    "arch": "x86_64",
+    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/test/44_Beta/Kinoite/x86_64/iso/Fedora-Kinoite-ostree-x86_64-44_Beta-1.2.iso",
+    "variant": "Kinoite",
+    "subvariant": "Kinoite"
+  },
+  {
+    "version": "44 Beta",
+    "arch": "x86_64",
+    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/test/44_Beta/Silverblue/x86_64/images/Fedora-Silverblue-x86_64-44_Beta.1.2.ociarchive",
+    "variant": "Silverblue",
+    "subvariant": "Silverblue"
+  },
+  {
+    "version": "44 Beta",
+    "arch": "x86_64",
+    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/test/44_Beta/Silverblue/x86_64/iso/Fedora-Silverblue-ostree-x86_64-44_Beta-1.2.iso",
+    "variant": "Silverblue",
+    "subvariant": "Silverblue"
+  },
+  {
+    "version": "44 Beta",
+    "arch": "x86_64",
+    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/test/44_Beta/Spins/x86_64/iso/Fedora-COSMIC-Live-44_Beta-1.2.x86_64.iso",
+    "variant": "Spins",
+    "subvariant": "COSMIC"
+  },
+  {
+    "version": "44 Beta",
+    "arch": "x86_64",
+    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/test/44_Beta/Workstation/x86_64/iso/Fedora-Workstation-Live-44_Beta-1.2.x86_64.iso",
+    "variant": "Workstation",
+    "subvariant": "Workstation"
+  },
+  {
     "version": "43",
     "arch": "x86_64",
     "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/43/COSMIC-Atomic/x86_64/images/Fedora-COSMIC-Atomic-x86_64-43.1.6.ociarchive",
@@ -56,15 +126,6 @@
   {
     "version": "43",
     "arch": "x86_64",
-    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/43/Silverblue/x86_64/images/Fedora-Silverblue-x86_64-43.1.6.ociarchive",
-    "variant": "Silverblue",
-    "subvariant": "Silverblue",
-    "sha256": "1f6c29161c277d63d660d7f8b5dcce96d2302bb3b8fd3c0c41c5911327f12be0",
-    "size": "2441334784"
-  },
-  {
-    "version": "43",
-    "arch": "x86_64",
     "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/43/Silverblue/x86_64/iso/Fedora-Silverblue-ostree-x86_64-43-1.6.iso",
     "variant": "Silverblue",
     "subvariant": "Silverblue",
@@ -74,47 +135,11 @@
   {
     "version": "43",
     "arch": "x86_64",
-    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/43/Spins/x86_64/iso/Fedora-Budgie-Live-43-1.6.x86_64.iso",
-    "variant": "Spins",
-    "subvariant": "Budgie",
-    "sha256": "8fb077e4e49c7cd7407e8d4048fc9f45863802c40a1c0aadd5693085942e69f0",
-    "size": "2940565504"
-  },
-  {
-    "version": "43",
-    "arch": "x86_64",
     "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/43/Spins/x86_64/iso/Fedora-COSMIC-Live-43-1.6.x86_64.iso",
     "variant": "Spins",
     "subvariant": "COSMIC",
     "sha256": "8cbaacf3ebd6c1da19c01811bbec6f7d4ab9491141634bfa6870ee96ea313e2a",
     "size": "3034408960"
-  },
-  {
-    "version": "43",
-    "arch": "x86_64",
-    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/43/Spins/x86_64/iso/Fedora-Cinnamon-Live-x86_64-43-1.6.iso",
-    "variant": "Spins",
-    "subvariant": "Cinnamon",
-    "sha256": "01baf0238638a3665a2522d6675f0b54730abfc2933ba8a3f5211df54bb536e5",
-    "size": "2974912512"
-  },
-  {
-    "version": "43",
-    "arch": "x86_64",
-    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/43/Spins/x86_64/iso/Fedora-KDE-Mobile-Live-43-1.6.x86_64.iso",
-    "variant": "Spins",
-    "subvariant": "KDE_Mobile",
-    "sha256": "ffe8c38a9f1316e1664bde3743c4366c03db7df52a36aaafeaca9c54e46b0ae2",
-    "size": "2641420288"
-  },
-  {
-    "version": "43",
-    "arch": "x86_64",
-    "link": "https://download.fedoraproject.org/pub/fedora/linux/releases/43/Spins/x86_64/iso/Fedora-Sway-Live-x86_64-43-1.6.iso",
-    "variant": "Spins",
-    "subvariant": "Sway",
-    "sha256": "41d08d2e5b99a9f255eddc9aa7c310fea5436de1cc90085e57f5520c937d8bd6",
-    "size": "2065707008"
   },
   {
     "version": "43",
