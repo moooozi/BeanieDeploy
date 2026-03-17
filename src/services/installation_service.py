@@ -478,7 +478,6 @@ class InstallationService:
         grub_cfg_content = config_builders.build_grub_cfg_file(
             context.partition.temp_part_label,
             is_autoinst=should_grub_autoinstall,
-            autoinstall_ramdisk=False,
         )
         grub_cfg_path.write_text(grub_cfg_content, encoding="utf-8", newline="")
         elevated.call(file_service.set_file_readonly, args=(str(grub_cfg_path), True))

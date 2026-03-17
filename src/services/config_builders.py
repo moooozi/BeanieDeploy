@@ -57,7 +57,6 @@ def write_ks_files(kickstart_config: KickstartConfig, base_path: Path) -> None:
 def build_grub_cfg_file(
     root_partition_label: str,
     is_autoinst: bool = False,
-    autoinstall_ramdisk: bool = False,
 ) -> str:
     """
     Build a GRUB configuration file for the installer.
@@ -104,10 +103,6 @@ def build_grub_cfg_file(
     # Add auto-install entry if enabled
     if is_autoinst:
         linux_cmd = f"linux /images/pxeboot/vmlinuz inst.stage2=hd:LABEL={root_partition_label} rd.live.check inst.ks=hd:LABEL={root_partition_label} quiet"
-        if autoinstall_ramdisk:
-            linux_cmd = linux_cmd.replace(
-                " rd.live.check", " rd.live.check rd.live.ram"
-            )
         entries.insert(
             0,
             GrubEntry(
