@@ -56,19 +56,24 @@ Output
 #   DISK        Device path or GPT disk GUID.
 #               e.g.  /dev/sda   or   12345678-ABCD-EF01-2345-6789ABCDEF01
 #
-#   DELETE_ALL  "true"  → delete existing partitions before appending.
-#               "false" → append only; ALL_EXCEPT is ignored entirely.
+#   DELETE_ALL  "true"/"yes"  → delete existing partitions before appending.
+#               "false"/"no" → append only; ALL_EXCEPT is ignored entirely.
 #
 #   ALL_EXCEPT  Only consulted when DELETE_ALL is true.
 #               Comma-separated partition specs to keep (and not delete).
 #               Each spec may be a device node (/dev/sda1), a by-partuuid
 #               symlink, or a bare PARTUUID.  Non-matching specs are ignored.
 #               Leave empty to delete every existing partition.
+#
+#   IS_ENCRYPTED
+#               "true"/"yes"  → add LUKS options to root kickstart part line.
+#               "false"/"no"  → plain root kickstart part line.
 # =============================================================================
 
 DISK = "{disk_path_or_uuid}"
 DELETE_ALL = "{should_delete_all}"
 ALL_EXCEPT = "{delete_all_except}"  # comma-separated specs to keep; only used when DELETE_ALL is true
+IS_ENCRYPTED = "{is_encrypted}"
 
 # =============================================================================
 
@@ -86,11 +91,6 @@ TYPE_EFI = "C12A7328-F81F-11D2-BA4B-00A0C93EC93B"  # EFI System Partition
 TYPE_LINUX = "0FC63DAF-8483-4772-8E79-3D69D8477DE4"  # Linux filesystem
 
 ONE_GIB = 1 << 30  # bytes
-
-
-def die(message: str, code: int = 1) -> None:
-    print(f"error: {message}", file=sys.stderr)
-    sys.exit(code)
 
 
 def make_uuid() -> str:
@@ -114,13 +114,13 @@ def query_sector_size(device: str) -> int:
         text=True,
     )
     if result.returncode != 0:
-        die(f"blockdev --getss {device} failed:\n{result.stderr.strip()}")
+        sys.exit(f"error: blockdev --getss {device} failed:\n{result.stderr.strip()}")
     try:
         size = int(result.stdout.strip())
     except ValueError:
-        die(f"unexpected output from blockdev --getss: {result.stdout!r}")
+        sys.exit(f"error: unexpected output from blockdev --getss: {result.stdout!r}")
     if size <= 0 or (size & (size - 1)) != 0:
-        die(f"blockdev returned a non-power-of-two sector size: {size}")
+        sys.exit(f"error: blockdev returned a non-power-of-two sector size: {size}")
     return size
 
 
@@ -141,10 +141,10 @@ def query_disk_guid(device: str) -> str:
         text=True,
     )
     if result.returncode != 0:
-        die(f"lsblk (PTUUID) failed:\n{result.stderr.strip()}")
+        sys.exit(f"error: lsblk (PTUUID) failed:\n{result.stderr.strip()}")
     guid = result.stdout.strip().upper()
     if not guid:
-        die(f"Could not read disk GUID from {device} — is it a GPT disk?")
+        sys.exit(f"error: Could not read disk GUID from {device} — is it a GPT disk?")
     return guid
 
 
@@ -166,7 +166,7 @@ def resolve_device(argument: str) -> str:
     if argument.startswith("/"):
         real = os.path.realpath(argument)
         if not os.path.exists(real):
-            die(f"Device path does not exist: {argument}")
+            sys.exit(f"error: Device path does not exist: {argument}")
         return real
 
     # Treat as a disk GUID — scan every top-level block device.
@@ -178,7 +178,9 @@ def resolve_device(argument: str) -> str:
         text=True,
     )
     if result.returncode != 0:
-        die(f"lsblk failed while scanning for disk GUID:\n{result.stderr.strip()}")
+        sys.exit(
+            f"error: lsblk failed while scanning for disk GUID:\n{result.stderr.strip()}"
+        )
 
     data = json.loads(result.stdout)
     matches = [
@@ -188,10 +190,11 @@ def resolve_device(argument: str) -> str:
     ]
 
     if not matches:
-        die(f"No block device found with disk GUID {argument}")
+        sys.exit(f"error: No block device found with disk GUID {argument}")
     if len(matches) > 1:
-        die(
-            f"Ambiguous disk GUID {argument} matched multiple devices: "
+        sys.exit(
+            "error: "
+            + f"Ambiguous disk GUID {argument} matched multiple devices: "
             + ", ".join(matches)
         )
 
@@ -212,7 +215,7 @@ def get_device_partitions(device: str) -> list[dict]:
         text=True,
     )
     if result.returncode != 0:
-        die(f"lsblk failed:\n{result.stderr.strip()}")
+        sys.exit(f"error: lsblk failed:\n{result.stderr.strip()}")
 
     data = json.loads(result.stdout)
     partitions = []
@@ -256,7 +259,8 @@ def refresh_kernel_partition_table(device: str) -> None:
             text=True,
         )
         if reread.returncode != 0:
-            die(
+            sys.exit(
+                "error: "
                 "Failed to refresh kernel partition table via partprobe and "
                 f"blockdev --rereadpt:\n{partprobe.stderr.strip()}\n{reread.stderr.strip()}"
             )
@@ -283,7 +287,9 @@ def get_partition_mountpoints(device: str) -> dict[str, list[str]]:
         text=True,
     )
     if result.returncode != 0:
-        die(f"lsblk failed while querying mount points:\n{result.stderr.strip()}")
+        sys.exit(
+            f"error: lsblk failed while querying mount points:\n{result.stderr.strip()}"
+        )
 
     data = json.loads(result.stdout)
     mount_map: dict[str, list[str]] = {}
@@ -321,7 +327,9 @@ def unmount_partitions(partitions: list[dict], mount_map: dict[str, list[str]]) 
                 text=True,
             )
             if result.returncode != 0:
-                die(f"Failed to unmount {mount} ({node}):\n{result.stderr.strip()}")
+                sys.exit(
+                    f"error: Failed to unmount {mount} ({node}):\n{result.stderr.strip()}"
+                )
 
 
 # ---------------------------------------------------------------------------
@@ -402,7 +410,7 @@ def delete_partitions(device: str, partitions: list[dict]) -> None:
         print(result.stdout, end="", file=sys.stderr)
     if result.returncode != 0:
         print(result.stderr, file=sys.stderr)
-        die(f"sfdisk --delete exited with status {result.returncode}")
+        sys.exit(f"error: sfdisk --delete exited with status {result.returncode}")
 
     refresh_kernel_partition_table(device)
 
@@ -508,7 +516,7 @@ def run_sfdisk_append(device: str, script: str) -> None:
         print(result.stdout, end="", file=sys.stderr)
     if result.returncode != 0:
         print(result.stderr, file=sys.stderr)
-        die(f"sfdisk exited with status {result.returncode}")
+        sys.exit(f"error: sfdisk exited with status {result.returncode}")
 
     refresh_kernel_partition_table(device)
 
@@ -539,7 +547,9 @@ def resolve_nodes_by_partuuid(
         time.sleep(0.5)
 
     missing = wanted - found.keys()
-    die("Could not resolve kernel nodes for PARTUUIDs: " + ", ".join(missing))
+    sys.exit(
+        "error: Could not resolve kernel nodes for PARTUUIDs: " + ", ".join(missing)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -564,7 +574,9 @@ def parse_bool(raw: str, name: str) -> bool:
         return True
     if normalised in ("false", "0", "no"):
         return False
-    die(f"{name} must be a boolean string (true/false/yes/no/1/0), got: {raw!r}")
+    sys.exit(
+        f"error: {name} must be a boolean string (true/false/yes/no/1/0), got: {raw!r}"
+    )
 
 
 def parse_spec_list(raw: str) -> list[str] | None:
@@ -580,28 +592,31 @@ def parse_spec_list(raw: str) -> list[str] | None:
     return [s.strip() for s in stripped.split(",") if s.strip()]
 
 
-def validate_config() -> tuple[str, bool, list[str] | None]:
+def validate_config() -> tuple[str, bool, list[str] | None, bool]:
     """
     Parse and validate the module-level configuration variables.
 
-    Returns (disk, delete_all, keep_specs) where keep_specs is only
+    Returns (disk, delete_all, keep_specs, is_encrypted) where keep_specs is only
     populated when delete_all is True and ALL_EXCEPT is non-empty.
     """
     disk = DISK.strip()
     if not disk:
-        die("DISK must be a non-empty string (device path or GPT disk GUID).")
+        sys.exit(
+            "error: DISK must be a non-empty string (device path or GPT disk GUID)."
+        )
 
     delete_all = parse_bool(DELETE_ALL, "DELETE_ALL")
+    is_encrypted = parse_bool(IS_ENCRYPTED, "IS_ENCRYPTED")
 
     # ALL_EXCEPT is only meaningful when DELETE_ALL is true — don't even
     # look at it otherwise.
     keep_specs = parse_spec_list(ALL_EXCEPT) if delete_all else None
 
-    return disk, delete_all, keep_specs
+    return disk, delete_all, keep_specs, is_encrypted
 
 
 def main() -> None:
-    disk_arg, delete_all, keep_specs = validate_config()
+    disk_arg, delete_all, keep_specs, is_encrypted = validate_config()
 
     device = resolve_device(disk_arg)
 
@@ -682,13 +697,15 @@ def main() -> None:
         },
     }
     print(json.dumps(result, indent=2))
-    write_output_files(efi_uuid, boot_uuid, root_uuid)
+    write_output_files(efi_uuid, boot_uuid, root_uuid, is_encrypted)
 
 
 OUTPUT_DIR = "/tmp/wingone_vars"
 
 
-def write_output_files(efi_uuid: str, boot_uuid: str, root_uuid: str) -> None:
+def write_output_files(
+    efi_uuid: str, boot_uuid: str, root_uuid: str, is_encrypted: bool
+) -> None:
     """
     Write two files to OUTPUT_DIR:
 
@@ -696,6 +713,10 @@ def write_output_files(efi_uuid: str, boot_uuid: str, root_uuid: str) -> None:
       partitioning_ks      — Kickstart snippet for EFI, boot, and root
     """
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    root_part_line = f"part btrfs.01 --onpart=/dev/disk/by-partuuid/{root_uuid.lower()}"
+    if is_encrypted:
+        root_part_line += " --encrypted --passphrase change-me"
 
     # --- partition_uuids ---
     uuids_path = os.path.join(OUTPUT_DIR, "partition_uuids")
@@ -716,7 +737,7 @@ def write_output_files(efi_uuid: str, boot_uuid: str, root_uuid: str) -> None:
         f"part /boot --fstype=ext4 --label=fedora_boot --onpart=/dev/disk/by-partuuid/{boot_uuid.lower()}\n"
         f"\n"
         f"# root\n"
-        f"part btrfs.01 --onpart=/dev/disk/by-partuuid/{root_uuid.lower()}\n"
+        f"{root_part_line}\n"
         f"btrfs none --label=fedora btrfs.01\n"
         f"btrfs / --subvol --name=root fedora\n"
         f"btrfs /home --subvol --name=home fedora\n"
